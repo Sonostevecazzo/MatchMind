@@ -29,6 +29,13 @@ def _stable_id(value: str) -> int:
     return (int(hashlib.sha256(value.encode("utf-8")).hexdigest()[:8], 16) & 0x7FFFFFFF) or 1
 
 
+def league_id_for_slug(league_slug: str) -> int:
+    """Return a stable SQLite-compatible ID for a public CSV competition."""
+    if not league_slug or "/" in league_slug or ".." in league_slug:
+        raise ValueError("league_slug must be a single competition folder name")
+    return _stable_id("open-matchday:league:" + league_slug)
+
+
 def _season_code(start_year: int) -> str:
     if not 2000 <= int(start_year) <= 2100:
         raise ValueError("season must be a start year between 2000 and 2100")
@@ -103,7 +110,7 @@ class OpenMatchdayClient:
                 continue
             rows[(kickoff[:10], home.casefold(), away.casefold())] = {**row, "_kickoff_utc": kickoff, "_home": home, "_away": away}
         output: list[dict[str, Any]] = []
-        league_id = _stable_id("open-matchday:league:" + league_slug)
+        league_id = league_id_for_slug(league_slug)
         for row in rows.values():
             home, away = row["_home"], row["_away"]
             kickoff = row["_kickoff_utc"]
