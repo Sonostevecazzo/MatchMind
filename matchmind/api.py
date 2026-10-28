@@ -16,6 +16,7 @@ from .historical_model import InsufficientHistoricalData, estimate_expected_goal
 from .fixture_odds import analyse_fixture_odds
 from .model import forecast_markets, market_dict
 from .providers.api_football import ApiFootballClient, ProviderAPIError, ProviderConfigurationError, ProviderError
+from .providers.open_matchday import OpenMatchdayClient, OpenMatchdayError, DEFAULT_LEAGUE as DEFAULT_OPEN_MATCHDAY_LEAGUE
 from .storage import MatchMindStore
 from .sync import MatchMindSync, active_season_year, run_scheduled_sync
 
@@ -173,6 +174,34 @@ def data_players(team_id: int, season: int | None = Query(default=None, ge=2000,
     if team_id <= 0:
         raise HTTPException(status_code=422, detail="team_id must be positive")
     return {"players": _store().player_statistics_for_team(team_id, season, limit=limit)}
+
+
+@app.post("/sync/open-matchday")
+def sync_open_matchday(
+    league_slug: str = Query(default=DEFAULT_OPEN_MATCHDAY_LEAGUE, min_length=3, max_length=80),
+    season: int = Query(default_factory=active_season_year, ge=2000, le=2100),
+):
+    """Import public fixtures/results from open-matchday; no API key required."""
+    try:
+        with OpenMatchdayClient() as client:
+            records = client.fixtures(league_slug=league_slug, season=season)
+        if not records:
+            raise HTTPException(status_code=404, detail="No CSV rows found for this competition and season; verify the folder name and season on the source repository.")
+        stored = _store().upsert_fixtures(records)
+        completed = sum(1 for row in records if row["goals"]["home"] is not None and row["goals"]["away"] is not None)
+        return {
+            "provider": "open-matchday", "api_key_required": False,
+            "league_slug": league_slug, "season": season,
+            "fetched": len(records), "stored_or_updated": stored,
+            "completed_results": completed, "scheduled_fixtures": len(records) - completed,
+            "status": "success",
+            "limitations": ["No bookmaker odds, injuries, lineups or complete player data.", "Coverage and statistics vary by competition.", "Source data are refreshed daily, not live."],
+            "source_url": "https://github.com/oladeeayo/open-matchday",
+        }
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except OpenMatchdayError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.post("/sync/fixtures")
