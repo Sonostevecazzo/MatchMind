@@ -34,9 +34,10 @@
     <section class="card">
       <div class="card-head"><div><h3>Archivio partite</h3><p>Seleziona una partita per calcolare le probabilità dai risultati precedenti.</p></div><span class="status" id="fixtureCount">0 risultati</span></div>
       <div class="controls">
-        <div class="field"><label for="league">ID competizione</label><input id="league" type="number" min="1" value="135"></div>
+        <div class="field"><label for="dataSource">Fonte dati</label><select id="dataSource"><option value="open-matchday">Serie A gratuita (senza API key)</option><option value="api-football">API-Football (API key)</option></select></div>
+        <div class="field" id="leagueField" style="display:none"><label for="league">ID competizione API-Football</label><input id="league" type="number" min="1" value="135"></div>
         <div class="field"><label for="season">Stagione (anno di inizio)</label><input id="season" type="number" min="2000" max="2100"></div>
-        <div style="display:flex;align-items:flex-end;gap:7px"><button class="primary" id="syncBtn">Sincronizza dati</button><button id="loadBtn">Carica archivio</button></div>
+        <div style="display:flex;align-items:flex-end;gap:7px"><button class="primary" id="syncBtn">Aggiorna Serie A</button><button id="loadBtn">Carica archivio</button></div>
       </div>
       <div class="table-wrap"><table><thead><tr><th>Partita / competizione</th><th>Data UTC</th><th>Risultato</th><th>Stato</th><th>Analisi</th></tr></thead><tbody id="fixtureRows"><tr><td colspan="5"><div class="empty"><strong>Archivio locale</strong>Carica le partite già archiviate oppure sincronizza dal provider.</div></td></tr></tbody></table></div>
     </section>
@@ -59,25 +60,35 @@
   async function loadStatus(){
     try{
       const [health,provider,coverage]=await Promise.all([api('/health'),api('/provider/status'),api('/data/coverage')]);
-      $('providerDot').className='dot '+(provider.configured?'good':'bad');
-      $('providerLabel').textContent=provider.configured?(provider.automatic_sync_enabled?'Provider con sync automatico':'API configurata'):'API non configurata';
+      const publicEnabled=Boolean(health.public_automatic_sync_enabled);
+      $('providerDot').className='dot '+((publicEnabled||provider.configured)?'good':'bad');
+      $('providerLabel').textContent=publicEnabled?'Serie A pubblica · sync automatico':provider.configured?(provider.automatic_sync_enabled?'API con sync automatico':'API-Football configurata'):'Nessuna fonte automatica attiva';
       $('metricFixtures').textContent=fmt(coverage.fixtures.count); $('metricInjuries').textContent=fmt(coverage.injuries.count); $('metricOdds').textContent=fmt(coverage.odds_snapshots.count); $('metricPlayers').textContent=fmt(coverage.player_statistics.count);
       const last=[['Partite',coverage.fixtures],['Indisponibilità',coverage.injuries],['Quote',coverage.odds_snapshots],['Giocatori',coverage.player_statistics]];
-      $('statusPanel').innerHTML=(provider.configured?notice('Chiave provider presente. La copertura effettiva dipende dal piano API.','good'):notice('Manca API_FOOTBALL_KEY: l’app funziona, ma non può importare dati live. Imposta la chiave nell’ambiente locale; non inserirla nel codice.'))+
-        `<div class="data-row"><span>Fonte</span><strong>API-Football v3</strong></div><div class="data-row"><span>Sync automatico</span><strong>${provider.automatic_sync_enabled?'Attivo':'Non attivo'}</strong></div><div class="data-row"><span>Competizioni configurate</span><strong>${esc(provider.configured_leagues.join(', ')||'—')}</strong></div><div class="data-row"><span>Stagione corrente stimata</span><strong>${esc(provider.active_season_default)}</strong></div>`+
+      const intro=publicEnabled
+        ? notice('Fonte pubblica senza chiave attiva. MatchMind aggiorna automaticamente calendari e risultati Serie A all’avvio e ogni giorno alle 04:05, finché il server è in esecuzione.','good')
+        : provider.configured
+          ? notice('Chiave API-Football presente. La copertura effettiva dipende dal piano.','good')
+          : notice('La sincronizzazione pubblica automatica non risulta attiva. Controlla MATCHMIND_PUBLIC_AUTO_SYNC nel file .env e riavvia il server.');
+      $('statusPanel').innerHTML=intro+
+        `<div class="data-row"><span>Fonte gratuita</span><strong>open-matchday · Serie A</strong></div><div class="data-row"><span>Sync pubblico automatico</span><strong>${publicEnabled?'Attivo':'Non attivo'}</strong></div><div class="data-row"><span>API-Football</span><strong>${provider.configured?'Configurata':'Non configurata (facoltativa)'}</strong></div><div class="data-row"><span>Stagione corrente stimata</span><strong>${esc(provider.active_season_default)}</strong></div>`+
         last.map(([name,obj])=>`<div class="data-row"><span>Ultimo aggiornamento ${esc(name)}</span><strong>${dateFmt(obj.last_retrieved_at)}</strong></div>`).join('')+
         `<div class="section-label">Ultimi tentativi di sincronizzazione</div>`+
         ((coverage.recent_sync_runs||[]).slice(0,5).map(r=>`<div class="data-row"><span>${esc(r.data_type)} · ${esc(r.league_id)} / ${esc(r.season)}<small class="small">${dateFmt(r.started_at)}</small></span><strong style="color:${r.status==='success'?'var(--accent)':r.status==='failed'?'var(--bad)':'var(--warn)'}">${esc(r.status)}${r.error_message?`<small class="small">${esc(r.error_message)}</small>`:''}</strong></div>`).join('')||'<div class="small">Nessuna sincronizzazione registrata.</div>');
-    }catch(e){$('providerDot').className='dot bad';$('providerLabel').textContent='API non raggiungibile';showError($('statusPanel'),e.message);}
+    }catch(e){$('providerDot').className='dot bad';$('providerLabel').textContent='Server non raggiungibile';showError($('statusPanel'),e.message);}
   }
   async function loadFixtures(){
+    const source=$('dataSource').value;
     const league=Number($('league').value)||135, season=Number($('season').value)||new Date().getFullYear();
     $('fixtureRows').innerHTML='<tr><td colspan="5"><div class="empty">Caricamento archivio…</div></td></tr>';
     try{
-      const data=await api(`/data/fixtures?league_id=${league}&season=${season}&limit=200`), rows=data.fixtures||[];
-      $('fixtureCount').textContent=`${rows.length} risultati`;
-      if(!rows.length){$('fixtureRows').innerHTML='<tr><td colspan="5"><div class="empty"><strong>Nessuna partita salvata</strong>Controlla la chiave del provider e usa “Sincronizza dati”.</div></td></tr>';return;}
-      $('fixtureRows').innerHTML=rows.map(r=>`<tr><td><div class="teams">${esc(r.home_team)} <span style="color:var(--muted);font-weight:400">vs</span> ${esc(r.away_team)}</div><div class="small">${esc(r.league_name)} · ${esc(r.season)}</div></td><td>${dateFmt(r.kickoff_utc)}</td><td class="teams">${r.home_goals==null?'—':`${r.home_goals} – ${r.away_goals}`}</td><td><span class="status ${['FT','AET','PEN'].includes(r.status_short)?'finished':''}">${esc(statusText(r.status_short))}</span></td><td><button class="link" data-forecast="${Number(r.fixture_id)}">Analisi ↗</button></td></tr>`).join('');
+      const url=source==='open-matchday'
+        ? `/data/fixtures?source=open-matchday&season=${season}&limit=200`
+        : `/data/fixtures?league_id=${league}&season=${season}&limit=200`;
+      const data=await api(url), rows=data.fixtures||[];
+      $('fixtureCount').textContent=`${rows.length} partite`;
+      if(!rows.length){$('fixtureRows').innerHTML='<tr><td colspan="5"><div class="empty"><strong>Nessuna partita salvata</strong>'+(source==='open-matchday'?'La sincronizzazione iniziale può richiedere alcuni secondi. Riprova tra poco.':'Controlla la chiave API e avvia la sincronizzazione.')+'</div></td></tr>';return;}
+      $('fixtureRows').innerHTML=rows.map(r=>`<tr><td><div class="teams">${esc(r.home_team)} <span style="color:var(--muted);font-weight:400">vs</span> ${esc(r.away_team)}</div><div class="small">${esc(r.league_name)} · ${esc(r.season)}${r.match_statistics?.home_shots!=null?' · Tiri '+esc(r.match_statistics.home_shots)+'–'+esc(r.match_statistics.away_shots):''}</div></td><td>${dateFmt(r.kickoff_utc)}</td><td class="teams">${r.home_goals==null?'—':`${r.home_goals} – ${r.away_goals}`}</td><td><span class="status ${['FT','AET','PEN'].includes(r.status_short)?'finished':''}">${esc(statusText(r.status_short))}</span></td><td><button class="link" data-forecast="${Number(r.fixture_id)}">Analisi ↗</button></td></tr>`).join('');
       $('fixtureRows').querySelectorAll('[data-forecast]').forEach(btn=>btn.addEventListener('click',()=>loadForecast(Number(btn.dataset.forecast))));
     }catch(e){$('fixtureRows').innerHTML=`<tr><td colspan="5">${notice(e.message,'error')}</td></tr>`;}
   }
@@ -120,15 +131,37 @@
     }catch(e){showError($('forecastPanel'),e.message);}
   }
   async function syncAll(){
+    const source=$('dataSource').value;
     const league=Number($('league').value)||135, season=Number($('season').value)||new Date().getFullYear();
-    const btn=$('syncBtn');btn.disabled=true;btn.textContent='Sincronizzazione…';
-    try{const r=await api(`/sync/all?league_id=${league}&season=${season}`,{method:'POST'});const count=(r.syncs||[]).reduce((s,x)=>s+(x.stored_or_updated||0),0);alert(`${r.status==='partial'?'Sincronizzazione parziale':'Sincronizzazione completata'}. Record importati/aggiornati: ${count}.${(r.warnings||[]).length?'\n\n'+r.warnings.join('\n'):''}`);await Promise.all([loadFixtures(),loadStatus()]);}
-    catch(e){alert(`Sincronizzazione non riuscita: ${e.message}`);}
-    finally{btn.disabled=false;btn.textContent='Sincronizza dati';}
+    const btn=$('syncBtn');btn.disabled=true;btn.textContent='Aggiornamento…';
+    try{
+      if(source==='open-matchday'){
+        const result=await api(`/sync/open-matchday?league_slug=ITA_1_serie-a&season=${season}`,{method:'POST'});
+        alert(`Aggiornamento pubblico completato. Risultati: ${result.completed_results}; partite future: ${result.scheduled_fixtures}; righe aggiornate: ${result.stored_or_updated}. Fonte: open-matchday.`);
+      }else{
+        const result=await api(`/sync/all?league_id=${league}&season=${season}`,{method:'POST'});
+        const count=(result.syncs||[]).reduce((sum,x)=>sum+(x.stored_or_updated||0),0);
+        alert(`${result.status==='partial'?'Sincronizzazione parziale':'Sincronizzazione completata'}. Record importati/aggiornati: ${count}.${(result.warnings||[]).length?'\n\n'+result.warnings.join('\n'):''}`);
+      }
+      await Promise.all([loadFixtures(),loadStatus()]);
+    }catch(e){alert(`Sincronizzazione non riuscita: ${e.message}`);}
+    finally{btn.disabled=false;btn.textContent=source==='open-matchday'?'Aggiorna Serie A':'Sincronizza API';}
   }
   $('season').value=String(new Date().getMonth()>=6?new Date().getFullYear():new Date().getFullYear()-1);
+  function updateSourceUI(){
+    const isPublic=$('dataSource').value==='open-matchday';
+    $('leagueField').style.display=isPublic?'none':'';
+    $('syncBtn').textContent=isPublic?'Aggiorna Serie A':'Sincronizza API';
+    $('loadBtn').textContent=isPublic?'Carica Serie A':'Carica archivio';
+    loadFixtures();
+  }
+  $('dataSource').addEventListener('change',updateSourceUI);
   $('refreshBtn').addEventListener('click',()=>Promise.all([loadStatus(),loadFixtures()]));$('statusBtn').addEventListener('click',loadStatus);$('loadBtn').addEventListener('click',loadFixtures);$('syncBtn').addEventListener('click',syncAll);
   loadStatus();loadFixtures();
+  // The first public sync is scheduled by the API shortly after startup.
+  window.setTimeout(()=>Promise.all([loadStatus(),loadFixtures()]),12000);
+  // Keep the dashboard in step with scheduled server-side syncs without manual imports.
+  window.setInterval(()=>Promise.all([loadStatus(),loadFixtures()]),300000);
 </script>
 </body>
 </html>
