@@ -1,0 +1,1 @@
+Place only manually acquired, properly licensed data here. Do not commit private datasets, API keys, or data whose licence forbids your intended analysis/training. Every imported record must retain source, retrieval date, and licence metadata.
