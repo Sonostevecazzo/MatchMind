@@ -51,6 +51,10 @@ matchmind sync --league 135 --season 2026 --data players --team 489
 
 API endpoints include `POST /sync/all`, `POST /sync/fixtures`, `POST /sync/injuries`, `POST /sync/odds`, and `POST /sync/players`. Read `/provider/status` and `/data/coverage` to verify configuration and import results. The default league ID 135 is commonly used for Italian Serie A in API-Football; confirm competition IDs and plan coverage against the provider's current dashboard.
 
+## Automatic live-provider verification
+
+The separate `provider-live-smoke` GitHub Actions workflow can be run manually or daily. To enable a real provider test without exposing credentials, add a repository Actions secret named `API_FOOTBALL_KEY` under **Settings → Secrets and variables → Actions**. The workflow checks the selected league/season coverage and exercises the fixtures, injuries and odds endpoints. If the secret is absent, the live check is intentionally skipped; the standard CI still runs mock-based tests. Never commit the key or paste it into a chat. The local application still needs the key in its own private `.env` file.
+
 ## What gets stored
 
 SQLite tables store fixture metadata and final scores, player-availability reports, player seasonal statistics, each distinct bookmaker/market/selection price snapshot, source URLs, provider timestamps and local retrieval timestamps. Sync attempts are logged. Repeated identical odds snapshots are deduplicated. Provider errors do not turn into fake records.
