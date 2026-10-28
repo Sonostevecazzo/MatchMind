@@ -55,7 +55,9 @@ API endpoints include `POST /sync/all`, `POST /sync/fixtures`, `POST /sync/injur
 
 SQLite tables store fixture metadata and final scores, player-availability reports, player seasonal statistics, each distinct bookmaker/market/selection price snapshot, source URLs, provider timestamps and local retrieval timestamps. Sync attempts are logged. Repeated identical odds snapshots are deduplicated. Provider errors do not turn into fake records.
 
-The forecast-from-fixture endpoint only trains from completed results with kickoff timestamps before the fixture. It uses a time-decayed, smoothed team-strength baseline and requires sufficient match history. Injury and odds records are shown as context but are **not** arbitrarily applied as multipliers to probabilities: their effects must be estimated and validated on held-out data first.
+The dashboard also analyses complete, comparable bookmaker snapshots for 1X2, Gol/No Gol and supported Over/Under lines. It calculates overround, proportional de-vigged market probabilities, model/market divergence and theoretical expected value, and flags large margins or differences for review. Incomplete or unrecognised markets are skipped rather than treated as comparable. Player season statistics and injury reports are shown as sourced context; their effects are not applied to forecasts until validated on out-of-sample data.
+
+The forecast-from-fixture endpoint only estimates expected goals from completed results with kickoff timestamps before the fixture. It uses a time-decayed, smoothed team-strength baseline and requires sufficient match history. Injury and odds records are shown as context but are **not** arbitrarily applied as multipliers to probabilities: their effects must be estimated and validated on held-out data first.
 
 ## Verification
 
