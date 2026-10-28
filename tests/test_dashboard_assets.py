@@ -39,6 +39,11 @@ def test_dashboard_is_packaged_and_mentions_local_api() -> None:
     assert "MatchMind" in html
     assert "/data/coverage" in html
     assert "/forecast/fixture/" in html
+    assert "market('Under 1.5',p.under_15)" in html
+    assert "market('Under 2.5',p.under_25)" in html
+    assert "market('Under 3.5',p.under_35)" in html
+    assert "oddsAnalysisHtml" in html
+    assert "playerBlock" in html
     parser = _ScriptCollector()
     parser.feed(html)
     assert parser.scripts, "dashboard should contain its application JavaScript"
