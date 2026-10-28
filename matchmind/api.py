@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from .analysis import compare_market
 from .historical_model import InsufficientHistoricalData, estimate_expected_goals
+from .fixture_odds import analyse_fixture_odds
 from .model import forecast_markets, market_dict
 from .providers.api_football import ApiFootballClient, ProviderAPIError, ProviderConfigurationError, ProviderError
 from .storage import MatchMindStore
@@ -221,11 +222,14 @@ def forecast_stored_fixture(fixture_id: int):
     markets = market_dict(forecast_markets(estimated["home_xg"], estimated["away_xg"]))
     injuries = store.injuries_for_fixture(fixture_id)
     odds = store.odds_for_fixture(fixture_id)
-    return {"fixture": {"fixture_id": fixture["fixture_id"], "kickoff_utc": fixture["kickoff_utc"], "league": fixture["league_name"], "season": fixture["season"], "home_team": fixture["home_team"], "away_team": fixture["away_team"], "status": fixture["status_short"]},
+    home_players = store.player_statistics_for_team(fixture["home_team_id"], fixture["season"], limit=8) if fixture["home_team_id"] is not None else []
+    away_players = store.player_statistics_for_team(fixture["away_team_id"], fixture["season"], limit=8) if fixture["away_team_id"] is not None else []
+    odds_analysis = analyse_fixture_odds(odds, markets)
+    return {"fixture": {"fixture_id": fixture["fixture_id"], "kickoff_utc": fixture["kickoff_utc"], "league": fixture["league_name"], "season": fixture["season"], "home_team": fixture["home_team"], "away_team": fixture["away_team"], "home_team_id": fixture["home_team_id"], "away_team_id": fixture["away_team_id"], "status": fixture["status_short"]},
             "mode": "historical_score_statistical_baseline", "source": "locally_stored_provider_data", "expected_goals_estimate": estimated,
-            "markets": markets, "data_context": {"injury_records": len(injuries), "odds_snapshot_records": len(odds), "injury_effect_in_model": False, "odds_used_to_calibrate_forecast": False,
-            "note": "Injury and bookmaker data are shown as context only until their predictive effects are calibrated on out-of-sample historical data."},
-            "injuries": injuries, "odds": odds[:200]}
+            "markets": markets, "data_context": {"injury_records": len(injuries), "odds_snapshot_records": len(odds), "home_player_records": len(home_players), "away_player_records": len(away_players), "injury_effect_in_model": False, "odds_used_to_calibrate_forecast": False,
+            "note": "Injury, player and bookmaker data are shown as context only; their predictive effects must be calibrated on out-of-sample historical data before they influence probabilities."},
+            "players": {"home": home_players, "away": away_players}, "injuries": injuries, "odds": odds[:200], "odds_analysis": odds_analysis}
 
 
 @app.post("/odds/analyse")
