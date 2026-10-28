@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>MatchMind — AI Sports Lab</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b0d12;--panel:#131722;--panel2:#191f2c;--line:#272f40;--muted:#929db2;--text:#edf1f8;--accent:#b5f46d;--warn:#ffcf70;--bad:#ff8c96;--blue:#84a8ff}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 86% -10%,#1e2938 0,transparent 65%),var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,input,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:10px 13px;transition:transform .15s,border-color .15s}button:hover{border-color:#63728a;transform:translateY(-1px)}button.primary{background:var(--accent);border-color:var(--accent);color:#10160b;font-weight:750}button:disabled{opacity:.45;cursor:wait;transform:none}
+    .shell{max-width:1400px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:12px}.mark{width:42px;height:42px;border-radius:14px;background:var(--accent);color:#11180a;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 8px 32px #b5f46d21}.brand h1{font-size:20px;letter-spacing:-.6px;margin:0}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}.header-right{display:flex;align-items:center;gap:10px}.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;padding:7px 11px;color:var(--muted);font-size:12px}.dot{height:7px;width:7px;border-radius:50%;background:var(--warn)}.dot.good{background:var(--accent)}.dot.bad{background:var(--bad)}
+    .hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin:24px 0}.hero h2{font-size:clamp(28px,4vw,46px);line-height:1.05;letter-spacing:-1.8px;margin:6px 0 12px}.hero p{max-width:680px;color:var(--muted);margin:0}.hero .right-note{max-width:260px;color:var(--muted);font-size:12px;border-left:1px solid var(--line);padding-left:16px}
+    .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0}.metric,.card{background:linear-gradient(145deg,#171c27,#11151d);border:1px solid var(--line);border-radius:16px}.metric{padding:17px}.metric .label{color:var(--muted);font-size:12px}.metric .value{font-size:27px;font-weight:750;letter-spacing:-.8px;margin:5px 0}.metric .sub{color:var(--muted);font-size:11px}
+    .grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(330px,.75fr);gap:16px;align-items:start}.card{overflow:hidden}.card-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px}.card-head h3{font-size:15px;margin:0}.card-head p{color:var(--muted);font-size:12px;margin:4px 0 0}.controls{padding:16px 20px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line)}.field{display:flex;flex-direction:column;gap:5px;min-width:110px;flex:1}.field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}.field input{width:100%;background:#0c1017;border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--text);min-width:0}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:560px}th,td{text-align:left;padding:13px 18px;border-bottom:1px solid #232a37}th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600}td{font-size:12px}tr:last-child td{border-bottom:0}.teams{font-weight:650;font-size:13px}.small{font-size:11px;color:var(--muted);margin-top:3px}.status{font-size:10px;border-radius:6px;background:#252c3a;color:#bac5d7;padding:4px 6px;white-space:nowrap}.status.finished{color:var(--accent)}.link{color:var(--blue);font-weight:650;border:0;background:transparent;padding:5px}.empty{padding:38px 22px;text-align:center;color:var(--muted)}.empty strong{color:var(--text);display:block;font-size:15px;margin-bottom:6px}
+    .right-col{display:grid;gap:16px}.box-body{padding:18px 20px}.notice{border:1px solid #554524;background:#241f14;color:#e9d6aa;padding:12px 14px;border-radius:10px;font-size:12px;margin:0 0 14px}.notice.good{border-color:#314a26;background:#182216;color:#c9edac}.notice.error{border-color:#5e3037;background:#241619;color:#ffbec4}.detail-title{font-weight:750;font-size:17px;margin:0 0 4px}.detail-sub{color:var(--muted);font-size:12px;margin-bottom:18px}.market{margin:14px 0}.market-top{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:6px}.market-label{color:#dce3ee}.market-val{font-weight:750;font-variant-numeric:tabular-nums}.bar{height:5px;background:#2b3342;border-radius:8px;overflow:hidden}.bar span{display:block;height:100%;background:var(--accent);border-radius:8px}.section-label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:22px 0 9px}.data-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.data-row span:first-child{color:var(--muted)}.data-row:last-child{border-bottom:0}.foot{margin:20px 0 4px;color:var(--muted);font-size:11px;text-align:center}.foot a{color:var(--blue);text-decoration:none}
+    @media(max-width:960px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{align-items:flex-start;flex-direction:column}.hero .right-note{max-width:none}}@media(max-width:600px){.shell{padding:15px}.header-right .pill{display:none}header{align-items:flex-start}.brand h1{font-size:17px}.metrics{gap:8px}.metric{padding:13px}.metric .value{font-size:22px}.card-head,.controls{padding:14px}.box-body{padding:15px}.card-head{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand"><div class="mark">M</div><div><div class="eyebrow">Private football analytics</div><h1>MatchMind <span style="color:var(--muted);font-weight:500">/ AI Sports Lab</span></h1></div></div>
+    <div class="header-right"><span class="pill"><span class="dot" id="providerDot"></span><span id="providerLabel">Verifica sorgente…</span></span><button id="refreshBtn">↻ Aggiorna</button></div>
+  </header>
+  <section class="hero"><div><div class="eyebrow">Statistical modelling workspace</div><h2>Oltre le quote.<br><span style="color:var(--accent)">Dentro i dati.</span></h2><p>Risultati storici, forma statistica, indisponibilità e snapshot delle quote in un unico spazio. Le probabilità sono stime, non garanzie.</p></div><div class="right-note">Un modello trasparente vale più di una previsione opaca. Ogni dato importato conserva fonte e data di acquisizione.</div></section>
+  <section class="metrics">
+    <div class="metric"><div class="label">Partite archiviate</div><div class="value" id="metricFixtures">—</div><div class="sub">Dati nel database locale</div></div>
+    <div class="metric"><div class="label">Report indisponibilità</div><div class="value" id="metricInjuries">—</div><div class="sub">Segnalazioni importate</div></div>
+    <div class="metric"><div class="label">Snapshot quote</div><div class="value" id="metricOdds">—</div><div class="sub">Prezzi storicizzati</div></div>
+    <div class="metric"><div class="label">Statistiche giocatori</div><div class="value" id="metricPlayers">—</div><div class="sub">Righe di statistiche salvate</div></div>
+  </section>
+  <div class="grid">
+    <section class="card">
+      <div class="card-head"><div><h3>Archivio partite</h3><p>Seleziona una partita per calcolare le probabilità dai risultati precedenti.</p></div><span class="status" id="fixtureCount">0 risultati</span></div>
+      <div class="controls">
+        <div class="field"><label for="league">ID competizione</label><input id="league" type="number" min="1" value="135"></div>
+        <div class="field"><label for="season">Stagione (anno di inizio)</label><input id="season" type="number" min="2000" max="2100"></div>
+        <div style="display:flex;align-items:flex-end;gap:7px"><button class="primary" id="syncBtn">Sincronizza dati</button><button id="loadBtn">Carica archivio</button></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Partita / competizione</th><th>Data UTC</th><th>Risultato</th><th>Stato</th><th>Analisi</th></tr></thead><tbody id="fixtureRows"><tr><td colspan="5"><div class="empty"><strong>Archivio locale</strong>Carica le partite già archiviate oppure sincronizza dal provider.</div></td></tr></tbody></table></div>
+    </section>
+    <div class="right-col">
+      <section class="card"><div class="card-head"><div><h3>Analisi della partita</h3><p>Poisson + forze squadra stimate dai risultati storici.</p></div></div><div class="box-body" id="forecastPanel"><div class="empty"><strong>Nessuna partita selezionata</strong>Usa “Analisi” su una partita dell’archivio.</div></div></section>
+      <section class="card"><div class="card-head"><div><h3>Stato dati</h3><p>Configurazione e provenienza.</p></div><button id="statusBtn">Verifica</button></div><div class="box-body" id="statusPanel"><div class="empty">Verifica configurazione e copertura dei dati.</div></div></section>
+    </div>
+  </div>
+  <div class="foot">MatchMind è uno strumento analitico privato. Le anomalie di quota non dimostrano manipolazioni; il valore atteso teorico non garantisce risultati. <a href="/docs" target="_blank" rel="noopener">API locale</a></div>
+</div>
+<script>
+  const $ = id => document.getElementById(id);
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt = n => n == null ? '—' : Number(n).toLocaleString('it-IT');
+  const dateFmt = value => { if(!value) return '—'; const d=new Date(value); return Number.isNaN(d.getTime()) ? value : d.toLocaleString('it-IT',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC'; };
+  const statusText = s => ({FT:'Terminata',AET:'DTS',PEN:'Rigori',NS:'Programmato',TBD:'Da definire',PST:'Rinviata',CANC:'Annullata',LIVE:'In corso',1H:'1° tempo',HT:'Intervallo',2H:'2° tempo'}[s] || s || 'Sconosciuto');
+  async function api(url, options={}) { const res=await fetch(url,{headers:{'Accept':'application/json','Content-Type':'application/json',...(options.headers||{})},...options}); const body=await res.json().catch(()=>({detail:'Risposta non valida dal server'})); if(!res.ok) throw new Error(body.detail || `Errore HTTP ${res.status}`); return body; }
+  function notice(text,type=''){ return `<div class="notice ${type}">${esc(text)}</div>`; }
+  function showError(el,msg){el.innerHTML=notice(msg,'error');}
+  async function loadStatus(){
+    try{
+      const [health,provider,coverage]=await Promise.all([api('/health'),api('/provider/status'),api('/data/coverage')]);
+      $('providerDot').className='dot '+(provider.configured?'good':'bad');
+      $('providerLabel').textContent=provider.configured?(provider.automatic_sync_enabled?'Provider con sync automatico':'API configurata'):'API non configurata';
+      $('metricFixtures').textContent=fmt(coverage.fixtures.count); $('metricInjuries').textContent=fmt(coverage.injuries.count); $('metricOdds').textContent=fmt(coverage.odds_snapshots.count); $('metricPlayers').textContent=fmt(coverage.player_statistics.count);
+      const last=[['Partite',coverage.fixtures],['Indisponibilità',coverage.injuries],['Quote',coverage.odds_snapshots],['Giocatori',coverage.player_statistics]];
+      $('statusPanel').innerHTML=(provider.configured?notice('Chiave provider presente. La copertura effettiva dipende dal piano API.','good'):notice('Manca API_FOOTBALL_KEY: l’app funziona, ma non può importare dati live. Imposta la chiave nell’ambiente locale; non inserirla nel codice.'))+
+        `<div class="data-row"><span>Fonte</span><strong>API-Football v3</strong></div><div class="data-row"><span>Sync automatico</span><strong>${provider.automatic_sync_enabled?'Attivo':'Non attivo'}</strong></div><div class="data-row"><span>Competizioni configurate</span><strong>${esc(provider.configured_leagues.join(', ')||'—')}</strong></div><div class="data-row"><span>Stagione corrente stimata</span><strong>${esc(provider.active_season_default)}</strong></div>`+
+        last.map(([name,obj])=>`<div class="data-row"><span>Ultimo aggiornamento ${esc(name)}</span><strong>${dateFmt(obj.last_retrieved_at)}</strong></div>`).join('')+
+        `<div class="section-label">Ultimi tentativi di sincronizzazione</div>`+
+        ((coverage.recent_sync_runs||[]).slice(0,5).map(r=>`<div class="data-row"><span>${esc(r.data_type)} · ${esc(r.league_id)} / ${esc(r.season)}<small class="small">${dateFmt(r.started_at)}</small></span><strong style="color:${r.status==='success'?'var(--accent)':r.status==='failed'?'var(--bad)':'var(--warn)'}">${esc(r.status)}${r.error_message?`<small class="small">${esc(r.error_message)}</small>`:''}</strong></div>`).join('')||'<div class="small">Nessuna sincronizzazione registrata.</div>');
+    }catch(e){$('providerDot').className='dot bad';$('providerLabel').textContent='API non raggiungibile';showError($('statusPanel'),e.message);}
+  }
+  async function loadFixtures(){
+    const league=Number($('league').value)||135, season=Number($('season').value)||new Date().getFullYear();
+    $('fixtureRows').innerHTML='<tr><td colspan="5"><div class="empty">Caricamento archivio…</div></td></tr>';
+    try{
+      const data=await api(`/data/fixtures?league_id=${league}&season=${season}&limit=200`), rows=data.fixtures||[];
+      $('fixtureCount').textContent=`${rows.length} risultati`;
+      if(!rows.length){$('fixtureRows').innerHTML='<tr><td colspan="5"><div class="empty"><strong>Nessuna partita salvata</strong>Controlla la chiave del provider e usa “Sincronizza dati”.</div></td></tr>';return;}
+      $('fixtureRows').innerHTML=rows.map(r=>`<tr><td><div class="teams">${esc(r.home_team)} <span style="color:var(--muted);font-weight:400">vs</span> ${esc(r.away_team)}</div><div class="small">${esc(r.league_name)} · ${esc(r.season)}</div></td><td>${dateFmt(r.kickoff_utc)}</td><td class="teams">${r.home_goals==null?'—':`${r.home_goals} – ${r.away_goals}`}</td><td><span class="status ${['FT','AET','PEN'].includes(r.status_short)?'finished':''}">${esc(statusText(r.status_short))}</span></td><td><button class="link" data-forecast="${Number(r.fixture_id)}">Analisi ↗</button></td></tr>`).join('');
+      $('fixtureRows').querySelectorAll('[data-forecast]').forEach(btn=>btn.addEventListener('click',()=>loadForecast(Number(btn.dataset.forecast))));
+    }catch(e){$('fixtureRows').innerHTML=`<tr><td colspan="5">${notice(e.message,'error')}</td></tr>`;}
+  }
+  function market(name,prob){const p=Math.max(0,Math.min(1,Number(prob)||0));return `<div class="market"><div class="market-top"><span class="market-label">${esc(name)}</span><span class="market-val">${(p*100).toLocaleString('it-IT',{maximumFractionDigits:1})}%</span></div><div class="bar"><span style="width:${p*100}%"></span></div></div>`;}
+  async function loadForecast(id){
+    $('forecastPanel').innerHTML='<div class="empty">Calcolo probabilità…</div>';
+    try{
+      const d=await api(`/forecast/fixture/${id}`,{method:'POST'}), f=d.fixture, p=d.markets, x=d.expected_goals_estimate;
+      $('forecastPanel').innerHTML=`<div class="eyebrow">${esc(f.league)} · ${esc(f.kickoff_utc)}</div><div class="detail-title">${esc(f.home_team)} <span style="color:var(--muted);font-weight:400">vs</span> ${esc(f.away_team)}</div><div class="detail-sub">${esc(x.method)} · ${x.league_matches_used} partite storiche</div>`+
+        `<div class="data-row"><span>Expected goals casa</span><strong>${Number(x.home_xg).toFixed(2)}</strong></div><div class="data-row"><span>Expected goals trasferta</span><strong>${Number(x.away_xg).toFixed(2)}</strong></div>`+
+        `<div class="section-label">Esito 1X2</div>${market('1 · Vittoria casa',p.home_win)}${market('X · Pareggio',p.draw)}${market('2 · Vittoria trasferta',p.away_win)}`+
+        `<div class="section-label">Gol / No Gol</div>${market('Gol (entrambe segnano)',p.btts_yes)}${market('No Gol',p.btts_no)}`+
+        `<div class="section-label">Over / Under</div>${market('Over 1.5',p.over_15)}${market('Over 2.5',p.over_25)}${market('Over 3.5',p.over_35)}`+
+        `<div class="section-label">Contesto dati</div><div class="data-row"><span>Indisponibilità archiviate per la partita</span><strong>${d.data_context.injury_records}</strong></div><div class="data-row"><span>Quote/snapshot presenti</span><strong>${d.data_context.odds_snapshot_records}</strong></div>`+
+        (d.odds&&d.odds.length?`<div class="section-label">Ultimi prezzi registrati · dati osservati</div>`+d.odds.slice(0,8).map(o=>`<div class="data-row"><span>${esc(o.bookmaker)} · ${esc(o.market)}<small class="small">${esc(o.selection)} · ${dateFmt(o.observed_at)}</small></span><strong>${Number(o.decimal_odds).toFixed(2)}</strong></div>`).join(''):'')+
+        notice('Le indisponibilità e le quote sono mostrate come contesto ma non modificano ancora la previsione: il loro effetto deve essere calibrato e validato su dati fuori campione.')+
+        `<div class="small">${esc(x.disclaimer)}</div>`;
+    }catch(e){showError($('forecastPanel'),e.message);}
+  }
+  async function syncAll(){
+    const league=Number($('league').value)||135, season=Number($('season').value)||new Date().getFullYear();
+    const btn=$('syncBtn');btn.disabled=true;btn.textContent='Sincronizzazione…';
+    try{const r=await api(`/sync/all?league_id=${league}&season=${season}`,{method:'POST'});const count=(r.syncs||[]).reduce((s,x)=>s+(x.stored_or_updated||0),0);alert(`${r.status==='partial'?'Sincronizzazione parziale':'Sincronizzazione completata'}. Record importati/aggiornati: ${count}.${(r.warnings||[]).length?'\n\n'+r.warnings.join('\n'):''}`);await Promise.all([loadFixtures(),loadStatus()]);}
+    catch(e){alert(`Sincronizzazione non riuscita: ${e.message}`);}
+    finally{btn.disabled=false;btn.textContent='Sincronizza dati';}
+  }
+  $('season').value=String(new Date().getMonth()>=6?new Date().getFullYear():new Date().getFullYear()-1);
+  $('refreshBtn').addEventListener('click',()=>Promise.all([loadStatus(),loadFixtures()]));$('statusBtn').addEventListener('click',loadStatus);$('loadBtn').addEventListener('click',loadFixtures);$('syncBtn').addEventListener('click',syncAll);
+  loadStatus();loadFixtures();
+</script>
+</body>
+</html>
