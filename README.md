@@ -4,7 +4,7 @@ MatchMind is a local-first football data pipeline and probability workbench. It 
 
 **It is not yet a trained AI model.** The built-in forecast is a transparent Poisson baseline. The API-Football adapter and local scheduled synchronizer are implemented, and a separate no-key public CSV importer is available for supported competitions. API-Football-only feeds still require a valid key and plan coverage. No real key, live response, or prediction performance result is bundled into the repository.
 
-## Free setup (recommended)
+## Optional API-Football setup
 
 You can start with API-Football's **$0 Free plan**. The provider currently advertises 100 requests per day and says no credit card is required for the free version. The plan lists fixtures, statistics, player information, injuries, pre-match/in-play odds and predictions among its endpoint categories, but available seasons and actual coverage may vary. Check the current plan and coverage before relying on any feed: [API-Football pricing](https://www.api-football.com/pricing).
 
@@ -52,9 +52,9 @@ set -a; source .env; set +a
 uvicorn matchmind.api:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000` for the dashboard, or `http://127.0.0.1:8000/docs` for API docs. By default the server binds to loopback, and automatic sync is disabled until explicitly enabled.
+Open `http://127.0.0.1:8000` for the dashboard, or `http://127.0.0.1:8000/docs` for API docs. By default the server binds to loopback. If you use `.env.example`, public Serie A sync is enabled without an API key.
 
-To keep the app and its database running in a persistent local container, create `.env` from `.env.example`, set the key privately, then run `docker compose up --build -d`. The Compose port is bound to `127.0.0.1` and `./data` is mounted persistently. Stop it with `docker compose down`.
+To keep the app and its database running in a persistent local container, create `.env` from `.env.example` and run `docker compose up --build -d`. No API key is required for automatic public Serie A sync. The Compose port is bound to `127.0.0.1` and `./data` is mounted persistently. Stop it with `docker compose down`.
 
 ## Automatic synchronization
 
