@@ -1,5 +1,11 @@
 name: provider-live-smoke
 on:
+  push:
+    paths:
+      - '.github/workflows/provider-live-smoke.yml'
+      - 'matchmind/live_smoke.py'
+      - 'matchmind/providers/api_football.py'
+      - 'pyproject.toml'
   workflow_dispatch:
   schedule:
     - cron: "20 5 * * *"
