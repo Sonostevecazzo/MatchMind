@@ -2,7 +2,7 @@
 
 MatchMind is a local-first football data pipeline and probability workbench. It imports provider data into a source-attributed SQLite database, offers a dark dashboard, and computes transparent statistical estimates for 1X2, Gol/No Gol and Over/Under 1.5, 2.5 and 3.5.
 
-**It is not yet a trained AI model.** The built-in forecast is a transparent Poisson baseline. The provider adapter and local scheduled synchronizer are implemented, but live data require a valid API-Football key and plan coverage. No real key, live response, or prediction performance result is bundled into the repository.
+**It is not yet a trained AI model.** The built-in forecast is a transparent Poisson baseline. The API-Football adapter and local scheduled synchronizer are implemented, and a separate no-key public CSV importer is available for supported competitions. API-Football-only feeds still require a valid key and plan coverage. No real key, live response, or prediction performance result is bundled into the repository.
 
 ## Free setup (recommended)
 
@@ -15,6 +15,20 @@ You can start with API-Football's **$0 Free plan**. The provider currently adver
 5. Run the app as described below, then inspect `/provider/status`, `/provider/coverage` and `/data/coverage`.
 
 The free plan still requires a provider account and API key; it is **not** a no-registration/no-key data source. Never paste the key into chat, commit it, or put it in `.env.example`. The app cannot bypass the provider's request quota or endpoint restrictions. For a low quota, sync only the leagues and date ranges you need; automatic player sync is off by default because it can consume many requests.
+
+## No-key data mode (public CSV source)
+
+MatchMind also supports importing results and fixtures from [open-matchday](https://github.com/oladeeayo/open-matchday), a public CSV dataset that does not require an API key or account. It can be used independently of API-Football for supported competitions. The default is Italy's Serie A.
+
+With the app running, call:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/sync/open-matchday?league_slug=ITA_1_serie-a&season=2026"
+```
+
+The season is the year it starts (for example, `2026` means 2026/27). The `league_slug` must match a folder in the source repository's `data/` directory. The endpoint imports completed results and scheduled fixtures into the same SQLite store, with source attribution. You can then inspect `/data/coverage` and `/data/fixtures`. The imported fixtures use a separate internal competition ID; they do not mix with API-Football league IDs.
+
+**Limits:** the dataset is refreshed daily, not live, and coverage varies by competition. It does not supply bookmaker odds, injuries, lineups or full player statistics. Some match statistics may be missing. Its published terms permit informational non-commercial use with attribution and prohibit selling, sublicensing or presenting the compilation as a commercial data feed; check its current terms and upstream providers' terms before use. See [open-matchday source and terms](https://github.com/oladeeayo/open-matchday).
 
 ## Quick start (macOS/Linux)
 
