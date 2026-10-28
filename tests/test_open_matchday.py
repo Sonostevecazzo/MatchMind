@@ -40,11 +40,16 @@ def test_open_matchday_records_store_with_correct_source(tmp_path):
         "goals": {"home": 2, "away": 1},
         "_source": "open-matchday",
         "_source_url": "https://github.com/oladeeayo/open-matchday",
+        "_statistics": {"home_shots": "12", "away_shots": "8"},
     }
     assert store.upsert_fixtures([record]) == 1
     row = store.get_fixture(123)
     assert row["source"] == "open-matchday"
     assert row["source_url"] == "https://github.com/oladeeayo/open-matchday"
+    archived = store.list_fixtures(source="open-matchday", season=2026)
+    assert len(archived) == 1
+    assert archived[0]["match_statistics"]["home_shots"] == "12"
+    assert store.list_fixtures(source="API-Football", season=2026) == []
 
 
 def test_open_matchday_sync_endpoint_needs_no_api_key(monkeypatch, tmp_path):
