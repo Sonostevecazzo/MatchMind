@@ -18,7 +18,7 @@ from .model import forecast_markets, market_dict
 from .providers.api_football import ApiFootballClient, ProviderAPIError, ProviderConfigurationError, ProviderError
 from .providers.open_matchday import OpenMatchdayClient, OpenMatchdayError, DEFAULT_LEAGUE as DEFAULT_OPEN_MATCHDAY_LEAGUE
 from .storage import MatchMindStore
-from .sync import MatchMindSync, active_season_year, run_scheduled_sync
+from .sync import MatchMindSync, active_season_year, run_public_csv_sync, run_scheduled_sync
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -31,25 +31,49 @@ def _truthy(value: str | None) -> bool:
 
 
 def _start_scheduler():
-    if not _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")):
-        return None
-    if not os.getenv("API_FOOTBALL_KEY", "").strip():
+    api_auto = _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")) and _configured()
+    public_auto = _truthy(os.getenv("MATCHMIND_PUBLIC_AUTO_SYNC", "false"))
+    if not api_auto and not public_auto:
         return None
     if BackgroundScheduler is None:
         raise RuntimeError("Automatic synchronization requires APScheduler; install project runtime dependencies.")
+
     timezone_name = os.getenv("MATCHMIND_TIMEZONE", "Europe/Rome")
     timezone = ZoneInfo(timezone_name)
-    hour = int(os.getenv("MATCHMIND_SYNC_HOUR", "4"))
-    minute = int(os.getenv("MATCHMIND_SYNC_MINUTE", "20"))
-    if hour not in range(24) or minute not in range(60):
-        raise RuntimeError("MATCHMIND_SYNC_HOUR must be 0-23 and MATCHMIND_SYNC_MINUTE must be 0-59.")
     scheduler = BackgroundScheduler(timezone=timezone)
-    scheduler.add_job(run_scheduled_sync, "cron", hour=hour, minute=minute, id="matchmind-daily-sync", replace_existing=True, max_instances=1, coalesce=True)
-    if _truthy(os.getenv("MATCHMIND_SYNC_ON_STARTUP", "true")):
-        scheduler.add_job(run_scheduled_sync, "date", run_date=datetime.now(timezone) + timedelta(seconds=8), id="matchmind-startup-sync", max_instances=1)
+
+    if api_auto:
+        hour = int(os.getenv("MATCHMIND_SYNC_HOUR", "4"))
+        minute = int(os.getenv("MATCHMIND_SYNC_MINUTE", "20"))
+        if hour not in range(24) or minute not in range(60):
+            raise RuntimeError("MATCHMIND_SYNC_HOUR must be 0-23 and MATCHMIND_SYNC_MINUTE must be 0-59.")
+        scheduler.add_job(
+            run_scheduled_sync, "cron", hour=hour, minute=minute,
+            id="matchmind-daily-sync", replace_existing=True, max_instances=1, coalesce=True
+        )
+        if _truthy(os.getenv("MATCHMIND_SYNC_ON_STARTUP", "true")):
+            scheduler.add_job(
+                run_scheduled_sync, "date", run_date=datetime.now(timezone) + timedelta(seconds=8),
+                id="matchmind-startup-sync", max_instances=1
+            )
+
+    if public_auto:
+        public_hour = int(os.getenv("MATCHMIND_PUBLIC_SYNC_HOUR", "4"))
+        public_minute = int(os.getenv("MATCHMIND_PUBLIC_SYNC_MINUTE", "5"))
+        if public_hour not in range(24) or public_minute not in range(60):
+            raise RuntimeError("MATCHMIND_PUBLIC_SYNC_HOUR must be 0-23 and MATCHMIND_PUBLIC_SYNC_MINUTE must be 0-59.")
+        scheduler.add_job(
+            run_public_csv_sync, "cron", hour=public_hour, minute=public_minute,
+            id="matchmind-public-daily-sync", replace_existing=True, max_instances=1, coalesce=True
+        )
+        if _truthy(os.getenv("MATCHMIND_PUBLIC_SYNC_ON_STARTUP", "true")):
+            scheduler.add_job(
+                run_public_csv_sync, "date", run_date=datetime.now(timezone) + timedelta(seconds=8),
+                id="matchmind-public-startup-sync", max_instances=1
+            )
+
     scheduler.start()
     return scheduler
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -130,9 +154,14 @@ def dashboard():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "mode": "local", "provider": "API-Football", "live_data_configured": _configured(),
+    return {"status": "ok", "mode": "local", "provider": "API-Football",
+            "live_data_configured": _configured(),
             "automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")) and _configured(),
-            "trained_model_configured": False, "historical_baseline_available": _store().coverage()["fixtures"]["count"] > 0}
+            "public_data_provider": "open-matchday",
+            "public_data_api_key_required": False,
+            "public_automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_PUBLIC_AUTO_SYNC", "false")),
+            "trained_model_configured": False,
+            "historical_baseline_available": _store().coverage()["fixtures"]["count"] > 0}
 
 
 @app.get("/provider/status")
