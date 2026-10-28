@@ -210,3 +210,12 @@ def test_fixture_odds_analysis_flags_only_complete_comparable_markets():
     totals = next(r for r in result if r["category"] == "totals")
     assert totals["line"] == 1.5
     assert len(totals["selections"]) == 2
+
+
+def test_live_smoke_requires_explicit_coverage_for_all_critical_feeds():
+    from matchmind.live_smoke import missing_required_coverage
+
+    complete = {"fixtures": {"events": True}, "injuries": True, "odds": True}
+    assert missing_required_coverage(complete) == []
+    assert missing_required_coverage({"fixtures": {"events": True}, "injuries": True, "odds": False}) == ["odds"]
+    assert missing_required_coverage({}) == ["fixtures", "injuries", "odds"]
