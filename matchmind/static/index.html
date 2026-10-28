@@ -82,6 +82,25 @@
     }catch(e){$('fixtureRows').innerHTML=`<tr><td colspan="5">${notice(e.message,'error')}</td></tr>`;}
   }
   function market(name,prob){const p=Math.max(0,Math.min(1,Number(prob)||0));return `<div class="market"><div class="market-top"><span class="market-label">${esc(name)}</span><span class="market-val">${(p*100).toLocaleString('it-IT',{maximumFractionDigits:1})}%</span></div><div class="bar"><span style="width:${p*100}%"></span></div></div>`;}
+
+  function playerBlock(teamName, players){
+    const body=players.length?players.slice(0,5).map(p=>`<div class="data-row"><span>${esc(p.player_name)}<small class="small">${fmt(p.appearances)} presenze · ${fmt(p.minutes)} minuti</small></span><strong>${p.rating==null?'—':Number(p.rating).toFixed(1)} · ${fmt(p.goals??0)} G / ${fmt(p.assists??0)} A</strong></div>`).join(''):'<div class="small">Statistiche non importate o non disponibili per questa stagione.</div>';
+    return `<div class="data-row"><span><strong>${esc(teamName)}</strong></span><span class="small">Rating · gol / assist</span></div>${body}`;
+  }
+  function pct(value){return value==null||!Number.isFinite(Number(value))?'—':(Number(value)*100).toLocaleString('it-IT',{maximumFractionDigits:1})+'%';}
+  function oddsAnalysisHtml(analyses){
+    if(!analyses||!analyses.length)return '<div class="small">Non ci sono ancora mercati completi riconoscibili da analizzare. La fonte può non coprire queste quote o può aver restituito solo parte degli esiti.</div>';
+    return analyses.slice(0,6).map(a=>{
+      const margin=Number(a.overround), flags=a.flags||[];
+      const marketName=`${a.market}${a.line==null?'':` · linea ${a.line}`}`;
+      const signal=flags.length?notice(flags.map(f=>f.detail).join(' '),'error'):notice('Nessuna soglia di allerta attivata su questo mercato; non è una garanzia di regolarità né di profitto.','good');
+      const outcomes=(a.selections||[]).map(s=>{
+        const detail=s.model_probability==null?`Probabilità mercato senza margine ${pct(s.devigged_market_probability)}`:`Modello ${pct(s.model_probability)} · EV teorico ${pct(s.theoretical_ev_per_unit)}`;
+        return `<div class="data-row"><span>${esc(s.selection)}<small class="small">Quota ${Number(s.decimal_odds).toFixed(2)} · ${detail}</small></span><strong>${pct(s.raw_implied_probability)}</strong></div>`;
+      }).join('');
+      return `<div class="section-label">${esc(a.bookmaker)} · ${esc(marketName)}</div><div class="data-row"><span>Margine bookmaker (overround)<small class="small">${dateFmt(a.observed_at)} · ${flags.length} segnalazioni</small></span><strong>${(margin*100).toLocaleString('it-IT',{maximumFractionDigits:2})}%</strong></div>${outcomes}${signal}`;
+    }).join('');
+  }
   async function loadForecast(id){
     $('forecastPanel').innerHTML='<div class="empty">Calcolo probabilità…</div>';
     try{
@@ -90,8 +109,11 @@
         `<div class="data-row"><span>Expected goals casa</span><strong>${Number(x.home_xg).toFixed(2)}</strong></div><div class="data-row"><span>Expected goals trasferta</span><strong>${Number(x.away_xg).toFixed(2)}</strong></div>`+
         `<div class="section-label">Esito 1X2</div>${market('1 · Vittoria casa',p.home_win)}${market('X · Pareggio',p.draw)}${market('2 · Vittoria trasferta',p.away_win)}`+
         `<div class="section-label">Gol / No Gol</div>${market('Gol (entrambe segnano)',p.btts_yes)}${market('No Gol',p.btts_no)}`+
-        `<div class="section-label">Over / Under</div>${market('Over 1.5',p.over_15)}${market('Over 2.5',p.over_25)}${market('Over 3.5',p.over_35)}`+
+        `<div class="section-label">Over / Under</div>${market('Over 1.5',p.over_15)}${market('Under 1.5',p.under_15)}${market('Over 2.5',p.over_25)}${market('Under 2.5',p.under_25)}${market('Over 3.5',p.over_35)}${market('Under 3.5',p.under_35)}`+
         `<div class="section-label">Contesto dati</div><div class="data-row"><span>Indisponibilità archiviate per la partita</span><strong>${d.data_context.injury_records}</strong></div><div class="data-row"><span>Quote/snapshot presenti</span><strong>${d.data_context.odds_snapshot_records}</strong></div>`+
+        `<div class="section-label">Analisi delle quote</div>`+oddsAnalysisHtml(d.odds_analysis||[])+
+        `<div class="section-label">Indisponibilità segnalate</div>`+(d.injuries&&d.injuries.length?d.injuries.slice(0,8).map(i=>`<div class="data-row"><span>${esc(i.player_name)} · ${esc(i.team_name||'Squadra')}<small class="small">${esc(i.status||'Stato non specificato')} · ${esc(i.reason||'Motivo non specificato')}</small></span><strong>${dateFmt(i.report_date)}</strong></div>`).join(''):'<div class="small">Nessuna segnalazione importata per questa partita. Questo non certifica che la rosa sia al completo.</div>')+
+        `<div class="section-label">Giocatori · statistiche stagionali</div>`+playerBlock(f.home_team,d.players?.home||[])+playerBlock(f.away_team,d.players?.away||[])+
         (d.odds&&d.odds.length?`<div class="section-label">Ultimi prezzi registrati · dati osservati</div>`+d.odds.slice(0,8).map(o=>`<div class="data-row"><span>${esc(o.bookmaker)} · ${esc(o.market)}<small class="small">${esc(o.selection)} · ${dateFmt(o.observed_at)}</small></span><strong>${Number(o.decimal_odds).toFixed(2)}</strong></div>`).join(''):'')+
         notice('Le indisponibilità e le quote sono mostrate come contesto ma non modificano ancora la previsione: il loro effetto deve essere calibrato e validato su dati fuori campione.')+
         `<div class="small">${esc(x.disclaimer)}</div>`;
