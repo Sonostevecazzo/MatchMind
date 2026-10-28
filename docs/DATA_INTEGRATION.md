@@ -1,46 +1,25 @@
-# Data integration plan
+# Data integration and model validation
 
-This document defines the required source pipeline before any real-world forecast can be shown.
+## API-Football v3
 
-## Required data families
+Official documentation: https://www.api-football.com/documentation-v3
 
-| Family | Required fields | How it affects the model |
-|---|---|---|
-| Match history | kickoff UTC, competition, season, teams, score, source | Attack/defence strength, home advantage, team form |
-| Team match stats | shots, shots on target, xG where licensed, possession, cards | Additional features and model diagnostics |
-| Player stats | player/team IDs, minutes, starts, goals, assists, role, date | Player contribution estimates adjusted for minutes and opposition |
-| Availability | player ID, status, reason if public, expected return, observed time, source | Squad-strength uncertainty and lineup scenarios |
-| Odds snapshots | bookmaker, market, selection, decimal odds, timestamp, source | Overround, consensus, line movement, divergence |
-| Final results | verified result and settlement rules | Out-of-sample evaluation |
+The adapter uses the `x-apisports-key` header and the documented `fixtures`, `injuries`, `odds`, `players` and `teams/statistics` API categories. It honours response pagination with a page safety limit and handles authentication, plan/coverage, network and rate-limit errors without logging credentials. Data availability changes by league, season, provider subscription and endpoint.
 
-## Provider integration rules
+## Data lineage and schema
 
-- Keep provider adapters separate from model code.
-- Read credentials only from environment variables or a secrets manager.
-- Never log API keys or include them in error messages.
-- Respect rate limits, plan limits, robots/terms and retention rights.
-- Cache responses where provider terms allow it.
-- Record `source`, `source_url`, `retrieved_at`, competition coverage and licence/plan note.
-- Mark data as missing or stale; do not fabricate injury reports or projected lineups.
-- Make the UI show the timestamp and provider coverage for each prediction.
+Each imported fixture, injury, player-statistics row and odds snapshot retains provider name, relevant documentation URL, provider timestamp where exposed, local `retrieved_at`, plus raw provider payload for auditing. SQLite uses unique keys/upserts for fixtures and seasonal player stats; odds snapshots are deduplicated by fixture, bookmaker, market, selection, price and provider update time. Sync history records success/failure counts.
 
-## Candidate sources to evaluate
+## Scheduled sync
 
-- **API-Football:** candidate for fixtures, teams, player statistics, sidelined/injury reports and odds. Exact endpoints, historical depth and rate limits depend on the active subscription. Do not enable an adapter until credentials and allowed usage are confirmed.
-- **StatsBomb Open Data:** selected competitions and event data; attribution and coverage restrictions apply.
-- **football-data.co.uk:** useful for manual, offline personal review of historical results and odds where terms permit. Do not scrape it or use it for automated AI training under terms that disallow that activity.
+The optional APScheduler job runs inside the FastAPI process only when `MATCHMIND_AUTO_SYNC=true` and `API_FOOTBALL_KEY` is set. It syncs current and recent past seasons for fixtures, then current-season injury and odds data. The player stats sweep is opt-in due request quotas. Default schedule: 04:20 `Europe/Rome`, with a one-time sync after startup. Configure competition IDs and history depth using environment variables.
 
-## Data quality checks before modelling
+## Anti-leakage and model gate
 
-1. Normalize team/player IDs; names alone are not stable identifiers.
-2. Normalize kickoff times to UTC and preserve original source time.
-3. Prevent leakage: only use information available before kickoff for a historical forecast.
-4. Store odds snapshots separately from match outcomes.
-5. De-duplicate fixtures and validate scores/settlement.
-6. Track injury-report freshness and conflicting sources.
-7. Run chronological train/validation/test splits by date.
-8. Publish sample size, missingness, calibration and error metrics beside any model score.
+Historical forecasts query only completed records with kickoff strictly earlier than the target fixture. At least 20 eligible league matches and 3 appearances per target team are required. The score-based baseline applies a 540-day exponential decay half-life and five-match shrinkage toward the league mean. It is a transparent baseline, not a trained AI model. Injury reports and bookmaker odds are presented as context but don't alter xG until their effect is calibrated on chronological held-out data.
 
-## Provider activation gate
+Before any model is presented as validated, use rolling-origin/walk-forward evaluations and report Brier score, log loss, calibration, sample sizes, missingness, and appropriate baselines. Closing-line value is an additional diagnostic, not a guarantee of returns.
 
-Real data is **not active** in the current version. Activation requires a selected provider, a key stored privately, a review of permitted personal use and a successful smoke test. Until then the API only uses user-supplied xG or odds.
+## Setup blockers
+
+No provider secret is checked into the repository. Until a valid key is supplied to the runtime, live fetches intentionally return HTTP 503. A provider key must be set in an ignored local `.env`, an environment variable, or a secrets manager. Never paste it into a GitHub commit, issue, or ordinary chat message.
