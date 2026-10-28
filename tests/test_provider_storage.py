@@ -120,6 +120,8 @@ def test_forecast_fixture_endpoint_uses_prior_results_only(tmp_path,monkeypatch)
         store.upsert_fixtures([fixture(100+i, when, home_id, away_id, 1+(i%2), i%2, "FT", 2025)])
     target = fixture(999,"2026-10-01T15:00:00Z",1,2,None,None,"NS",2026)
     store.upsert_fixtures([target])
+    store.upsert_player_statistics([{"player":{"id":777,"name":"Player Home"},"statistics":[{"team":{"id":1,"name":"Team 1"},"league":{"id":135,"name":"Serie A","season":2026},"games":{"appearences":6,"lineups":4,"minutes":360,"rating":"7.2"},"goals":{"total":3,"assists":2},"cards":{"yellow":1,"red":0}}]}])
+    store.upsert_odds([{"fixture":{"id":999},"league":{"id":135,"season":2026},"update":"2026-10-01T12:00:00Z","bookmakers":[{"id":7,"name":"Book A","bets":[{"id":1,"name":"Match Winner","values":[{"value":"Home","odd":"1.50"},{"value":"Draw","odd":"3.80"},{"value":"Away","odd":"6.00"}]}]}]}])
     with TestClient(app) as client:
         response=client.post("/forecast/fixture/999")
     assert response.status_code==200, response.text
@@ -127,6 +129,9 @@ def test_forecast_fixture_endpoint_uses_prior_results_only(tmp_path,monkeypatch)
     assert payload["expected_goals_estimate"]["league_matches_used"]==30
     assert "home_win" in payload["markets"]
     assert payload["data_context"]["injury_effect_in_model"] is False
+    assert payload["players"]["home"][0]["player_name"] == "Player Home"
+    assert len(payload["odds_analysis"]) == 1
+    assert payload["odds_analysis"][0]["flags"][0]["code"] == "high_market_margin"
 
 
 def test_api_basics_and_live_sync_requires_key(tmp_path,monkeypatch):
@@ -178,3 +183,30 @@ def test_auto_sync_scheduler_is_opt_in_and_schedules_daily_job(monkeypatch):
     assert scheduler.started
     assert scheduler.kwargs["timezone"].key=="Europe/Rome"
     assert [j[0] for j in scheduler.jobs]==["cron","date"]
+
+
+def test_fixture_odds_analysis_flags_only_complete_comparable_markets():
+    from matchmind.fixture_odds import analyse_fixture_odds
+
+    stamp = "2026-10-20T12:00:00+00:00"
+    rows = [
+        {"bookmaker_id": 7, "bookmaker": "Book A", "market_id": 1, "market": "Match Winner", "observed_at": stamp, "selection": "Home", "decimal_odds": 1.50},
+        {"bookmaker_id": 7, "bookmaker": "Book A", "market_id": 1, "market": "Match Winner", "observed_at": stamp, "selection": "Draw", "decimal_odds": 3.80},
+        {"bookmaker_id": 7, "bookmaker": "Book A", "market_id": 1, "market": "Match Winner", "observed_at": stamp, "selection": "Away", "decimal_odds": 6.00},
+        {"bookmaker_id": 7, "bookmaker": "Book A", "market_id": 2, "market": "Goals Over/Under", "observed_at": stamp, "selection": "Over 1.5", "decimal_odds": 1.30},
+        {"bookmaker_id": 7, "bookmaker": "Book A", "market_id": 2, "market": "Goals Over/Under", "observed_at": stamp, "selection": "Under 1.5", "decimal_odds": 4.10},
+        # An incomplete BTTS market must not be reported as a meaningful overround.
+        {"bookmaker_id": 7, "bookmaker": "Book A", "market_id": 3, "market": "Both Teams Score", "observed_at": stamp, "selection": "Yes", "decimal_odds": 1.75},
+    ]
+    result = analyse_fixture_odds(rows, {
+        "home_win": 0.55, "draw": 0.25, "away_win": 0.20,
+        "over_15": 0.80, "under_15": 0.20,
+    })
+    assert len(result) == 2
+    match_winner = next(r for r in result if r["category"] == "1x2")
+    assert match_winner["overround"] > 0.08
+    assert any(flag["code"] == "high_market_margin" for flag in match_winner["flags"])
+    assert all("theoretical_ev_per_unit" in selection for selection in match_winner["selections"])
+    totals = next(r for r in result if r["category"] == "totals")
+    assert totals["line"] == 1.5
+    assert len(totals["selections"]) == 2
