@@ -157,7 +157,7 @@ def run_public_csv_sync() -> dict[str, Any]:
             sync_id: int | None = None
             try:
                 league_id = league_id_for_slug(slug)
-                sync_id = store.start_sync("public_csv_fixtures", league_id, season)
+                sync_id = store.start_sync("public_csv_fixtures", league_id, season, source="open-matchday")
                 records = client.fixtures(league_slug=slug, season=season)
                 if not records:
                     raise OpenMatchdayError(
