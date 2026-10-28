@@ -8,27 +8,37 @@ MatchMind is a local-first football data pipeline and probability workbench. It 
 
 You can start with API-Football's **$0 Free plan**. The provider currently advertises 100 requests per day and says no credit card is required for the free version. The plan lists fixtures, statistics, player information, injuries, pre-match/in-play odds and predictions among its endpoint categories, but available seasons and actual coverage may vary. Check the current plan and coverage before relying on any feed: [API-Football pricing](https://www.api-football.com/pricing).
 
-1. Create an account at [API-Football](https://dashboard.api-football.com/register) and activate the Free plan.
-2. Copy your API key from the provider dashboard.
-3. Copy `.env.example` to `.env` and put the key only in the local `.env` file as `API_FOOTBALL_KEY=your_key_here`.
-4. Keep `MATCHMIND_AUTO_SYNC=false` until you have verified the first manual sync and the quota/coverage.
-5. Run the app as described below, then inspect `/provider/status`, `/provider/coverage` and `/data/coverage`.
+1. For the no-key mode, copy `.env.example` to `.env`; no account or key is needed.
+2. For API-Football-only feeds, you may separately create an account, activate the Free plan and add the key locally.
+3. Run the app as described below, then inspect `/provider/status`, `/provider/coverage` and `/data/coverage`.
 
 The free plan still requires a provider account and API key; it is **not** a no-registration/no-key data source. Never paste the key into chat, commit it, or put it in `.env.example`. The app cannot bypass the provider's request quota or endpoint restrictions. For a low quota, sync only the leagues and date ranges you need; automatic player sync is off by default because it can consume many requests.
 
-## No-key data mode (public CSV source)
+## Automatic no-key Serie A data refresh
 
-MatchMind also supports importing results and fixtures from [open-matchday](https://github.com/oladeeayo/open-matchday), a public CSV dataset that does not require an API key or account. It can be used independently of API-Football for supported competitions. The default is Italy's Serie A.
+MatchMind can automatically refresh fixtures and results from [open-matchday](https://github.com/oladeeayo/open-matchday), a public daily-updated CSV dataset that does not require registration or an API key. The default competition is Italy's Serie A.
 
-With the app running, call:
+The example configuration enables this mode by default:
+- It runs shortly after the application starts.
+- It refreshes once per day at 04:05 Europe/Rome while the MatchMind API process is running.
+- It stores fixtures and completed scores in the local SQLite database, preserving the source and sync history.
+- It uses the current season automatically; `2026` means 2026/27. You can configure additional competition folder slugs in `MATCHMIND_PUBLIC_LEAGUES`.
+
+To activate it, create `.env` from `.env.example`, then load the variables and start the server:
+
+```bash
+cp .env.example .env
+set -a; source .env; set +a
+uvicorn matchmind.api:app --host 127.0.0.1 --port 8000
+```
+
+No API key is needed. Keep the app running for the daily scheduler to execute; if the process stops or the machine is off, no scheduled refresh happens during that period. Check `/health`, `/data/coverage` and `/data/fixtures` to see whether data have been imported. A one-off manual sync remains available as a fallback:
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/sync/open-matchday?league_slug=ITA_1_serie-a&season=2026"
 ```
 
-The season is the year it starts (for example, `2026` means 2026/27). The `league_slug` must match a folder in the source repository's `data/` directory. The endpoint imports completed results and scheduled fixtures into the same SQLite store, with source attribution. You can then inspect `/data/coverage` and `/data/fixtures`. The imported fixtures use a separate internal competition ID; they do not mix with API-Football league IDs.
-
-**Limits:** the dataset is refreshed daily, not live, and coverage varies by competition. It does not supply bookmaker odds, injuries, lineups or full player statistics. Some match statistics may be missing. Its published terms permit informational non-commercial use with attribution and prohibit selling, sublicensing or presenting the compilation as a commercial data feed; check its current terms and upstream providers' terms before use. See [open-matchday source and terms](https://github.com/oladeeayo/open-matchday).
+**Limits:** the source updates daily, not live, and its coverage/statistics vary. It provides results and fixtures plus some match statistics, but not bookmaker odds, injuries, lineups or complete player data. Its terms allow informational non-commercial use with attribution and prohibit selling or sublicensing this compilation; upstream providers may have additional terms. See [open-matchday source and terms](https://github.com/oladeeayo/open-matchday).
 
 ## Quick start (macOS/Linux)
 
@@ -37,7 +47,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 cp .env.example .env
-# Edit .env privately and set API_FOOTBALL_KEY=your_key_here
+# Optional: set API_FOOTBALL_KEY only if you want to use API-Football as an additional source
 set -a; source .env; set +a
 uvicorn matchmind.api:app --host 127.0.0.1 --port 8000
 ```
