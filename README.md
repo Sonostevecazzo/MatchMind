@@ -4,6 +4,18 @@ MatchMind is a local-first football data pipeline and probability workbench. It 
 
 **It is not yet a trained AI model.** The built-in forecast is a transparent Poisson baseline. The provider adapter and local scheduled synchronizer are implemented, but live data require a valid API-Football key and plan coverage. No real key, live response, or prediction performance result is bundled into the repository.
 
+## Free setup (recommended)
+
+You can start with API-Football's **$0 Free plan**. The provider currently advertises 100 requests per day and says no credit card is required for the free version. The plan lists fixtures, statistics, player information, injuries, pre-match/in-play odds and predictions among its endpoint categories, but available seasons and actual coverage may vary. Check the current plan and coverage before relying on any feed: [API-Football pricing](https://www.api-football.com/pricing).
+
+1. Create an account at [API-Football](https://dashboard.api-football.com/register) and activate the Free plan.
+2. Copy your API key from the provider dashboard.
+3. Copy `.env.example` to `.env` and put the key only in the local `.env` file as `API_FOOTBALL_KEY=your_key_here`.
+4. Keep `MATCHMIND_AUTO_SYNC=false` until you have verified the first manual sync and the quota/coverage.
+5. Run the app as described below, then inspect `/provider/status`, `/provider/coverage` and `/data/coverage`.
+
+The free plan still requires a provider account and API key; it is **not** a no-registration/no-key data source. Never paste the key into chat, commit it, or put it in `.env.example`. The app cannot bypass the provider's request quota or endpoint restrictions. For a low quota, sync only the leagues and date ranges you need; automatic player sync is off by default because it can consume many requests.
+
 ## Quick start (macOS/Linux)
 
 ```bash
@@ -53,7 +65,7 @@ API endpoints include `POST /sync/all`, `POST /sync/fixtures`, `POST /sync/injur
 
 ## Automatic live-provider verification
 
-The separate `provider-live-smoke` GitHub Actions workflow can be run manually or daily. To enable a real provider test without exposing credentials, add a repository Actions secret named `API_FOOTBALL_KEY` under **Settings → Secrets and variables → Actions**. The workflow checks the selected league/season coverage and exercises the fixtures, injuries and odds endpoints. If the secret is absent, the live check is intentionally skipped; the standard CI still runs mock-based tests. Never commit the key or paste it into a chat. The local application still needs the key in its own private `.env` file.
+The separate `provider-live-smoke` GitHub Actions workflow can be run manually or daily. To enable a real provider test without exposing credentials, add a repository Actions secret named `API_FOOTBALL_KEY` under **Settings → Secrets and variables → Actions**. The workflow checks the selected league/season coverage and exercises the fixtures, injuries and odds endpoints. If the secret is absent, the live check is intentionally skipped; the standard CI still runs mock-based tests. The local application still needs the key in its own private `.env` file.
 
 ## What gets stored
 
