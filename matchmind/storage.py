@@ -166,11 +166,11 @@ class MatchMindStore:
                 """
             )
 
-    def start_sync(self, data_type: str, league_id: int, season: int) -> int:
+    def start_sync(self, data_type: str, league_id: int, season: int, *, source: str = SOURCE_NAME) -> int:
         with self._connect() as db:
             cursor = db.execute(
                 "INSERT INTO sync_runs(data_type,league_id,season,started_at,status,source) VALUES(?,?,?,?,?,?)",
-                (data_type, int(league_id), int(season), utc_now().isoformat(), "running", SOURCE_NAME),
+                (data_type, int(league_id), int(season), utc_now().isoformat(), "running", str(source)),
             )
             return int(cursor.lastrowid)
 
