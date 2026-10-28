@@ -198,8 +198,13 @@ def provider_coverage(league_id: int = Query(default=135, gt=0), season: int = Q
 
 
 @app.get("/data/fixtures")
-def data_fixtures(league_id: int | None = Query(default=None, gt=0), season: int | None = Query(default=None, ge=2000, le=2100), limit: int = Query(default=100, ge=1, le=500)):
-    return {"fixtures": _store().list_fixtures(league_id=league_id, season=season, limit=limit)}
+def data_fixtures(
+    league_id: int | None = Query(default=None, gt=0),
+    season: int | None = Query(default=None, ge=2000, le=2100),
+    source: str | None = Query(default=None, min_length=1, max_length=64),
+    limit: int = Query(default=100, ge=1, le=500),
+):
+    return {"fixtures": _store().list_fixtures(league_id=league_id, season=season, source=source, limit=limit)}
 
 
 @app.get("/data/players/{team_id}")
