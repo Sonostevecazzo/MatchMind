@@ -166,11 +166,11 @@ class MatchMindStore:
                 """
             )
 
-    def start_sync(self, data_type: str, league_id: int, season: int) -> int:
+    def start_sync(self, data_type: str, league_id: int, season: int, *, source: str = SOURCE_NAME) -> int:
         with self._connect() as db:
             cursor = db.execute(
                 "INSERT INTO sync_runs(data_type,league_id,season,started_at,status,source) VALUES(?,?,?,?,?,?)",
-                (data_type, int(league_id), int(season), utc_now().isoformat(), "running", SOURCE_NAME),
+                (data_type, int(league_id), int(season), utc_now().isoformat(), "running", str(source)),
             )
             return int(cursor.lastrowid)
 
@@ -216,7 +216,7 @@ class MatchMindStore:
                     fixture_id, kickoff, league_id, str(league.get("name") or league_id), season,
                     home.get("id"), str(home["name"]), away.get("id"), str(away["name"]),
                     str(self._nested(item, "fixture", "status", "short") or "UNK"),
-                    goals.get("home"), goals.get("away"), SOURCE_NAME, SOURCE_FIXTURES, now,
+                    goals.get("home"), goals.get("away"), str(item.get("_source") or SOURCE_NAME), str(item.get("_source_url") or SOURCE_FIXTURES), now,
                     json.dumps(item, ensure_ascii=False, separators=(",", ":")),
                 )
                 db.execute(
@@ -354,7 +354,7 @@ class MatchMindStore:
             row = db.execute("SELECT * FROM fixtures WHERE fixture_id=?", (int(fixture_id),)).fetchone()
         return dict(row) if row else None
 
-    def list_fixtures(self, *, league_id: int | None = None, season: int | None = None, limit: int = 100) -> list[dict[str, Any]]:
+    def list_fixtures(self, *, league_id: int | None = None, season: int | None = None, source: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         limit = max(1, min(int(limit), 500))
         conditions: list[str] = []
         args: list[Any] = []
@@ -362,10 +362,24 @@ class MatchMindStore:
             conditions.append("league_id=?"); args.append(int(league_id))
         if season is not None:
             conditions.append("season=?"); args.append(int(season))
+        if source is not None:
+            conditions.append("source=?"); args.append(str(source))
         clause = " WHERE " + " AND ".join(conditions) if conditions else ""
         with self._connect() as db:
-            rows = db.execute(f"SELECT fixture_id,kickoff_utc,league_id,league_name,season,home_team_id,home_team,away_team_id,away_team,status_short,home_goals,away_goals,source,source_url,retrieved_at FROM fixtures{clause} ORDER BY kickoff_utc DESC LIMIT ?", [*args, limit]).fetchall()
-        return [dict(r) for r in rows]
+            rows = db.execute(
+                f"SELECT fixture_id,kickoff_utc,league_id,league_name,season,home_team_id,home_team,away_team_id,away_team,status_short,home_goals,away_goals,source,source_url,retrieved_at,raw_json FROM fixtures{clause} ORDER BY kickoff_utc DESC LIMIT ?",
+                [*args, limit]
+            ).fetchall()
+        output: list[dict[str, Any]] = []
+        for row in rows:
+            item = dict(row)
+            try:
+                raw = json.loads(item.pop("raw_json", "{}"))
+            except (TypeError, ValueError):
+                raw = {}
+            item["match_statistics"] = raw.get("_statistics", {}) if isinstance(raw, dict) else {}
+            output.append(item)
+        return output
 
     def completed_fixtures_before(self, league_id: int, kickoff_utc: str, *, limit: int = 5000) -> list[dict[str, Any]]:
         with self._connect() as db:

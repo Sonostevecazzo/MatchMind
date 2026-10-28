@@ -16,8 +16,9 @@ from .historical_model import InsufficientHistoricalData, estimate_expected_goal
 from .fixture_odds import analyse_fixture_odds
 from .model import forecast_markets, market_dict
 from .providers.api_football import ApiFootballClient, ProviderAPIError, ProviderConfigurationError, ProviderError
+from .providers.open_matchday import OpenMatchdayClient, OpenMatchdayError, DEFAULT_LEAGUE as DEFAULT_OPEN_MATCHDAY_LEAGUE
 from .storage import MatchMindStore
-from .sync import MatchMindSync, active_season_year, run_scheduled_sync
+from .sync import MatchMindSync, active_season_year, run_public_csv_sync, run_scheduled_sync
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -30,25 +31,49 @@ def _truthy(value: str | None) -> bool:
 
 
 def _start_scheduler():
-    if not _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")):
-        return None
-    if not os.getenv("API_FOOTBALL_KEY", "").strip():
+    api_auto = _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")) and _configured()
+    public_auto = _truthy(os.getenv("MATCHMIND_PUBLIC_AUTO_SYNC", "false"))
+    if not api_auto and not public_auto:
         return None
     if BackgroundScheduler is None:
         raise RuntimeError("Automatic synchronization requires APScheduler; install project runtime dependencies.")
+
     timezone_name = os.getenv("MATCHMIND_TIMEZONE", "Europe/Rome")
     timezone = ZoneInfo(timezone_name)
-    hour = int(os.getenv("MATCHMIND_SYNC_HOUR", "4"))
-    minute = int(os.getenv("MATCHMIND_SYNC_MINUTE", "20"))
-    if hour not in range(24) or minute not in range(60):
-        raise RuntimeError("MATCHMIND_SYNC_HOUR must be 0-23 and MATCHMIND_SYNC_MINUTE must be 0-59.")
     scheduler = BackgroundScheduler(timezone=timezone)
-    scheduler.add_job(run_scheduled_sync, "cron", hour=hour, minute=minute, id="matchmind-daily-sync", replace_existing=True, max_instances=1, coalesce=True)
-    if _truthy(os.getenv("MATCHMIND_SYNC_ON_STARTUP", "true")):
-        scheduler.add_job(run_scheduled_sync, "date", run_date=datetime.now(timezone) + timedelta(seconds=8), id="matchmind-startup-sync", max_instances=1)
+
+    if api_auto:
+        hour = int(os.getenv("MATCHMIND_SYNC_HOUR", "4"))
+        minute = int(os.getenv("MATCHMIND_SYNC_MINUTE", "20"))
+        if hour not in range(24) or minute not in range(60):
+            raise RuntimeError("MATCHMIND_SYNC_HOUR must be 0-23 and MATCHMIND_SYNC_MINUTE must be 0-59.")
+        scheduler.add_job(
+            run_scheduled_sync, "cron", hour=hour, minute=minute,
+            id="matchmind-daily-sync", replace_existing=True, max_instances=1, coalesce=True
+        )
+        if _truthy(os.getenv("MATCHMIND_SYNC_ON_STARTUP", "true")):
+            scheduler.add_job(
+                run_scheduled_sync, "date", run_date=datetime.now(timezone) + timedelta(seconds=8),
+                id="matchmind-startup-sync", max_instances=1
+            )
+
+    if public_auto:
+        public_hour = int(os.getenv("MATCHMIND_PUBLIC_SYNC_HOUR", "4"))
+        public_minute = int(os.getenv("MATCHMIND_PUBLIC_SYNC_MINUTE", "5"))
+        if public_hour not in range(24) or public_minute not in range(60):
+            raise RuntimeError("MATCHMIND_PUBLIC_SYNC_HOUR must be 0-23 and MATCHMIND_PUBLIC_SYNC_MINUTE must be 0-59.")
+        scheduler.add_job(
+            run_public_csv_sync, "cron", hour=public_hour, minute=public_minute,
+            id="matchmind-public-daily-sync", replace_existing=True, max_instances=1, coalesce=True
+        )
+        if _truthy(os.getenv("MATCHMIND_PUBLIC_SYNC_ON_STARTUP", "true")):
+            scheduler.add_job(
+                run_public_csv_sync, "date", run_date=datetime.now(timezone) + timedelta(seconds=8),
+                id="matchmind-public-startup-sync", max_instances=1
+            )
+
     scheduler.start()
     return scheduler
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -129,9 +154,14 @@ def dashboard():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "mode": "local", "provider": "API-Football", "live_data_configured": _configured(),
+    return {"status": "ok", "mode": "local", "provider": "API-Football",
+            "live_data_configured": _configured(),
             "automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")) and _configured(),
-            "trained_model_configured": False, "historical_baseline_available": _store().coverage()["fixtures"]["count"] > 0}
+            "public_data_provider": "open-matchday",
+            "public_data_api_key_required": False,
+            "public_automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_PUBLIC_AUTO_SYNC", "false")),
+            "trained_model_configured": False,
+            "historical_baseline_available": _store().coverage()["fixtures"]["count"] > 0}
 
 
 @app.get("/provider/status")
@@ -139,10 +169,14 @@ def provider_status():
     key_present = _configured()
     return {"provider": "API-Football", "configured": key_present,
             "automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")) and key_present,
+            "public_data_provider": "open-matchday",
+            "public_data_api_key_required": False,
+            "public_automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_PUBLIC_AUTO_SYNC", "false")),
+            "public_competitions": [p.strip() for p in os.getenv("MATCHMIND_PUBLIC_LEAGUES", DEFAULT_OPEN_MATCHDAY_LEAGUE).split(",") if p.strip()],
             "database": "sqlite", "active_season_default": active_season_year(),
             "configured_leagues": [p.strip() for p in os.getenv("MATCHMIND_LEAGUES", "135").split(",") if p.strip()],
             "historical_seasons": max(0, min(5, int(os.getenv("MATCHMIND_HISTORY_SEASONS", "2")))),
-            "scope": "API key present does not guarantee a plan includes every league, injuries, odds or historical depth."}
+            "scope": "Public mode provides daily fixtures/results and available match stats; odds, injuries and player availability require other feeds."}
 
 
 @app.get("/data/coverage")
@@ -164,8 +198,13 @@ def provider_coverage(league_id: int = Query(default=135, gt=0), season: int = Q
 
 
 @app.get("/data/fixtures")
-def data_fixtures(league_id: int | None = Query(default=None, gt=0), season: int | None = Query(default=None, ge=2000, le=2100), limit: int = Query(default=100, ge=1, le=500)):
-    return {"fixtures": _store().list_fixtures(league_id=league_id, season=season, limit=limit)}
+def data_fixtures(
+    league_id: int | None = Query(default=None, gt=0),
+    season: int | None = Query(default=None, ge=2000, le=2100),
+    source: str | None = Query(default=None, min_length=1, max_length=64),
+    limit: int = Query(default=100, ge=1, le=500),
+):
+    return {"fixtures": _store().list_fixtures(league_id=league_id, season=season, source=source, limit=limit)}
 
 
 @app.get("/data/players/{team_id}")
@@ -173,6 +212,34 @@ def data_players(team_id: int, season: int | None = Query(default=None, ge=2000,
     if team_id <= 0:
         raise HTTPException(status_code=422, detail="team_id must be positive")
     return {"players": _store().player_statistics_for_team(team_id, season, limit=limit)}
+
+
+@app.post("/sync/open-matchday")
+def sync_open_matchday(
+    league_slug: str = Query(default=DEFAULT_OPEN_MATCHDAY_LEAGUE, min_length=3, max_length=80),
+    season: int = Query(default_factory=active_season_year, ge=2000, le=2100),
+):
+    """Import public fixtures/results from open-matchday; no API key required."""
+    try:
+        with OpenMatchdayClient() as client:
+            records = client.fixtures(league_slug=league_slug, season=season)
+        if not records:
+            raise HTTPException(status_code=404, detail="No CSV rows found for this competition and season; verify the folder name and season on the source repository.")
+        stored = _store().upsert_fixtures(records)
+        completed = sum(1 for row in records if row["goals"]["home"] is not None and row["goals"]["away"] is not None)
+        return {
+            "provider": "open-matchday", "api_key_required": False,
+            "league_slug": league_slug, "season": season,
+            "fetched": len(records), "stored_or_updated": stored,
+            "completed_results": completed, "scheduled_fixtures": len(records) - completed,
+            "status": "success",
+            "limitations": ["No bookmaker odds, injuries, lineups or complete player data.", "Coverage and statistics vary by competition.", "Source data are refreshed daily, not live."],
+            "source_url": "https://github.com/oladeeayo/open-matchday",
+        }
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except OpenMatchdayError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.post("/sync/fixtures")

@@ -2,7 +2,43 @@
 
 MatchMind is a local-first football data pipeline and probability workbench. It imports provider data into a source-attributed SQLite database, offers a dark dashboard, and computes transparent statistical estimates for 1X2, Gol/No Gol and Over/Under 1.5, 2.5 and 3.5.
 
-**It is not yet a trained AI model.** The built-in forecast is a transparent Poisson baseline. The provider adapter and local scheduled synchronizer are implemented, but live data require a valid API-Football key and plan coverage. No real key, live response, or prediction performance result is bundled into the repository.
+**It is not yet a trained AI model.** The built-in forecast is a transparent Poisson baseline. The API-Football adapter and local scheduled synchronizer are implemented, and a separate no-key public CSV importer is available for supported competitions. API-Football-only feeds still require a valid key and plan coverage. No real key, live response, or prediction performance result is bundled into the repository.
+
+## Optional API-Football setup
+
+You can start with API-Football's **$0 Free plan**. The provider currently advertises 100 requests per day and says no credit card is required for the free version. The plan lists fixtures, statistics, player information, injuries, pre-match/in-play odds and predictions among its endpoint categories, but available seasons and actual coverage may vary. Check the current plan and coverage before relying on any feed: [API-Football pricing](https://www.api-football.com/pricing).
+
+1. For the no-key mode, copy `.env.example` to `.env`; no account or key is needed.
+2. For API-Football-only feeds, you may separately create an account, activate the Free plan and add the key locally.
+3. Run the app as described below, then inspect `/provider/status`, `/provider/coverage` and `/data/coverage`.
+
+The free plan still requires a provider account and API key; it is **not** a no-registration/no-key data source. Never paste the key into chat, commit it, or put it in `.env.example`. The app cannot bypass the provider's request quota or endpoint restrictions. For a low quota, sync only the leagues and date ranges you need; automatic player sync is off by default because it can consume many requests.
+
+## Automatic no-key Serie A data refresh
+
+MatchMind can automatically refresh fixtures and results from [open-matchday](https://github.com/oladeeayo/open-matchday), a public daily-updated CSV dataset that does not require registration or an API key. The default competition is Italy's Serie A.
+
+The example configuration enables this mode by default:
+- It runs shortly after the application starts.
+- It refreshes once per day at 04:05 Europe/Rome while the MatchMind API process is running.
+- It stores fixtures and completed scores in the local SQLite database, preserving the source and sync history.
+- It uses the current season automatically; `2026` means 2026/27. You can configure additional competition folder slugs in `MATCHMIND_PUBLIC_LEAGUES`.
+
+To activate it, create `.env` from `.env.example`, then load the variables and start the server:
+
+```bash
+cp .env.example .env
+set -a; source .env; set +a
+uvicorn matchmind.api:app --host 127.0.0.1 --port 8000
+```
+
+No API key is needed. Keep the app running for the daily scheduler to execute; if the process stops or the machine is off, no scheduled refresh happens during that period. Check `/health`, `/data/coverage` and `/data/fixtures` to see whether data have been imported. A one-off manual sync remains available as a fallback:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/sync/open-matchday?league_slug=ITA_1_serie-a&season=2026"
+```
+
+**Limits:** the source updates daily, not live, and its coverage/statistics vary. It provides results and fixtures plus some match statistics, but not bookmaker odds, injuries, lineups or complete player data. Its terms allow informational non-commercial use with attribution and prohibit selling or sublicensing this compilation; upstream providers may have additional terms. See [open-matchday source and terms](https://github.com/oladeeayo/open-matchday).
 
 ## Quick start (macOS/Linux)
 
@@ -11,14 +47,14 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
 cp .env.example .env
-# Edit .env privately and set API_FOOTBALL_KEY=your_key_here
+# Optional: set API_FOOTBALL_KEY only if you want to use API-Football as an additional source
 set -a; source .env; set +a
 uvicorn matchmind.api:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000` for the dashboard, or `http://127.0.0.1:8000/docs` for API docs. By default the server binds to loopback, and automatic sync is disabled until explicitly enabled.
+Open `http://127.0.0.1:8000` for the dashboard, or `http://127.0.0.1:8000/docs` for API docs. By default the server binds to loopback. If you use `.env.example`, public Serie A sync is enabled without an API key.
 
-To keep the app and its database running in a persistent local container, create `.env` from `.env.example`, set the key privately, then run `docker compose up --build -d`. The Compose port is bound to `127.0.0.1` and `./data` is mounted persistently. Stop it with `docker compose down`.
+To keep the app and its database running in a persistent local container, create `.env` from `.env.example` and run `docker compose up --build -d`. No API key is required for automatic public Serie A sync. The Compose port is bound to `127.0.0.1` and `./data` is mounted persistently. Stop it with `docker compose down`.
 
 ## Automatic synchronization
 
@@ -53,7 +89,7 @@ API endpoints include `POST /sync/all`, `POST /sync/fixtures`, `POST /sync/injur
 
 ## Automatic live-provider verification
 
-The separate `provider-live-smoke` GitHub Actions workflow can be run manually or daily. To enable a real provider test without exposing credentials, add a repository Actions secret named `API_FOOTBALL_KEY` under **Settings → Secrets and variables → Actions**. The workflow checks the selected league/season coverage and exercises the fixtures, injuries and odds endpoints. If the secret is absent, the live check is intentionally skipped; the standard CI still runs mock-based tests. Never commit the key or paste it into a chat. The local application still needs the key in its own private `.env` file.
+The separate `provider-live-smoke` GitHub Actions workflow can be run manually or daily. To enable a real provider test without exposing credentials, add a repository Actions secret named `API_FOOTBALL_KEY` under **Settings → Secrets and variables → Actions**. The workflow checks the selected league/season coverage and exercises the fixtures, injuries and odds endpoints. If the secret is absent, the live check is intentionally skipped; the standard CI still runs mock-based tests. The local application still needs the key in its own private `.env` file.
 
 ## What gets stored
 
