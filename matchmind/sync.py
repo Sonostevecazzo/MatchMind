@@ -7,6 +7,7 @@ from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
 from .providers.api_football import ApiFootballClient, ProviderConfigurationError, ProviderError
+from .providers.open_matchday import OpenMatchdayClient, OpenMatchdayError, DEFAULT_LEAGUE as DEFAULT_OPEN_MATCHDAY_LEAGUE, league_id_for_slug
 from .storage import MatchMindStore
 
 
@@ -131,3 +132,64 @@ def run_scheduled_sync() -> dict[str, Any]:
     finally:
         service.close()
         client.close()
+
+def run_public_csv_sync() -> dict[str, Any]:
+    """Refresh configured competitions from the public no-key CSV source."""
+    raw_leagues = os.getenv("MATCHMIND_PUBLIC_LEAGUES", DEFAULT_OPEN_MATCHDAY_LEAGUE)
+    leagues = [part.strip() for part in raw_leagues.split(",") if part.strip()]
+    if not leagues:
+        raise ValueError("MATCHMIND_PUBLIC_LEAGUES must contain at least one competition folder.")
+    season = int(os.getenv("MATCHMIND_PUBLIC_SEASON", str(active_season_year())))
+    if not 2000 <= season <= 2100:
+        raise ValueError("MATCHMIND_PUBLIC_SEASON must be a season start year between 2000 and 2100.")
+
+    store = MatchMindStore()
+    output: dict[str, Any] = {
+        "provider": "open-matchday",
+        "api_key_required": False,
+        "season": season,
+        "competitions": [],
+        "source_url": "https://github.com/oladeeayo/open-matchday",
+    }
+    with OpenMatchdayClient() as client:
+        for slug in leagues:
+            competition: dict[str, Any] = {"league_slug": slug, "season": season}
+            sync_id: int | None = None
+            try:
+                league_id = league_id_for_slug(slug)
+                sync_id = store.start_sync("public_csv_fixtures", league_id, season)
+                records = client.fixtures(league_slug=slug, season=season)
+                if not records:
+                    raise OpenMatchdayError(
+                        "No rows found for this competition/season. Verify the source folder and season file."
+                    )
+                stored = store.upsert_fixtures(records)
+                completed = sum(
+                    1 for row in records
+                    if row.get("goals", {}).get("home") is not None
+                    and row.get("goals", {}).get("away") is not None
+                )
+                store.finish_sync(sync_id, status="success", records_count=stored)
+                competition.update({
+                    "league_id": league_id,
+                    "fetched": len(records),
+                    "stored_or_updated": stored,
+                    "completed_results": completed,
+                    "scheduled_fixtures": len(records) - completed,
+                    "status": "success",
+                })
+            except (OpenMatchdayError, ValueError) as exc:
+                if sync_id is not None:
+                    store.finish_sync(sync_id, status="failed", error_message=str(exc)[:500])
+                competition.update({"status": "failed", "error": str(exc)[:300]})
+            except Exception as exc:
+                if sync_id is not None:
+                    store.finish_sync(sync_id, status="failed", error_message=f"Unexpected {type(exc).__name__}")
+                competition.update({"status": "failed", "error": f"Unexpected {type(exc).__name__} during public data sync."})
+            output["competitions"].append(competition)
+    statuses = [row["status"] for row in output["competitions"]]
+    output["status"] = "success" if statuses and all(status == "success" for status in statuses) else (
+        "failed" if statuses and all(status == "failed" for status in statuses) else "partial"
+    )
+    output["last_retrieved_at"] = datetime.now(ZoneInfo(os.getenv("MATCHMIND_TIMEZONE", "Europe/Rome"))).isoformat()
+    return output
