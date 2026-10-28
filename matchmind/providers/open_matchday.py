@@ -134,9 +134,11 @@ class OpenMatchdayClient:
                 "_source": SOURCE_NAME,
                 "_source_url": SOURCE_URL,
                 "_statistics": {key: row.get(key) for key in (
-                    "ht_home", "ht_away", "home_shots", "away_shots", "home_shots_on_target",
-                    "away_shots_on_target", "home_corners", "away_corners", "home_yellow",
-                    "away_yellow", "home_red", "away_red", "goal_minutes"
+                    "gw", "ft_result", "ht_home", "ht_away", "ht_result",
+                    "home_shots", "away_shots", "home_target", "away_target",
+                    "home_fouls", "away_fouls", "home_corners", "away_corners",
+                    "home_corners_1h", "away_corners_1h", "home_corners_2h", "away_corners_2h",
+                    "home_yellow", "away_yellow", "home_red", "away_red", "goal_minutes"
                 ) if row.get(key) not in (None, "")},
             })
         return sorted(output, key=lambda item: item["fixture"]["date"])
