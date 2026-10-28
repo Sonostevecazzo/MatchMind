@@ -169,10 +169,14 @@ def provider_status():
     key_present = _configured()
     return {"provider": "API-Football", "configured": key_present,
             "automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_AUTO_SYNC", "false")) and key_present,
+            "public_data_provider": "open-matchday",
+            "public_data_api_key_required": False,
+            "public_automatic_sync_enabled": _truthy(os.getenv("MATCHMIND_PUBLIC_AUTO_SYNC", "false")),
+            "public_competitions": [p.strip() for p in os.getenv("MATCHMIND_PUBLIC_LEAGUES", DEFAULT_OPEN_MATCHDAY_LEAGUE).split(",") if p.strip()],
             "database": "sqlite", "active_season_default": active_season_year(),
             "configured_leagues": [p.strip() for p in os.getenv("MATCHMIND_LEAGUES", "135").split(",") if p.strip()],
             "historical_seasons": max(0, min(5, int(os.getenv("MATCHMIND_HISTORY_SEASONS", "2")))),
-            "scope": "API key present does not guarantee a plan includes every league, injuries, odds or historical depth."}
+            "scope": "Public mode provides daily fixtures/results and available match stats; odds, injuries and player availability require other feeds."}
 
 
 @app.get("/data/coverage")
