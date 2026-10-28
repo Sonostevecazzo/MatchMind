@@ -216,7 +216,7 @@ class MatchMindStore:
                     fixture_id, kickoff, league_id, str(league.get("name") or league_id), season,
                     home.get("id"), str(home["name"]), away.get("id"), str(away["name"]),
                     str(self._nested(item, "fixture", "status", "short") or "UNK"),
-                    goals.get("home"), goals.get("away"), SOURCE_NAME, SOURCE_FIXTURES, now,
+                    goals.get("home"), goals.get("away"), str(item.get("_source") or SOURCE_NAME), str(item.get("_source_url") or SOURCE_FIXTURES), now,
                     json.dumps(item, ensure_ascii=False, separators=(",", ":")),
                 )
                 db.execute(
