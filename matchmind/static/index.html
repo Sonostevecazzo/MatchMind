@@ -52,7 +52,7 @@
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt = n => n == null ? '—' : Number(n).toLocaleString('it-IT');
   const dateFmt = value => { if(!value) return '—'; const d=new Date(value); return Number.isNaN(d.getTime()) ? value : d.toLocaleString('it-IT',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'})+' UTC'; };
-  const statusText = s => ({FT:'Terminata',AET:'DTS',PEN:'Rigori',NS:'Programmato',TBD:'Da definire',PST:'Rinviata',CANC:'Annullata',LIVE:'In corso',1H:'1° tempo',HT:'Intervallo',2H:'2° tempo'}[s] || s || 'Sconosciuto');
+  const statusText = s => ({FT:'Terminata',AET:'DTS',PEN:'Rigori',NS:'Programmato',TBD:'Da definire',PST:'Rinviata',CANC:'Annullata',LIVE:'In corso','1H':'1° tempo',HT:'Intervallo','2H':'2° tempo'}[s] || s || 'Sconosciuto');
   async function api(url, options={}) { const res=await fetch(url,{headers:{'Accept':'application/json','Content-Type':'application/json',...(options.headers||{})},...options}); const body=await res.json().catch(()=>({detail:'Risposta non valida dal server'})); if(!res.ok) throw new Error(body.detail || `Errore HTTP ${res.status}`); return body; }
   function notice(text,type=''){ return `<div class="notice ${type}">${esc(text)}</div>`; }
   function showError(el,msg){el.innerHTML=notice(msg,'error');}
