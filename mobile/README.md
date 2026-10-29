@@ -13,13 +13,9 @@ Create a Cloudflare Pages project connected to this private GitHub repository:
 
 After the first deploy, Cloudflare assigns a `*.pages.dev` address; no purchased domain is required.
 
-### Protect it with your own username and password
+### Access and privacy
 
-The Pages Function at `functions/_middleware.js` protects all app paths using HTTP Basic authentication. In Cloudflare dashboard:
-1. Open **Workers & Pages → your MatchMind Pages project → Settings → Variables and Secrets**.
-2. Add `MATCHMIND_USERNAME` as a text variable with your chosen username.
-3. Add `MATCHMIND_PASSWORD` as an encrypted secret with a long, unique password.
-4. Save your changes.
+The deployed app is public: anyone who has its Pages URL can open and use it. Do not enter or store sensitive personal data in the app. Match forecasts are calculated locally in the browser.
 
 ### Enable injuries and player form (optional, free API tier)
 
@@ -28,11 +24,11 @@ The `functions/api/player-context.js` endpoint keeps the API key on Cloudflare's
 2. Copy your API key from its dashboard.
 3. In Cloudflare **Settings → Variables and Secrets**, add `API_FOOTBALL_KEY` as an **encrypted secret**. Do not place it in `index.html`, GitHub source, or a public setting.
 4. Save all variables/secrets and trigger a new deployment. Without the API key, the base app still works and the player module explains why its data is disabled.
-5. Open your `*.pages.dev` URL on your phone. The browser asks for the username and password. Use HTTPS only; do not share the URL or credentials.
+5. Open your `*.pages.dev` URL on your phone.
 
 The API-Football free tier is limited to 100 requests per day. Injury data is cached at the edge for up to four hours and player searches/form for up to six hours. A recent-form lookup can use multiple provider calls; avoid repeatedly forcing the same search. Coverage and update timing are controlled by the provider.
 
-The app service worker deliberately does not cache the protected HTML page, so offline mode cannot bypass the authentication check. Data already stored by the browser remains on that phone; lock your device.
+The app service worker does not cache the HTML page. Data already stored by the browser remains on that phone; lock your device.
 
 ## Data and limitations
 
