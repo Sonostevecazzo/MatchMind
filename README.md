@@ -109,6 +109,12 @@ python -m compileall -q matchmind
 
 Automated tests use mocked HTTP responses and a temporary SQLite database. They test pagination, secret handling, storage idempotence, market probabilities, historical cut-off logic and the missing-key failure path. This validates software behaviour without pretending the live provider has been contacted.
 
+## Private cloud access
+
+The API supports HTTP Basic authentication via environment variables. For any internet-accessible deployment, set `MATCHMIND_REQUIRE_AUTH=true`, `MATCHMIND_AUTH_USERNAME`, and a long unique `MATCHMIND_AUTH_PASSWORD` in the hosting provider's secret/environment settings. Never commit real credentials. Authentication protects the dashboard, API routes, health endpoint, and interactive API documentation. Use HTTPS only; the hosting platform or reverse proxy must terminate TLS. If auth is enabled but credentials are missing, the app fails closed with HTTP 503 rather than exposing the service.
+
+**Hosting note:** the current database is SQLite and the daily scheduler runs inside the web process. Many free web-hosting tiers sleep and/or have ephemeral filesystems; on those tiers, scheduled sync may not run while sleeping and SQLite data can be lost on redeploy. Choose a host with persistent disk and a continuously running container/VM if you need durable history and dependable daily sync. Do not deploy publicly until authentication and persistent storage are configured.
+
 ## Security and responsible use
 
 - Never commit `.env`, API keys, tokens, or the local SQLite database.
