@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from pydantic import BaseModel, Field
 
@@ -19,6 +19,7 @@ from .providers.api_football import ApiFootballClient, ProviderAPIError, Provide
 from .providers.open_matchday import OpenMatchdayClient, OpenMatchdayError, DEFAULT_LEAGUE as DEFAULT_OPEN_MATCHDAY_LEAGUE
 from .storage import MatchMindStore
 from .sync import MatchMindSync, active_season_year, run_public_csv_sync, run_scheduled_sync
+from .security import basic_credentials_valid
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -91,6 +92,29 @@ app = FastAPI(
     description="Private-first football data pipeline and transparent statistical baseline. Not a trained AI model.",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def protect_private_instance(request: Request, call_next):
+    """Protect every route, including dashboard, API docs and health, when enabled."""
+    if not _truthy(os.getenv("MATCHMIND_REQUIRE_AUTH", "false")):
+        return await call_next(request)
+
+    username = os.getenv("MATCHMIND_AUTH_USERNAME", "")
+    password = os.getenv("MATCHMIND_AUTH_PASSWORD", "")
+    if not username or not password:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Private access is enabled but credentials are not configured."},
+        )
+
+    if not basic_credentials_valid(request.headers.get("authorization", ""), username, password):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required."},
+            headers={"WWW-Authenticate": 'Basic realm="MatchMind", charset="UTF-8"'},
+        )
+    return await call_next(request)
 
 
 class ForecastRequest(BaseModel):
