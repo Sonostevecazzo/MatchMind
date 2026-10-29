@@ -363,8 +363,9 @@ function oddsEventUpdatedAt(event) {
   const updates = (Array.isArray(event && event.bookmakers) ? event.bookmakers : [])
     .flatMap(bookmaker => Array.isArray(bookmaker && bookmaker.markets) ? bookmaker.markets : [])
     .map(market => market && market.last_update)
-    .filter(value => typeof value === "string" && Number.isFinite(Date.parse(value)));
-  return updates.sort().at(-1) || null;
+    .filter(value => typeof value === "string" && Number.isFinite(Date.parse(value)))
+    .sort((left, right) => Date.parse(left) - Date.parse(right));
+  return updates.at(-1) || null;
 }
 
 async function getFootballDataFixtures(context, season) {
