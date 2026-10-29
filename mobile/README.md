@@ -50,6 +50,7 @@ The app service worker does not cache the HTML page. Data already stored by the 
 - Optional API-Football module: upcoming reported injuries/questionable players and a search for Serie A player season statistics plus up to five recent appearances (minutes, goals, assists, rating and other fields where the provider supplies them).
 - Optional The Odds API module: European bookmaker prices for supported 1X2 and main totals markets; the app compares them to MatchMind's estimate. The free monthly credit quota can be exhausted.
 - Optional football-data.org fallback: current season fixtures and delayed results when the primary public CSV source cannot be reached.
+- Potential value is flagged at estimated EV of at least +5% only when the historical sample is sufficient. If injury data is missing or incomplete, the comparison uses the base historical estimate, labels it as such and asks the user to verify lineups; no partial injury adjustment is applied.
 - Missing keys, provider quota exhaustion and absent coverage are shown rather than filled with invented data. Secrets remain server-side.
 - The no-key public CSV source does not provide dependable player-level form, injuries, lineups or current pre-match odds.
 - Data providers can change URLs, coverage or availability; the app handles missing historical seasons gracefully.
