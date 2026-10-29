@@ -20,5 +20,6 @@ with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
     handle.write(scripts[0])
     handle.flush()
     subprocess.run(["node", "--check", handle.name], check=True)
-subprocess.run(["node", "--check", str(ROOT / "sw.js")], check=True)
-print("Mobile PWA manifest and JavaScript syntax checks passed.")
+for path in [ROOT / "sw.js", ROOT / "functions" / "_middleware.js"]:
+    subprocess.run(["node", "--check", str(path)], check=True)
+print("Mobile PWA manifest, middleware and JavaScript syntax checks passed.")
