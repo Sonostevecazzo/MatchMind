@@ -65,7 +65,7 @@ async function providerGet(path, params, context, ttlSeconds) {
 
   let payload;
   try {
-    payload = await response.json();
+    payload = response.status === 204 ? { response: [], errors: [] } : await response.json();
   } catch {
     throw new Error("provider_invalid_json");
   }
