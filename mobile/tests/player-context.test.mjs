@@ -108,6 +108,47 @@ test("The Odds API quota errors produce a clear message without leaking the key"
   assert.equal(JSON.stringify(body).includes("odds-secret"), false);
 });
 
+test("API-Football remains a working source for injuries and quote fallback", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const date = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  globalThis.fetch = async (url, options) => {
+    const parsed = new URL(String(url));
+    assert.equal(options.headers["x-apisports-key"], "football-secret");
+    if (parsed.pathname.endsWith("/fixtures")) {
+      return apiResponse({ errors: [], response: [{
+        fixture: { id: 123, date: date + "T12:00:00+00:00" },
+        teams: { home: { id: 10, name: "Bologna" }, away: { id: 11, name: "Monza" } }
+      }] });
+    }
+    if (parsed.pathname.endsWith("/injuries")) return apiResponse({ errors: [], response: [] });
+    if (parsed.pathname.endsWith("/odds")) {
+      return apiResponse({ errors: [], response: [{
+        update: "2026-10-29T10:00:00Z",
+        bookmakers: [{ name: "Sample Book", bets: [{ name: "Match Winner", values: [
+          { value: "Home", odd: "1.8" }, { value: "Draw", odd: "3.5" }, { value: "Away", odd: "4.5" }
+        ] }] }]
+      }] });
+    }
+    throw new Error("unexpected provider endpoint " + parsed.pathname);
+  };
+
+  const response = await onRequestGet(makeContext(
+    "https://matchmind.test/api/player-context?type=match&date=" + date + "&home=Bologna&away=Monza",
+    { API_FOOTBALL_KEY: "football-secret" }
+  ));
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.fixtureFound, true);
+  assert.equal(body.homeTeamId, 10);
+  assert.equal(body.awayTeamId, 11);
+  assert.equal(body.injuriesAvailable, true);
+  assert.equal(body.injuryStatsComplete, true);
+  assert.equal(body.oddsAvailable, true);
+  assert.equal(body.oddsSource, "API-Football");
+  assert.equal(JSON.stringify(body).includes("football-secret"), false);
+});
+
 test("football-data.org fixtures are normalized and its token is not returned", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
