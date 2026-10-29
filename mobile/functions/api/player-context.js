@@ -153,6 +153,7 @@ function normalizeInjuries(payload, now = new Date()) {
     const key = String(team.id || team.name || "unknown") + "|" + id;
     const record = {
       playerId: player.id == null ? null : Number(player.id),
+      teamId: team.id == null ? null : Number(team.id),
       name: player.name || "Giocatore non identificato",
       team: team.name || "Squadra non disponibile",
       status: player.type || item.status || "Indisponibile",
@@ -195,6 +196,145 @@ async function getInjuries(context, season) {
     lookaheadDays: 14,
     updatedAt: new Date().toISOString(),
     injuries: normalizeInjuries(payload)
+  });
+}
+
+
+function normalizeTeamName(value) {
+  return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+const TEAM_NAME_GROUPS = [
+  ["inter", "internazionale", "intermilan"],
+  ["milan", "acmilan"],
+  ["verona", "hellasverona"],
+  ["roma", "asroma"],
+  ["lazio", "sslazio"],
+  ["juventus", "juve"],
+  ["napoli", "sscnapoli"],
+  ["fiorentina", "acffiorentina"],
+  ["sassuolo", "ussassuolo"],
+  ["cagliari", "cagliaricalcio"],
+  ["udinese", "udinesecalcio"],
+  ["torino", "torinofc"],
+  ["genoa", "genoacfc"],
+  ["parma", "parmacalcio"],
+  ["lecce", "uslecce"],
+  ["pisa", "pisasc"]
+];
+
+function sameTeamName(left, right) {
+  const a = normalizeTeamName(left);
+  const b = normalizeTeamName(right);
+  if (!a || !b) return false;
+  if (a === b || (Math.min(a.length, b.length) >= 5 && (a.includes(b) || b.includes(a)))) return true;
+  return TEAM_NAME_GROUPS.some(group => group.includes(a) && group.includes(b));
+}
+
+function hasAbsenceStatus(item) {
+  const value = String(item && item.status || "").toLowerCase();
+  return value.includes("missing") || value.includes("questionable") || value.includes("suspend") || value.includes("injur");
+}
+
+async function getMatchContext(context, season, requestUrl) {
+  const date = requestUrl.searchParams.get("date") || "";
+  const home = (requestUrl.searchParams.get("home") || "").trim();
+  const away = (requestUrl.searchParams.get("away") || "").trim();
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !home || !away || home.length > 80 || away.length > 80) {
+    return responseJson({ configured: true, type: "match", error: "Partita o data non validi." }, 400);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const latest = addDays(new Date(today + "T00:00:00.000Z"), 14);
+  if (date < today || date > latest) {
+    return responseJson({ configured: true, type: "match", error: "I dati prematch sono richiesti solo per le partite dei prossimi 14 giorni." }, 400);
+  }
+
+  const fixturesPayload = await providerGet("fixtures", {
+    league: SERIE_A_ID,
+    season,
+    date,
+    timezone: "Europe/Rome"
+  }, context, 12 * 60 * 60);
+  const fixtures = Array.isArray(fixturesPayload && fixturesPayload.response) ? fixturesPayload.response : [];
+  const fixture = fixtures.find(item => {
+    const teams = item && item.teams || {};
+    return sameTeamName(home, teams.home && teams.home.name) && sameTeamName(away, teams.away && teams.away.name);
+  });
+
+  if (!fixture || !fixture.fixture || fixture.fixture.id == null) {
+    return responseJson({
+      configured: true,
+      type: "match",
+      fixtureFound: false,
+      injuriesAvailable: false,
+      injuryStatsComplete: false,
+      oddsAvailable: false,
+      injuries: [],
+      bookmakers: [],
+      message: "La partita non è stata abbinata nei dati API-Football per questa data."
+    });
+  }
+
+  const fixtureId = Number(fixture.fixture.id);
+  const results = await Promise.allSettled([
+    providerGet("injuries", { fixture: fixtureId }, context, 4 * 60 * 60),
+    providerGet("odds", { fixture: fixtureId }, context, 3 * 60 * 60)
+  ]);
+
+  const injuryResult = results[0];
+  const oddsResult = results[1];
+  let injuries = injuryResult.status === "fulfilled" ? normalizeInjuries(injuryResult.value) : [];
+  const actionable = injuries.filter(hasAbsenceStatus);
+  const selected = actionable.slice(0, 6);
+  let injuryStatsComplete = actionable.length <= selected.length && selected.every(item => item.playerId != null);
+  const statResults = await Promise.allSettled(selected.map(item => providerGet("players", {
+    id: item.playerId,
+    league: SERIE_A_ID,
+    season
+  }, context, 12 * 60 * 60)));
+
+  const statsByPlayer = new Map();
+  statResults.forEach((result, index) => {
+    if (result.status !== "fulfilled") {
+      injuryStatsComplete = false;
+      return;
+    }
+    const rows = Array.isArray(result.value && result.value.response) ? result.value.response : [];
+    if (!rows.length) {
+      injuryStatsComplete = false;
+      return;
+    }
+    statsByPlayer.set(String(selected[index].playerId), normalizeStats(rows[0]));
+  });
+
+  injuries = injuries.map(item => ({
+    ...item,
+    playerStats: item.playerId == null ? null : (statsByPlayer.get(String(item.playerId)) || null)
+  }));
+  if (actionable.some(item => !statsByPlayer.has(String(item.playerId)))) injuryStatsComplete = false;
+
+  const oddsPayload = oddsResult.status === "fulfilled" ? oddsResult.value : null;
+  const oddsRecord = Array.isArray(oddsPayload && oddsPayload.response) ? oddsPayload.response[0] : null;
+  const bookmakers = Array.isArray(oddsRecord && oddsRecord.bookmakers) ? oddsRecord.bookmakers : [];
+
+  return responseJson({
+    configured: true,
+    type: "match",
+    fixtureFound: true,
+    fixtureId,
+    season,
+    source: "API-Football",
+    updatedAt: new Date().toISOString(),
+    injuriesAvailable: injuryResult.status === "fulfilled",
+    injuryError: injuryResult.status === "rejected" ? publicError(injuryResult.reason) : null,
+    injuryStatsComplete,
+    injuries,
+    oddsAvailable: oddsResult.status === "fulfilled" && bookmakers.length > 0,
+    oddsError: oddsResult.status === "rejected" ? publicError(oddsResult.reason) : null,
+    oddsUpdatedAt: oddsRecord && oddsRecord.update || null,
+    bookmakers,
+    message: !bookmakers.length ? "Quote prematch non disponibili per questa partita o bookmaker." : null
   });
 }
 
@@ -321,6 +461,7 @@ export async function onRequestGet(context) {
   try {
     if (type === "status") return responseJson({ configured: true, type: "status", source: "API-Football", season, freePlanRequestsPerDay: 100 });
     if (type === "injuries") return await getInjuries(context, season);
+    if (type === "match") return await getMatchContext(context, season, requestUrl);
     if (type === "search") return await searchPlayers(context, season, (requestUrl.searchParams.get("q") || "").trim());
     if (type === "form") return await getPlayerForm(context, season, requestUrl);
     return responseJson({ configured: true, error: "Tipo richiesta non supportato." }, 400);
