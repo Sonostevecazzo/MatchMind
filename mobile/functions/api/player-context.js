@@ -1,4 +1,6 @@
 const API_BASE = "https://v3.football.api-sports.io";
+const ODDS_API_BASE = "https://api.the-odds-api.com/v4";
+const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
 const SERIE_A_ID = 135;
 const CACHE_ROOT = "/__matchmind_internal_cache/";
 
@@ -95,6 +97,54 @@ async function providerGet(path, params, context, ttlSeconds) {
   return payload;
 }
 
+async function cachedExternalJson(context, providerName, url, cacheId, headers, ttlSeconds) {
+  let cache;
+  let cacheKey;
+  try {
+    cache = caches.default;
+    const requestUrl = new URL(context.request.url);
+    cacheKey = new Request(new URL(CACHE_ROOT + encodeURIComponent(cacheId), requestUrl.origin).toString());
+    const cached = await cache.match(cacheKey);
+    if (cached) return await cached.json();
+  } catch {
+    cache = null;
+    cacheKey = null;
+  }
+
+  let response;
+  try {
+    response = await fetch(url, { method: "GET", headers, signal: AbortSignal.timeout(12000) });
+  } catch {
+    throw new Error(providerName + "_unreachable");
+  }
+  if (!response.ok) {
+    let errorText = "";
+    try { errorText = (await response.clone().text()).toUpperCase(); } catch { /* use the HTTP status below */ }
+    if (providerName === "odds" && errorText.includes("OUT_OF_USAGE_CREDITS")) throw new Error("odds_quota_exceeded");
+    if (errorText.includes("INVALID_KEY") || errorText.includes("DEACTIVATED_KEY")) throw new Error(providerName + "_invalid_key");
+    if (response.status === 429) throw new Error(providerName + "_rate_limited");
+    if (providerName === "odds" && response.status === 402) throw new Error("odds_quota_exceeded");
+    if (response.status === 401 || response.status === 403) throw new Error(providerName + "_invalid_key");
+    throw new Error(providerName + "_http_error");
+  }
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error(providerName + "_invalid_json");
+  }
+  if (cache && cacheKey) {
+    try {
+      await cache.put(cacheKey, new Response(JSON.stringify(payload), {
+        headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=" + ttlSeconds }
+      }));
+    } catch {
+      // A valid provider response remains usable when edge caching is unavailable.
+    }
+  }
+  return payload;
+}
+
 function normalizeStats(playerItem) {
   const player = playerItem && playerItem.player ? playerItem.player : {};
   const statsList = Array.isArray(playerItem && playerItem.statistics) ? playerItem.statistics : [];
@@ -168,9 +218,9 @@ function normalizeInjuries(payload, now = new Date()) {
 }
 
 function errorStatus(error) {
-  if (error.message === "provider_invalid_key") return 502;
-  if (error.message === "provider_rate_limited") return 429;
-  if (error.message === "provider_unreachable") return 503;
+  if (error.message.endsWith("_invalid_key")) return 502;
+  if (error.message.endsWith("_rate_limited") || error.message === "odds_quota_exceeded") return 429;
+  if (error.message.endsWith("_unreachable")) return 503;
   return 502;
 }
 
@@ -181,7 +231,18 @@ function publicError(error) {
     provider_unreachable: "Il servizio dati non è raggiungibile in questo momento.",
     provider_http_error: "Il servizio dati ha restituito un errore.",
     provider_invalid_json: "Il servizio dati ha restituito una risposta non leggibile.",
-    provider_rejected_request: "Il servizio dati ha rifiutato la richiesta. Verifica la copertura della Serie A e la chiave API."
+    provider_rejected_request: "Il servizio dati ha rifiutato la richiesta. Verifica la copertura della Serie A e la chiave API.",
+    odds_invalid_key: "La chiave The Odds API non è valida. Controlla il secret THE_ODDS_API_KEY su Cloudflare.",
+    odds_rate_limited: "The Odds API ha limitato le richieste. Riprova più tardi.",
+    odds_quota_exceeded: "Crediti mensili The Odds API esauriti. La quota si rinnova secondo il piano del provider.",
+    odds_unreachable: "The Odds API non è raggiungibile in questo momento.",
+    odds_http_error: "The Odds API ha restituito un errore.",
+    odds_invalid_json: "The Odds API ha restituito una risposta non leggibile.",
+    football_data_invalid_key: "Il token football-data.org non è valido. Controlla il secret FOOTBALL_DATA_API_KEY su Cloudflare.",
+    football_data_rate_limited: "Limite football-data.org raggiunto. Il piano gratuito consente 10 richieste al minuto; riprova tra poco.",
+    football_data_unreachable: "football-data.org non è raggiungibile in questo momento.",
+    football_data_http_error: "football-data.org ha restituito un errore.",
+    football_data_invalid_json: "football-data.org ha restituito una risposta non leggibile."
   };
   return messages[error.message] || "Errore temporaneo durante il recupero dei dati.";
 }
@@ -231,6 +292,111 @@ function sameTeamName(left, right) {
   return TEAM_NAME_GROUPS.some(group => group.includes(a) && group.includes(b));
 }
 
+function oddsEventsCacheKey() {
+  return "the-odds-api/serie-a/eu/h2h-totals";
+}
+
+async function getOddsEvents(context) {
+  const key = context.env && context.env.THE_ODDS_API_KEY;
+  if (!key) return { configured: false, events: [], error: "THE_ODDS_API_KEY non configurata." };
+  const url = new URL(ODDS_API_BASE + "/sports/soccer_italy_serie_a/odds/");
+  url.searchParams.set("apiKey", key);
+  url.searchParams.set("regions", "eu");
+  url.searchParams.set("markets", "h2h,totals");
+  url.searchParams.set("oddsFormat", "decimal");
+  url.searchParams.set("dateFormat", "iso");
+  const events = await cachedExternalJson(context, "odds", url.toString(), oddsEventsCacheKey(), {}, 90 * 60);
+  return { configured: true, events: Array.isArray(events) ? events : [] };
+}
+
+function localDateTime(utcDate) {
+  const date = new Date(utcDate);
+  if (!Number.isFinite(date.getTime())) return { date: "", time: "" };
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(date);
+  const part = name => (parts.find(item => item.type === name) || {}).value || "";
+  return { date: part("year") + "-" + part("month") + "-" + part("day"), time: part("hour") + ":" + part("minute") };
+}
+
+function findOddsEvent(events, date, home, away) {
+  return events.find(event => {
+    const kickoff = localDateTime(event && event.commence_time);
+    return kickoff.date === date && sameTeamName(home, event && event.home_team) && sameTeamName(away, event && event.away_team);
+  }) || null;
+}
+
+function normalizeOddsBookmakers(event) {
+  const bookmakers = Array.isArray(event && event.bookmakers) ? event.bookmakers : [];
+  return bookmakers.map(bookmaker => {
+    const bets = [];
+    for (const market of Array.isArray(bookmaker && bookmaker.markets) ? bookmaker.markets : []) {
+      const outcomes = Array.isArray(market && market.outcomes) ? market.outcomes : [];
+      if (market.key === "h2h") {
+        bets.push({
+          name: "Match Winner",
+          values: outcomes.map(outcome => {
+            const name = outcome.name || "";
+            const value = normalizeTeamName(name) === "draw" || normalizeTeamName(name) === "tie"
+              ? "Draw"
+              : (sameTeamName(name, event.home_team) ? "Home" : (sameTeamName(name, event.away_team) ? "Away" : name));
+            return { value, odd: outcome.price };
+          })
+        });
+      } else if (market.key === "totals") {
+        bets.push({
+          name: "Goals Over/Under",
+          values: outcomes.map(outcome => ({
+            value: outcome.name + (outcome.point == null ? "" : " " + outcome.point),
+            handicap: outcome.point == null ? "" : String(outcome.point),
+            odd: outcome.price
+          }))
+        });
+      }
+    }
+    return { name: bookmaker.title || bookmaker.key || "Bookmaker", bets };
+  }).filter(bookmaker => bookmaker.bets.length);
+}
+
+async function getFootballDataFixtures(context, season) {
+  const key = context.env && context.env.FOOTBALL_DATA_API_KEY;
+  if (!key) {
+    return responseJson({
+      configured: false,
+      type: "fixtures",
+      error: "FOOTBALL_DATA_API_KEY non configurata. Aggiungi il token football-data.org come secret su Cloudflare Pages."
+    });
+  }
+  const url = new URL(FOOTBALL_DATA_BASE + "/competitions/SA/matches");
+  url.searchParams.set("season", String(season));
+  const payload = await cachedExternalJson(context, "football_data", url.toString(), "football-data/serie-a/" + season, { "X-Auth-Token": key }, 6 * 60 * 60);
+  const sourceMatches = Array.isArray(payload && payload.matches) ? payload.matches : [];
+  const matches = sourceMatches.filter(item => item && item.homeTeam && item.awayTeam && item.utcDate)
+    .map(item => {
+      const kickoff = localDateTime(item.utcDate);
+      const fullTime = item.score && item.score.fullTime || {};
+      return {
+        date: kickoff.date,
+        time: kickoff.time,
+        round: item.matchday == null ? null : Number(item.matchday),
+        home: item.homeTeam.name || item.homeTeam.shortName || "",
+        away: item.awayTeam.name || item.awayTeam.shortName || "",
+        hg: fullTime.home == null ? null : Number(fullTime.home),
+        ag: fullTime.away == null ? null : Number(fullTime.away),
+        hs: null,
+        as: null,
+        ht: null,
+        at: null,
+        source: "football-data.org",
+        oddsH: null,
+        oddsD: null,
+        oddsA: null
+      };
+    });
+  return responseJson({ configured: true, type: "fixtures", source: "football-data.org", season, updatedAt: new Date().toISOString(), matches });
+}
+
 function hasAbsenceStatus(item) {
   const value = String(item && item.status || "").toLowerCase();
   return value.includes("missing") || value.includes("questionable") || value.includes("suspend") || value.includes("injur");
@@ -250,49 +416,40 @@ async function getMatchContext(context, season, requestUrl) {
     return responseJson({ configured: true, type: "match", error: "I dati prematch sono richiesti solo per le partite dei prossimi 14 giorni." }, 400);
   }
 
-  const fixturesPayload = await providerGet("fixtures", {
-    league: SERIE_A_ID,
-    season,
-    date,
-    timezone: "Europe/Rome"
-  }, context, 12 * 60 * 60);
-  const fixtures = Array.isArray(fixturesPayload && fixturesPayload.response) ? fixturesPayload.response : [];
+  const apiFootballKey = context.env && context.env.API_FOOTBALL_KEY;
+  const oddsApiKey = context.env && context.env.THE_ODDS_API_KEY;
+  const [fixtureLookup, oddsLookup] = await Promise.allSettled([
+    apiFootballKey ? providerGet("fixtures", { league: SERIE_A_ID, season, date, timezone: "Europe/Rome" }, context, 12 * 60 * 60) : Promise.resolve(null),
+    oddsApiKey ? getOddsEvents(context) : Promise.resolve({ configured: false, events: [] })
+  ]);
+  const fixturePayload = fixtureLookup.status === "fulfilled" ? fixtureLookup.value : null;
+  const fixtures = Array.isArray(fixturePayload && fixturePayload.response) ? fixturePayload.response : [];
   const fixture = fixtures.find(item => {
     const teams = item && item.teams || {};
     return sameTeamName(home, teams.home && teams.home.name) && sameTeamName(away, teams.away && teams.away.name);
-  });
+  }) || null;
+  const oddsData = oddsLookup.status === "fulfilled" ? oddsLookup.value : null;
+  const oddsEvent = findOddsEvent(oddsData && oddsData.events || [], date, home, away);
+  const fixtureId = fixture && fixture.fixture && fixture.fixture.id != null ? Number(fixture.fixture.id) : null;
 
-  if (!fixture || !fixture.fixture || fixture.fixture.id == null) {
-    return responseJson({
-      configured: true,
-      type: "match",
-      fixtureFound: false,
-      injuriesAvailable: false,
-      injuryStatsComplete: false,
-      oddsAvailable: false,
-      injuries: [],
-      bookmakers: [],
-      message: "La partita non è stata abbinata nei dati API-Football per questa data."
-    });
+  let injuryResult = null;
+  let apiFootballOddsResult = null;
+  if (fixtureId != null) {
+    const results = await Promise.allSettled([
+      providerGet("injuries", { fixture: fixtureId }, context, 4 * 60 * 60),
+      oddsApiKey && oddsEvent ? Promise.resolve(null) : providerGet("odds", { fixture: fixtureId }, context, 3 * 60 * 60)
+    ]);
+    injuryResult = results[0];
+    apiFootballOddsResult = results[1];
   }
 
-  const fixtureId = Number(fixture.fixture.id);
-  const results = await Promise.allSettled([
-    providerGet("injuries", { fixture: fixtureId }, context, 4 * 60 * 60),
-    providerGet("odds", { fixture: fixtureId }, context, 3 * 60 * 60)
-  ]);
-
-  const injuryResult = results[0];
-  const oddsResult = results[1];
-  let injuries = injuryResult.status === "fulfilled" ? normalizeInjuries(injuryResult.value) : [];
+  let injuries = injuryResult && injuryResult.status === "fulfilled" ? normalizeInjuries(injuryResult.value) : [];
   const actionable = injuries.filter(hasAbsenceStatus);
   const selected = actionable.slice(0, 4);
-  let injuryStatsComplete = actionable.length <= selected.length && selected.every(item => item.playerId != null);
-  const statResults = await Promise.allSettled(selected.map(item => providerGet("players", {
-    id: item.playerId,
-    league: SERIE_A_ID,
-    season
-  }, context, 12 * 60 * 60)));
+  let injuryStatsComplete = Boolean(injuryResult && injuryResult.status === "fulfilled") && actionable.length <= selected.length && selected.every(item => item.playerId != null);
+  const statResults = injuryResult && injuryResult.status === "fulfilled"
+    ? await Promise.allSettled(selected.map(item => providerGet("players", { id: item.playerId, league: SERIE_A_ID, season }, context, 12 * 60 * 60)))
+    : [];
 
   const statsByPlayer = new Map();
   statResults.forEach((result, index) => {
@@ -314,29 +471,43 @@ async function getMatchContext(context, season, requestUrl) {
   }));
   if (actionable.some(item => !statsByPlayer.has(String(item.playerId)))) injuryStatsComplete = false;
 
-  const oddsPayload = oddsResult.status === "fulfilled" ? oddsResult.value : null;
-  const oddsRecord = Array.isArray(oddsPayload && oddsPayload.response) ? oddsPayload.response[0] : null;
-  const bookmakers = Array.isArray(oddsRecord && oddsRecord.bookmakers) ? oddsRecord.bookmakers : [];
+  const apiFootballOddsPayload = apiFootballOddsResult && apiFootballOddsResult.status === "fulfilled" ? apiFootballOddsResult.value : null;
+  const oddsRecord = Array.isArray(apiFootballOddsPayload && apiFootballOddsPayload.response) ? apiFootballOddsPayload.response[0] : null;
+  const oddsApiBookmakers = oddsEvent ? normalizeOddsBookmakers(oddsEvent) : [];
+  const bookmakers = oddsApiBookmakers.length ? oddsApiBookmakers : (Array.isArray(oddsRecord && oddsRecord.bookmakers) ? oddsRecord.bookmakers : []);
+  const oddsAvailable = bookmakers.length > 0;
+  const oddsSource = oddsApiBookmakers.length ? "The Odds API" : (bookmakers.length ? "API-Football" : null);
+  const fixtureFound = Boolean(fixtureId != null || oddsEvent);
+  const injuryError = injuryResult && injuryResult.status === "rejected"
+    ? publicError(injuryResult.reason)
+    : (!apiFootballKey
+      ? "API_FOOTBALL_KEY non configurata: indisponibili e statistiche giocatore non disponibili."
+      : (fixtureLookup.status === "rejected" ? publicError(fixtureLookup.reason) : (!fixtureId ? "La partita non è stata trovata da API-Football per recuperare le assenze." : null)));
+  const oddsError = oddsAvailable ? null : (oddsLookup.status === "rejected"
+    ? publicError(oddsLookup.reason)
+    : (apiFootballOddsResult && apiFootballOddsResult.status === "rejected" ? publicError(apiFootballOddsResult.reason)
+      : (!oddsApiKey && !apiFootballKey ? "Aggiungi THE_ODDS_API_KEY per le quote internazionali oppure API_FOOTBALL_KEY." : "Quote prematch non disponibili per questa partita.")));
 
   return responseJson({
     configured: true,
     type: "match",
-    fixtureFound: true,
+    fixtureFound,
     fixtureId,
-    homeTeamId: fixture.teams && fixture.teams.home ? Number(fixture.teams.home.id) : null,
-    awayTeamId: fixture.teams && fixture.teams.away ? Number(fixture.teams.away.id) : null,
+    homeTeamId: fixture && fixture.teams && fixture.teams.home ? Number(fixture.teams.home.id) : null,
+    awayTeamId: fixture && fixture.teams && fixture.teams.away ? Number(fixture.teams.away.id) : null,
     season,
-    source: "API-Football",
+    source: oddsSource || (fixtureId != null ? "API-Football" : null),
     updatedAt: new Date().toISOString(),
-    injuriesAvailable: injuryResult.status === "fulfilled",
-    injuryError: injuryResult.status === "rejected" ? publicError(injuryResult.reason) : null,
+    injuriesAvailable: Boolean(injuryResult && injuryResult.status === "fulfilled"),
+    injuryError,
     injuryStatsComplete,
     injuries,
-    oddsAvailable: oddsResult.status === "fulfilled" && bookmakers.length > 0,
-    oddsError: oddsResult.status === "rejected" ? publicError(oddsResult.reason) : null,
-    oddsUpdatedAt: oddsRecord && oddsRecord.update || null,
+    oddsAvailable,
+    oddsSource,
+    oddsError,
+    oddsUpdatedAt: oddsEvent ? oddsEvent.last_update || null : (oddsRecord && oddsRecord.update || null),
     bookmakers,
-    message: !bookmakers.length ? "Quote prematch non disponibili per questa partita o bookmaker." : null
+    message: !fixtureFound ? "Partita non trovata nelle fonti quote o API-Football per questa data." : null
   });
 }
 
@@ -450,18 +621,39 @@ async function getPlayerForm(context, season, requestUrl) {
 
 export async function onRequestGet(context) {
   const requestUrl = new URL(context.request.url);
-  const key = context.env && context.env.API_FOOTBALL_KEY;
-  if (!key) {
-    return responseJson({
-      configured: false,
-      error: "API_FOOTBALL_KEY non configurata. Aggiungi la chiave come secret su Cloudflare Pages per attivare infortuni e forma giocatori."
-    });
-  }
-
+  const env = context.env || {};
+  const apiFootballConfigured = Boolean(env.API_FOOTBALL_KEY);
+  const oddsApiConfigured = Boolean(env.THE_ODDS_API_KEY);
+  const footballDataConfigured = Boolean(env.FOOTBALL_DATA_API_KEY);
   const season = currentSeason();
   const type = requestUrl.searchParams.get("type") || "";
   try {
-    if (type === "status") return responseJson({ configured: true, type: "status", source: "API-Football", season, freePlanRequestsPerDay: 100 });
+    if (type === "status") return responseJson({
+      configured: apiFootballConfigured || oddsApiConfigured || footballDataConfigured,
+      type: "status",
+      source: apiFootballConfigured ? "API-Football" : (oddsApiConfigured ? "The Odds API" : (footballDataConfigured ? "football-data.org" : null)),
+      season,
+      freePlanRequestsPerDay: apiFootballConfigured ? 100 : null,
+      error: apiFootballConfigured || oddsApiConfigured || footballDataConfigured ? null : "API_FOOTBALL_KEY, THE_ODDS_API_KEY o FOOTBALL_DATA_API_KEY non configurata.",
+      providers: {
+        apiFootball: apiFootballConfigured,
+        oddsApi: oddsApiConfigured,
+        footballData: footballDataConfigured
+      }
+    });
+    if (type === "fixtures") {
+      const requestedSeason = Number(requestUrl.searchParams.get("season") || season);
+      if (!Number.isInteger(requestedSeason) || requestedSeason < 1990 || requestedSeason > season + 1) {
+        return responseJson({ configured: true, type: "fixtures", error: "Stagione non valida." }, 400);
+      }
+      return await getFootballDataFixtures(context, requestedSeason);
+    }
+    if (["injuries", "search", "form"].includes(type) && !apiFootballConfigured) {
+      return responseJson({
+        configured: false,
+        error: "API_FOOTBALL_KEY non configurata. Aggiungi la chiave come secret su Cloudflare Pages per attivare indisponibili e dati giocatore."
+      });
+    }
     if (type === "injuries") return await getInjuries(context, season);
     if (type === "match") return await getMatchContext(context, season, requestUrl);
     if (type === "search") return await searchPlayers(context, season, (requestUrl.searchParams.get("q") || "").trim());
@@ -471,7 +663,7 @@ export async function onRequestGet(context) {
     return responseJson({
       configured: true,
       error: publicError(error),
-      retryable: ["provider_rate_limited", "provider_unreachable", "provider_http_error"].includes(error.message)
+      retryable: error.message.endsWith("_rate_limited") || error.message.endsWith("_unreachable") || error.message.endsWith("_http_error") || error.message === "odds_quota_exceeded"
     }, errorStatus(error));
   }
 }
