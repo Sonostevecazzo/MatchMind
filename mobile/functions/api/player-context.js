@@ -319,6 +319,7 @@ export async function onRequestGet(context) {
   const season = currentSeason();
   const type = requestUrl.searchParams.get("type") || "";
   try {
+    if (type === "status") return responseJson({ configured: true, type: "status", source: "API-Football", season, freePlanRequestsPerDay: 100 });
     if (type === "injuries") return await getInjuries(context, season);
     if (type === "search") return await searchPlayers(context, season, (requestUrl.searchParams.get("q") || "").trim());
     if (type === "form") return await getPlayerForm(context, season, requestUrl);
