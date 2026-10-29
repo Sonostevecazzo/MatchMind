@@ -201,7 +201,7 @@ async function getInjuries(context, season) {
 
 
 function normalizeTeamName(value) {
-  return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 const TEAM_NAME_GROUPS = [
@@ -240,7 +240,7 @@ async function getMatchContext(context, season, requestUrl) {
   const date = requestUrl.searchParams.get("date") || "";
   const home = (requestUrl.searchParams.get("home") || "").trim();
   const away = (requestUrl.searchParams.get("away") || "").trim();
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !home || !away || home.length > 80 || away.length > 80) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !home || !away || home.length > 80 || away.length > 80) {
     return responseJson({ configured: true, type: "match", error: "Partita o data non validi." }, 400);
   }
 
