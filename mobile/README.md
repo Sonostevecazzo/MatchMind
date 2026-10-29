@@ -23,7 +23,7 @@ The `functions/api/player-context.js` endpoint calls providers from Cloudflare P
 
 Optional sources:
 
-- **The Odds API** for international bookmaker quotes: create a free key at https://the-odds-api.com/. Its Starter plan currently includes 500 credits/month. MatchMind requests European 1X2 and totals markets; one uncached request costs 2 credits and the shared response is cached at Cloudflare for 90 minutes. The provider's available bookmakers and markets can vary by match.
+- **The Odds API** for international bookmaker quotes: create a free key at https://the-odds-api.com/. Its Starter plan currently includes 500 credits/month. MatchMind requests European 1X2 and totals markets; one uncached request costs 2 credits and the shared response is cached at Cloudflare for 90 minutes. The browser reuses a match quote for at most 45 minutes. The provider's available bookmakers and markets can vary by match.
 - **football-data.org** as a Serie A calendar/results fallback: register at https://www.football-data.org/client/register. Its free tier includes Serie A fixtures and delayed scores, with 10 requests/minute. MatchMind calls it only when the primary public CSV is unavailable and caches the season response for six hours.
 - **API-Football** for reported injuries, player-season stats and recent player appearances: create a free account at https://dashboard.api-football.com/register. Its free tier currently lists 100 requests/day. This source is still needed for Serie A injury and player data; the two alternatives above do not replace it.
 
