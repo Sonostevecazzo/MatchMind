@@ -359,6 +359,14 @@ function normalizeOddsBookmakers(event) {
   }).filter(bookmaker => bookmaker.bets.length);
 }
 
+function oddsEventUpdatedAt(event) {
+  const updates = (Array.isArray(event && event.bookmakers) ? event.bookmakers : [])
+    .flatMap(bookmaker => Array.isArray(bookmaker && bookmaker.markets) ? bookmaker.markets : [])
+    .map(market => market && market.last_update)
+    .filter(value => typeof value === "string" && Number.isFinite(Date.parse(value)));
+  return updates.sort().at(-1) || null;
+}
+
 async function getFootballDataFixtures(context, season) {
   const key = context.env && context.env.FOOTBALL_DATA_API_KEY;
   if (!key) {
@@ -505,7 +513,7 @@ async function getMatchContext(context, season, requestUrl) {
     oddsAvailable,
     oddsSource,
     oddsError,
-    oddsUpdatedAt: oddsEvent ? oddsEvent.last_update || null : (oddsRecord && oddsRecord.update || null),
+    oddsUpdatedAt: oddsEvent ? oddsEventUpdatedAt(oddsEvent) : (oddsRecord && oddsRecord.update || null),
     bookmakers,
     message: !fixtureFound ? "Partita non trovata nelle fonti quote o API-Football per questa data." : null
   });
