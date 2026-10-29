@@ -286,7 +286,7 @@ async function getMatchContext(context, season, requestUrl) {
   const oddsResult = results[1];
   let injuries = injuryResult.status === "fulfilled" ? normalizeInjuries(injuryResult.value) : [];
   const actionable = injuries.filter(hasAbsenceStatus);
-  const selected = actionable.slice(0, 6);
+  const selected = actionable.slice(0, 4);
   let injuryStatsComplete = actionable.length <= selected.length && selected.every(item => item.playerId != null);
   const statResults = await Promise.allSettled(selected.map(item => providerGet("players", {
     id: item.playerId,
@@ -323,6 +323,8 @@ async function getMatchContext(context, season, requestUrl) {
     type: "match",
     fixtureFound: true,
     fixtureId,
+    homeTeamId: fixture.teams && fixture.teams.home ? Number(fixture.teams.home.id) : null,
+    awayTeamId: fixture.teams && fixture.teams.away ? Number(fixture.teams.away.id) : null,
     season,
     source: "API-Football",
     updatedAt: new Date().toISOString(),
