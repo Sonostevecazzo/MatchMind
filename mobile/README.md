@@ -17,16 +17,27 @@ After the first deploy, Cloudflare assigns a `*.pages.dev` address; no purchased
 
 The deployed app is public: anyone who has its Pages URL can open and use it. Do not enter or store sensitive personal data in the app. Match forecasts are calculated locally in the browser.
 
-### Enable injuries and player form (optional, free API tier)
+### Enable additional data sources with free tiers
 
-The `functions/api/player-context.js` endpoint keeps the API key on Cloudflare's server; it is never inserted into browser code. To enable it:
-1. Create a free API-Football account at https://dashboard.api-football.com/register. The provider currently lists a free tier of 100 requests/day without requiring a credit card.
-2. Copy your API key from its dashboard.
-3. In Cloudflare **Settings → Variables and Secrets**, add `API_FOOTBALL_KEY` as an **encrypted secret**. Do not place it in `index.html`, GitHub source, or a public setting.
-4. Save all variables/secrets and trigger a new deployment. Without the API key, the base app still works and the player module explains why its data is disabled.
-5. Open your `*.pages.dev` URL on your phone.
+The `functions/api/player-context.js` endpoint calls providers from Cloudflare Pages Functions. Keys stay on the server and are never inserted into browser code or sent back to the page.
 
-The API-Football free tier is limited to 100 requests per day. Injury data is cached at the edge for up to four hours and player searches/form for up to six hours. A recent-form lookup can use multiple provider calls; avoid repeatedly forcing the same search. Coverage and update timing are controlled by the provider.
+Optional sources:
+
+- **The Odds API** for international bookmaker quotes: create a free key at https://the-odds-api.com/. Its Starter plan currently includes 500 credits/month. MatchMind requests European 1X2 and totals markets; one uncached request costs 2 credits and the shared response is cached at Cloudflare for 90 minutes. The provider's available bookmakers and markets can vary by match.
+- **football-data.org** as a Serie A calendar/results fallback: register at https://www.football-data.org/client/register. Its free tier includes Serie A fixtures and delayed scores, with 10 requests/minute. MatchMind calls it only when the primary public CSV is unavailable and caches the season response for six hours.
+- **API-Football** for reported injuries, player-season stats and recent player appearances: create a free account at https://dashboard.api-football.com/register. Its free tier currently lists 100 requests/day. This source is still needed for Serie A injury and player data; the two alternatives above do not replace it.
+
+In Cloudflare **Settings → Variables and Secrets**, add each available key as an **encrypted secret**:
+
+| Secret name | Enables |
+| --- | --- |
+| `THE_ODDS_API_KEY` | International pre-match quotes and the odds comparison |
+| `FOOTBALL_DATA_API_KEY` | Backup Serie A fixtures/results when the primary CSV source is down |
+| `API_FOOTBALL_KEY` | Injuries, player statistics and recent appearances; also a fallback for quotes |
+
+After saving secrets, trigger a new deployment. You can add only the providers you want; the base app and existing public CSV source continue to work without them. Open the app's **Giocatori** or **Dati e copertura** section to see which connections are active.
+
+API-Football injury data is cached at the edge for up to four hours and player searches/form for up to six hours. A recent-form lookup can use multiple provider calls; avoid repeatedly forcing the same search. Provider quotas, coverage and update timing can change.
 
 The app service worker does not cache the HTML page. Data already stored by the browser remains on that phone; lock your device.
 
@@ -37,7 +48,9 @@ The app service worker does not cache the HTML page. Data already stored by the 
 - Forecasts: transparent Poisson baseline calculated locally; 1X2, BTTS and Over/Under 1.5/2.5/3.5.
 - A local browser cache keeps the last loaded match data available if the data provider is temporarily unavailable after the app is open.
 - Optional API-Football module: upcoming reported injuries/questionable players and a search for Serie A player season statistics plus up to five recent appearances (minutes, goals, assists, rating and other fields where the provider supplies them).
-- Player context requires the server-side encrypted `API_FOOTBALL_KEY` secret. It is intentionally not bundled in the PWA. If that secret is missing or the free quota is exhausted, the app explains the limitation rather than inventing values.
+- Optional The Odds API module: European bookmaker prices for supported 1X2 and main totals markets; the app compares them to MatchMind's estimate. The free monthly credit quota can be exhausted.
+- Optional football-data.org fallback: current season fixtures and delayed results when the primary public CSV source cannot be reached.
+- Missing keys, provider quota exhaustion and absent coverage are shown rather than filled with invented data. Secrets remain server-side.
 - The no-key public CSV source does not provide dependable player-level form, injuries, lineups or current pre-match odds.
 - Data providers can change URLs, coverage or availability; the app handles missing historical seasons gracefully.
 - This is a research aid, not a trained AI model or a validated profitable betting system. Source attribution is shown in the app.
