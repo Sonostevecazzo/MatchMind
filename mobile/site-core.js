@@ -91,13 +91,14 @@
   const isFavorite=name=>{try{return (JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]')).includes(name);}catch{return false;}};
   function toggleFavorite(name){const list=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]');}catch{return [];}})();const next=list.includes(name)?list.filter(x=>x!==name):[...list,name];saveCache('matchmind-favorites-v1',next);return next.includes(name);}
   function nav(active){
-    const links=[['index.html','⌂','Home','home'],['matches.html','▤','Partite','matches'],['explore.html','◈','Esplora','explore'],['analysis-lab.html','◉','MatchMind','mind']];
+    const links=[['index.html','⌂','Home','home'],['matches.html','▤','Partite','matches'],['explore.html','◈','Squadre','explore'],['analysis-lab.html','◉','Analisi','mind'],['data.html','⌁','Dati','explore']];
     const mobile=links.map(([href,icon,label,key])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'"><span class="nav-icon">'+icon+'</span><span>'+label+'</span></a>').join('');
     const desktop=links.map(([href,,label,key])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'">'+label+'</a>').join('');
     return '<header class="site-header"><a class="brand-link" href="index.html"><span class="brand-mark">M</span><span><b>MatchMind</b><small>FOOTBALL INTELLIGENCE</small></span></a><nav class="desktop-nav">'+desktop+'</nav><button class="refresh-data" id="installApp" type="button" hidden>＋ <span>Installa</span></button><button class="refresh-data" id="globalRefresh" type="button">↻ <span>Aggiorna</span></button></header><nav class="mobile-nav" aria-label="Navigazione principale">'+mobile+'</nav>';
   }
   function mountShell(active,title,subtitle){
     const header=$('siteHeader');if(header)header.innerHTML=nav(active);
+    if(document.body.dataset.page==='match'){const back=document.createElement('button');back.className='detail-back';back.type='button';back.innerHTML='‹ <span>Torna alle partite</span>';back.addEventListener('click',()=>{if(history.length>1)history.back();else location.href='matches.html';});const main=document.querySelector('.page-wrap');if(main)main.prepend(back);}
     const titleEl=$('pageTitle');if(titleEl)titleEl.textContent=title||'MatchMind';
     const subEl=$('pageSubtitle');if(subEl)subEl.textContent=subtitle||'';
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);location.reload();}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
