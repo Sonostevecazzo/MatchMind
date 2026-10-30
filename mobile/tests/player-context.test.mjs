@@ -39,76 +39,86 @@ test("status route does not consume an upstream API request", async (t) => {
 
 test("status reports each configured provider without exposing key values", async () => {
   const response = await onRequestGet(makeContext("https://matchmind.test/api/player-context?type=status", {
-    THE_ODDS_API_KEY: "odds-secret",
+    ODDSPAPI_API_KEY: "odds-secret",
     FOOTBALL_DATA_API_KEY: "football-secret"
   }));
   const body = await response.json();
   assert.equal(body.configured, true);
-  assert.deepEqual(body.providers, { apiFootball: false, oddsApi: true, footballData: true });
+  assert.deepEqual(body.providers, { apiFootball: false, sisalOdds: true, footballData: true });
   assert.equal(JSON.stringify(body).includes("secret"), false);
 });
 
-test("The Odds API quotes work without API-Football and stay server-side", async (t) => {
+test("Sisal OddsPapi quotes work without API-Football and stay server-side", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
   const date = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   globalThis.fetch = async (url) => {
     const parsed = new URL(String(url));
-    assert.equal(parsed.hostname, "api.the-odds-api.com");
+    assert.equal(parsed.hostname, "api.oddspapi.io");
     assert.equal(parsed.searchParams.get("apiKey"), "odds-secret");
-    assert.equal(parsed.searchParams.get("markets"), "h2h,totals");
-    return apiResponse([{
-      id: "fixture-1",
-      home_team: "Bologna",
-      away_team: "Monza",
-      commence_time: date + "T12:00:00Z",
-      bookmakers: [{
-        key: "sample_book",
-        title: "Sample Book",
-        markets: [
-          { key: "h2h", last_update: "2026-10-29T10:00:00Z", outcomes: [
-            { name: "Bologna", price: 1.8 }, { name: "Draw", price: 3.5 }, { name: "Monza", price: 4.5 }
-          ] },
-          { key: "totals", outcomes: [
-            { name: "Over", point: 2.5, price: 1.9 }, { name: "Under", point: 2.5, price: 1.95 }
-          ] }
-        ]
-      }]
+    if (parsed.pathname.endsWith("/fixtures")) {
+      assert.equal(parsed.searchParams.get("bookmakers"), "sisal.it");
+      return apiResponse([{
+        fixtureId: "fixture-1", participant1Name: "Bologna", participant2Name: "Monza",
+        startTime: date + "T12:00:00Z", updatedAt: "2026-10-29T10:00:00Z"
+      }]);
+    }
+    if (parsed.pathname.endsWith("/markets")) return apiResponse([{
+      marketId: "1", marketName: "Full Time Result", marketType: "1x2", period: "Full Time",
+      outcomes: [
+        { outcomeId: "1", outcomeName: "Bologna" },
+        { outcomeId: "2", outcomeName: "Draw" },
+        { outcomeId: "3", outcomeName: "Monza" }
+      ]
     }]);
+    if (parsed.pathname.endsWith("/odds")) {
+      assert.equal(parsed.searchParams.get("bookmakers"), "sisal.it");
+      return apiResponse({
+        updatedAt: "2026-10-29T10:00:00Z",
+        bookmakerOdds: { "sisal.it": { bookmakerIsActive: true, markets: { "1": {
+          marketActive: true, outcomes: {
+            "1": { players: { "0": { price: 1.8, active: true, bookmakerChangedAt: "2026-10-29T10:00:00Z" } } },
+            "2": { players: { "0": { price: 3.5, active: true, bookmakerChangedAt: "2026-10-29T10:00:00Z" } } },
+            "3": { players: { "0": { price: 4.5, active: true, bookmakerChangedAt: "2026-10-29T10:00:00Z" } } }
+          }
+        } } }
+      });
+    }
+    throw new Error("unexpected provider endpoint " + parsed.pathname);
   };
 
   const response = await onRequestGet(makeContext(
     "https://matchmind.test/api/player-context?type=match&date=" + date + "&home=Bologna&away=Monza",
-    { THE_ODDS_API_KEY: "odds-secret" }
+    { ODDSPAPI_API_KEY: "odds-secret" }
   ));
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.fixtureFound, true);
   assert.equal(body.oddsAvailable, true);
-  assert.equal(body.oddsSource, "The Odds API");
+  assert.equal(body.oddsSource, "Sisal · OddsPapi");
   assert.equal(body.oddsUpdatedAt, "2026-10-29T10:00:00Z");
   assert.equal(body.injuriesAvailable, false);
-  assert.equal(body.bookmakers[0].bets[0].name, "Match Winner");
+  assert.equal(body.bookmakers[0].name, "Sisal");
   assert.deepEqual(body.bookmakers[0].bets[0].values.map(value => value.value), ["Home", "Draw", "Away"]);
   assert.equal(JSON.stringify(body).includes("odds-secret"), false);
 });
 
-test("The Odds API quota errors produce a clear message without leaking the key", async (t) => {
+test("Sisal quota errors are reported without leaking the key", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
   const date = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  globalThis.fetch = async () => apiResponse({ error_code: "OUT_OF_USAGE_CREDITS" }, 401);
+  globalThis.fetch = async () => apiResponse({ error: { code: "REQUEST_LIMIT_EXCEEDED" } }, 429);
   const response = await onRequestGet(makeContext(
     "https://matchmind.test/api/player-context?type=match&date=" + date + "&home=Bologna&away=Monza",
-    { THE_ODDS_API_KEY: "odds-secret" }
+    { ODDSPAPI_API_KEY: "odds-secret" }
   ));
   const body = await response.json();
   assert.equal(response.status, 200);
-  assert.match(body.oddsError, /Crediti mensili/);
+  assert.match(body.oddsError, /quota mensile/i);
   assert.equal(JSON.stringify(body).includes("odds-secret"), false);
 });
 
-test("API-Football remains a working source for injuries and quote fallback", async (t) => {
+test("API-Football still supplies injuries without providing fallback quotes", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
   const date = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -122,14 +132,6 @@ test("API-Football remains a working source for injuries and quote fallback", as
       }] });
     }
     if (parsed.pathname.endsWith("/injuries")) return apiResponse({ errors: [], response: [] });
-    if (parsed.pathname.endsWith("/odds")) {
-      return apiResponse({ errors: [], response: [{
-        update: "2026-10-29T10:00:00Z",
-        bookmakers: [{ name: "Sample Book", bets: [{ name: "Match Winner", values: [
-          { value: "Home", odd: "1.8" }, { value: "Draw", odd: "3.5" }, { value: "Away", odd: "4.5" }
-        ] }] }]
-      }] });
-    }
     throw new Error("unexpected provider endpoint " + parsed.pathname);
   };
 
@@ -143,9 +145,7 @@ test("API-Football remains a working source for injuries and quote fallback", as
   assert.equal(body.homeTeamId, 10);
   assert.equal(body.awayTeamId, 11);
   assert.equal(body.injuriesAvailable, true);
-  assert.equal(body.injuryStatsComplete, true);
-  assert.equal(body.oddsAvailable, true);
-  assert.equal(body.oddsSource, "API-Football");
+  assert.equal(body.oddsAvailable, false);
   assert.equal(JSON.stringify(body).includes("football-secret"), false);
 });
 
