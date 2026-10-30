@@ -23,7 +23,7 @@ The `functions/api/player-context.js` endpoint calls providers from Cloudflare P
 
 Optional sources:
 
-- **The Odds API** for international bookmaker quotes: create a free key at https://the-odds-api.com/. Its Starter plan currently includes 500 credits/month. MatchMind requests European 1X2 and totals markets; one uncached request costs 2 credits and the shared response is cached at Cloudflare for 90 minutes. The browser reuses a match quote for at most 45 minutes. The provider's available bookmakers and markets can vary by match.
+- **OddsPapi** for Sisal IT quotes only: create a key at https://oddspapi.io/sportsbooks/sisal-it. MatchMind requests only `sisal.it` and supported 1X2, BTTS and Over/Under 2.5 markets. Fixture data are cached for 30 minutes, market metadata for 24 hours, and match quotes for 15 minutes; the browser reuses match context for 5 minutes.
 - **football-data.org** as a Serie A calendar/results fallback: register at https://www.football-data.org/client/register. Its free tier includes Serie A fixtures and delayed scores, with 10 requests/minute. MatchMind calls it only when the primary public CSV is unavailable and caches the season response for six hours.
 - **API-Football** for reported injuries, player-season stats and recent player appearances: create a free account at https://dashboard.api-football.com/register. Its free tier currently lists 100 requests/day. This source is still needed for Serie A injury and player data; the two alternatives above do not replace it.
 
@@ -31,9 +31,9 @@ In Cloudflare **Settings → Variables and Secrets**, add each available key as 
 
 | Secret name | Enables |
 | --- | --- |
-| `THE_ODDS_API_KEY` | International pre-match quotes and the odds comparison |
+| `ODDSPAPI_API_KEY` | Sisal IT pre-match quotes and the odds comparison |
 | `FOOTBALL_DATA_API_KEY` | Backup Serie A fixtures/results when the primary CSV source is down |
-| `API_FOOTBALL_KEY` | Injuries, player statistics and recent appearances; also a fallback for quotes |
+| `API_FOOTBALL_KEY` | Injuries, player statistics and recent appearances |
 
 After saving secrets, trigger a new deployment. You can add only the providers you want; the base app and existing public CSV source continue to work without them. Open the app's **Giocatori** or **Dati e copertura** section to see which connections are active.
 
@@ -48,7 +48,7 @@ The app service worker does not cache the HTML page. Data already stored by the 
 - Forecasts: transparent Poisson baseline calculated locally; 1X2, BTTS and Over/Under 1.5/2.5/3.5.
 - A local browser cache keeps the last loaded match data available if the data provider is temporarily unavailable after the app is open.
 - Optional API-Football module: upcoming reported injuries/questionable players and a search for Serie A player season statistics plus up to five recent appearances (minutes, goals, assists, rating and other fields where the provider supplies them).
-- Optional The Odds API module: European bookmaker prices for supported 1X2 and main totals markets; the app compares them to MatchMind's estimate. The free monthly credit quota can be exhausted.
+- Optional OddsPapi module: Sisal IT prices for supported 1X2, BTTS and Over/Under 2.5 markets; the app compares them to MatchMind's estimate. Quotes are available only when Sisal offers the market for that fixture.
 - Optional football-data.org fallback: current season fixtures and delayed results when the primary public CSV source cannot be reached.
 - Potential value is flagged at estimated EV of at least +5% only when the historical sample is sufficient. If injury data is missing or incomplete, the comparison uses the base historical estimate, labels it as such and asks the user to verify lineups; no partial injury adjustment is applied.
 - Missing keys, provider quota exhaustion and absent coverage are shown rather than filled with invented data. Secrets remain server-side.
@@ -76,7 +76,7 @@ The shared navigation and data layer lives in `site-core.js`; page-specific rend
 
 ## Quote comparison and betting-analysis guidance
 
-The match detail page can compare available pre-match 1X2 and goal-total prices from configured bookmakers. It displays the provider and last update, uses the best returned price per outcome, removes the market overround by normalizing implied probabilities, and compares those values with the local Poisson estimate.
+The match detail page can compare available pre-match 1X2, BTTS and Over/Under 2.5 prices from Sisal IT only. It displays the provider and last update, uses the Sisal price returned for each outcome, removes the market overround by normalizing implied probabilities, and compares those values with the local Poisson estimate.
 
 A possible positive-value signal is shown only when:
 - the historical sample meets the existing minimum threshold;
