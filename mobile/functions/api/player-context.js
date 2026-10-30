@@ -98,6 +98,40 @@ async function providerGet(path, params, context, ttlSeconds) {
   return payload;
 }
 
+async function readApiFootballUsage(context) {
+  // API-Football /status is quota-free. Cache briefly to avoid needless polling.
+  try {
+    const payload = await providerGet("status", {}, context, 60);
+    const account = payload && payload.response ? payload.response : {};
+    const requests = account.requests || {};
+    const current = Number(requests.current);
+    const limitDay = Number(requests.limit_day);
+    if (!Number.isFinite(current) || !Number.isFinite(limitDay) || limitDay < 0 || current < 0) {
+      return { available: false, reason: "invalid_status_response" };
+    }
+    const subscription = account.subscription || {};
+    return {
+      available: true,
+      current,
+      limitDay,
+      remaining: Math.max(0, limitDay - current),
+      usedPercent: limitDay > 0 ? Math.min(100, Math.round((current / limitDay) * 1000) / 10) : null,
+      plan: typeof subscription.plan === "string" ? subscription.plan.slice(0, 40) : null,
+      subscriptionActive: typeof subscription.active === "boolean" ? subscription.active : null,
+      checkedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    const reason = error && typeof error.message === "string" ? error.message : "";
+    return {
+      available: false,
+      reason: reason === "provider_invalid_key" ? "invalid_key"
+        : reason === "provider_rate_limited" ? "rate_limited"
+        : reason === "provider_unreachable" ? "unreachable"
+        : "provider_error"
+    };
+  }
+}
+
 async function cachedExternalJson(context, providerName, url, cacheId, headers, ttlSeconds) {
   let cache;
   let cacheKey;
@@ -732,19 +766,23 @@ export async function onRequestGet(context) {
   const season = currentSeason();
   const type = requestUrl.searchParams.get("type") || "";
   try {
-    if (type === "status") return responseJson({
-      configured: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured,
-      type: "status",
-      source: apiFootballConfigured ? "API-Football" : (sisalOddsConfigured ? "Sisal · OddsPapi" : (footballDataConfigured ? "football-data.org" : null)),
-      season,
-      freePlanRequestsPerDay: apiFootballConfigured ? 100 : null,
-      error: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured ? null : "API_FOOTBALL_KEY, ODDSPAPI_API_KEY o FOOTBALL_DATA_API_KEY non configurata.",
-      providers: {
-        apiFootball: apiFootballConfigured,
-        sisalOdds: sisalOddsConfigured,
-        footballData: footballDataConfigured
-      }
-    });
+    if (type === "status") {
+      const apiFootballUsage = apiFootballConfigured ? await readApiFootballUsage(context) : null;
+      return responseJson({
+        configured: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured,
+        type: "status",
+        source: apiFootballConfigured ? "API-Football" : (sisalOddsConfigured ? "Sisal · OddsPapi" : (footballDataConfigured ? "football-data.org" : null)),
+        season,
+        freePlanRequestsPerDay: apiFootballConfigured ? 100 : null,
+        apiFootballUsage,
+        error: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured ? null : "API_FOOTBALL_KEY, ODDSPAPI_API_KEY o FOOTBALL_DATA_API_KEY non configurata.",
+        providers: {
+          apiFootball: apiFootballConfigured,
+          sisalOdds: sisalOddsConfigured,
+          footballData: footballDataConfigured
+        }
+      });
+    }
     if (type === "fixtures") {
       const requestedSeason = Number(requestUrl.searchParams.get("season") || season);
       if (!Number.isInteger(requestedSeason) || requestedSeason < 1990 || requestedSeason > season + 1) {
