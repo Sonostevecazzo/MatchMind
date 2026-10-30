@@ -96,7 +96,7 @@
   '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri il centro MatchMind Intelligence ↗</a></div>';
   if(!done){
    try{
-    const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),45*60*1000);
+    const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
     const injuries=(c.injuries||[]).filter(i=>MM().norm(i.team)===MM().norm(match.home)||MM().norm(i.team)===MM().norm(match.away));
     const markets=(c.bookmakers||[]).flatMap(book=>(book.bets||[]).map(market=>({book:book.name,market:market.name,values:market.values||[]})));
     const bestByMarket=new Map();
@@ -168,7 +168,7 @@
   });
  }
  async function initData(){
-  const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const r=await fetch('./api/player-context?type=status',{headers:{Accept:'application/json'},cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · dati pubblici',true],['Probabilità statistiche','Modello Poisson locale',true],['Quote bookmaker','The Odds API / API-Football',!!(p.oddsApi||p.apiFootball)],['Infortuni e forma giocatori','API-Football',!!p.apiFootball],['Calendario di riserva','football-data.org',!!p.footballData]];target.innerHTML=rows.map(([a,b,on])=>'<div class="data-row"><span>'+a+'</span><b style="color:'+(on?'var(--mint)':'var(--amber)')+'">'+(on?'Disponibile':'Non configurato / non verificato')+'</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">'+b+'</small>').join('');}catch(e){target.innerHTML='<div class="notice warning">Non riesco a verificare i provider. Il calendario e il modello locale possono comunque funzionare.</div>';}}
+  const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const r=await fetch('./api/player-context?type=status',{headers:{Accept:'application/json'},cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · dati pubblici',true],['Probabilità statistiche','Modello Poisson locale',true],['Quote bookmaker','Sisal IT · OddsPapi',!!p.sisalOdds],['Infortuni e forma giocatori','API-Football',!!p.apiFootball],['Calendario di riserva','football-data.org',!!p.footballData]];target.innerHTML=rows.map(([a,b,on])=>'<div class="data-row"><span>'+a+'</span><b style="color:'+(on?'var(--mint)':'var(--amber)')+'">'+(on?'Disponibile':'Non configurato / non verificato')+'</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">'+b+'</small>').join('');}catch(e){target.innerHTML='<div class="notice warning">Non riesco a verificare i provider. Il calendario e il modello locale possono comunque funzionare.</div>';}}
   $('checkProviders').addEventListener('click',check);await check();
  }
  async function initMind(d){const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);$('mindFixtures').innerHTML=rows.length?rows.map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile per l’analisi.</div>';}
