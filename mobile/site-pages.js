@@ -107,6 +107,11 @@
         group='1X2';value=v.value;
         label=value==='Home'?'1 · '+match.home:value==='Away'?'2 · '+match.away:'X · Pareggio';
         modelProb={Home:p.home,Draw:p.draw,Away:p.away}[value];
+      }else if(m.market==='Both Teams To Score'){
+        const answer=String(v.value||'').trim().toLowerCase();
+        if(!['yes','no','gol','no gol','both teams to score','both teams not to score'].includes(answer))return;
+        group='BTTS';value=['yes','gol','both teams to score'].includes(answer)?'yes':'no';
+        label=value==='yes'?'Gol':'No Gol';modelProb=value==='yes'?p.btts:1-p.btts;
       }else if(m.market==='Goals Over/Under'){
         const matchTotal=String(v.value||'').match(/^(Over|Under)\s+(\d+(?:[.,]\d+)?)$/i);
         if(!matchTotal)return;
