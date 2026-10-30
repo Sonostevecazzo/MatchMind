@@ -58,7 +58,7 @@
   const hasScore=m=>m&&m.hg!==null&&m.hg!==undefined&&m.ag!==null&&m.ag!==undefined&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag));
   const dateLabel=m=>{if(!m||!m.date)return 'Data da definire';const d=new Date(m.date+'T12:00:00');return d.toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long'})+(m.time?' · '+m.time:'');};
   const shortDate=m=>{if(!m||!m.date)return 'Data da definire';return new Date(m.date+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});};
-  const upcoming=m=>!hasScore(m)&&m.date&&(m.date+'T'+(m.time||'23:59')+':00')>=new Date().toISOString().slice(0,16);
+  const upcoming=m=>{if(hasScore(m)||!m.date)return false;const time=/^\\d{1,2}:\\d{2}$/.test(String(m.time||''))?m.time:'23:59';const kickoff=new Date(m.date+'T'+time+':00').getTime();return Number.isFinite(kickoff)&&kickoff>=Date.now();};
   const matchUrl=m=>'match.html?date='+encodeURIComponent(m.date)+'&home='+encodeURIComponent(m.home)+'&away='+encodeURIComponent(m.away);
   const teamUrl=name=>'team.html?team='+encodeURIComponent(name);
   const playerUrl='players.html';
@@ -85,7 +85,7 @@
     const links=[['index.html','⌂','Home','home'],['matches.html','▤','Partite','matches'],['explore.html','◈','Esplora','explore'],['analysis-lab.html','◉','MatchMind','mind']];
     const mobile=links.map(([href,icon,label,key])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'"><span class="nav-icon">'+icon+'</span><span>'+label+'</span></a>').join('');
     const desktop=links.map(([href,,label,key])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'">'+label+'</a>').join('');
-    return '<header class="site-header"><a class="brand-link" href="index.html"><span class="brand-mark">M</span><span><b>MatchMind</b><small>FOOTBALL INTELLIGENCE</small></span></a><nav class="desktop-nav">'+desktop+'</nav><button class="refresh-data" id="globalRefresh" type="button">↻ <span>Aggiorna</span></button></header><nav class="mobile-nav" aria-label="Navigazione principale">'+mobile+'</nav>';
+    return '<header class="site-header"><a class="brand-link" href="index.html"><span class="brand-mark">M</span><span><b>MatchMind</b><small>FOOTBALL INTELLIGENCE</small></span></a><nav class="desktop-nav">'+desktop+'</nav><button class="refresh-data" id="installApp" type="button" hidden>＋ <span>Installa</span></button><button class="refresh-data" id="globalRefresh" type="button">↻ <span>Aggiorna</span></button></header><nav class="mobile-nav" aria-label="Navigazione principale">'+mobile+'</nav>';
   }
   function mountShell(active,title,subtitle){
     const header=$('siteHeader');if(header)header.innerHTML=nav(active);
@@ -93,6 +93,6 @@
     const subEl=$('pageSubtitle');if(subEl)subEl.textContent=subtitle||'';
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);document.dispatchEvent(new CustomEvent('matchmind:data-refreshed'));}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
   }
-  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';mountShell(page==='home'?'home':page==='matches'?'matches':page==='explore'?'explore':page==='mind'?'mind':'',document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');});
+  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=page==='home'?'home':(page==='matches'||page==='match')?'matches':page==='mind'?'mind':(page==='explore'||page==='league'||page==='team'||page==='players'||page==='data')?'explore':'';mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});});
   window.MM={$,esc,norm,loadData,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,teamStats,probs,playerApi,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
 })();
