@@ -133,14 +133,14 @@
     }).sort((a,b)=>b.ev-a.ev);
     const bestValue=candidates[0]||null;
     const marketPrices=allQuotes.filter(q=>q.group==='1X2');
-    const outcomeRows=marketPrices;
+    const outcomeRows=allQuotes;
     const oddsFresh=c.oddsUpdatedAt&&Number.isFinite(Date.parse(c.oddsUpdatedAt))?Math.max(0,(Date.now()-Date.parse(c.oddsUpdatedAt))/60000):null;
     const valueHtml=bestValue&&f.sampleEnough&&oddsFresh!==null&&oddsFresh<=120&&bestValue.ev>0.03
       ?'<div class="notice good"><b>Possibile valore da verificare: '+esc(bestValue.label)+'</b><br>Quota migliore '+fmt(bestValue.odd,2)+' presso '+esc(bestValue.book)+'. Probabilità modello '+fmt(bestValue.modelProb*100,1)+'%, probabilità implicita depurata dal margine '+fmt(bestValue.marketProb*100,1)+'%, vantaggio stimato '+fmt(bestValue.edge*100,1)+' punti. EV teorico '+(bestValue.ev>=0?'+':'')+fmt(bestValue.ev*100,1)+'% per unità puntata.<br><small>Segnale esplorativo: non è una raccomandazione né una garanzia di profitto.</small></div>'
       :'<div class="notice warning">'+(!bestValue?'Non ci sono mercati con almeno due esiti confrontabili.':!f.sampleEnough?'Nessun suggerimento: campione storico insufficiente.':oddsFresh===null?'Nessun suggerimento: manca l’orario di aggiornamento delle quote.':oddsFresh>120?'Nessun suggerimento: quote troppo vecchie.':'Nessun mercato supera la soglia prudenziale di valore atteso (+3%).')+'</div>';
     const odds=c.oddsAvailable
-      ?'<div class="data-row"><span>Fonte quote</span><b>'+esc(c.oddsSource||'Provider')+'</b></div><div class="data-row"><span>Ultimo aggiornamento quote</span><b>'+(c.oddsUpdatedAt?new Date(c.oddsUpdatedAt).toLocaleString('it-IT'):'Non comunicato')+'</b></div><div class="data-row"><span>Bookmaker / esiti</span><b>'+new Set(outcomeRows.map(v=>v.book)).size+' / '+outcomeRows.length+'</b></div>'+valueHtml+
-       (marketPrices.length?'<div class="eyebrow" style="margin-top:12px">MIGLIORI QUOTE 1X2 RILEVATE</div>'+marketPrices.map(v=>'<div class="data-row"><span>'+(v.value==='Home'?'1 · '+esc(match.home):v.value==='Away'?'2 · '+esc(match.away):'X · Pareggio')+'</span><b>'+fmt(v.odd,2)+' · '+esc(v.book)+'</b></div>').join(''):'')
+      ?'<div class="data-row"><span>Fonte quote</span><b>'+esc(c.oddsSource||'Provider')+'</b></div><div class="data-row"><span>Ultimo aggiornamento quote</span><b>'+(c.oddsUpdatedAt?new Date(c.oddsUpdatedAt).toLocaleString('it-IT'):'Non comunicato')+'</b></div><div class="data-row"><span>Bookmaker / quote</span><b>'+new Set(outcomeRows.map(v=>v.book)).size+' / '+outcomeRows.length+'</b></div>'+valueHtml+
+       (outcomeRows.length?'<div class="eyebrow" style="margin-top:12px">QUOTE SISAL RILEVATE</div>'+outcomeRows.map(v=>'<div class="data-row"><span>'+(v.group==='1X2'?(v.value==='Home'?'1 · '+esc(match.home):v.value==='Away'?'2 · '+esc(match.away):'X · Pareggio'):esc(v.label))+'</span><b>'+fmt(v.odd,2)+' · '+esc(v.book)+'</b></div>').join(''):'')
       :'<div class="notice warning">Quote non disponibili: '+esc(c.oddsError||'la fonte non ha restituito mercati per questa partita')+'</div>';
     const abs=injuries.length?injuries.map(i=>'<div class="data-row"><span>'+esc(i.name)+' · '+esc(i.team)+'</span><b>'+esc(i.status||'Segnalazione')+'</b></div>').join(''):'<div class="notice">Nessuna indisponibilità riportata dalla fonte. Non equivale alla conferma di una formazione completa.</div>';
     const modelMap={Home:p.home,Draw:p.draw,Away:p.away};
