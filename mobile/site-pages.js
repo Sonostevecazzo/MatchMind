@@ -98,18 +98,41 @@
    try{
     const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),45*60*1000);
     const injuries=(c.injuries||[]).filter(i=>MM().norm(i.team)===MM().norm(match.home)||MM().norm(i.team)===MM().norm(match.away));
-    const markets=(c.bookmakers||[]).flatMap(book=> (book.bets||[]).map(market=>({book:book.name,market:market.name,values:market.values||[]})));
-    const outcomeRows=markets.filter(m=>m.market==='Match Winner').flatMap(m=>m.values.map(v=>({book:m.book,value:v.value,odd:Number(v.odd)}))).filter(v=>Number.isFinite(v.odd)&&v.odd>1);
-    const bestOdds={};outcomeRows.forEach(v=>{const k=v.value;if(!bestOdds[k]||v.odd>bestOdds[k].odd)bestOdds[k]=v;});
-    const marketPrices=Object.entries(bestOdds).map(([value,v])=>({value,odd:v.odd,book:v.book,raw:1/v.odd}));
-    const margin=marketPrices.reduce((sum,v)=>sum+v.raw,0);
-    const modelMap={Home:p.home,Draw:p.draw,Away:p.away};
-    const candidates=marketPrices.map(v=>({...v,marketProb:v.raw/margin,modelProb:modelMap[v.value],edge:modelMap[v.value]-v.raw/margin,ev:modelMap[v.value]*v.odd-1})).filter(v=>Number.isFinite(v.modelProb)).sort((a,b)=>b.ev-a.ev);
+    const markets=(c.bookmakers||[]).flatMap(book=>(book.bets||[]).map(market=>({book:book.name,market:market.name,values:market.values||[]})));
+    const bestByMarket=new Map();
+    markets.forEach(m=>m.values.forEach(v=>{
+      const odd=Number(v.odd);if(!Number.isFinite(odd)||odd<=1)return;
+      let group='',value='',label='',modelProb=null;
+      if(m.market==='Match Winner'){
+        group='1X2';value=v.value;
+        label=value==='Home'?'1 · '+match.home:value==='Away'?'2 · '+match.away:'X · Pareggio';
+        modelProb={Home:p.home,Draw:p.draw,Away:p.away}[value];
+      }else if(m.market==='Goals Over/Under'){
+        const matchTotal=String(v.value||'').match(/^(Over|Under)\\s+(\\d+(?:[.,]\\d+)?)$/i);
+        if(!matchTotal)return;
+        const side=matchTotal[1].toLowerCase(),line=Number(matchTotal[2].replace(',','.'));
+        const key=line===1.5?'o15':line===2.5?'o25':line===3.5?'o35':null;
+        if(!key)return;
+        group='TOTAL '+line;value=side;label=(side==='over'?'Over ':'Under ')+line.toFixed(1).replace('.',',');
+        const over=p[key];modelProb=side==='over'?over:1-over;
+      }else return;
+      if(!Number.isFinite(modelProb))return;
+      const k=group+'|'+value,old=bestByMarket.get(k);
+      if(!old||odd>old.odd)bestByMarket.set(k,{group,value,label,odd,book:m.book,modelProb});
+    }));
+    const allQuotes=[...bestByMarket.values()];
+    const grouped=new Map();allQuotes.forEach(q=>{if(!grouped.has(q.group))grouped.set(q.group,[]);grouped.get(q.group).push(q);});
+    const candidates=[...grouped.values()].filter(group=>group.length>=2).flatMap(group=>{
+      const margin=group.reduce((sum,q)=>sum+1/q.odd,0);
+      return group.map(q=>({...q,marketProb:(1/q.odd)/margin,edge:q.modelProb-(1/q.odd)/margin,ev:q.modelProb*q.odd-1}));
+    }).sort((a,b)=>b.ev-a.ev);
     const bestValue=candidates[0]||null;
+    const marketPrices=allQuotes.filter(q=>q.group==='1X2');
+    const outcomeRows=marketPrices;
     const oddsFresh=c.oddsUpdatedAt&&Number.isFinite(Date.parse(c.oddsUpdatedAt))?Math.max(0,(Date.now()-Date.parse(c.oddsUpdatedAt))/60000):null;
     const valueHtml=bestValue&&f.sampleEnough&&oddsFresh!==null&&oddsFresh<=120&&bestValue.ev>0.03
-      ?'<div class="notice good"><b>Possibile valore da verificare: '+(bestValue.value==='Home'?'1 · '+esc(match.home):bestValue.value==='Away'?'2 · '+esc(match.away):'X · Pareggio')+'</b><br>Quota migliore '+fmt(bestValue.odd,2)+' presso '+esc(bestValue.book)+'. Probabilità modello '+fmt(bestValue.modelProb*100,1)+'%, probabilità implicita depurata dal margine '+fmt(bestValue.marketProb*100,1)+'%, vantaggio stimato '+fmt(bestValue.edge*100,1)+' punti. EV teorico '+(bestValue.ev>=0?'+':'')+fmt(bestValue.ev*100,1)+'% per unità puntata.<br><small>È un segnale statistico da verificare, non una raccomandazione né una garanzia di profitto.</small></div>'
-      :'<div class="notice warning">'+(!bestValue?'Non ci sono quote 1X2 confrontabili per questa partita.':!f.sampleEnough?'Non propongo un possibile valore: il campione storico del modello è insufficiente.':oddsFresh===null?'Non propongo un possibile valore: manca l’orario di aggiornamento delle quote.':oddsFresh>120?'Quote troppo vecchie per un confronto affidabile.':'Nessun esito supera la soglia prudenziale di valore atteso.')+'</div>';
+      ?'<div class="notice good"><b>Possibile valore da verificare: '+esc(bestValue.label)+'</b><br>Quota migliore '+fmt(bestValue.odd,2)+' presso '+esc(bestValue.book)+'. Probabilità modello '+fmt(bestValue.modelProb*100,1)+'%, probabilità implicita depurata dal margine '+fmt(bestValue.marketProb*100,1)+'%, vantaggio stimato '+fmt(bestValue.edge*100,1)+' punti. EV teorico '+(bestValue.ev>=0?'+':'')+fmt(bestValue.ev*100,1)+'% per unità puntata.<br><small>Segnale esplorativo: non è una raccomandazione né una garanzia di profitto.</small></div>'
+      :'<div class="notice warning">'+(!bestValue?'Non ci sono mercati con almeno due esiti confrontabili.':!f.sampleEnough?'Nessun suggerimento: campione storico insufficiente.':oddsFresh===null?'Nessun suggerimento: manca l’orario di aggiornamento delle quote.':oddsFresh>120?'Nessun suggerimento: quote troppo vecchie.':'Nessun mercato supera la soglia prudenziale di valore atteso (+3%).')+'</div>';
     const odds=c.oddsAvailable
       ?'<div class="data-row"><span>Fonte quote</span><b>'+esc(c.oddsSource||'Provider')+'</b></div><div class="data-row"><span>Ultimo aggiornamento quote</span><b>'+(c.oddsUpdatedAt?new Date(c.oddsUpdatedAt).toLocaleString('it-IT'):'Non comunicato')+'</b></div><div class="data-row"><span>Bookmaker / esiti</span><b>'+new Set(outcomeRows.map(v=>v.book)).size+' / '+outcomeRows.length+'</b></div>'+valueHtml+
        (marketPrices.length?'<div class="eyebrow" style="margin-top:12px">MIGLIORI QUOTE 1X2 RILEVATE</div>'+marketPrices.map(v=>'<div class="data-row"><span>'+(v.value==='Home'?'1 · '+esc(match.home):v.value==='Away'?'2 · '+esc(match.away):'X · Pareggio')+'</span><b>'+fmt(v.odd,2)+' · '+esc(v.book)+'</b></div>').join(''):'')
