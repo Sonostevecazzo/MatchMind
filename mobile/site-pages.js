@@ -11,7 +11,7 @@
    '<div class="fixture-main"><div class="fixture-teams"><a class="fixture-team" href="'+MM().teamUrl(m.home)+'">'+MM().badge(m.home)+'<b>'+esc(m.home)+'</b></a><a class="fixture-team" href="'+MM().teamUrl(m.away)+'">'+MM().badge(m.away)+'<b>'+esc(m.away)+'</b></a></div><div class="fixture-score '+(done?'':'pending')+'">'+score+'</div></div>'+
    '<div class="fixture-foot"><span>'+esc(MM().shortDate(m))+(m.time?' · '+esc(m.time):'')+'</span><a href="'+MM().matchUrl(m)+'">Dettaglio e analisi ↗</a></div></article>';
  };
- const groupCards=rows=>MM().groupByDate(rows).map(([date,list])=>'<div class="date-divider"><span>'+esc(MM().shortDate(list[0]))+'</span><small>'+list.length+' '+(list.length===1?'partita':'partite')+'</small></div>'+list.map(matchCard).join('')).join('');
+ const groupCards=(rows,reverse=false)=>{const groups=MM().groupByDate(rows);if(reverse)groups.reverse();return groups.map(([date,list])=>'<div class="date-divider"><span>'+esc(MM().shortDate(list[0]))+'</span><small>'+list.length+' '+(list.length===1?'partita':'partite')+'</small></div>'+list.map(matchCard).join('')).join('');};
  function setStatus(message,kind=''){const e=$('globalStatus');if(e)e.innerHTML=(kind?'<i class="status-dot '+kind+'"></i>':'')+esc(message);}
  async function initHome(d){
    const current=d.matches,played=current.filter(MM().hasScore),next=current.filter(MM().upcoming).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
@@ -28,7 +28,7 @@
    round.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+n+'">Giornata '+n+'</option>').join('');
    const render=()=>{
     const q=MM().norm($('matchSearch').value),date=$('matchDate').value,gw=round.value,season=$('matchSeason').value;
-    let base=season==='previous'?d.history.filter(m=>MM().hasScore(m)&&m.date.slice(0,4)===String(MM().seasonStart()-1)):d.matches;
+    const previousStart=MM().seasonStart()-1,previousFrom=previousStart+'-07-01',previousTo=MM().seasonStart()+'-07-01';let base=season==='previous'?d.history.filter(m=>MM().hasScore(m)&&m.date>=previousFrom&&m.date<previousTo):d.matches;
     activeMatches=base.filter(m=>(!q||MM().norm(m.home).includes(q)||MM().norm(m.away).includes(q))&&(!date||m.date===date)&&(!gw||Number(m.round)===Number(gw)));
     if(matchFilter==='upcoming')activeMatches=activeMatches.filter(MM().upcoming);
     else if(matchFilter==='finished')activeMatches=activeMatches.filter(MM().hasScore);
@@ -38,7 +38,7 @@
     const target=$('matchList'),visible=activeMatches.slice(0,shownLimit);
     $('matchListTitle').textContent={upcoming:'In programma',finished:'Risultati',stale:'Da aggiornare',all:'Tutte le partite'}[matchFilter];
     $('matchListSummary').textContent=activeMatches.length+' partite trovate · '+(season==='previous'?'stagione precedente':'stagione corrente');
-    target.innerHTML=visible.length?groupCards(visible):'<div class="empty-state">Nessuna partita corrisponde ai filtri selezionati.</div>';
+    target.innerHTML=visible.length?groupCards(visible,matchFilter==='finished'||matchFilter==='stale'):'<div class="empty-state">Nessuna partita corrisponde ai filtri selezionati.</div>';
     $('moreMatches').hidden=activeMatches.length<=shownLimit;
    };
    ['matchSearch','matchDate','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=45;render()}));
@@ -78,7 +78,7 @@
   $('teamContent').innerHTML='<div class="team-hero">'+MM().badge(name)+'<div style="flex:1"><h1>'+esc(name)+'</h1><p>Serie A · profilo squadra</p></div><button id="teamFavorite">'+(MM().isFavorite(name)?'★ Seguita':'☆ Segui')+'</button></div>'+
   '<div class="stat-strip"><div class="stat-cell"><b>'+played.length+'</b><span>RISULTATI NEL FEED</span></div><div class="stat-cell"><b>'+wins+'V · '+draws+'N</b><span>ULTIME CINQUE</span></div><div class="stat-cell"><b>'+up.length+'</b><span>PROSSIME PARTITE</span></div></div>'+
   '<section class="section"><div class="section-head"><div><h2>Forma recente</h2><p>Ultimi risultati storici disponibili.</p></div></div><div class="panel panel-pad"><div class="form-row">'+(form.form.length?form.form.map(x=>'<span class="form-chip '+x+'">'+x+'</span>').join(''):'<span class="notice">Forma non disponibile</span>')+'</div><div class="data-row"><span>Gol segnati medi (ultime 10)</span><b>'+fmt(form.for,2)+'</b></div><div class="data-row"><span>Gol subiti medi (ultime 10)</span><b>'+fmt(form.against,2)+'</b></div></div></section>'+
-  '<section class="section"><div class="section-head"><div><h2>Calendario e risultati</h2><p>Partite in cui compare '+esc(name)+'.</p></div></div><div class="fixture-list">'+groupCards(rows.slice(-25).reverse())+'</div></section>';
+  '<section class="section"><div class="section-head"><div><h2>Calendario e risultati</h2><p>Partite in cui compare '+esc(name)+'.</p></div></div><div class="fixture-list">'+groupCards(rows.slice(-25),true)+'</div></section>';
   $('teamFavorite').addEventListener('click',()=>{const on=MM().toggleFavorite(name);$('teamFavorite').textContent=on?'★ Seguita':'☆ Segui';});
  }
  function probCard(label,value){const pct=value*100;return '<div class="prob"><span>'+label+'</span><b>'+fmt(pct,1)+'%</b><div class="track"><i style="width:'+Math.max(0,Math.min(100,pct))+'%"></i></div></div>';}
