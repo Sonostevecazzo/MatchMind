@@ -108,7 +108,7 @@
         label=value==='Home'?'1 · '+match.home:value==='Away'?'2 · '+match.away:'X · Pareggio';
         modelProb={Home:p.home,Draw:p.draw,Away:p.away}[value];
       }else if(m.market==='Goals Over/Under'){
-        const matchTotal=String(v.value||'').match(/^(Over|Under)\\s+(\\d+(?:[.,]\\d+)?)$/i);
+        const matchTotal=String(v.value||'').match(/^(Over|Under)\s+(\d+(?:[.,]\d+)?)$/i);
         if(!matchTotal)return;
         const side=matchTotal[1].toLowerCase(),line=Number(matchTotal[2].replace(',','.'));
         const key=line===1.5?'o15':line===2.5?'o25':line===3.5?'o35':null;
