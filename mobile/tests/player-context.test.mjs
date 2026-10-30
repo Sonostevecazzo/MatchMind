@@ -112,7 +112,7 @@ test("Sisal OddsPapi quotes work without API-Football and stay server-side", asy
             "2": { players: { "0": { price: 3.5, active: true, bookmakerChangedAt: "2026-10-29T10:00:00Z" } } },
             "3": { players: { "0": { price: 4.5, active: true, bookmakerChangedAt: "2026-10-29T10:00:00Z" } } }
           }
-        } } }
+        } } } }
       });
     }
     throw new Error("unexpected provider endpoint " + parsed.pathname);
