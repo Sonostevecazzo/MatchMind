@@ -98,9 +98,25 @@
    try{
     const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),45*60*1000);
     const injuries=(c.injuries||[]).filter(i=>MM().norm(i.team)===MM().norm(match.home)||MM().norm(i.team)===MM().norm(match.away));
-    const odds=c.oddsAvailable?'<div class="data-row"><span>Quote prematch</span><b>Disponibili · '+esc(c.oddsSource||'provider')+'</b></div>':'<div class="notice warning">Quote non disponibili: '+esc(c.oddsError||'la fonte non ha restituito mercati per questa partita')+'</div>';
+    const markets=(c.bookmakers||[]).flatMap(book=> (book.bets||[]).map(market=>({book:book.name,market:market.name,values:market.values||[]})));
+    const outcomeRows=markets.filter(m=>m.market==='Match Winner').flatMap(m=>m.values.map(v=>({book:m.book,value:v.value,odd:Number(v.odd)}))).filter(v=>Number.isFinite(v.odd)&&v.odd>1);
+    const bestOdds={};outcomeRows.forEach(v=>{const k=v.value;if(!bestOdds[k]||v.odd>bestOdds[k].odd)bestOdds[k]=v;});
+    const marketPrices=Object.entries(bestOdds).map(([value,v])=>({value,odd:v.odd,book:v.book,raw:1/v.odd}));
+    const margin=marketPrices.reduce((sum,v)=>sum+v.raw,0);
+    const modelMap={Home:p.home,Draw:p.draw,Away:p.away};
+    const candidates=marketPrices.map(v=>({...v,marketProb:v.raw/margin,modelProb:modelMap[v.value],edge:modelMap[v.value]-v.raw/margin,ev:modelMap[v.value]*v.odd-1})).filter(v=>Number.isFinite(v.modelProb)).sort((a,b)=>b.ev-a.ev);
+    const bestValue=candidates[0]||null;
+    const oddsFresh=c.oddsUpdatedAt&&Number.isFinite(Date.parse(c.oddsUpdatedAt))?Math.max(0,(Date.now()-Date.parse(c.oddsUpdatedAt))/60000):null;
+    const valueHtml=bestValue&&f.sampleEnough&&oddsFresh!==null&&oddsFresh<=120&&bestValue.ev>0.03
+      ?'<div class="notice good"><b>Possibile valore da verificare: '+(bestValue.value==='Home'?'1 · '+esc(match.home):bestValue.value==='Away'?'2 · '+esc(match.away):'X · Pareggio')+'</b><br>Quota migliore '+fmt(bestValue.odd,2)+' presso '+esc(bestValue.book)+'. Probabilità modello '+fmt(bestValue.modelProb*100,1)+'%, probabilità implicita depurata dal margine '+fmt(bestValue.marketProb*100,1)+'%, vantaggio stimato '+fmt(bestValue.edge*100,1)+' punti. EV teorico '+(bestValue.ev>=0?'+':'')+fmt(bestValue.ev*100,1)+'% per unità puntata.<br><small>È un segnale statistico da verificare, non una raccomandazione né una garanzia di profitto.</small></div>'
+      :'<div class="notice warning">'+(!bestValue?'Non ci sono quote 1X2 confrontabili per questa partita.':!f.sampleEnough?'Non propongo un possibile valore: il campione storico del modello è insufficiente.':oddsFresh===null?'Non propongo un possibile valore: manca l’orario di aggiornamento delle quote.':oddsFresh>120?'Quote troppo vecchie per un confronto affidabile.':'Nessun esito supera la soglia prudenziale di valore atteso.')+'</div>';
+    const odds=c.oddsAvailable
+      ?'<div class="data-row"><span>Fonte quote</span><b>'+esc(c.oddsSource||'Provider')+'</b></div><div class="data-row"><span>Ultimo aggiornamento quote</span><b>'+(c.oddsUpdatedAt?new Date(c.oddsUpdatedAt).toLocaleString('it-IT'):'Non comunicato')+'</b></div><div class="data-row"><span>Bookmaker / esiti</span><b>'+new Set(outcomeRows.map(v=>v.book)).size+' / '+outcomeRows.length+'</b></div>'+valueHtml+
+       (marketPrices.length?'<div class="eyebrow" style="margin-top:12px">MIGLIORI QUOTE 1X2 RILEVATE</div>'+marketPrices.map(v=>'<div class="data-row"><span>'+(v.value==='Home'?'1 · '+esc(match.home):v.value==='Away'?'2 · '+esc(match.away):'X · Pareggio')+'</span><b>'+fmt(v.odd,2)+' · '+esc(v.book)+'</b></div>').join(''):'')
+      :'<div class="notice warning">Quote non disponibili: '+esc(c.oddsError||'la fonte non ha restituito mercati per questa partita')+'</div>';
     const abs=injuries.length?injuries.map(i=>'<div class="data-row"><span>'+esc(i.name)+' · '+esc(i.team)+'</span><b>'+esc(i.status||'Segnalazione')+'</b></div>').join(''):'<div class="notice">Nessuna indisponibilità riportata dalla fonte. Non equivale alla conferma di una formazione completa.</div>';
-    $('matchContext').innerHTML='<div class="eyebrow">CONTESTO PREMATCH</div>'+odds+'<div style="margin-top:10px" class="eyebrow">INDISPONIBILI</div>'+abs;
+    const suggestion='<div class="section-head" style="margin-top:13px"><div><h2>Come leggere la scommessa</h2><p>Probabilità e convenienza sono due cose diverse.</p></div></div><div class="notice">L’esito più probabile è quello con la percentuale del modello più alta ('+(Object.entries(modelMap).sort((a,b)=>b[1]-a[1])[0][0]==='Home'?'1 · '+esc(match.home):Object.entries(modelMap).sort((a,b)=>b[1]-a[1])[0][0]==='Away'?'2 · '+esc(match.away):'X · Pareggio')+'). Non significa che sia conveniente: per valutare il prezzo confronta probabilità modello e quota. Se non emerge un margine positivo e dati aggiornati, la scelta razionale è non puntare.</div>';
+    $('matchContext').innerHTML='<div class="eyebrow">QUOTE E VALORE ATTESO</div>'+odds+suggestion+'<div style="margin-top:14px" class="eyebrow">INDISPONIBILI · API-FOOTBALL</div>'+abs+'<div class="notice" style="margin-top:10px">Fonti prematch: '+esc(c.oddsSource||'quote non disponibili')+' per le quote; API-Football per fixture e indisponibili. Le quote possono cambiare rapidamente.</div>';
    }catch(e){$('matchContext').innerHTML='<div class="notice warning">Dati prematch non disponibili: '+esc(e.message)+'</div>';}
   }
  }
