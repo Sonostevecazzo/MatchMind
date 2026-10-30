@@ -8,6 +8,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./matchmind-refresh.css">
+<link rel="stylesheet" href="./matchmind-league.css">
 <title>MatchMind · Football Intelligence</title>
 <style>
 :root{color-scheme:dark;--bg:#0c1014;--panel:#151a20;--panel2:#1d252d;--line:#2a343e;--text:#f3f5f4;--muted:#97a4aa;--accent:#c8f36f;--blue:#9fbaff;--amber:#ffd17a;--red:#ff929b;--radius:16px}
@@ -137,36 +138,91 @@ footer a{color:var(--blue)}
 <body>
 <div class="app">
 <header><div class="brand"><div class="logo">M</div><div><div class="eyebrow">Football intelligence</div><h1>MatchMind</h1></div></div><div class="head-actions"><button class="iconbtn" id="installBtn" aria-label="Installa app" title="Installa app" hidden>＋</button><button class="iconbtn" id="refreshBtn" aria-label="Aggiorna dati" title="Aggiorna dati">↻</button></div></header>
-<nav class="primary-nav" aria-label="Navigazione MatchMind"><a class="active" href="#matchesSection"><span class="nav-icon">⚽</span> Partite <span class="nav-meta">Serie A</span></a><a href="#analysisSection">Analisi</a><a href="#playerContextSection">Giocatori</a><a href="#coverageSection">Dati</a></nav>
-<section class="hero"><div><div class="eyebrow"><span class="country-mark">IT</span>Campionato · Italia</div><h2>Serie A <span>· Partite e analisi</span></h2><p>Calendario, forma e probabilità statistiche. Apri una partita per consultare i mercati di MatchMind.</p><div class="source-line"><span class="dot" id="sourceDot"></span><span id="sourceStatus">Pronto per caricare i dati</span></div></div></section>
-<div class="stats"><div class="stat"><div class="num" id="statMatches">—</div><div class="label">Storico</div></div><div class="stat"><div class="num" id="statUpcoming">—</div><div class="label">In calendario</div></div><div class="stat"><div class="num" id="statUpdated">—</div><div class="label">Aggiornamento</div></div></div>
-<main class="dashboard-layout">
-<div class="main-column">
-<section class="section" id="matchesSection"><div class="section-head"><div><h3>Partite</h3><p>Seleziona un evento per aprire l’analisi.</p></div><button id="syncBtn" class="primary">Aggiorna</button></div>
-<div class="filters"><div class="field"><label for="seasonSelect">Stagione</label><select id="seasonSelect"><option value="current">Stagione corrente</option><option value="previous">Stagione precedente</option></select></div><div class="field"><label for="searchTeam">Cerca squadra</label><input id="searchTeam" type="search" placeholder="Squadra…"></div></div>
-<div class="tabs" role="tablist"><button class="active" data-filter="upcoming">In programma</button><button data-filter="all">Tutte</button><button data-filter="finished">Risultati</button></div>
-<div id="matches" class="matches"><div class="empty"><span class="loading"></span><br>Caricamento partite…</div></div></section>
-<section class="section" id="analysisSection"><div class="section-head"><div><h3>Analisi partita</h3><p>Seleziona un evento per calcolare le probabilità.</p></div></div><div class="card"><div class="card-body"><div class="empty"><strong>Nessuna partita selezionata</strong>Scegli una partita e premi “Analizza”.</div></div></div></section>
-</div>
-<aside class="side-column">
-<section class="section" id="coverageSection"><div class="section-head"><div><h3>Dati e copertura</h3><p>Fonti disponibili per l’analisi.</p></div></div><div class="card"><div class="card-body" id="sourceDetails"><div class="data-row"><span>Calendario e risultati</span><strong>open-matchday</strong></div><div class="data-row"><span>Probabilità</span><strong>Modello locale</strong></div><div class="notice info">Quote e indisponibili prematch arrivano da API-Football se il secret è configurato. Copertura bookmaker e dati giocatore possono variare.</div></div></div></section>
-<section class="section" id="playerContextSection"><div class="section-head"><div><h3>Giocatori</h3><p>Indisponibili e forma recente.</p></div><button id="loadInjuries">↻</button></div>
-<div class="card"><div class="card-body">
-<div id="playerContextStatus" class="notice info">Verifica collegamento dati in corso…</div>
-<div class="subhead" style="margin-top:12px">Indisponibili e in dubbio</div>
-<div id="injuryResults" class="injury-list"><div class="small">Premi “Infortuni” per caricare le segnalazioni disponibili.</div></div>
-<div class="subhead">Forma del giocatore</div>
-<p class="small">Presenze, minuti, gol e assist recenti. I dati dipendono dalla copertura API.</p>
-<div class="player-lookup"><div class="field"><label for="playerSearch">Nome giocatore</label><input id="playerSearch" type="search" minlength="4" autocomplete="off" placeholder="Es. Lautaro Martínez"></div><button id="searchPlayers" class="primary">Cerca</button></div>
-<div id="playerResults" class="player-results"><div class="small">Inserisci almeno 4 caratteri e premi Cerca.</div></div>
-<div id="playerFormResult" class="player-results"></div>
-</div></div>
+<nav class="primary-nav league-tabs" aria-label="Navigazione campionato">
+  <a class="active" href="#overviewPanel"><span>Panoramica</span></a>
+  <a href="#matchesSection"><span>Partite</span></a>
+  <a href="#standingsPanel"><span>Classifica</span></a>
+  <a href="#statsPanel"><span>Statistiche</span></a>
+  <a href="#playerContextSection"><span>Giocatori</span></a>
+</nav>
+
+<section class="league-hero" id="overviewPanel">
+  <div class="league-mark">A</div>
+  <div class="league-heading">
+    <div class="league-kicker"><span class="italy-flag"></span> ITALIA <span class="league-dot">•</span> CAMPIONATO</div>
+    <div class="league-title-row"><h2>Serie A</h2><span class="season-pill" id="seasonLabel">Stagione corrente</span></div>
+    <p class="league-subtitle">Calendario, risultati e statistiche del campionato italiano</p>
+    <div class="source-line"><span class="dot" id="sourceDot"></span><span id="sourceStatus">Pronto per caricare i dati</span></div>
+  </div>
+  <button class="follow-league" type="button" aria-label="Campionato selezionato">★ <span>Segui</span></button>
 </section>
-</aside>
-</main>
-<footer>MatchMind · Probabilità statistiche, non certezze. Quote bookmaker e copertura dipendono dalle fonti.<br>Dati: <a href="https://github.com/oladeeayo/open-matchday" target="_blank" rel="noopener">open-matchday</a> e <a href="https://github.com/qhtexas/football-dataset" target="_blank" rel="noopener">football-dataset</a>.</footer>
+
+<div class="stats league-stats">
+  <div class="stat"><div class="num" id="statMatches">—</div><div class="label">Partite archiviate</div></div>
+  <div class="stat"><div class="num" id="statUpcoming">—</div><div class="label">In programma</div></div>
+  <div class="stat"><div class="num" id="statUpdated">—</div><div class="label">Ultimo aggiornamento</div></div>
 </div>
-<nav class="bottom-nav" aria-label="Navigazione rapida"><a href="#matchesSection"><span>⚽</span>Partite</a><a href="#analysisSection"><span>◉</span>Analisi</a><a href="#playerContextSection"><span>♙</span>Giocatori</a><a href="#coverageSection"><span>ⓘ</span>Dati</a></nav>
+
+<section class="overview-grid">
+  <article class="overview-card featured-card">
+    <div class="overview-card-head"><div><span class="eyebrow">PROSSIMO APPUNTAMENTO</span><h3>La prossima partita</h3></div><span class="live-indicator">SERIE A</span></div>
+    <div id="featuredMatch" class="featured-match"><div class="empty">Caricamento calendario…</div></div>
+  </article>
+  <article class="overview-card mini-table-card">
+    <div class="overview-card-head"><div><span class="eyebrow">STAGIONE CORRENTE</span><h3>Classifica</h3></div><a href="#standingsPanel" class="text-link">Vedi tutto ↗</a></div>
+    <div id="standingsPreview"><div class="empty">La classifica sarà calcolata dai risultati disponibili.</div></div>
+  </article>
+</section>
+
+<main class="dashboard-layout">
+  <div class="main-column">
+    <section class="section match-section" id="matchesSection">
+      <div class="section-head"><div><span class="eyebrow">CALENDARIO UFFICIALE DISPONIBILE</span><h3>Partite</h3><p>Consulta gli incontri e apri l'analisi statistica MatchMind.</p></div><button id="syncBtn" class="sync-button" aria-label="Aggiorna calendario">↻ Aggiorna</button></div>
+      <div class="filters">
+        <div class="field"><label for="seasonSelect">Stagione</label><select id="seasonSelect"><option value="current">Stagione corrente</option><option value="previous">Stagione precedente</option></select></div>
+        <div class="field"><label for="searchTeam">Cerca squadra</label><input id="searchTeam" type="search" placeholder="Nome squadra…"></div>
+      </div>
+      <div class="tabs match-filters" role="tablist" aria-label="Filtra partite"><button class="active" data-filter="upcoming">In programma</button><button data-filter="finished">Risultati</button><button data-filter="all">Tutte</button></div>
+      <div class="match-view-row"><span class="view-label">VISUALIZZA</span><div class="view-toggle"><button class="active" data-match-view="date">Per data</button><button data-match-view="teams">Per squadra</button></div></div>
+      <div id="teamQuickFilters" class="team-quick-filters hidden"></div>
+      <div id="matches" class="matches"><div class="empty"><span class="loading"></span><br>Caricamento partite…</div></div>
+    </section>
+
+    <section class="section" id="analysisSection">
+      <div class="section-head"><div><span class="eyebrow">MATCHMIND INTELLIGENCE</span><h3>Analisi partita</h3><p>Seleziona un evento per calcolare le probabilità.</p></div></div>
+      <div class="card"><div class="card-body"><div class="empty"><strong>Nessuna partita selezionata</strong>Scegli una partita e premi “Analizza”.</div></div></div>
+    </section>
+
+    <section class="section data-page" id="standingsPanel">
+      <div class="section-head"><div><span class="eyebrow">SERIE A · CLASSIFICA</span><h3>Classifica completa</h3><p>Elaborata dai risultati della stagione disponibili nell'archivio MatchMind.</p></div></div>
+      <div class="card"><div class="card-body" id="standingsTable"><div class="empty">In attesa dei risultati.</div></div></div>
+    </section>
+
+    <section class="section data-page" id="statsPanel">
+      <div class="section-head"><div><span class="eyebrow">NUMERI DEL CAMPIONATO</span><h3>Statistiche</h3><p>Indicatori calcolati sulle partite concluse presenti nei dati caricati.</p></div></div>
+      <div id="leagueStats" class="league-stats-grid"><div class="empty">In attesa dei risultati.</div></div>
+    </section>
+  </div>
+
+  <aside class="side-column">
+    <section class="section" id="playerContextSection">
+      <div class="section-head"><div><span class="eyebrow">FOCUS GIOCATORI</span><h3>Giocatori</h3><p>Indisponibili e forma recente.</p></div><button id="loadInjuries" class="iconbtn" aria-label="Aggiorna infortuni">↻</button></div>
+      <div class="card"><div class="card-body">
+        <div id="playerContextStatus" class="notice info">Verifica collegamento dati in corso…</div>
+        <div class="subhead" style="margin-top:12px">Indisponibili e in dubbio</div>
+        <div id="injuryResults" class="injury-list"><div class="small">Premi aggiorna per caricare le segnalazioni disponibili.</div></div>
+        <div class="subhead">Forma del giocatore</div><p class="small">Presenze, minuti, gol e assist recenti. I dati dipendono dalla copertura API.</p>
+        <div class="player-lookup"><div class="field"><label for="playerSearch">Nome giocatore</label><input id="playerSearch" type="search" minlength="4" autocomplete="off" placeholder="Es. Lautaro Martínez"></div><button id="searchPlayers" class="primary">Cerca</button></div>
+        <div id="playerResults" class="player-results"><div class="small">Inserisci almeno 4 caratteri e premi Cerca.</div></div>
+        <div id="playerFormResult" class="player-results"></div>
+      </div></div>
+    </section>
+    <section class="section" id="coverageSection"><div class="section-head"><div><span class="eyebrow">TRASPARENZA DATI</span><h3>Fonti e copertura</h3><p>Informazioni utilizzate nelle analisi.</p></div></div><div class="card"><div class="card-body" id="sourceDetails"><div class="data-row"><span>Calendario e risultati</span><strong>open-matchday</strong></div><div class="data-row"><span>Probabilità</span><strong>Modello locale</strong></div><div class="notice info">Quote e indisponibili prematch arrivano da API-Football se il secret è configurato. La copertura può variare.</div></div></div></section>
+  </aside>
+</main>
+<footer>MatchMind · Le statistiche sono elaborate sui dati disponibili; eventuali rinvii o dati mancanti possono influire sulla classifica.<br>Dati: <a href="https://github.com/oladeeayo/open-matchday" target="_blank" rel="noopener">open-matchday</a> e <a href="https://github.com/qhtexas/football-dataset" target="_blank" rel="noopener">football-dataset</a>.</footer>
+</div>
+<nav class="bottom-nav" aria-label="Navigazione rapida"><a href="#matchesSection"><span>⚽</span>Partite</a><a href="#standingsPanel"><span>▤</span>Classifica</a><a href="#analysisSection"><span>◉</span>Analisi</a><a href="#playerContextSection"><span>♙</span>Giocatori</a></nav>
 <script>
 const $=id=>document.getElementById(id);
 const BASE='https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/ITA_1_serie-a/';
@@ -236,5 +292,74 @@ $('syncBtn').addEventListener('click',()=>loadData(true));$('refreshBtn').addEve
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').hidden=false});$('installBtn').addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installBtn').hidden=true});
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 loadCache();loadData();
+
+</script>
+<script>
+/* Sofascore-inspired league presentation. Match and model data remain unchanged. */
+let matchMindView = 'date';
+function teamInitials(name){return String(name||'?').trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase().slice(0,2)}
+function teamTint(name){let n=0;for(const c of String(name||''))n=(n*31+c.charCodeAt(0))|0;return 'hsl('+Math.abs(n)%360+' 36% 25%)'}
+function teamBadge(name){return '<span class="team-crest" style="--crest:'+teamTint(name)+'">'+esc(teamInitials(name))+'</span>'}
+function currentSeasonRows(){return matches.filter(hasScore)}
+function buildLeagueTable(rows){
+  const map=new Map();
+  const get=(name)=>{const k=norm(name);if(!map.has(k))map.set(k,{name,played:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});return map.get(k)};
+  rows.forEach(m=>{if(!hasScore(m))return;const h=get(m.home),a=get(m.away),hg=Number(m.hg),ag=Number(m.ag);h.played++;a.played++;h.gf+=hg;h.ga+=ag;a.gf+=ag;a.ga+=hg;if(hg>ag){h.w++;a.l++;h.pts+=3}else if(hg<ag){a.w++;h.l++;a.pts+=3}else{h.d++;a.d++;h.pts++;a.pts++}});
+  return [...map.values()].map(t=>({...t,gd:t.gf-t.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.name.localeCompare(b.name,'it'));
+}
+function standingsMarkup(table,compact=false){
+  if(!table.length)return '<div class="empty"><strong>Classifica non ancora disponibile</strong>Servono risultati conclusi della stagione selezionata.</div>';
+  const rows=(compact?table.slice(0,5):table).map((t,i)=>'<tr><td class="rank-cell">'+(i+1)+'</td><td class="club-cell">'+teamBadge(t.name)+'<strong>'+esc(t.name)+'</strong></td><td>'+t.played+'</td><td>'+t.w+'</td><td>'+t.d+'</td><td>'+t.l+'</td><td>'+t.gd+'</td><td class="points-cell">'+t.pts+'</td></tr>').join('');
+  return '<div class="table-scroll"><table class="league-table"><thead><tr><th>#</th><th>Squadra</th><th>PG</th><th>V</th><th>N</th><th>P</th><th>DR</th><th>PT</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+(compact?'':'<p class="data-disclaimer">PG partite giocate · DR differenza reti · PT punti. Classifica ricostruita dai soli risultati caricati, non feed ufficiale in tempo reale.</p>');
+}
+function renderLeagueOverview(){
+  const upcoming=matches.filter(m=>!hasScore(m)).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  const next=upcoming[0],featured=$('featuredMatch');
+  if(featured){
+    if(!next)featured.innerHTML='<div class="featured-empty">Nessuna prossima partita presente nel calendario caricato.</div>';
+    else featured.innerHTML='<div class="featured-date">'+esc(dateLabel(next))+'</div><div class="featured-teams"><div class="featured-team">'+teamBadge(next.home)+'<strong>'+esc(next.home)+'</strong></div><span class="versus">VS</span><div class="featured-team">'+teamBadge(next.away)+'<strong>'+esc(next.away)+'</strong></div></div><button class="primary featured-action" data-featured-analyse>Apri analisi partita ↗</button>';
+    const action=featured.querySelector('[data-featured-analyse]');if(action)action.addEventListener('click',()=>analyse(next));
+  }
+  const table=buildLeagueTable(currentSeasonRows());
+  if($('standingsPreview'))$('standingsPreview').innerHTML=standingsMarkup(table,true);
+  if($('standingsTable'))$('standingsTable').innerHTML=standingsMarkup(table,false);
+  if($('seasonLabel'))$('seasonLabel').textContent=(seasonStart())+'/'+String(seasonStart()+1).slice(-2);
+  const played=currentSeasonRows(),teams=table.length,totalGoals=played.reduce((s,m)=>s+Number(m.hg)+Number(m.ag),0);
+  const homeWins=played.filter(m=>m.hg>m.ag).length,draws=played.filter(m=>m.hg===m.ag).length,awayWins=played.filter(m=>m.hg<m.ag).length;
+  const scorers=table.slice().sort((a,b)=>b.gf-a.gf).slice(0,5);
+  if($('leagueStats'))$('leagueStats').innerHTML='<article class="metric-card"><span>Partite concluse</span><strong>'+played.length+'</strong><small>nella stagione caricata</small></article><article class="metric-card"><span>Gol totali</span><strong>'+totalGoals+'</strong><small>'+(played.length?(totalGoals/played.length).toFixed(2).replace('.',','):'—')+' per partita</small></article><article class="metric-card"><span>Squadre presenti</span><strong>'+teams+'</strong><small>con almeno un risultato</small></article><article class="metric-card"><span>Esiti</span><strong>'+homeWins+' / '+draws+' / '+awayWins+'</strong><small>vittorie casa / pareggi / trasferta</small></article><article class="metric-card wide"><span>Squadre con più gol segnati</span><div class="leaders-list">'+(scorers.length?scorers.map(t=>'<div>'+teamBadge(t.name)+'<span>'+esc(t.name)+'</span><b>'+t.gf+'</b></div>').join(''):'<small>Statistiche in attesa dei risultati.</small>')+'</div></article>';
+  const clubs=[...new Set(matches.flatMap(m=>[m.home,m.away]))].sort((a,b)=>a.localeCompare(b,'it'));
+  const quick=$('teamQuickFilters');
+  if(quick)quick.innerHTML=clubs.map(n=>'<button type="button" data-team-filter="'+esc(n)+'">'+teamBadge(n)+esc(n)+'</button>').join('');
+  quick?.querySelectorAll('[data-team-filter]').forEach(b=>b.addEventListener('click',()=>{$('searchTeam').value=b.dataset.teamFilter;renderMatches();}));
+}
+function matchCard(m){
+  const done=hasScore(m),id=matches.indexOf(m);
+  const status=done?'FT':(m.time||'ORARIO TBA');
+  const score=done?m.hg+' – '+m.ag:'– : –';
+  return '<article class="fixture-card"><div class="fixture-topline"><span class="fixture-competition"><span class="tiny-flag"></span> SERIE A</span><span class="fixture-status '+(done?'completed':'scheduled')+'">'+status+'</span></div><div class="fixture-body"><div class="fixture-clubs"><div class="fixture-club">'+teamBadge(m.home)+'<strong>'+esc(m.home)+'</strong></div><div class="fixture-club">'+teamBadge(m.away)+'<strong>'+esc(m.away)+'</strong></div></div><div class="fixture-score '+(done?'':'pending')+'">'+score+'</div></div><div class="fixture-bottom"><span>'+(m.hs!==null?'Tiri '+m.hs+' – '+(m.as??'—'):'Dati partita')+'</span><button class="analyse-button" data-analyse="'+id+'">Analizza <span>↗</span></button></div></article>';
+}
+function renderMatches(){
+  const q=norm($('searchTeam')?.value||'');
+  let rows=matches.filter(m=>!q||norm(m.home).includes(q)||norm(m.away).includes(q));
+  rows=rows.filter(m=>filter==='all'||(filter==='finished'?hasScore(m):!hasScore(m)));
+  rows.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  if(filter==='finished')rows.reverse();
+  const target=$('matches');if(!target)return;
+  if(!rows.length){target.innerHTML='<div class="empty"><strong>Nessuna partita trovata</strong>Prova a cambiare filtro o aggiorna il calendario.</div>';renderLeagueOverview();return;}
+  if(matchMindView==='teams'&&!q){
+    const clubs=[...new Set(rows.flatMap(m=>[m.home,m.away]))].sort((a,b)=>a.localeCompare(b,'it'));
+    target.innerHTML=clubs.map(club=>{const games=rows.filter(m=>norm(m.home)===norm(club)||norm(m.away)===norm(club));return '<section class="team-fixture-group"><h4>'+teamBadge(club)+esc(club)+'</h4>'+games.map(matchCard).join('')+'</section>'}).join('');
+  }else{
+    const groups=new Map();rows.forEach(m=>{const key=m.date||'Data da definire';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m)});
+    target.innerHTML=[...groups.entries()].map(([date,games])=>'<section class="date-group"><div class="date-group-title"><span>'+esc(dateLabel({...games[0],time:''}).split(' · ')[0])+'</span><small>'+games.length+' '+(games.length===1?'partita':'partite')+'</small></div>'+games.map(matchCard).join('')+'</section>').join('');
+  }
+  target.querySelectorAll('[data-analyse]').forEach(b=>b.addEventListener('click',()=>analyse(matches[Number(b.dataset.analyse)])));
+  renderLeagueOverview();
+}
+document.querySelectorAll('[data-match-view]').forEach(b=>b.addEventListener('click',()=>{matchMindView=b.dataset.matchView;document.querySelectorAll('[data-match-view]').forEach(x=>x.classList.toggle('active',x===b));$('teamQuickFilters')?.classList.toggle('hidden',matchMindView!=='teams');renderMatches();}));
+document.querySelectorAll('.league-tabs a,.bottom-nav a').forEach(a=>a.addEventListener('click',()=>{document.querySelectorAll('.league-tabs a').forEach(x=>x.classList.toggle('active',x.getAttribute('href')===a.getAttribute('href')))}));
+window.renderMatches=renderMatches;
+window.addEventListener('load',()=>{renderMatches();renderLeagueOverview();});
 </script>
 </body></html>
