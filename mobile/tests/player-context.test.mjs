@@ -25,16 +25,47 @@ test("API route fails clearly and without leaking secrets when key is missing", 
   assert.equal(body.error.includes("test-secret"), false);
 });
 
-test("status route does not consume an upstream API request", async (t) => {
+test("status route reads quota-free API-Football usage without exposing account data", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
-  globalThis.fetch = async () => { throw new Error("status must not call provider"); };
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(String(url)).pathname, "/status");
+    assert.equal(init.headers["x-apisports-key"], "test-secret");
+    return apiResponse({
+      errors: [],
+      response: {
+        account: { firstname: "Private", email: "private@example.test" },
+        subscription: { plan: "Free", active: true },
+        requests: { current: 37, limit_day: 100 }
+      }
+    });
+  };
   const response = await onRequestGet(makeContext("https://matchmind.test/api/player-context?type=status", { API_FOOTBALL_KEY: "test-secret" }));
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.configured, true);
   assert.equal(body.source, "API-Football");
   assert.equal(body.freePlanRequestsPerDay, 100);
+  assert.deepEqual({
+    available: body.apiFootballUsage.available,
+    current: body.apiFootballUsage.current,
+    limitDay: body.apiFootballUsage.limitDay,
+    remaining: body.apiFootballUsage.remaining,
+    usedPercent: body.apiFootballUsage.usedPercent,
+    plan: body.apiFootballUsage.plan,
+    subscriptionActive: body.apiFootballUsage.subscriptionActive
+  }, {
+    available: true,
+    current: 37,
+    limitDay: 100,
+    remaining: 63,
+    usedPercent: 37,
+    plan: "Free",
+    subscriptionActive: true
+  });
+  assert.equal(JSON.stringify(body).includes("test-secret"), false);
+  assert.equal(JSON.stringify(body).includes("private@example.test"), false);
+  assert.equal(JSON.stringify(body).includes("Private"), false);
 });
 
 test("status reports each configured provider without exposing key values", async () => {
