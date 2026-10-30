@@ -55,3 +55,20 @@ The app service worker does not cache the HTML page. Data already stored by the 
 - The no-key public CSV source does not provide dependable player-level form, injuries, lineups or current pre-match odds.
 - Data providers can change URLs, coverage or availability; the app handles missing historical seasons gracefully.
 - This is a research aid, not a trained AI model or a validated profitable betting system. Source attribution is shown in the app.
+
+
+## Multi-screen navigation
+
+The mobile PWA is organised into separate routes rather than one long dashboard:
+- `index.html`: home, upcoming fixtures and followed teams.
+- `matches.html`: match calendar with date, team, round and status filters.
+- `explore.html`: available competition and team directory.
+- `league.html`: Serie A standings, fixtures and season totals.
+- `team.html`: individual team profile and recent form.
+- `match.html`: match details, local statistical estimates and available prematch context.
+- `players.html`: player search and recent appearances, subject to API-Football coverage.
+- `analysis-lab.html`: dedicated MatchMind intelligence entry point.
+- `data.html`: provider status and data coverage.
+- `legacy-workbench.html`: preserved previous analysis workbench for continuity.
+
+The shared navigation and data layer lives in `site-core.js`; page-specific rendering lives in `site-pages.js`; responsive presentation lives in `site.css`. The service worker caches the independent screens and their shared assets for app-shell use. The home navigation shows only four primary destinations; contextual screens are reached from Explore, fixtures, teams or the match detail.
