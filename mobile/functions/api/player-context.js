@@ -431,9 +431,12 @@ function normalizeOddsBookmakers(event) {
           name: "Match Winner",
           values: outcomes.map(outcome => {
             const name = outcome.name || "";
-            const value = normalizeTeamName(name) === "draw" || normalizeTeamName(name) === "tie"
+            const normalized = normalizeTeamName(name);
+            const value = ["draw", "tie", "x"].includes(normalized)
               ? "Draw"
-              : (sameTeamName(name, event.home_team) ? "Home" : (sameTeamName(name, event.away_team) ? "Away" : name));
+              : (["1", "home", "hometeam"].includes(normalized) || sameTeamName(name, event.home_team)
+                ? "Home"
+                : (["2", "away", "awayteam"].includes(normalized) || sameTeamName(name, event.away_team) ? "Away" : name));
             return { value, odd: outcome.price };
           })
         });
@@ -442,8 +445,6 @@ function normalizeOddsBookmakers(event) {
           name: "Both Teams To Score",
           values: outcomes.map(outcome => ({ value: outcome.name, odd: outcome.price }))
         });
-      } else if (market.key === "btts") {
-        bets.push({ name: "Both Teams To Score", values: outcomes.map(outcome => ({ value: outcome.name, odd: outcome.price })) });
       } else if (market.key === "totals") {
         bets.push({
           name: "Goals Over/Under",
