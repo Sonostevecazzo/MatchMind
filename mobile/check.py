@@ -14,7 +14,7 @@ assert (ROOT / "sw.js").is_file()
 
 required_pages = [
     "index.html", "matches.html", "explore.html", "league.html",
-    "team.html", "match.html", "players.html", "analysis-lab.html", "data.html",
+    "team.html", "match.html", "players.html", "analysis-lab.html", "data.html", "settings.html",
 ]
 for name in required_pages:
     page = ROOT / name
@@ -46,6 +46,6 @@ subprocess.run(["node", "--test", str(ROOT / "tests" / "player-context.test.mjs"
 
 # Check the app's four main destinations and that page-specific routes are linked.
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
-for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html"]:
+for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html", "settings.html"]:
     assert route in core, f"Missing primary navigation route: {route}"
 print("MatchMind multi-screen PWA, shared scripts, service worker, middleware and player API tests passed.")
