@@ -308,6 +308,8 @@ function publicError(error) {
     provider_http_error: "API-Football ha restituito un errore.",
     provider_invalid_json: "API-Football ha restituito una risposta non leggibile.",
     provider_rejected_request: "API-Football ha rifiutato la richiesta. Verifica copertura e piano.",
+    news_unreachable: "Il servizio di notizie non è raggiungibile in questo momento.",
+    news_http_error: "Il servizio di notizie ha restituito un errore.",
     sisal_odds_invalid_key: "La chiave OddsPapi non è valida. Controlla la chiave nelle Impostazioni.",
     sisal_odds_restricted: "La chiave OddsPapi non include l'accesso alle quote Sisal. Controlla la copertura del piano.",
     sisal_odds_quota_exceeded: "La quota mensile OddsPapi è esaurita. Riprova al rinnovo o verifica il piano.",
@@ -327,6 +329,113 @@ function publicError(error) {
     the_odds_api_invalid_json: "The Odds API ha restituito dati non leggibili."
   };
   return messages[error.message] || "Errore temporaneo durante il recupero dei dati.";
+}
+
+
+function decodeXmlEntities(value) {
+  return String(value || "")
+    .replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, "$1")
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&#(\\d+);/g, (_, code) => String.fromCodePoint(parseInt(code, 10)))
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+function rssTag(item, tag) {
+  const match = item.match(new RegExp("<" + tag + "(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)</" + tag + ">", "i"));
+  return match ? decodeXmlEntities(match[1]).replace(/<[^>]*>/g, "").trim() : "";
+}
+
+async function getNewsContext(context, requestUrl) {
+  const home = (requestUrl.searchParams.get("home") || "").trim();
+  const away = (requestUrl.searchParams.get("away") || "").trim();
+  if (!home || !away || home.length > 80 || away.length > 80) {
+    return responseJson({ configured: true, type: "news", error: "Squadre non valide." }, 400);
+  }
+
+  const query = home + " " + away + " Serie A calcio";
+  const feedUrl = new URL("https://news.google.com/rss/search");
+  feedUrl.searchParams.set("q", query);
+  feedUrl.searchParams.set("hl", "it");
+  feedUrl.searchParams.set("gl", "IT");
+  feedUrl.searchParams.set("ceid", "IT:it");
+
+  let xml = "";
+  let cache;
+  let cacheKey;
+  try {
+    cache = caches.default;
+    const origin = new URL(context.request.url).origin;
+    cacheKey = new Request(new URL(CACHE_ROOT + encodeURIComponent("google-news/" + normalizeTeamName(home) + "/" + normalizeTeamName(away)), origin).toString());
+    const cached = await cache.match(cacheKey);
+    if (cached) xml = await cached.text();
+  } catch {
+    cache = null;
+    cacheKey = null;
+  }
+
+  if (!xml) {
+    let response;
+    try {
+      response = await fetch(feedUrl.toString(), {
+        headers: { Accept: "application/rss+xml, application/xml, text/xml" },
+        signal: AbortSignal.timeout(12000)
+      });
+    } catch {
+      throw new Error("news_unreachable");
+    }
+    if (!response.ok) throw new Error("news_http_error");
+    xml = await response.text();
+    if (cache && cacheKey) {
+      try {
+        await cache.put(cacheKey, new Response(xml, {
+          headers: { "Content-Type": "application/rss+xml; charset=utf-8", "Cache-Control": "public, max-age=900" }
+        }));
+      } catch {
+        // News caching is optional; a successful RSS response remains usable.
+      }
+    }
+  }
+
+  const now = Date.now();
+  const cutoff = now - 21 * 24 * 60 * 60 * 1000;
+  const articles = Array.from(xml.matchAll(/<item\\b[^>]*>([\\s\\S]*?)<\\/item>/gi), match => {
+    const item = match[1];
+    const title = rssTag(item, "title");
+    const link = rssTag(item, "link");
+    const sourceMatch = item.match(/<source\\b[^>]*>([\\s\\S]*?)<\\/source>/i);
+    const source = sourceMatch ? decodeXmlEntities(sourceMatch[1]).replace(/<[^>]*>/g, "").trim() : "Google News";
+    const publishedText = rssTag(item, "pubDate");
+    const published = Date.parse(publishedText);
+    let safeUrl = "";
+    try {
+      const parsed = new URL(link);
+      if (parsed.protocol === "https:") safeUrl = parsed.toString();
+    } catch {
+      // Ignore malformed article links.
+    }
+    return {
+      title: title.slice(0, 240),
+      url: safeUrl,
+      source: source.slice(0, 100),
+      publishedAt: Number.isFinite(published) ? new Date(published).toISOString() : null
+    };
+  }).filter(article => article.title && article.url && (!article.publishedAt || Date.parse(article.publishedAt) >= cutoff))
+    .filter((article, index, all) => all.findIndex(other => other.url === article.url) === index)
+    .slice(0, 6);
+
+  return responseJson({
+    configured: true,
+    type: "news",
+    source: "Google News RSS",
+    query,
+    updatedAt: new Date().toISOString(),
+    articles,
+    note: "Le notizie sono contesto editoriale: non vengono convertite in statistiche, assenze confermate o probabilità."
+  });
 }
 
 async function getInjuries(context, season) {
@@ -887,6 +996,7 @@ export async function onRequestGet(context) {
         }
       });
     }
+    if (type === "news") return await getNewsContext(context, requestUrl);
     if (type === "test-oddspapi") return await getOddsPapiStatus(context);
     if (type === "test-the-odds-api") return await getTheOddsApiStatus(context);
     if (type === "odds-batch") return await getTheOddsApiEvents(context);
