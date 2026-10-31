@@ -78,6 +78,26 @@ test("builds only a complete proposal that reaches the requested joint threshold
   assert.ok(result.selections.length <= fixtures.length);
 });
 
+test("keeps a recognised fixture editable when the market text is unknown", () => {
+  const parsed = bets.parseSlip(
+    "Bologna - Monza\nMercato non identificato",
+    fixtures,
+    forecastFn,
+    upcoming
+  );
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].ok, false);
+  assert.equal(parsed[0].match.home, "Bologna");
+  assert.equal(parsed[0].market, null);
+});
+
+test("supports a strict greater-than-50-percent joint target and returns quote-covered markets", () => {
+  const result = bets.buildTicket(fixtures, forecastFn, 0.55, { maxLegs: 5 });
+  assert.equal(result.available, true);
+  assert.ok(result.probability >= 0.55);
+  assert.ok(result.selections.every(item => Boolean(item.marketKey)));
+});
+
 test("does not invent a ticket when no eligible sample exists", () => {
   const result = bets.buildTicket(fixtures, () => ({ sampleEnough: false, probabilities: {} }), 0.5);
   assert.equal(result.available, false);
