@@ -235,7 +235,8 @@
       });
       $("refreshSisal").dataset.idleText = "Verifica quote Sisal";
       $("refreshSisal").addEventListener("click", () => refreshSisal(selections));
-      $("ticketResults").addEventListener("click", event => {\n        if (event.target.closest("#refreshSuggestedSisal")) refreshSisal(suggestedSelections, $("suggestedOdds"), $("refreshSuggestedSisal"));
+      $("ticketResults").addEventListener("click", event => {
+        if (event.target.closest("#refreshSuggestedSisal")) refreshSisal(suggestedSelections, $("suggestedOdds"), $("refreshSuggestedSisal"));
       });
       $("buildTicket").addEventListener("click", buildProposal);
       if ($("slipText").value.trim()) $("checkSlip").click();
