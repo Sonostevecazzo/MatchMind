@@ -283,17 +283,28 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
     if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(minPayout)||!Number.isFinite(maxPayout)||minPayout<=0||maxPayout<minPayout){result.innerHTML='<div class="notice warning">Controlla puntata e intervallo della vincita potenziale.</div>';return;}
     assistantButton.disabled=true;assistantButton.textContent='Analisi in corso…';result.innerHTML='<div class="loading-state">Controllo campioni, quote e mercati prematch…</div>';
     try{
-     const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0};
+     const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0,alternativeEvents:0};
+     let alternativeEvents=[];
+     try{
+      const batch=await MM().playerApi('type=odds-batch','the-odds-api-serie-a',5*60*1000);
+      alternativeEvents=Array.isArray(batch.events)?batch.events:[];
+      coverage.alternativeEvents=alternativeEvents.length;
+     }catch{}
      for(const match of fixtures){
       const forecast=MM().forecast(match,d.history);
       if(!forecast.sampleEnough){coverage.weakSample++;continue;}
       try{
        const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
-       const age=c.oddsUpdatedAt&&Number.isFinite(Date.parse(c.oddsUpdatedAt))?Math.max(0,(Date.now()-Date.parse(c.oddsUpdatedAt))/60000):null;
-       if(!c.oddsAvailable||!Array.isArray(c.bookmakers)||!c.bookmakers.length){coverage.missingOdds++;continue;}
-       if(age===null||age>120){coverage.staleOdds++;continue;}
+       const alternative=alternativeEvents.find(event=>event.date===match.date&&MM().norm(event.home)===MM().norm(match.home)&&MM().norm(event.away)===MM().norm(match.away));
+       const bookmakers=[
+        ...(Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'OddsPapi · Sisal',updatedAt:c.oddsUpdatedAt})):[]),
+        ...(alternative&&Array.isArray(alternative.bookmakers)?alternative.bookmakers.map(book=>({...book,source:'The Odds API',updatedAt:alternative.updatedAt})):[])
+       ];
+       if(!bookmakers.length){coverage.missingOdds++;continue;}
+       const freshBookmakers=bookmakers.filter(book=>book.updatedAt&&Number.isFinite(Date.parse(book.updatedAt))&&Math.max(0,(Date.now()-Date.parse(book.updatedAt))/60000)<=120);
+       if(!freshBookmakers.length){coverage.staleOdds++;continue;}
        const p=forecast.probabilities,matchKey=match.date+'|'+MM().norm(match.home)+'|'+MM().norm(match.away),matchLabel=match.home+' – '+match.away;
-       c.bookmakers.forEach(book=>{
+       freshBookmakers.forEach(book=>{
         (book.bets||[]).forEach(market=>{
          const marketName=String(market.name||''),mapped=(market.values||[]).map(v=>{
           const odd=Number(v.odd);if(!Number.isFinite(odd)||odd<=1)return null;
@@ -319,7 +330,7 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
           const margin=groupValues.reduce((sum,x)=>sum+1/x.odd,0);
           groupValues.forEach(x=>{
            const implied=(1/x.odd)/margin,ev=x.probability*x.odd-1,edge=x.probability-implied;
-           if(ev>0.03&&edge>0)candidates.push({matchKey,matchLabel,market:x.group,selection:x.selection,odd:x.odd,probability:x.probability,book:book.name||'Provider',ev,edge,updatedAt:c.oddsUpdatedAt});
+           if(ev>0.03&&edge>0)candidates.push({matchKey,matchLabel,market:x.group,selection:x.selection,odd:x.odd,probability:x.probability,book:book.name||'Provider',source:book.source||'Provider',ev,edge,updatedAt:book.updatedAt});
           });
          });
         });
@@ -329,11 +340,11 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
      }
      const proposal=window.MatchMindRounds.buildAssistant(candidates,{stake,minPayout,maxPayout,minLegs,maxLegs});
      const pct=x=>fmt(x*100,2)+'%';
-     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
+     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · '+coverage.alternativeEvents+' eventi letti da The Odds API · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
      if(!proposal.available){
       result.innerHTML=coverageHtml+'<div class="notice warning" style="margin-top:9px">'+esc(proposal.reason)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">Nessuna quota è stata stimata o inventata. Riprova quando provider e campioni avranno copertura sufficiente.</small>';
      }else{
-      const legsHtml=proposal.legs.map((x,i)=>'<div class="data-row"><span><b>'+(i+1)+'. '+esc(x.matchLabel)+'</b><small style="display:block;color:#91a0ae">'+esc(x.market)+' · '+esc(x.selection)+' · '+esc(x.book)+'</small></span><b>'+fmt(x.odd,2)+'<small style="display:block;color:#91a0ae">'+pct(x.probability)+' · EV +'+fmt(x.ev*100,1)+'%</small></b></div>').join('');
+      const legsHtml=proposal.legs.map((x,i)=>'<div class="data-row"><span><b>'+(i+1)+'. '+esc(x.matchLabel)+'</b><small style="display:block;color:#91a0ae">'+esc(x.market)+' · '+esc(x.selection)+' · '+esc(x.book)+' · '+esc(x.source||'Provider')+'</small></span><b>'+fmt(x.odd,2)+'<small style="display:block;color:#91a0ae">'+pct(x.probability)+' · EV +'+fmt(x.ev*100,1)+'%</small></b></div>').join('');
       result.innerHTML=coverageHtml+'<div class="metric-grid" style="margin-top:10px"><div class="metric"><span>QUOTA COMPLESSIVA</span><b>'+fmt(proposal.odds,2)+'</b></div><div class="metric"><span>VINCITA POTENZIALE</span><b>€ '+fmt(proposal.payout,2)+'</b></div><div class="metric"><span>PROBABILITÀ CONGIUNTA</span><b>'+pct(proposal.probability)+'</b></div><div class="metric"><span>EVENTI</span><b>'+proposal.legs.length+'</b></div></div><div class="eyebrow" style="margin-top:12px">PROPOSTA · QUOTE DEL PROVIDER</div>'+legsHtml+'<div class="notice warning" style="margin-top:10px">La combinazione massimizza la probabilità stimata tra quelle che rispettano i parametri e superano il filtro EV +3%. Non è una garanzia di vincita. '+esc(proposal.disclaimer)+'</div>';
      }
     }catch(error){result.innerHTML='<div class="notice warning">Assistente non disponibile: '+esc(error.message)+'</div>';}
