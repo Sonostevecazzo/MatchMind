@@ -32,7 +32,8 @@
     const forecast = window.MM().forecast(row.match, data.history);
     const selected = marketChoices().find(item => item[0] === key);
     const probability = engine().marketProbability(forecast, key);
-    if (!selected || probability === null) return;\n    row.ok = true;
+    if (!selected || probability === null) return;
+    row.ok = true;
     row.market = { key, label: selected[1] };
     row.probability = probability;
     row.sampleEnough = Boolean(forecast.sampleEnough);
