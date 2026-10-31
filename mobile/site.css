@@ -804,3 +804,15 @@ body{background:#090d11;color:var(--text);letter-spacing:0}
 @media(prefers-reduced-motion:reduce){
   .fixture,.team-tile,.shortcut,.nav-item{transition:none!important}
 }
+
+.score-matrix-section{margin-top:16px}
+.score-matrix-table{width:100%;min-width:470px;border-collapse:separate;border-spacing:3px;font-variant-numeric:tabular-nums}
+.score-matrix-table th{padding:7px 5px;color:#a5b0b5;font-size:8px;font-weight:850;text-align:center;white-space:nowrap}
+.score-matrix-table td{padding:8px 4px;text-align:center;border:1px solid #ffffff0b;border-radius:6px;background:rgba(197,243,106,calc(var(--heat,0)*.23));color:#eef3e9;font-size:9px;font-weight:800}
+.score-matrix-table tbody th{background:#172129;border-radius:6px;color:#cbd4d7}
+.score-matrix-tail{margin-top:9px;padding-top:9px;border-top:1px solid #ffffff10;color:#89979d;font-size:9px}
+.score-matrix-tail b{color:#d9e1e2}
+.favorite-toggle,.favorite-action{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.favorite-toggle{width:34px;height:34px;min-height:34px;padding:0;border-radius:10px;background:#17211b;border-color:#34452a;color:var(--mint)}
+.favorite-toggle svg,.favorite-action svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.favorite-action{white-space:nowrap}
