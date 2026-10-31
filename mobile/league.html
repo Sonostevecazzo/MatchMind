@@ -1,9 +1,28 @@
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090c11"><meta name="description" content="MatchMind · Football Intelligence"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><title>MatchMind · Serie A</title><script defer src="./site-core.js"></script><script defer src="./site-pages.js"></script></head>
-<body data-page="league" data-title="Serie A" data-subtitle="La competizione in una schermata dedicata."><div id="siteHeader"></div><main class="page-wrap"><div class="page-intro"><div class="eyebrow">MATCHMIND / LEAGUE</div><h1 id="pageTitle">Serie A</h1><p id="pageSubtitle">La competizione in una schermata dedicata.</p></div>
-<div class="competition-hero"><span class="competition-badge"><img class="competition-logo" src="https://media.api-sports.io/football/leagues/135.png" alt="Logo Serie A" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.remove()"><span class="competition-fallback">A</span></span><span style="flex:1"><h2>Serie A · Italia</h2><p id="leagueSeason">Classifica e calendario</p></span><span class="flag-it"></span></div><span class="flag-it"></span></div>
-<div class="filter-row" id="leagueTabs"><button class="pill active" data-view="standings">Classifica</button><button class="pill" data-view="fixtures">Calendario</button><button class="pill" data-view="stats">Statistiche</button></div>
-<section id="leagueStandings" class="panel"><div class="panel-head"><div><h3>Classifica</h3><p>Ricostruita dai risultati caricati.</p></div></div><div class="panel-body" id="standingsBody"><div class="loading-state">Calcolo classifica…</div></div></section>
-<section id="leagueFixtures" class="section" hidden><div class="section-head"><div><h2>Calendario</h2><p>Partite disponibili per questa stagione.</p></div></div><div id="leagueFixtureList" class="fixture-list"></div></section>
-<section id="leagueStats" class="section" hidden><div class="section-head"><div><h2>Numeri del campionato</h2><p>Statistiche elaborate solo sui risultati conclusi.</p></div></div><div id="leagueStatsGrid" class="metric-grid"></div></section>
-<p class="data-disclaimer" style="color:#7e8c99;font-size:8px;margin-top:10px">La classifica è calcolata localmente dal campione di risultati disponibile e non è un feed ufficiale live. Eventuali partite mancanti o rinviate possono alterarla.</p><div class="status-line" id="globalStatus" aria-live="polite"></div><footer class="site-footer">MatchMind · Dati soggetti alla copertura delle fonti. Le analisi sono stime statistiche.</footer></main></body></html>
+<html lang="it">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d11"><meta name="description" content="MatchMind · Serie A">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css">
+<title>MatchMind · Serie A</title><script defer src="./site-core.js"></script><script defer src="./site-pages.js"></script></head>
+<body data-page="league" data-title="Serie A" data-subtitle="Classifica, calendario e numeri del campionato.">
+<div id="siteHeader"></div>
+<main class="page-wrap">
+ <div class="page-intro"><div class="eyebrow">CAMPIONATO ITALIANO</div><h1 id="pageTitle">Serie A</h1><p id="pageSubtitle">Classifica, calendario e numeri del campionato.</p></div>
+ <div class="competition-hero">
+  <span class="competition-badge"><img class="competition-logo" src="https://media.api-sports.io/football/leagues/135.png" alt="Logo Serie A" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.remove()"><span class="competition-fallback">A</span></span>
+  <span style="flex:1;min-width:0"><h2>Serie A · Italia</h2><p id="leagueSeason">Classifica e calendario</p></span>
+  <span class="flag-it" aria-label="Italia"></span>
+ </div>
+ <div class="filter-row" id="leagueTabs" role="tablist" aria-label="Sezioni Serie A">
+  <button class="pill active" data-view="standings" role="tab" aria-selected="true">Classifica</button>
+  <button class="pill" data-view="fixtures" role="tab" aria-selected="false">Calendario</button>
+  <button class="pill" data-view="stats" role="tab" aria-selected="false">Statistiche</button>
+ </div>
+ <section id="leagueStandings" class="panel"><div class="panel-head"><div><h3>Classifica</h3><p>Calcolata dai risultati archiviati disponibili.</p></div></div><div class="panel-body" id="standingsBody"><div class="loading-state">Calcolo classifica…</div></div></section>
+ <section id="leagueFixtures" class="section" hidden><div class="section-head"><div><h2>Calendario</h2><p>Partite future della stagione.</p></div></div><div id="leagueFixtureList" class="fixture-list"></div></section>
+ <section id="leagueStats" class="section" hidden><div class="section-head"><div><h2>Numeri del campionato</h2><p>Statistiche calcolate sulle partite concluse disponibili.</p></div></div><div id="leagueStatsGrid" class="metric-grid"></div></section>
+ <p class="data-disclaimer" style="color:#8b979e;font-size:9px;line-height:1.55;margin-top:12px">La classifica è ricostruita dai risultati presenti nel feed MatchMind, non è un collegamento ufficiale live. Partite mancanti, rinviate o non ancora aggiornate possono modificarla.</p>
+ <div class="status-line" id="globalStatus" aria-live="polite"></div>
+ <footer class="site-footer">MatchMind · Serie A Intelligence.</footer>
+</main>
+</body>
+</html>
