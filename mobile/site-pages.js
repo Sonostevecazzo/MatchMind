@@ -236,6 +236,67 @@
  async function initMind(d){
   const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
   $('mindFixtures').innerHTML=rows.length?rows.map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile per l’analisi.</div>';
+  const assistantButton=$('assistantGenerate');
+  if(assistantButton){
+   assistantButton.addEventListener('click',async()=>{
+    const result=$('assistantResult'),stake=Number($('assistantStake').value),minPayout=Number($('assistantMinPayout').value),maxPayout=Number($('assistantMaxPayout').value),legRange=String($('assistantLegs').value||'4-6').split('-').map(Number);
+    const minLegs=legRange[0]||4,maxLegs=legRange[1]||6;
+    if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(minPayout)||!Number.isFinite(maxPayout)||minPayout<=0||maxPayout<minPayout){result.innerHTML='<div class="notice warning">Controlla puntata e intervallo della vincita potenziale.</div>';return;}
+    assistantButton.disabled=true;assistantButton.textContent='Analisi in corso…';result.innerHTML='<div class="loading-state">Controllo campioni, quote e mercati prematch…</div>';
+    try{
+     const fixtures=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,12),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0};
+     for(const match of fixtures){
+      const forecast=MM().forecast(match,d.history);
+      if(!forecast.sampleEnough){coverage.weakSample++;continue;}
+      try{
+       const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
+       const age=c.oddsUpdatedAt&&Number.isFinite(Date.parse(c.oddsUpdatedAt))?Math.max(0,(Date.now()-Date.parse(c.oddsUpdatedAt))/60000):null;
+       if(!c.oddsAvailable||!Array.isArray(c.bookmakers)||!c.bookmakers.length){coverage.missingOdds++;continue;}
+       if(age===null||age>120){coverage.staleOdds++;continue;}
+       const p=forecast.probabilities,matchKey=match.date+'|'+MM().norm(match.home)+'|'+MM().norm(match.away),matchLabel=match.home+' – '+match.away;
+       c.bookmakers.forEach(book=>{
+        (book.bets||[]).forEach(market=>{
+         const marketName=String(market.name||''),mapped=(market.values||[]).map(v=>{
+          const odd=Number(v.odd);if(!Number.isFinite(odd)||odd<=1)return null;
+          let selection='',probability=null,group='';
+          if(marketName==='Match Winner'){
+           selection=v.value==='Home'?'1':v.value==='Draw'?'X':v.value==='Away'?'2':'';
+           probability={Home:p.home,Draw:p.draw,Away:p.away}[v.value];group='1X2';
+          }else if(marketName==='Both Teams To Score'){
+           const answer=String(v.value||'').trim().toLowerCase();
+           if(['yes','gol','both teams to score'].includes(answer)){selection='Gol';probability=p.btts;}
+           else if(['no','no gol','both teams not to score'].includes(answer)){selection='No Gol';probability=1-p.btts;}
+           group='Gol/No Gol';
+          }else if(marketName==='Goals Over/Under'){
+           const parsed=String(v.value||'').match(/^(Over|Under)\s+(1\.5|2\.5|3\.5)$/i);
+           if(parsed){const line=Number(parsed[2]),over=line===1.5?p.o15:line===2.5?p.o25:p.o35;selection=parsed[1].toLowerCase()==='over'?'Over '+line.toFixed(1):'Under '+line.toFixed(1);probability=parsed[1].toLowerCase()==='over'?over:1-over;group='U/O '+line.toFixed(1);}
+          }
+          return selection&&Number.isFinite(probability)?{selection,probability,odd,group}:null;
+         }).filter(Boolean);
+         if(mapped.length<2)return;
+         const margin=mapped.reduce((sum,x)=>sum+1/x.odd,0);
+         mapped.forEach(x=>{
+          const implied=(1/x.odd)/margin,ev=x.probability*x.odd-1,edge=x.probability-implied;
+          if(ev>0.03&&edge>0)candidates.push({matchKey,matchLabel,market:x.group,selection:x.selection,odd:x.odd,probability:x.probability,book:book.name||'Provider',ev,edge,updatedAt:c.oddsUpdatedAt});
+         });
+        });
+       });
+       coverage.eligible++;
+      }catch(error){coverage.missingOdds++;}
+     }
+     const proposal=window.MatchMindRounds.buildAssistant(candidates,{stake,minPayout,maxPayout,minLegs,maxLegs});
+     const pct=x=>fmt(x*100,2)+'%';
+     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
+     if(!proposal.available){
+      result.innerHTML=coverageHtml+'<div class="notice warning" style="margin-top:9px">'+esc(proposal.reason)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">Nessuna quota è stata stimata o inventata. Riprova quando provider e campioni avranno copertura sufficiente.</small>';
+     }else{
+      const legsHtml=proposal.legs.map((x,i)=>'<div class="data-row"><span><b>'+(i+1)+'. '+esc(x.matchLabel)+'</b><small style="display:block;color:#91a0ae">'+esc(x.market)+' · '+esc(x.selection)+' · '+esc(x.book)+'</small></span><b>'+fmt(x.odd,2)+'<small style="display:block;color:#91a0ae">'+pct(x.probability)+' · EV +'+fmt(x.ev*100,1)+'%</small></b></div>').join('');
+      result.innerHTML=coverageHtml+'<div class="metric-grid" style="margin-top:10px"><div class="metric"><span>QUOTA COMPLESSIVA</span><b>'+fmt(proposal.odds,2)+'</b></div><div class="metric"><span>VINCITA POTENZIALE</span><b>€ '+fmt(proposal.payout,2)+'</b></div><div class="metric"><span>PROBABILITÀ CONGIUNTA</span><b>'+pct(proposal.probability)+'</b></div><div class="metric"><span>EVENTI</span><b>'+proposal.legs.length+'</b></div></div><div class="eyebrow" style="margin-top:12px">PROPOSTA · QUOTE DEL PROVIDER</div>'+legsHtml+'<div class="notice warning" style="margin-top:10px">La combinazione massimizza la probabilità stimata tra quelle che rispettano i parametri e superano il filtro EV +3%. Non è una garanzia di vincita. '+esc(proposal.disclaimer)+'</div>';
+     }
+    }catch(error){result.innerHTML='<div class="notice warning">Assistente non disponibile: '+esc(error.message)+'</div>';}
+    finally{assistantButton.disabled=false;assistantButton.textContent='Analizza di nuovo';}
+   });
+  }
   const ticketTarget=$('roundTickets');
   if(ticketTarget&&window.MatchMindRounds){
    try{
