@@ -419,7 +419,7 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
 .detail-back{border:1px solid #40523a;background:#1b2a18;color:#d7f59b;border-radius:11px}
 .mobile-nav{display:none}
 .home-page>.page-intro{display:none}
-.home-hero{position:relative;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(230px,.8fr);align-items:center;gap:25px;min-height:260px;margin:0 0 16px;padding:30px 34px;overflow:hidden;border:1px solid #3c5032;border-radius:26px;background:radial-gradient(circle at 76% 40%,#c4f36a1d,transparent 30%),linear-gradient(118deg,#1a2b20 0%,#111c21 56%,#111922 100%);box-shadow:0 22px 50px #0004}
+.home-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:25px;min-height:260px;margin:0 0 16px;padding:30px 34px;overflow:hidden;border:1px solid #3c5032;border-radius:26px;background:radial-gradient(circle at 76% 40%,#c4f36a1d,transparent 30%),linear-gradient(118deg,#1a2b20 0%,#111c21 56%,#111922 100%);box-shadow:0 22px 50px #0004}
 .home-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 45%,#080c111f);pointer-events:none}
 .home-hero-copy{position:relative;z-index:2;max-width:580px}
 .hero-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:15px;color:#d0ed9c;font-size:8px;font-weight:950;letter-spacing:1.7px}
@@ -636,3 +636,6 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
 }
 
 .competition-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#17210a;font-size:21px;font-weight:950;z-index:1}.competition-fallback[hidden]{display:none}
+
+/* Home refresh: keep the landing hero focused on content, without the pitch illustration. */
+.home-hero-art{display:none!important}
