@@ -20,7 +20,7 @@
   }
   const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
   function toISO(v){if(!v)return '';if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;const m=String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(m){let y=Number(m[3]);if(y<100)y+=y<70?2000:1900;return y+'-'+String(Number(m[2])).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');}return '';}
-  function parseOpen(rows){return rows.filter(r=>r.home&&r.away&&r.date).map(r=>({date:r.date,time:r.time||'',round:num(r.gw??r.GW??r.round??r.Round??r.matchday??r.Matchday),home:r.home,away:r.away,hg:num(r.ft_home),ag:num(r.ft_away),hs:num(r.home_shots),as:num(r.away_shots),ht:num(r.ht_home),at:num(r.ht_away),source:'open-matchday',oddsH:null,oddsD:null,oddsA:null}));}
+  function parseOpen(rows){return rows.filter(r=>r.home&&r.away&&r.date).map(r=>({date:r.date,time:r.time||'',round:num(r.gw??r.GW??r.round??r.Round??r.matchday??r.Matchday),home:r.home,away:r.away,hg:num(r.ft_home),ag:num(r.ft_away),hs:num(r.home_shots),as:num(r.away_shots),hst:num(r.home_target),ast:num(r.away_target),ht:num(r.ht_home),at:num(r.ht_away),hf:num(r.home_fouls),af:num(r.away_fouls),hc:num(r.home_corners),ac:num(r.away_corners),hc1h:num(r.home_corners_1h),ac1h:num(r.away_corners_1h),hc2h:num(r.home_corners_2h),ac2h:num(r.away_corners_2h),hy:num(r.home_yellow),ay:num(r.away_yellow),hr:num(r.home_red),ar:num(r.away_red),goalMinutes:r.goal_minutes||null,statSource:r.source||null,source:'open-matchday',oddsH:null,oddsD:null,oddsA:null}));}
   function parseOpenFootball(payload){
     const rows=Array.isArray(payload?.matches)?payload.matches:[];
     return rows.map(r=>{
@@ -35,7 +35,7 @@
       return {date:toISO(r.date||r.utcDate||''),time:r.time||'',round:roundMatch?num(roundMatch[1]):num(r.round),home,away,hg,ag,hs:null,as:null,ht:null,at:null,source:'openfootball',oddsH:null,oddsD:null,oddsA:null};
     }).filter(m=>m.date&&m.home&&m.away);
   }
-  function parseHist(rows){return rows.filter(r=>(r.HomeTeam||r.home)&&(r.AwayTeam||r.away)&&(r.Date||r.date)).map(r=>({date:toISO(r.Date||r.date),time:r.Time||'',round:num(r.gw??r.GW??r.round??r.Round??r.Matchday??r.matchday),home:r.HomeTeam||r.home,away:r.AwayTeam||r.away,hg:num(r.FTHG??r.ft_home),ag:num(r.FTAG??r.ft_away),hs:num(r.HS),as:num(r.AS),ht:num(r.HTHG),at:num(r.HTAG),source:'football-data',oddsH:num(r.B365H??r.AvgH),oddsD:num(r.B365D??r.AvgD),oddsA:num(r.B365A??r.AvgA)})).filter(m=>m.date);}
+  function parseHist(rows){return rows.filter(r=>(r.HomeTeam||r.home)&&(r.AwayTeam||r.away)&&(r.Date||r.date)).map(r=>({date:toISO(r.Date||r.date),time:r.Time||'',round:num(r.gw??r.GW??r.round??r.Round??r.Matchday??r.matchday),home:r.HomeTeam||r.home,away:r.AwayTeam||r.away,hg:num(r.FTHG??r.ft_home),ag:num(r.FTAG??r.ft_away),hs:num(r.HS),as:num(r.AS),hst:num(r.HST),ast:num(r.AST),ht:num(r.HTHG),at:num(r.HTAG),hf:num(r.HF),af:num(r.AF),hc:num(r.HC),ac:num(r.AC),hy:num(r.HY),ay:num(r.AY),hr:num(r.HR),ar:num(r.AR),source:'football-data',statSource:'football-data.co.uk',oddsH:num(r.B365H??r.AvgH),oddsD:num(r.B365D??r.AvgD),oddsA:num(r.B365A??r.AvgA)})).filter(m=>m.date);}
   async function fetchText(url){
     const controller=typeof AbortController!=='undefined'?new AbortController():null;
     const timeout=controller?setTimeout(()=>controller.abort(),12000):null;
@@ -80,22 +80,17 @@
         const primaryKeys=new Set(fresh.map(m=>m.date+'|'+norm(m.home)+'|'+norm(m.away)));
         jsonRows.forEach(m=>{if(!primaryKeys.has(m.date+'|'+norm(m.home)+'|'+norm(m.away)))fresh.push(m);});
       }
-      // Use the optional backend only after both public feeds have failed completely.
-      if(!fresh.length){
-        try{
-          const backup=await playerApi('type=fixtures&season='+y,'football-data-fixtures:'+y,6*60*60*1000);
-          fresh=Array.isArray(backup.matches)?backup.matches:[];
-          if(fresh.length)used.push('football-data.org · backend');
-        }catch{}
-      }
+      // Core match data stays keyless: if both public feeds fail, keep cache or show an explicit error.
       if(fresh.length){
         const deduped=[];
         fresh.forEach(m=>{
           const idx=deduped.findIndex(x=>x.date===m.date&&sameTeam(x.home,m.home)&&sameTeam(x.away,m.away));
           if(idx<0)deduped.push(m);
           else{
-            const prev=deduped[idx];
-            deduped[idx]={...m,...prev,round:prev.round??m.round,time:prev.time||m.time,hg:prev.hg??m.hg,ag:prev.ag??m.ag,hs:prev.hs??m.hs,as:prev.as??m.as,ht:prev.ht??m.ht,at:prev.at??m.at};
+            const prev=deduped[idx],merged={...m,...prev};
+            ['hs','as','hst','ast','ht','at','hf','af','hc','ac','hc1h','ac1h','hc2h','ac2h','hy','ay','hr','ar','goalMinutes','statSource'].forEach(field=>{merged[field]=prev[field]??m[field]??null;});
+            merged.round=prev.round??m.round;merged.time=prev.time||m.time;merged.hg=prev.hg??m.hg;merged.ag=prev.ag??m.ag;
+            deduped[idx]=merged;
           }
         });
         const current=deduped;
@@ -153,6 +148,28 @@
   function probs(lh,la){let h=0,d=0,a=0,btts=0,o15=0,o25=0,o35=0,total=0;for(let x=0;x<=30;x++)for(let y=0;y<=30;y++){const p=poisson(lh,x)*poisson(la,y);total+=p;if(x>y)h+=p;else if(x===y)d+=p;else a+=p;if(x>0&&y>0)btts+=p;if(x+y>=2)o15+=p;if(x+y>=3)o25+=p;if(x+y>=4)o35+=p;}return{home:h/total,draw:d/total,away:a/total,btts:btts/total,o15:o15/total,o25:o25/total,o35:o35/total};}
   function teamStats(team,rows){const k=norm(team),list=rows.filter(m=>hasScore(m)&&(norm(m.home)===k||norm(m.away)===k)).sort((a,b)=>a.date.localeCompare(b.date)).slice(-10);if(!list.length)return{played:0,for:1.25,against:1.25,form:[]};let gf=0,ga=0;for(const m of list){const home=norm(m.home)===k;gf+=home?Number(m.hg):Number(m.ag);ga+=home?Number(m.ag):Number(m.hg);}return{played:list.length,for:gf/list.length,against:ga/list.length,form:list.slice(-5).map(m=>{const x=Number(m.hg),y=Number(m.ag),home=norm(m.home)===k;return(home?x>y:y>x)?'W':x===y?'D':'L';})};}
   function forecast(match,history){const hist=history.filter(x=>hasScore(x)&&x.date<match.date);const league=hist.length?hist.reduce((s,x)=>s+Number(x.hg),0)/hist.length:1.35;const awayLeague=hist.length?hist.reduce((s,x)=>s+Number(x.ag),0)/hist.length:1.1;const h=teamStats(match.home,hist),a=teamStats(match.away,hist);const homeXg=Math.max(.15,Math.min(4.5,league*((h.for+.7)/(league+.7))*((a.against+.7)/(awayLeague+.7))*1.06));const awayXg=Math.max(.15,Math.min(4.5,awayLeague*((a.for+.7)/(awayLeague+.7))*((h.against+.7)/(league+.7))));const dates=hist.map(m=>m.date).filter(Boolean).sort();const scoreMatrix=[];let matrixMass=0;for(let homeGoals=0;homeGoals<=5;homeGoals++)for(let awayGoals=0;awayGoals<=5;awayGoals++){const probability=poisson(homeXg,homeGoals)*poisson(awayXg,awayGoals);matrixMass+=probability;scoreMatrix.push({homeGoals,awayGoals,probability});}return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates.at(-1)||null,home:h,away:a,homeXg,awayXg,probabilities:probs(homeXg,awayXg),scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:h.played>=10&&a.played>=10};}
+  function eventForecast(match,history){
+    const before=String(match&&match.date||'');
+    const samples=(team,venue,field,max=8)=>{
+      const k=norm(team);
+      const values=(history||[]).filter(m=>hasScore(m)&&m.date&&m.date<before&&norm(m[venue])===k&&Number.isFinite(m[field])&&m[field]>=0&&m[field]<=40)
+        .sort((a,b)=>a.date.localeCompare(b.date)).slice(-max).map(m=>m[field]);
+      return {count:values.length,mean:values.length?values.reduce((sum,value)=>sum+value,0)/values.length:null};
+    };
+    const blend=(left,right,min=5)=>{
+      if(left.count<min||right.count<min)return {available:false,expected:null,samples:[left.count,right.count],required:min};
+      return {available:true,expected:(left.mean+right.mean)/2,samples:[left.count,right.count],required:min};
+    };
+    const hh={corners:samples(match.home,'home','hc'),cornersAgainst:samples(match.home,'home','ac'),yellow:samples(match.home,'home','hy'),yellowAgainst:samples(match.home,'home','ay'),htFor:samples(match.home,'home','ht'),htAgainst:samples(match.home,'home','at')};
+    const aa={corners:samples(match.away,'away','ac'),cornersAgainst:samples(match.away,'away','hc'),yellow:samples(match.away,'away','ay'),yellowAgainst:samples(match.away,'away','hy'),htFor:samples(match.away,'away','at'),htAgainst:samples(match.away,'away','ht')};
+    const cornersHome=blend(hh.corners,aa.cornersAgainst),cornersAway=blend(aa.corners,hh.cornersAgainst);
+    const cardsHome=blend(hh.yellow,aa.yellowAgainst),cardsAway=blend(aa.yellow,hh.yellowAgainst);
+    const halfHome=blend(hh.htFor,aa.htAgainst),halfAway=blend(aa.htFor,hh.htAgainst);
+    const corners={available:cornersHome.available&&cornersAway.available,home:cornersHome.expected,away:cornersAway.expected,total:cornersHome.available&&cornersAway.available?cornersHome.expected+cornersAway.expected:null,samples:{home:cornersHome.samples,away:cornersAway.samples},required:5};
+    const yellowCards={available:cardsHome.available&&cardsAway.available,home:cardsHome.expected,away:cardsAway.expected,total:cardsHome.available&&cardsAway.available?cardsHome.expected+cardsAway.expected:null,samples:{home:cardsHome.samples,away:cardsAway.samples},required:5};
+    const halfTime={available:halfHome.available&&halfAway.available,homeXg:halfHome.expected,awayXg:halfAway.expected,probabilities:halfHome.available&&halfAway.available?probs(halfHome.expected,halfAway.expected):null,samples:{home:halfHome.samples,away:halfAway.samples},required:5};
+    return {corners,yellowCards,halfTime,method:'Medie per sede (ultime 8 gare disponibili)',asOf:before,experimental:true};
+  }
   function backtest(rows){
     const played=rows.filter(m=>hasScore(m)&&m.date).slice().sort((a,b)=>a.date.localeCompare(b.date));
     const scored=[],outcomes={home:0,draw:0,away:0};
@@ -182,7 +199,7 @@
   }
   function localCache(key){try{return JSON.parse(localStorage.getItem(key)||'{}');}catch{return {};}}
   function saveCache(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
-  async function playerApi(query,key,ttl=21600000){const cache=localCache('matchmind-player-cache-v1'),item=cache[key];if(item&&Date.now()-item.at<ttl)return item.data;const headers={Accept:'application/json'};try{const keys=[['matchmind-api-football-session-key','X-MatchMind-API-Key'],['matchmind-oddspapi-session-key','X-MatchMind-OddsPapi-Key'],['matchmind-football-data-session-key','X-MatchMind-Football-Data-Key'],['matchmind-the-odds-api-session-key','X-MatchMind-The-Odds-API-Key']];keys.forEach(([storage,header])=>{const value=sessionStorage.getItem(storage);if(value)headers[header]=value;});}catch{}const res=await fetch('./api/player-context?'+query,{headers,cache:'no-store'});let body;try{body=await res.json();}catch{throw new Error('Risposta non valida dal servizio dati.');}if(!res.ok)throw new Error(body.error||'Errore nel recupero dati.');if(body.configured===false||body.error)throw new Error(body.error||'Fonte dati non configurata.');cache[key]={at:Date.now(),data:body};saveCache('matchmind-player-cache-v1',cache);return body;}
+  async function playerApi(query,key,ttl=21600000){const cache=localCache('matchmind-player-cache-v1'),item=cache[key];if(item&&Date.now()-item.at<ttl)return item.data;const headers={Accept:'application/json'};try{const keys=[['matchmind-api-football-session-key','X-MatchMind-API-Key'],['matchmind-oddspapi-session-key','X-MatchMind-OddsPapi-Key']];keys.forEach(([storage,header])=>{const value=sessionStorage.getItem(storage);if(value)headers[header]=value;});}catch{}const res=await fetch('./api/player-context?'+query,{headers,cache:'no-store'});let body;try{body=await res.json();}catch{throw new Error('Risposta non valida dal servizio dati.');}if(!res.ok)throw new Error(body.error||'Errore nel recupero dati.');if(body.configured===false||body.error)throw new Error(body.error||'Fonte dati non configurata.');cache[key]={at:Date.now(),data:body};saveCache('matchmind-player-cache-v1',cache);return body;}
   const isFavorite=name=>{try{return (JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]')).includes(name);}catch{return false;}};
   function toggleFavorite(name){const list=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]');}catch{return [];}})();const next=list.includes(name)?list.filter(x=>x!==name):[...list,name];saveCache('matchmind-favorites-v1',next);return next.includes(name);}
   function nav(active){
@@ -214,5 +231,5 @@
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);location.reload();}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
   }
   document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=page==='home'?'home':(page==='matches'||page==='match')?'matches':page==='league'?'league':page==='mind'?'mind':'more';mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});});
-  window.MM={$,esc,norm,sameTeam,loadData,backtest,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,teamStats,probs,playerApi,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
+  window.MM={$,esc,norm,sameTeam,loadData,backtest,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,eventForecast,teamStats,probs,playerApi,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
 })();
