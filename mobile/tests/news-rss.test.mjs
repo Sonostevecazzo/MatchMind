@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseGoogleNewsRss } from "./news-rss.mjs";
+import { parseGoogleNewsRss } from "../functions/_lib/news-rss.mjs";
 
 const now = Date.parse("2026-10-31T10:00:00.000Z");
 const recent = new Date(now - 60 * 60 * 1000).toUTCString();
