@@ -67,7 +67,8 @@ for control in ["apiFootballKey", "oddsPapiKey", "theOddsApiKey", "footballDataK
     assert control in settings, f"Missing provider key control: {control}"
 for secret in ["matchmind-oddspapi-session-key", "matchmind-the-odds-api-session-key",
                "matchmind-football-data-session-key"]:
-    assert secret in core if "core" in globals() else secret in (ROOT / "site-pages.js").read_text(encoding="utf-8"), f"Missing session key handling: {secret}"
+    assert secret in (ROOT / "site-pages.js").read_text(encoding="utf-8"), f"Missing settings session-key handling: {secret}"
+    assert secret in (ROOT / "site-core.js").read_text(encoding="utf-8"), f"Missing request header for session key: {secret}"
 provider_api = (ROOT / "functions" / "api" / "player-context.js").read_text(encoding="utf-8")
 for route in ['type === "test-oddspapi"', 'type === "test-the-odds-api"', 'type === "odds-batch"',
               "soccer_italy_serie_a", "normalizeTheOddsEvents"]:
