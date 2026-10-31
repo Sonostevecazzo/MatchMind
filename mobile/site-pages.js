@@ -5,13 +5,14 @@
  const fmt=(v,d=0)=>Number(v||0).toLocaleString('it-IT',{maximumFractionDigits:d});
  const esc=s=>MM().esc(s);
  const matchCard=m=>{
-  const done=MM().hasScore(m),state=MM().status(m),score=done?m.hg+' – '+m.ag:'– : –';
+  const done=MM().hasScore(m),state=MM().status(m),score=done?m.hg+' – '+m.ag:(m.time||'VS');
   const statusClass=done?'finished':state==='Da aggiornare'?'stale':'scheduled';
+  const centerLabel=done?'RISULTATO FINALE':state==='Da aggiornare'?'ORARIO DA DEFINIRE':'CALCIO D’INIZIO';
   const forecast=!done&&MM().upcoming(m)?MM().forecast(m,MM().data.history):null;
   const preview=forecast?'<div class="fixture-preview"><div class="preview-head"><span>STIMA MATCHMIND</span><small>'+(forecast.sampleEnough?'Campione adeguato':'Campione limitato')+'</small></div><div class="preview-probs">'+[['1',forecast.probabilities.home],['X',forecast.probabilities.draw],['2',forecast.probabilities.away]].map(([label,value])=>'<div><span>'+label+'</span><b>'+fmt(value*100,0)+'%</b><i><em style="width:'+Math.max(0,Math.min(100,value*100))+'%"></em></i></div>').join('')+'</div></div>':'';
-  return '<article class="fixture"><div class="fixture-head"><span class="league-label"><i class="flag-it"></i> SERIE A'+(m.round?' · GIORNATA '+m.round:'')+'</span><span class="fixture-state '+statusClass+'">'+state+'</span></div>'+
-   '<div class="fixture-main"><div class="fixture-teams"><a class="fixture-team" href="'+MM().teamUrl(m.home)+'">'+MM().badge(m.home)+'<b>'+esc(m.home)+'</b></a><a class="fixture-team" href="'+MM().teamUrl(m.away)+'">'+MM().badge(m.away)+'<b>'+esc(m.away)+'</b></a></div><div class="fixture-score '+(done?'':'pending')+'">'+score+'</div></div>'+preview+
-   '<div class="fixture-foot"><span>'+esc(MM().shortDate(m))+(m.time?' · '+esc(m.time):'')+'</span><a href="'+MM().matchUrl(m)+'">Apri analisi ↗</a></div></article>';
+  return '<article class="fixture"><div class="fixture-head"><span class="league-label"><i class="flag-it"></i> SERIE A'+(m.round?' <span class="fixture-round">· GIORNATA '+m.round+'</span>':'')+'</span><span class="fixture-state '+statusClass+'">'+state+'</span></div>'+
+   '<div class="fixture-main fixture-horizontal"><a class="fixture-side home" href="'+MM().teamUrl(m.home)+'">'+MM().badge(m.home)+'<b>'+esc(m.home)+'</b></a><div class="fixture-center"><strong class="fixture-score '+(done?'':'pending')+'">'+score+'</strong><span class="fixture-center-label">'+centerLabel+'</span></div><a class="fixture-side away" href="'+MM().teamUrl(m.away)+'">'+MM().badge(m.away)+'<b>'+esc(m.away)+'</b></a></div>'+preview+
+   '<div class="fixture-foot"><span class="fixture-date">'+esc(MM().shortDate(m))+(m.time?' · '+esc(m.time):'')+'</span><a href="'+MM().matchUrl(m)+'">Match center <span aria-hidden="true">↗</span></a></div></article>';
  };
  const groupCards=(rows,reverse=false)=>{const groups=MM().groupByDate(rows);if(reverse)groups.reverse();return groups.map(([date,list])=>'<div class="date-divider"><span>'+esc(MM().shortDate(list[0]))+'</span><small>'+list.length+' '+(list.length===1?'partita':'partite')+'</small></div>'+list.map(matchCard).join('')).join('');};
  function setStatus(message,kind=''){const e=$('globalStatus');if(e)e.innerHTML=(kind?'<i class="status-dot '+kind+'"></i>':'')+esc(message);}
