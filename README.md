@@ -126,3 +126,10 @@ The API supports HTTP Basic authentication via environment variables. For any in
 ## Remaining model-validation work
 
 The import pipeline is usable once credentials and provider access are configured. A production-grade AI model still needs a defined licensed data coverage, walk-forward evaluation by date, calibration reports, benchmark comparisons (including a Dixon–Coles model), closing-line validation, monitoring for missing/stale reports, and documented out-of-sample performance before it should be described as validated.
+
+
+## Keyless mobile data sources
+
+The mobile PWA can load Serie A fixtures and results without API credentials. It tries the public [open-matchday CSV dataset](https://github.com/oladeeayo/open-matchday) first, then uses the public-domain [openfootball/football.json](https://github.com/openfootball/football.json) feed to fill missing results or fixtures. Historical matches are loaded from the existing football-dataset CSV archive, with openfootball JSON as a fallback. The interface shows the active sources and the local retrieval time; cached data are identified as offline data.
+
+These public feeds do **not** provide bookmaker odds, official lineups, injuries or reliable last-minute news. The assistant can produce a probability-only shortlist when no odds feed is configured, but it explicitly does not calculate a bookmaker payout, expected value or a profitable stake. Price-based proposals still require current odds from an enabled provider. News headlines may be linked as context only and must not be treated as numerical performance data.
