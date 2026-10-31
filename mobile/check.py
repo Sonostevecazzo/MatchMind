@@ -53,6 +53,10 @@ subprocess.run(["node", "--test", str(ROOT / "tests" / "rounds.test.mjs")], chec
 subprocess.run(["node", "--test", str(ROOT / "tests" / "bets-engine.test.cjs")], check=True)
 
 # Check the app's four main destinations and that page-specific routes are linked.
+home = (ROOT / "index.html").read_text(encoding="utf-8")
+assert 'href="bets.html"' in home, "Bet checker is missing from the home shortcuts"
+css = (ROOT / "site.css").read_text(encoding="utf-8")
+assert "grid-template-columns:repeat(6,minmax(0,1fr))" in css, "Mobile navigation must accommodate all six destinations"
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
 for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html", "bets.html", "settings.html"]:
     assert route in core, f"Missing primary navigation route: {route}"
