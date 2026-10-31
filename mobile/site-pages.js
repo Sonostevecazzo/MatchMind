@@ -179,31 +179,70 @@
   });
  }
  async function initSettings(){
-  const keyInput=$('apiFootballKey'),status=$('settingsProviderStatus'),usage=$('settingsApiUsage');
-  const readKey=()=>{try{return sessionStorage.getItem('matchmind-api-football-session-key')||''}catch{return ''}};
-  keyInput.value=readKey();
-  const headers=()=>{const h={Accept:'application/json'};const k=readKey();if(k)h['X-MatchMind-API-Key']=k;return h;};
-  async function verify(){
-   status.innerHTML='<div class="loading-state">Verifica della chiave con API-Football…</div>';usage.innerHTML='';
+  const providers=[
+   {id:'apiFootball',input:'apiFootballKey',storage:'matchmind-api-football-session-key',save:'saveSessionKey',test:'testSessionKey',clear:'clearSessionKey',status:'settingsProviderStatus',url:'type=status',kind:'apiFootball'},
+   {id:'oddsPapi',input:'oddsPapiKey',storage:'matchmind-oddspapi-session-key',save:'saveOddsPapiKey',test:'testOddsPapiKey',clear:'clearOddsPapiKey',status:'oddsPapiStatus',url:'type=test-oddspapi',kind:'oddsPapi'},
+   {id:'theOddsApi',input:'theOddsApiKey',storage:'matchmind-the-odds-api-session-key',save:'saveTheOddsApiKey',test:'testTheOddsApiKey',clear:'clearTheOddsApiKey',status:'theOddsApiStatus',url:'type=test-the-odds-api',kind:'theOddsApi'},
+   {id:'footballData',input:'footballDataKey',storage:'matchmind-football-data-session-key',save:'saveFootballDataKey',test:'testFootballDataKey',clear:'clearFootballDataKey',status:'footballDataStatus',url:null,kind:'footballData'}
+  ];
+  const read=provider=>{try{return sessionStorage.getItem(provider.storage)||''}catch{return ''}};
+  const headers=()=>{const h={Accept:'application/json'};providers.forEach(p=>{const key=read(p);if(key)h[({'apiFootball':'X-MatchMind-API-Key','oddsPapi':'X-MatchMind-OddsPapi-Key','theOddsApi':'X-MatchMind-The-Odds-API-Key','footballData':'X-MatchMind-Football-Data-Key'})[p.id]]=key;});return h;};
+  const clearCache=()=>{try{localStorage.removeItem('matchmind-player-cache-v1')}catch{}};
+  async function verify(provider){
+   const status=$(provider.status);if(!status)return;
+   status.innerHTML='<div class="loading-state">Verifica della connessione…</div>';
    try{
-    const res=await fetch('./api/player-context?type=status',{headers:headers(),cache:'no-store'}),d=await res.json(),p=d.providers||{},u=d.apiFootballUsage;
-    if(!res.ok||!p.apiFootball||!u||!u.available)throw new Error(d.error||'Chiave non verificata dal provider.');
-    status.innerHTML='<div class="notice good">Connessione verificata · '+esc(u.plan||'Piano attivo')+' · '+fmt(u.remaining)+' richieste residue oggi.</div>';
-    usage.innerHTML='<div class="data-row"><span>Consumo giornaliero</span><b>'+fmt(u.current)+' / '+fmt(u.limitDay)+'</b></div><div class="data-row"><span>Residue</span><b>'+fmt(u.remaining)+'</b></div><div class="data-row"><span>Ultima verifica</span><b>'+new Date(u.checkedAt).toLocaleTimeString('it-IT')+'</b></div>';
-   }catch(e){status.innerHTML='<div class="notice warning">'+esc(e.message)+' Se hai appena inserito la chiave, controlla che sia corretta e che il piano sia attivo.</div>';}
+    let url=provider.url, data;
+    if(provider.id==='footballData'){
+     const now=new Date(),season=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1;
+     url='type=fixtures&season='+season;
+    }
+    const res=await fetch('./api/player-context?'+url,{headers:headers(),cache:'no-store'});
+    data=await res.json();
+    if(!res.ok||data.configured===false||data.error)throw new Error(data.error||'Il provider non ha confermato la connessione.');
+    if(provider.id==='apiFootball'){
+     const usage=data.apiFootballUsage;
+     if(!data.providers?.apiFootball||!usage?.available)throw new Error('API-Football non ha confermato la chiave o lo stato del piano.');
+     status.innerHTML='<div class="notice good">Connessione verificata · '+esc(usage.plan||'Piano attivo')+' · '+fmt(usage.remaining)+' richieste residue oggi.</div>';
+     $('settingsApiUsage').innerHTML='<div class="data-row"><span>Consumo giornaliero</span><b>'+fmt(usage.current)+' / '+fmt(usage.limitDay)+'</b></div><div class="data-row"><span>Residue</span><b>'+fmt(usage.remaining)+'</b></div><div class="data-row"><span>Ultima verifica</span><b>'+new Date(usage.checkedAt).toLocaleTimeString('it-IT')+'</b></div>';
+    }else if(provider.id==='theOddsApi'){
+     if(data.serieAAvailable!==true)throw new Error('Chiave valida, ma la competizione Serie A non risulta attiva nel catalogo restituito.');
+     status.innerHTML='<div class="notice good">Chiave valida · Serie A disponibile · verifica gratuita del catalogo completata.</div>';
+    }else if(provider.id==='oddsPapi'){
+     status.innerHTML='<div class="notice good">Connessione OddsPapi verificata. La presenza di quote Sisal dipende dal piano e dalla partita.</div>';
+    }else{
+     status.innerHTML='<div class="notice good">football-data.org verificato · '+fmt((data.matches||[]).length)+' partite restituite per la stagione.</div>';
+    }
+   }catch(e){
+    status.innerHTML='<div class="notice warning">'+esc(e.message)+' Controlla la chiave e i limiti del piano.</div>';
+    if(provider.id==='apiFootball')$('settingsApiUsage').innerHTML='';
+   }
   }
-  $('saveSessionKey').addEventListener('click',async()=>{
-   const value=keyInput.value.trim();
-   if(!/^[A-Za-z0-9_-]{20,256}$/.test(value)){status.innerHTML='<div class="notice warning">Formato non valido. Incolla la chiave API-Football completa.</div>';return;}
-   try{sessionStorage.setItem('matchmind-api-football-session-key',value);}catch{status.innerHTML='<div class="notice warning">Il browser non consente di salvare la chiave nella sessione.</div>';return;}
-   await verify();
+  providers.forEach(provider=>{
+   const input=$(provider.input),status=$(provider.status);
+   if(!input||!status)return;
+   input.value=read(provider);
+   $(provider.save).addEventListener('click',async()=>{
+    const value=input.value.trim();
+    if(value.length<8){status.innerHTML='<div class="notice warning">Inserisci una chiave completa (almeno 8 caratteri).</div>';return;}
+    try{sessionStorage.setItem(provider.storage,value);}catch{status.innerHTML='<div class="notice warning">Il browser non consente di salvare la chiave nella sessione.</div>';return;}
+    clearCache();
+    await verify(provider);
+   });
+   $(provider.test).addEventListener('click',()=>verify(provider));
+   $(provider.clear).addEventListener('click',()=>{
+    try{sessionStorage.removeItem(provider.storage)}catch{}
+    input.value='';clearCache();
+    status.innerHTML='<div class="notice">Chiave rimossa dalla sessione corrente. Verrà usato il secret Cloudflare, se configurato.</div>';
+    if(provider.id==='apiFootball')$('settingsApiUsage').innerHTML='';
+   });
   });
-  $('clearSessionKey').addEventListener('click',()=>{try{sessionStorage.removeItem('matchmind-api-football-session-key')}catch{}keyInput.value='';status.innerHTML='<div class="notice">Chiave rimossa dalla sessione corrente. Le richieste useranno il secret Cloudflare, se configurato.</div>';usage.innerHTML='';});
-  $('testSessionKey').addEventListener('click',verify);
   $('copyCloudflareSteps').addEventListener('click',()=>GenCopy('API_FOOTBALL_KEY'));
-  if(readKey())await verify();else status.innerHTML='<div class="notice">Nessuna chiave inserita in questa sessione. Il calendario pubblico e il modello locale continuano a funzionare.</div>';
- }
- function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
+  const hasAny=providers.some(provider=>read(provider));
+  if(!hasAny)$('settingsProviderStatus').innerHTML='<div class="notice">Nessuna chiave inserita in questa sessione. Calendario pubblico e modello locale restano disponibili.</div>';
+  for(const provider of providers){if(read(provider))await verify(provider);}
+}
+function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
  async function initData(){
   const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const h={Accept:'application/json'};try{const k=sessionStorage.getItem('matchmind-api-football-session-key');if(k)h['X-MatchMind-API-Key']=k}catch{}const r=await fetch('./api/player-context?type=status',{headers:h,cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · dati pubblici',true],['Probabilità statistiche','Modello Poisson locale',true],['Quote bookmaker','Sisal IT · OddsPapi',!!p.sisalOdds],['Infortuni e forma giocatori','API-Football',!!p.apiFootball],['Calendario di riserva','football-data.org',!!p.footballData]];const usage=d.apiFootballUsage;
    const usageHtml=!p.apiFootball?'':(usage&&usage.available
