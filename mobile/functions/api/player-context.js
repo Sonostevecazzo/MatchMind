@@ -1,3 +1,5 @@
+import { parseGoogleNewsRss } from "../lib/news-rss.mjs";
+
 const API_BASE = "https://v3.football.api-sports.io";
 const SISAL_ODDS_API_BASE = "https://api.oddspapi.io/v4";
 const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
@@ -332,23 +334,6 @@ function publicError(error) {
 }
 
 
-function decodeXmlEntities(value) {
-  return String(value || "")
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(parseInt(code, 10)))
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
-}
-
-function rssTag(item, tag) {
-  const match = item.match(new RegExp("<" + tag + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + tag + ">", "i"));
-  return match ? decodeXmlEntities(match[1]).replace(/<[^>]*>/g, "").trim() : "";
-}
-
 async function getNewsContext(context, requestUrl) {
   const home = (requestUrl.searchParams.get("home") || "").trim();
   const away = (requestUrl.searchParams.get("away") || "").trim();
@@ -400,32 +385,7 @@ async function getNewsContext(context, requestUrl) {
     }
   }
 
-  const now = Date.now();
-  const cutoff = now - 21 * 24 * 60 * 60 * 1000;
-  const articles = Array.from(xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi), match => {
-    const item = match[1];
-    const title = rssTag(item, "title");
-    const link = rssTag(item, "link");
-    const sourceMatch = item.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i);
-    const source = sourceMatch ? decodeXmlEntities(sourceMatch[1]).replace(/<[^>]*>/g, "").trim() : "Google News";
-    const publishedText = rssTag(item, "pubDate");
-    const published = Date.parse(publishedText);
-    let safeUrl = "";
-    try {
-      const parsed = new URL(link);
-      if (parsed.protocol === "https:") safeUrl = parsed.toString();
-    } catch {
-      // Ignore malformed article links.
-    }
-    return {
-      title: title.slice(0, 240),
-      url: safeUrl,
-      source: source.slice(0, 100),
-      publishedAt: Number.isFinite(published) ? new Date(published).toISOString() : null
-    };
-  }).filter(article => article.title && article.url && (!article.publishedAt || Date.parse(article.publishedAt) >= cutoff))
-    .filter((article, index, all) => all.findIndex(other => other.url === article.url) === index)
-    .slice(0, 6);
+  const articles = parseGoogleNewsRss(xml);
 
   return responseJson({
     configured: true,
