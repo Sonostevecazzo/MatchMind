@@ -30,7 +30,7 @@ function hasProviderErrors(errors) {
 function getApiFootballKey(context) {
   const supplied = context.request && context.request.headers.get("x-matchmind-api-key");
   const key = supplied || (context.env && context.env.API_FOOTBALL_KEY) || "";
-  return /^[A-Za-z0-9_-]{20,256}$/.test(key) ? key : "";
+  return /^[A-Za-z0-9_-]{8,256}$/.test(key) ? key : "";
 }
 
 async function providerGet(path, params, context, ttlSeconds) {
