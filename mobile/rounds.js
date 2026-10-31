@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
- const scored=m=>m&&m.date&&m.home&&m.away&&m.hg!==null&&m.hg!==undefined&&m.ag!==null&&m.ag!==undefined&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag));
+ const scored=m=>m&&m.date&&m.home&&m.away&&m.hg!==null&&m.hg!==undefined&&m.hg!==''&&m.ag!==null&&m.ag!==undefined&&m.ag!==''&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag));
  const seasonStart=date=>{const y=Number(String(date).slice(0,4)),month=Number(String(date).slice(5,7));return (month>=7?y:y-1)+'-07-01';};
  function standingsBefore(rows,date){
   const start=seasonStart(date),map=new Map();
