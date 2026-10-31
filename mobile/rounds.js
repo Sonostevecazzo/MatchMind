@@ -26,7 +26,7 @@
  }
  function matchContext(match,rows,allTeamsRows=rows){
   const table=standingsBefore(rows,match.date),start=seasonStart(match.date),totalTeams=new Set(allTeamsRows.filter(m=>m&&m.date>=start).flatMap(m=>[m.home,m.away]).filter(Boolean).map(norm)).size||20;
-  return {table,home:teamContext(match.home,table,totalTeams),away:teamContext(match.away,table,totalTeams),asOf:match.date,disclaimer:'Obiettivi inferiti dalla classifica alla data della partita; non sono dichiarazioni ufficiali dei club.'};
+  return {table,home:teamContext(match.home,table,totalTeams),away:teamContext(match.away,table,totalTeams),asOf:match.date,disclaimer:'Obiettivi inferiti dalla classifica alla data della partita; non sono dichiarazioni ufficiali dei club. Classifica provvisoria ordinata per punti, differenza reti e gol fatti; gli spareggi diretti non sono applicati.'};
  }
  function buildTicket(rows,forecastFn){
   const upcoming=rows.filter(m=>m&&m.date&&(m.hg===null||m.hg===undefined||m.ag===null||m.ag===undefined)).slice().sort((a,b)=>a.date.localeCompare(b.date));
