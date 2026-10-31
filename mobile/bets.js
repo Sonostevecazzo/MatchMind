@@ -5,6 +5,7 @@
   const engine = () => window.MatchMindBets;
   let data = null;
   let selections = [];
+  let suggestedSelections = [];
 
   const pct = value => Number.isFinite(value) ? (value * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%" : "—";
   const oddsText = value => Number.isFinite(value) ? value.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 3 }) : "non disponibile";
@@ -112,14 +113,15 @@
     return null;
   }
 
-  async function refreshSisal() {
-    const target = $("sisalResults");
-    const button = $("refreshSisal");
-    const valid = selections.filter(row => row.ok);
+  async function refreshSisal(rowsToCheck, targetElement, actionButton) {
+    const target = targetElement || $("sisalResults");
+    const button = actionButton || $("refreshSisal");
+    const valid = (rowsToCheck || selections).filter(row => row.ok && row.market && row.match);
     if (!valid.length) {
-      target.innerHTML = '<div class="notice warning">Analizza prima una schedina con almeno una partita riconosciuta.</div>';
+      target.innerHTML = '<div class="notice warning">Non ci sono selezioni riconosciute da verificare.</div>';
       return;
     }
+    const idleText = button.dataset.idleText || "Verifica quote Sisal";
     button.disabled = true;
     button.textContent = "Verifica in corso…";
     target.innerHTML = '<div class="loading-state">Richiesta delle quote prematch Sisal tramite OddsPapi…</div>';
@@ -140,8 +142,8 @@
           ? new Date(context.oddsUpdatedAt).toLocaleString("it-IT")
           : "orario non comunicato";
         reports.push({
-          row, quote, source: context.oddsSource || "OddsPapi",
-          updated, error: context.oddsError || null
+          row, quote, source: context.oddsSource || "Sisal · OddsPapi",
+          updated, error: context.oddsError || (!quote ? "Quota non disponibile per il mercato selezionato." : null)
         });
       } catch (error) {
         reports.push({ row, error: error.message || "Errore provider" });
@@ -154,10 +156,15 @@
       }
       const probability = report.row.probability;
       const ev = report.row.sampleEnough ? probability * report.quote.odd - 1 : null;
-      return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' + esc(report.source || "Sisal · OddsPapi") + ' · ' + esc(report.updated) + '<br>Quota selezione Sisal: ' + oddsText(report.quote.odd) + ' · ' + esc(report.quote.bookmaker || "Sisal") + (ev === null ? "" : '<br>EV teorico esplorativo: ' + (ev >= 0 ? "+" : "") + pct(ev)) + '</small></span><b>' + pct(probability) + '</b></div>';
+      return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' +
+        esc(report.source) + ' · ' + esc(report.updated) +
+        '<br>Quota Sisal corrente: ' + oddsText(report.quote.odd) + ' · ' + esc(report.quote.bookmaker || "Sisal") +
+        (report.row.odds ? '<br>Quota sulla schedina: ' + oddsText(report.row.odds) : '') +
+        (ev === null ? '' : '<br>EV teorico esplorativo: ' + (ev >= 0 ? '+' : '') + pct(ev)) +
+        '</small></span><b>' + pct(probability) + '</b></div>';
     }).join("") + '<div class="notice warning">Le quote sono mostrate solo quando il provider le restituisce per la partita e il mercato richiesti. L’EV è un confronto teorico basato sul modello, non una prova di vantaggio reale.</div>';
     button.disabled = false;
-    button.textContent = "Verifica quote Sisal";
+    button.textContent = idleText;
   }
 
   function buildProposal() {
@@ -176,8 +183,13 @@
         (Number.isFinite(result.eligibleFixtures) ? '<small>Partite con campione adeguato: ' + result.eligibleFixtures + '</small>' : "");
       return;
     }
-    target.innerHTML = '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA COMBINAZIONE</span><b>' + pct(result.probability) + '</b><small>Obiettivo minimo: ' + pct(result.threshold) + ' · ' + result.selections.length + ' selezioni</small></div>' +
+    suggestedSelections = result.selections.map(item => ({
+      ok: true, match: item.match, market: { key: item.marketKey, label: item.market },
+      probability: item.probability, sampleEnough: true, odds: null
+    }));
+    target.innerHTML = '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA COMBINAZIONE</span><b>' + pct(result.probability) + '</b><small>Obiettivo minimo: ' + pct(result.threshold) + ' · ' + result.selections.length + (result.selections.length === 1 ? ' selezione' : ' selezioni') + '</small></div>' +
       result.selections.map(item => '<div class="data-row"><span><b>' + esc(item.match.home) + " – " + esc(item.match.away) + '</b><small style="display:block;color:#8c9aa8">' + esc(item.match.date) + ' · ' + esc(item.market) + '</small></span><b>' + pct(item.probability) + '</b></div>').join("") +
+      '<div class="settings-actions"><button id="refreshSuggestedSisal" type="button" class="secondary" data-idle-text="Verifica quote della proposta">Verifica quote della proposta</button></div><div id="suggestedOdds" style="margin-top:10px"></div>' +
       '<div class="notice warning">' + esc(result.assumption) + " " + esc(result.warning) + '</div>';
   }
 
@@ -220,7 +232,7 @@
         if (best) updateSelection(selections[index], best.key);
         renderSlip();
       });
-      $("refreshSisal").addEventListener("click", refreshSisal);
+      $("refreshSisal").dataset.idleText = "Verifica quote Sisal";\n      $("refreshSisal").addEventListener("click", () => refreshSisal(selections));\n      $("ticketResults").addEventListener("click", event => {\n        if (event.target.closest("#refreshSuggestedSisal")) refreshSisal(suggestedSelections, $("suggestedOdds"), $("refreshSuggestedSisal"));\n      });
       $("buildTicket").addEventListener("click", buildProposal);
       if ($("slipText").value.trim()) $("checkSlip").click();
     } catch (error) {
