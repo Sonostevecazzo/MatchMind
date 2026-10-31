@@ -22,7 +22,7 @@
  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
  function eloBacktest(rows,options={}){
   const K=Number.isFinite(options.kFactor)?options.kFactor:20;
-  const homeAdvantage=Number.isFinite(options.homeAdvantage)?options.homeAdvantage:65;
+  const homeAdvantage=Number.isFinite(options.homeAdvantage)?options.homeAdvantage:40;
   const initial=Number.isFinite(options.initialRating)?options.initialRating:1500;
   if(K<=0||homeAdvantage<0)throw new Error('Parametri Elo non validi');
   const played=rows.filter(valid).slice().sort((a,b)=>a.date.localeCompare(b.date));
