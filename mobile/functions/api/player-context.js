@@ -33,6 +33,21 @@ function getApiFootballKey(context) {
   return /^[A-Za-z0-9_-]{8,256}$/.test(key) ? key : "";
 }
 
+function getOddsPapiKey(context) {
+  const supplied = context.request && context.request.headers.get("x-matchmind-oddspapi-key");
+  return supplied || (context.env && context.env.ODDSPAPI_API_KEY) || "";
+}
+
+function getFootballDataKey(context) {
+  const supplied = context.request && context.request.headers.get("x-matchmind-football-data-key");
+  return supplied || (context.env && context.env.FOOTBALL_DATA_API_KEY) || "";
+}
+
+function getTheOddsApiKey(context) {
+  const supplied = context.request && context.request.headers.get("x-matchmind-the-odds-api-key");
+  return supplied || (context.env && context.env.THE_ODDS_API_KEY) || "";
+}
+
 async function providerGet(path, params, context, ttlSeconds) {
   const apiKey = getApiFootballKey(context);
   if (!apiKey) throw new Error("provider_missing_key");
@@ -144,10 +159,10 @@ async function cachedExternalJson(context, providerName, url, cacheId, headers, 
   let cache;
   let cacheKey;
   try {
-    cache = caches.default;
+    cache = ttlSeconds > 0 ? caches.default : null;
     const requestUrl = new URL(context.request.url);
-    cacheKey = new Request(new URL(CACHE_ROOT + encodeURIComponent(cacheId), requestUrl.origin).toString());
-    const cached = await cache.match(cacheKey);
+    cacheKey = cache ? new Request(new URL(CACHE_ROOT + encodeURIComponent(cacheId), requestUrl.origin).toString()) : null;
+    const cached = cache && cacheKey ? await cache.match(cacheKey) : null;
     if (cached) return await cached.json();
   } catch {
     cache = null;
@@ -169,6 +184,10 @@ async function cachedExternalJson(context, providerName, url, cacheId, headers, 
       errorCode = String(errorPayload && errorPayload.error && errorPayload.error.code || errorPayload && errorPayload.code || "").toUpperCase();
     } catch {
       try { errorText = (await response.clone().text()).toUpperCase(); } catch { /* use the HTTP status below */ }
+    }
+    if (providerName === "the_odds_api") {
+      if (response.status === 401 || response.status === 403 || errorText.includes("INVALID API KEY")) throw new Error("the_odds_api_invalid_key");
+      if (response.status === 429 || errorText.includes("QUOTA")) throw new Error("the_odds_api_rate_limited");
     }
     if (providerName === "sisal_odds") {
       if (["INVALID_API_KEY", "MISSING_API_KEY"].includes(errorCode) || errorText.includes("INVALID API KEY")) throw new Error("sisal_odds_invalid_key");
@@ -283,29 +302,29 @@ function errorStatus(error) {
 function publicError(error) {
   const messages = {
     provider_missing_key: "Inserisci una chiave API-Football valida oppure configura il secret API_FOOTBALL_KEY su Cloudflare.",
-    provider_invalid_key: "La chiave API-Football non è valida. Controlla il secret API_FOOTBALL_KEY su Cloudflare.",
-    provider_rate_limited: "Limite API raggiunto. Il piano gratuito consente 100 richieste al giorno; riprova dopo il ripristino della quota.",
-    provider_unreachable: "Il servizio dati non è raggiungibile in questo momento.",
-    provider_http_error: "Il servizio dati ha restituito un errore.",
-    provider_invalid_json: "Il servizio dati ha restituito una risposta non leggibile.",
-    provider_rejected_request: "Il servizio dati ha rifiutato la richiesta. Verifica la copertura della Serie A e la chiave API.",
-    sisal_odds_invalid_key: "La chiave OddsPapi non è valida. Controlla il secret ODDSPAPI_API_KEY su Cloudflare.",
+    provider_invalid_key: "La chiave API-Football non è valida. Controlla la chiave nelle Impostazioni.",
+    provider_rate_limited: "Limite API-Football raggiunto. Riprova dopo il ripristino della quota.",
+    provider_unreachable: "API-Football non è raggiungibile in questo momento.",
+    provider_http_error: "API-Football ha restituito un errore.",
+    provider_invalid_json: "API-Football ha restituito una risposta non leggibile.",
+    provider_rejected_request: "API-Football ha rifiutato la richiesta. Verifica copertura e piano.",
+    sisal_odds_invalid_key: "La chiave OddsPapi non è valida. Controlla la chiave nelle Impostazioni.",
     sisal_odds_restricted: "La chiave OddsPapi non include l'accesso alle quote Sisal. Controlla la copertura del piano.",
-    sisal_odds_quota_exceeded: "La quota mensile OddsPapi è esaurita. Riprova al rinnovo o verifica il piano.",
+    sisal_odds_quota_exceeded: "La quota OddsPapi è esaurita. Verifica il piano o attendi il rinnovo.",
     sisal_odds_rate_limited: "OddsPapi ha limitato le richieste. Riprova tra poco.",
     sisal_odds_unreachable: "OddsPapi non è raggiungibile in questo momento.",
     sisal_odds_http_error: "OddsPapi ha restituito un errore durante il recupero delle quote Sisal.",
     sisal_odds_invalid_json: "OddsPapi ha restituito una risposta non leggibile.",
-
-
-
-
-
-    football_data_invalid_key: "Il token football-data.org non è valido. Controlla il secret FOOTBALL_DATA_API_KEY su Cloudflare.",
-    football_data_rate_limited: "Limite football-data.org raggiunto. Il piano gratuito consente 10 richieste al minuto; riprova tra poco.",
+    football_data_invalid_key: "Il token football-data.org non è valido. Controlla la chiave nelle Impostazioni.",
+    football_data_rate_limited: "Limite football-data.org raggiunto. Riprova tra poco.",
     football_data_unreachable: "football-data.org non è raggiungibile in questo momento.",
     football_data_http_error: "football-data.org ha restituito un errore.",
-    football_data_invalid_json: "football-data.org ha restituito una risposta non leggibile."
+    football_data_invalid_json: "football-data.org ha restituito una risposta non leggibile.",
+    the_odds_api_invalid_key: "La chiave The Odds API non è valida. Controlla il valore inserito.",
+    the_odds_api_rate_limited: "The Odds API ha raggiunto il limite di richieste o crediti.",
+    the_odds_api_unreachable: "The Odds API non è raggiungibile in questo momento.",
+    the_odds_api_http_error: "The Odds API ha restituito un errore.",
+    the_odds_api_invalid_json: "The Odds API ha restituito dati non leggibili."
   };
   return messages[error.message] || "Errore temporaneo durante il recupero dei dati.";
 }
@@ -419,7 +438,7 @@ function convertSisalOdds(fixture, oddsPayload, marketDefinitions) {
 }
 
 async function getSisalOddsEvents(context, date, home, away) {
-  const key = context.env && context.env.ODDSPAPI_API_KEY;
+  const key = getOddsPapiKey(context);
   if (!key) return { configured: false, events: [] };
   const start = new Date(date + "T00:00:00.000Z");
   const from = new Date(start.getTime() - 3 * 60 * 60 * 1000).toISOString();
@@ -512,8 +531,82 @@ function oddsEventUpdatedAt(event) {
   return updates.at(-1) || null;
 }
 
+
+const THE_ODDS_API_BASE = "https://api.the-odds-api.com/v4";
+const THE_ODDS_SERIE_A = "soccer_italy_serie_a";
+
+async function getTheOddsApiSports(context) {
+  const key = getTheOddsApiKey(context);
+  if (!key) throw new Error("the_odds_api_invalid_key");
+  const url = new URL(THE_ODDS_API_BASE + "/sports");
+  url.searchParams.set("apiKey", key);
+  const payload = await cachedExternalJson(context, "the_odds_api", url.toString(), "the-odds-api/sports", { Accept: "application/json" }, 0);
+  if (!Array.isArray(payload)) throw new Error("the_odds_api_invalid_json");
+  return payload;
+}
+
+async function getTheOddsApiStatus(context) {
+  if (!getTheOddsApiKey(context)) return responseJson({ configured: false, provider: "The Odds API", error: "Inserisci una chiave nelle Impostazioni." });
+  const sports = await getTheOddsApiSports(context);
+  const serieA = sports.find(item => item && item.key === THE_ODDS_SERIE_A);
+  return responseJson({ configured: true, valid: true, provider: "The Odds API", serieAAvailable: Boolean(serieA && serieA.active !== false), sportKey: THE_ODDS_SERIE_A });
+}
+
+function normalizeTheOddsEvents(events) {
+  return (Array.isArray(events) ? events : []).map(event => {
+    const bookmakers = (Array.isArray(event.bookmakers) ? event.bookmakers : []).map(book => {
+      const market = (Array.isArray(book.markets) ? book.markets : []).find(item => item && item.key === "h2h");
+      if (!market) return null;
+      const values = (Array.isArray(market.outcomes) ? market.outcomes : []).map(outcome => {
+        const name = String(outcome && outcome.name || "");
+        const value = normalizeTeamName(name) === "draw" ? "Draw"
+          : (sameTeamName(name, event.home_team) ? "Home"
+          : (sameTeamName(name, event.away_team) ? "Away" : ""));
+        const odd = Number(outcome && outcome.price);
+        return value && Number.isFinite(odd) && odd > 1 ? { value, odd } : null;
+      }).filter(Boolean);
+      return values.length === 3 && new Set(values.map(item => item.value)).size === 3
+        ? { name: book.title || book.key || "Bookmaker · The Odds API", bets: [{ name: "Match Winner", values }] }
+        : null;
+    }).filter(Boolean);
+    const updates = (Array.isArray(event.bookmakers) ? event.bookmakers : [])
+      .map(book => book.last_update)
+      .filter(value => typeof value === "string" && Number.isFinite(Date.parse(value)));
+    return {
+      date: localDateTime(event.commence_time).date,
+      home: event.home_team || "",
+      away: event.away_team || "",
+      updatedAt: updates.sort((a, b) => Date.parse(a) - Date.parse(b)).at(-1) || null,
+      bookmakers,
+      source: "The Odds API"
+    };
+  }).filter(event => event.date && event.home && event.away && event.bookmakers.length);
+}
+
+async function getTheOddsApiEvents(context) {
+  if (!getTheOddsApiKey(context)) return responseJson({ configured: false, provider: "The Odds API", events: [] });
+  const url = new URL(THE_ODDS_API_BASE + "/sports/" + THE_ODDS_SERIE_A + "/odds");
+  url.searchParams.set("apiKey", getTheOddsApiKey(context));
+  url.searchParams.set("regions", "eu");
+  url.searchParams.set("markets", "h2h");
+  url.searchParams.set("oddsFormat", "decimal");
+  url.searchParams.set("dateFormat", "iso");
+  const payload = await cachedExternalJson(context, "the_odds_api", url.toString(), "the-odds-api/serie-a/eu/h2h", { Accept: "application/json" }, 300);
+  if (!Array.isArray(payload)) throw new Error("the_odds_api_invalid_json");
+  return responseJson({ configured: true, provider: "The Odds API", updatedAt: new Date().toISOString(), events: normalizeTheOddsEvents(payload) });
+}
+
+async function getOddsPapiStatus(context) {
+  if (!getOddsPapiKey(context)) return responseJson({ configured: false, provider: "OddsPapi", error: "Inserisci una chiave nelle Impostazioni." });
+  const url = new URL(SISAL_ODDS_API_BASE + "/sports");
+  url.searchParams.set("apiKey", getOddsPapiKey(context));
+  const payload = await cachedExternalJson(context, "sisal_odds", url.toString(), "oddspapi/status/sports", { Accept: "application/json" }, 0);
+  if (!Array.isArray(payload)) throw new Error("sisal_odds_invalid_json");
+  return responseJson({ configured: true, valid: true, provider: "OddsPapi" });
+}
+
 async function getFootballDataFixtures(context, season) {
-  const key = context.env && context.env.FOOTBALL_DATA_API_KEY;
+  const key = getFootballDataKey(context);
   if (!key) {
     return responseJson({
       configured: false,
@@ -570,7 +663,7 @@ async function getMatchContext(context, season, requestUrl) {
   }
 
   const apiFootballKey = getApiFootballKey(context);
-  const sisalOddsKey = context.env && context.env.ODDSPAPI_API_KEY;
+  const sisalOddsKey = getOddsPapiKey(context);
   const [fixtureLookup, oddsLookup] = await Promise.allSettled([
     apiFootballKey ? providerGet("fixtures", { league: SERIE_A_ID, season, date, timezone: "Europe/Rome" }, context, 12 * 60 * 60) : Promise.resolve(null),
     sisalOddsKey ? getSisalOddsEvents(context, date, home, away) : Promise.resolve({ configured: false, events: [] })
@@ -770,28 +863,33 @@ export async function onRequestGet(context) {
   const requestUrl = new URL(context.request.url);
   const env = context.env || {};
   const apiFootballConfigured = Boolean(getApiFootballKey(context));
-  const sisalOddsConfigured = Boolean(env.ODDSPAPI_API_KEY);
-  const footballDataConfigured = Boolean(env.FOOTBALL_DATA_API_KEY);
+  const sisalOddsConfigured = Boolean(getOddsPapiKey(context));
+  const footballDataConfigured = Boolean(getFootballDataKey(context));
+  const theOddsApiConfigured = Boolean(getTheOddsApiKey(context));
   const season = currentSeason();
   const type = requestUrl.searchParams.get("type") || "";
   try {
     if (type === "status") {
       const apiFootballUsage = apiFootballConfigured ? await readApiFootballUsage(context) : null;
       return responseJson({
-        configured: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured,
+        configured: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured || theOddsApiConfigured,
         type: "status",
         source: apiFootballConfigured ? "API-Football" : (sisalOddsConfigured ? "Sisal · OddsPapi" : (footballDataConfigured ? "football-data.org" : null)),
         season,
         freePlanRequestsPerDay: apiFootballConfigured ? 100 : null,
         apiFootballUsage,
-        error: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured ? null : "API_FOOTBALL_KEY, ODDSPAPI_API_KEY o FOOTBALL_DATA_API_KEY non configurata.",
+        error: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured || theOddsApiConfigured ? null : "Nessun provider API key configurato. Calendario e storico pubblici restano disponibili.",
         providers: {
           apiFootball: apiFootballConfigured,
           sisalOdds: sisalOddsConfigured,
-          footballData: footballDataConfigured
+          footballData: footballDataConfigured,
+          theOddsApi: theOddsApiConfigured
         }
       });
     }
+    if (type === "test-oddspapi") return await getOddsPapiStatus(context);
+    if (type === "test-the-odds-api") return await getTheOddsApiStatus(context);
+    if (type === "odds-batch") return await getTheOddsApiEvents(context);
     if (type === "fixtures") {
       const requestedSeason = Number(requestUrl.searchParams.get("season") || season);
       if (!Number.isInteger(requestedSeason) || requestedSeason < 1990 || requestedSeason > season + 1) {
