@@ -550,3 +550,51 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
 @media(prefers-reduced-motion:reduce){
  .fixture,.team-tile,.shortcut,.nav-item{transition:none!important}
 }
+
+
+/* Unified MatchMind product polish across secondary screens */
+.page-intro{position:relative}.page-intro:after{content:"";display:block;width:34px;height:3px;margin-top:10px;border-radius:9px;background:var(--mint);opacity:.85}
+.page-intro h1{line-height:1.08}.page-intro p{max-width:660px}
+.page-wrap>section,.page-wrap>div{min-width:0}.page-wrap .section{min-width:0}
+.page-wrap .section-head{gap:12px}.page-wrap .section-head>div{min-width:0}
+.field input,.field select,.page-wrap input[type=search],.page-wrap input[type=date],.page-wrap select{width:100%;min-width:0;min-height:44px;padding:10px 13px;border-radius:12px;font-size:12px}
+.field label{display:block;margin-bottom:5px}
+.page-wrap button{min-height:40px;padding:9px 13px;border-radius:11px}
+.filter-row{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:13px 0 0}.filter-row .pill{min-height:35px;padding:7px 13px}
+.page-wrap .notice{line-height:1.65}.page-wrap .data-row{gap:12px;min-width:0}.page-wrap .data-row>b{max-width:62%;text-align:right;overflow-wrap:anywhere}
+.competition-hero{display:flex;align-items:center;gap:14px;padding:19px;border:1px solid #35464a;border-radius:20px;background:radial-gradient(circle at 85% 15%,#c4f36a16,transparent 32%),linear-gradient(125deg,#182720,#111b22);box-shadow:0 15px 36px #0003}
+.competition-hero h2{font-size:19px;letter-spacing:-.6px}.competition-hero p{margin:4px 0 0;color:#95a39f;font-size:10px}
+.competition-badge{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:15px;background:linear-gradient(145deg,#d9ff94,#a4d84d);color:#17210a;font-size:21px;font-weight:950;box-shadow:0 8px 20px #c4f36a20}
+.league-table{min-width:540px;border-collapse:separate;border-spacing:0}.league-table thead th{position:sticky;top:0;background:#121c24;z-index:1}
+.league-table tbody tr{transition:background .16s}.league-table tbody tr:hover{background:#ffffff08}.league-table td.club a{gap:9px}
+.league-table .team-crest{width:27px;height:27px;flex:0 0 27px;border-radius:9px}.league-table .points{font-weight:950}
+.table-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}
+.team-hero{display:flex;align-items:center;gap:15px;padding:20px;border:1px solid #354b3c;border-radius:20px;background:radial-gradient(circle at 90% 10%,#c4f36a18,transparent 30%),linear-gradient(130deg,#1a2b21,#111b22);box-shadow:0 16px 36px #0003}
+.team-hero .team-crest{width:58px;height:58px;flex:0 0 58px;border-radius:18px;font-size:17px}.team-hero h1{font-size:22px;letter-spacing:-.8px}.team-hero p{color:#9eaca5;font-size:10px}.team-hero button{margin-left:auto;white-space:nowrap}
+.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric{min-width:0;padding:16px}
+.metric span{display:block;color:#93a19f;font-size:8px;font-weight:850;letter-spacing:.8px}.metric b{display:block;margin:5px 0;font-size:27px;letter-spacing:-1px}.metric small{color:#84939b;font-size:9px;line-height:1.5}
+.player-lookup{align-items:stretch}.player-lookup input{min-width:0}.player-item{box-shadow:0 9px 25px #0002}.player-item-head{align-items:center}.player-item-head button{flex:0 0 auto}.player-results{gap:10px}
+.shortcut-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.shortcut{min-width:0}.shortcut>span:last-child{min-width:0}.shortcut small{display:block}
+.analysis-section{padding:18px;border:1px solid #2b3d3e;border-radius:21px;background:linear-gradient(145deg,#121e25,#0f171e);box-shadow:0 14px 34px #0003}
+.analysis-section>.section-head:first-child{margin-bottom:15px}.analysis-section .prob-grid{gap:9px}.analysis-section .prob{min-width:0;padding:15px;border-color:#35443f;background:linear-gradient(145deg,#192720,#111b22)}
+.analysis-section .prob b{font-size:26px;color:#d4f58e}.analysis-section .prob span{font-size:9px;font-weight:850;letter-spacing:.5px}.analysis-section .track{height:5px;margin-top:9px}
+.match-model-context{border-color:#33453b;background:linear-gradient(140deg,#16231d,#101a21)}
+.context-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;color:#d6f49a;font-size:8px;font-weight:950;letter-spacing:1.1px}
+.context-heading small{color:#82938a;font-size:8px;font-weight:650;letter-spacing:0;text-align:right}
+.provider-section{padding:18px;border:1px solid #2a3941;border-radius:20px;background:#101820}
+.provider-section>.section-head{margin-bottom:12px}.provider-section #matchContext{border:0;padding:0;background:transparent;box-shadow:none}
+.provider-section #matchContext .data-row{padding:12px 0}.provider-section #matchContext .notice{margin-top:10px}.provider-section #matchContext .eyebrow{color:#d4f58e}
+.form-row{gap:6px}.form-chip{display:grid;place-items:center;font-style:normal;font-weight:950}
+.form-chip.W{background:#29451f;color:#d6f49a}.form-chip.D{background:#49391d;color:#ffdc96}.form-chip.L{background:#48252d;color:#ffabb5}
+.detail-back{margin-bottom:14px}[data-page="mind"] .hero-card{margin-bottom:22px}[data-page="mind"] .hero-card h1{max-width:540px}[data-page="mind"] .hero-card p{max-width:600px}
+[data-page="data"] .panel{overflow:hidden}[data-page="data"] .panel-head{align-items:center}[data-page="data"] .panel-head button{min-width:92px}
+@media(max-width:700px){
+ .page-wrap .section-head h2{font-size:16px}.page-wrap .section-head p{font-size:9px}
+ .competition-hero{padding:15px;border-radius:17px}.competition-badge{width:42px;height:42px;flex-basis:42px}
+ .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.metric{padding:13px;border-radius:14px}.metric b{font-size:23px}
+ .team-hero{padding:15px;border-radius:17px;gap:11px}.team-hero .team-crest{width:48px;height:48px;flex-basis:48px}.team-hero h1{font-size:18px}.team-hero button{padding:7px 9px;font-size:9px}
+ .shortcut-grid{grid-template-columns:1fr}.analysis-section{padding:13px;border-radius:17px}.analysis-section .prob-grid{gap:6px}.analysis-section .prob{padding:11px 7px;border-radius:12px}.analysis-section .prob b{font-size:21px}.analysis-section .prob span{font-size:8px}
+ .provider-section{padding:14px;border-radius:17px}.context-heading{align-items:flex-start}.context-heading small{max-width:48%}
+ .player-item-head button{min-height:35px}.page-wrap .data-row{font-size:9px}
+}
+@media(max-width:370px){.analysis-section .prob b{font-size:18px}}
