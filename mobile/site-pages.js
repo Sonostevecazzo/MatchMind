@@ -239,7 +239,7 @@
   const ticketTarget=$('roundTickets');
   if(ticketTarget&&window.MatchMindRounds){
    try{
-    const ticket=window.MatchMindRounds.buildTicket(d.matches,m=>MM().forecast(m,d.history));
+    const ticket=window.MatchMindRounds.buildTicket(d.matches,m=>MM().forecast(m,d.history),{isUpcoming:MM().upcoming});
     if(!ticket.available){ticketTarget.innerHTML='<div class="notice warning">'+esc(ticket.reason)+'</div>';}
     else{
      const pct=x=>x===null||x===undefined?'Non calcolabile':fmt(x*100,4)+'%';
