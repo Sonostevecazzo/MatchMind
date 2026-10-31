@@ -29,11 +29,26 @@ test("walk-forward backtest uses only earlier matches and returns valid 1X2 metr
   }
   assert.ok(result.model.logLoss >= 0);
   assert.ok(result.model.brier >= 0);
+  assert.deepEqual(Object.keys(result.byClass).sort(), ["away", "draw", "home"]);
+  assert.ok(result.model.accuracyCI[0] <= result.model.accuracy);
+  assert.ok(result.model.accuracyCI[1] >= result.model.accuracy);
+  assert.ok(Object.keys(result.bySeason).length > 0);
 });
 
 test("walk-forward backtest refuses an insufficient historical sample", () => {
   const rows = Array.from({ length: 20 }, (_, i) => ({
     date: new Date(Date.UTC(2023, 0, 1 + i)).toISOString().slice(0, 10),
+    home: "Alpha FC",
+    away: "Beta FC",
+    hg: i % 2,
+    ag: (i + 1) % 2
+  }));
+  assert.equal(window.MM.backtest(rows).count, 0);
+});
+
+test("walk-forward excludes every fixture played on the target date", () => {
+  const rows = Array.from({ length: 40 }, (_, i) => ({
+    date: "2024-01-01",
     home: "Alpha FC",
     away: "Beta FC",
     hg: i % 2,
