@@ -27,7 +27,15 @@ function hasProviderErrors(errors) {
   return Boolean(errors);
 }
 
-function getApiFootballKey(context) {\n  const supplied = context.request && context.request.headers.get("x-matchmind-api-key");\n  const key = supplied || (context.env && context.env.API_FOOTBALL_KEY) || "";\n  return /^[A-Za-z0-9_-]{20,256}$/.test(key) ? key : "";\n}\n\nasync function providerGet(path, params, context, ttlSeconds) {
+function getApiFootballKey(context) {
+  const supplied = context.request && context.request.headers.get("x-matchmind-api-key");
+  const key = supplied || (context.env && context.env.API_FOOTBALL_KEY) || "";
+  return /^[A-Za-z0-9_-]{20,256}$/.test(key) ? key : "";
+}
+
+async function providerGet(path, params, context, ttlSeconds) {
+  const apiKey = getApiFootballKey(context);
+  if (!apiKey) throw new Error("provider_missing_key");
   const providerUrl = new URL(path, API_BASE + "/");
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && String(value) !== "") {
@@ -38,7 +46,7 @@ function getApiFootballKey(context) {\n  const supplied = context.request && con
   let cache;
   let cacheKey;
   try {
-    cache = caches.default;
+    cache = ttlSeconds > 0 ? caches.default : null;
     const requestUrl = new URL(context.request.url);
     const keyUrl = new URL(CACHE_ROOT + encodeURIComponent(path), requestUrl.origin);
     keyUrl.search = providerUrl.search;
@@ -274,7 +282,8 @@ function errorStatus(error) {
 
 function publicError(error) {
   const messages = {
-    provider_missing_key: "Inserisci una chiave API-Football valida oppure configura il secret API_FOOTBALL_KEY su Cloudflare.",\n    provider_invalid_key: "La chiave API-Football non è valida. Controlla il secret API_FOOTBALL_KEY su Cloudflare.",
+    provider_missing_key: "Inserisci una chiave API-Football valida oppure configura il secret API_FOOTBALL_KEY su Cloudflare.",
+    provider_invalid_key: "La chiave API-Football non è valida. Controlla il secret API_FOOTBALL_KEY su Cloudflare.",
     provider_rate_limited: "Limite API raggiunto. Il piano gratuito consente 100 richieste al giorno; riprova dopo il ripristino della quota.",
     provider_unreachable: "Il servizio dati non è raggiungibile in questo momento.",
     provider_http_error: "Il servizio dati ha restituito un errore.",
