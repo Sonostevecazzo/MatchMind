@@ -38,6 +38,9 @@
     row.sampleEnough = Boolean(forecast.sampleEnough);
     row.reason = row.sampleEnough ? null : "Campione storico insufficiente.";
     row.quote = null;
+    row.odds = null;
+    row.breakEvenProbability = null;
+    row.theoreticalEv = null;
   }
 
   function renderSlip() {
