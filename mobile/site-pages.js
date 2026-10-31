@@ -99,6 +99,8 @@
   '<div class="panel panel-pad match-model-context" style="margin-top:14px"><div class="context-heading"><span>CONTESTO DEL MODELLO</span><small>Stime, non dati osservati</small></div><div class="data-row"><span>Partite usate · '+esc(match.home)+'</span><b>'+f.home.played+'</b></div><div class="data-row"><span>Partite usate · '+esc(match.away)+'</span><b>'+f.away.played+'</b></div><div class="data-row"><span>Periodo storico complessivo</span><b>'+(f.historyStart&&f.historyEnd?esc(f.historyStart)+' – '+esc(f.historyEnd):'Non disponibile')+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.home)+'</span><b>'+fmt(f.homeXg,2)+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.away)+'</span><b>'+fmt(f.awayXg,2)+'</b></div><div class="data-row"><span>Forma '+esc(match.home)+'</span><div class="form-row">'+(f.home.form.length?f.home.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div><div class="data-row"><span>Forma '+esc(match.away)+'</span><div class="form-row">'+(f.away.form.length?f.away.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div></div></section>'+
   seasonContextHtml+
   (done?'<div class="notice">Partita conclusa: il contesto prematch e le quote non vengono presentati come dati correnti.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">DATI ESTERNI</div><h2>Quote e indisponibili</h2><p>Solo dati restituiti dal provider, quando disponibili.</p></div></div><div id="matchContext" class="panel panel-pad"><div class="loading-state">Verifica copertura e contesto partita…</div></div></section>')+
+  '<section class="section"><div class="section-head"><div><div class="eyebrow">CONTESTO EDITORIALE</div><h2>Notizie recenti</h2><p>Articoli collegati alle due squadre, con fonte e data.</p></div></div><div id="matchNews" class="panel panel-pad"><div class="loading-state">Ricerca delle notizie…</div></div></section>'+
+
   '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri il centro MatchMind Intelligence ↗</a></div>';
   if(!done){
    try{
@@ -155,6 +157,19 @@
     const suggestion='<div class="section-head" style="margin-top:13px"><div><h2>Come leggere la scommessa</h2><p>Probabilità e convenienza sono due cose diverse.</p></div></div><div class="notice">L’esito più probabile secondo il modello è '+likelyLabel+' ('+fmt(mostLikely[1]*100,1)+'%). Non significa che sia conveniente: per valutare il prezzo confronta probabilità modello e quota. Se non emerge un margine positivo e dati aggiornati, la scelta razionale è non puntare.</div>';
     $('matchContext').innerHTML='<div class="context-heading"><span>QUOTE E VALORE ATTESO</span><small>Fonte esterna · disponibilità variabile</small></div>'+odds+suggestion+'<div style="margin-top:14px" class="eyebrow">INDISPONIBILI · API-FOOTBALL</div>'+abs+'<div class="notice" style="margin-top:10px">Fonti prematch: '+esc(c.oddsSource||'quote non disponibili')+' per le quote; API-Football per fixture e indisponibili. Le quote possono cambiare rapidamente.</div>';
    }catch(e){$('matchContext').innerHTML='<div class="notice warning">Dati prematch non disponibili: '+esc(e.message)+'</div>';}
+  }
+  try{
+   const news=await MM().playerApi('type=news&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'news:'+MM().norm(match.home)+':'+MM().norm(match.away),15*60*1000);
+   const target=$('matchNews');
+   if(target){
+    const articles=Array.isArray(news.articles)?news.articles:[];
+    target.innerHTML=articles.length
+     ?articles.map(article=>'<article class="data-row"><span><a href="'+esc(article.url)+'" target="_blank" rel="noopener noreferrer">'+esc(article.title)+'</a><small style="display:block;color:#91a0ae">'+esc(article.source||'Fonte editoriale')+(article.publishedAt?' · '+new Date(article.publishedAt).toLocaleDateString('it-IT'):'')+'</small></span><b>↗</b></article>').join('')+'<small style="display:block;color:#91a0ae;font-size:9px;line-height:1.5;margin-top:10px">'+esc(news.note||'Notizie come contesto editoriale.')+'</small><small style="display:block;color:#91a0ae;font-size:9px;margin-top:6px">Fonte: Google News RSS · verifica sempre il contenuto nell’articolo originale.</small>'
+     :'<div class="notice">Nessun articolo recente trovato per questa partita.</div><small style="display:block;color:#91a0ae;font-size:9px;margin-top:7px">Fonte: Google News RSS.</small>';
+   }
+  }catch(e){
+   const target=$('matchNews');
+   if(target)target.innerHTML='<div class="notice warning">Notizie non disponibili: '+esc(e.message)+'</div>';
   }
  }
  let playerResults=[];
