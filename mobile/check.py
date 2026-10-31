@@ -33,7 +33,7 @@ with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
     handle.flush()
     subprocess.run(["node", "--check", handle.name], check=True)
 
-for filename in ["site-core.js", "site-pages.js", "elo.js", "sw.js"]:
+for filename in ["site-core.js", "site-pages.js", "elo.js", "rounds.js", "sw.js"]:
     subprocess.run(["node", "--check", str(ROOT / filename)], check=True)
 
 for path in [
