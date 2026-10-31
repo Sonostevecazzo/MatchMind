@@ -28,20 +28,30 @@
   const table=standingsBefore(rows,match.date),start=seasonStart(match.date),totalTeams=new Set(allTeamsRows.filter(m=>m&&m.date>=start).flatMap(m=>[m.home,m.away]).filter(Boolean).map(norm)).size||20;
   return {table,home:teamContext(match.home,table,totalTeams),away:teamContext(match.away,table,totalTeams),asOf:match.date,disclaimer:'Obiettivi inferiti dalla classifica alla data della partita; non sono dichiarazioni ufficiali dei club. Classifica provvisoria ordinata per punti, differenza reti e gol fatti; gli spareggi diretti non sono applicati.'};
  }
- function buildTicket(rows,forecastFn){
-  const upcoming=rows.filter(m=>m&&m.date&&(m.hg===null||m.hg===undefined||m.ag===null||m.ag===undefined)).slice().sort((a,b)=>a.date.localeCompare(b.date));
+ function buildTicket(rows,forecastFn,options={}){
+  const now=options.now instanceof Date?options.now:new Date();
+  const localDate=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+  const isUpcoming=typeof options.isUpcoming==='function'?options.isUpcoming:m=>{
+   if(!m||!m.date||scored(m)||m.date<localDate)return false;
+   if(m.date>localDate)return true;
+   const time=/^\\d{1,2}:\\d{2}$/.test(String(m.time||''))?m.time:'';
+   if(!time)return true;
+   const [hours,minutes]=time.split(':').map(Number);
+   return new Date(now.getFullYear(),now.getMonth(),now.getDate(),hours,minutes).getTime()>=now.getTime();
+  };
+  const upcoming=rows.filter(m=>m&&m.date&&!scored(m)&&isUpcoming(m)).slice().sort((a,b)=>a.date.localeCompare(b.date));
   if(!upcoming.length)return {available:false,reason:'Nessuna partita futura disponibile.'};
   const first=upcoming[0],round=first.round;
-  const fixtures=round!==null&&round!==undefined?upcoming.filter(m=>Number(m.round)===Number(round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000);
+  const roundKey=round===null||round===undefined?'':String(round).trim();\n  const fixtures=roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000);
   const legs=fixtures.map(match=>{
    const f=forecastFn(match),p=f&&f.probabilities;
-   if(!p||!f.sampleEnough)return {match,eligible:false,reason:'Campione storico insufficiente'};
+   if(!p||!f.sampleEnough)return {match,eligible:false,reason:'Campione storico insufficiente'};\n   const values=[p.home,p.draw,p.away,p.btts,p.o25];\n   if(!values.every(v=>Number.isFinite(v)&&v>=0&&v<=1)||Math.abs(p.home+p.draw+p.away-1)>.02)return {match,eligible:false,reason:'Probabilità del modello mancanti o non valide'};
    const one=[['1',p.home],['X',p.draw],['2',p.away]].sort((a,b)=>b[1]-a[1])[0];
    const btts=[['Gol',p.btts],['No Gol',1-p.btts]].sort((a,b)=>b[1]-a[1])[0];
    const total=[['Over 2,5',p.o25],['Under 2,5',1-p.o25]].sort((a,b)=>b[1]-a[1])[0];
    return {match,eligible:true,oneXtwo:{label:one[0],probability:one[1]},btts:{label:btts[0],probability:btts[1]},total:{label:total[0],probability:total[1]},context:matchContext(match,rows,rows)};
   });
-  const combine=key=>{const valid=legs.filter(x=>x.eligible);if(valid.length!==legs.length||!valid.length)return {probability:null,legs:valid.length,required:legs.length,complete:false};const log=valid.reduce((s,x)=>s+Math.log(Math.max(1e-15,x[key].probability)),0);return {probability:Math.exp(log),legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};};
+  const combine=key=>{const valid=legs.filter(x=>x.eligible);if(valid.length!==legs.length||!valid.length)return {probability:null,legs:valid.length,required:legs.length,complete:false};if(valid.some(x=>x[key].probability===0))return {probability:0,legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};const log=valid.reduce((s,x)=>s+Math.log(x[key].probability),0);return {probability:Math.exp(log),legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};};
   return {available:true,round:first.round??null,from:fixtures[0].date,to:fixtures[fixtures.length-1].date,fixtures:legs,tickets:{oneXtwo:combine('oneXtwo'),btts:combine('btts'),underOver:combine('total')},selectionRule:'Per ogni mercato viene selezionato l’esito singolo con probabilità stimata più alta; linea totale fissa 2,5.',disclaimer:'Stime statistiche, non garanzie. Una schedina con molte selezioni può avere probabilità complessiva molto bassa.'};
  }
  window.MatchMindRounds={standingsBefore,teamContext,matchContext,buildTicket,seasonStart};
