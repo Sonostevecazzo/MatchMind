@@ -121,3 +121,17 @@ The Intelligence page also computes an independent, chronological Elo experiment
 ### Elo parameter selection and holdout result
 
 A small, predeclared grid was evaluated using only forecasts dated before 2025-08-01: K in {10, 15, 20, 25, 30} and home advantage in {40, 50, 60, 65, 70, 80} Elo points. The pair with the lowest training log loss was K=20 and home advantage=40. These settings were then evaluated on the untouched 2025/26 holdout (2025-08-01 through 2026-05-24), containing 370 eligible fixtures. Elo achieved 50.54% accuracy, 1.0116 log loss and 0.5984 multiclass Brier; Poisson on the same holdout fixtures achieved 50.00%, 1.0196 and 0.6098 respectively. On the full 1,733-forecast archive, selected Elo achieved 51.82% accuracy, 1.0010 log loss and 0.5976 Brier. This is encouraging but not definitive: the holdout contains one season only, the parameter grid is modest, and no market-odds or profitability test has been performed. Elo remains an experiment and Poisson remains the production match forecast. The separate fixed-parameter K=20 / home-advantage=65 experiment was not retained after the chronological holdout comparison.
+
+
+## Classifica, obiettivi stagionali e schedine per turno
+
+Il motore `rounds.js` aggiunge il contesto della classifica alla data di ogni partita: punti, posizione, partite giocate, differenza reti e distanza dalle prime posizioni. Le etichette (zona Champions, zona Europa, corsa alle coppe, lotta salvezza, zona retrocessione) sono inferenze basate sulla classifica disponibile e sul numero di squadre della stagione; non sono dichiarazioni ufficiali dei club. Il calcolo usa solo risultati con data strettamente precedente alla partita analizzata e azzera la classifica al cambio di stagione.
+
+La pagina Intelligence genera tre schedine per il turno successivo:
+- 1X2: per ogni partita seleziona il segno con probabilità stimata più alta.
+- Gol/No Gol: seleziona l'esito BTTS con probabilità più alta.
+- Under/Over 2,5: seleziona il lato della linea 2,5 con probabilità più alta.
+
+Per ogni gamba mostra la probabilità marginale. La probabilità complessiva è il prodotto delle probabilità delle singole selezioni, calcolato in log-spazio per evitare underflow numerico. Se anche una sola partita non ha un campione minimo adeguato, la probabilità complessiva viene omessa invece di essere inventata. Il prodotto assume indipendenza tra le partite: è una stima semplificata, non una probabilità congiunta calibrata. Le schedine non sono una raccomandazione di puntata e non dimostrano redditività.
+
+Le probabilità delle schedine riutilizzano il modello Poisson esistente. Il contesto classifica è mostrato separatamente e non modifica ancora le probabilità: prima di introdurre un aggiustamento motivazionale servono un backtest walk-forward multi-stagione, confronto con Poisson senza contesto e calibrazione separata per mercato. Questa scelta evita di attribuire coefficienti arbitrari alla cosiddetta motivazione.
