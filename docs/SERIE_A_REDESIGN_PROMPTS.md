@@ -51,7 +51,11 @@ This file records the reusable prompts used as structured review checklists. The
 - Updated the static PWA validator to assert the five primary destinations and the score-matrix model.
 - Added accessible pressed/selected state updates for match filters and Serie A tabs.
 - Bumped the service-worker cache key so deployed devices fetch the revised shell.
-- Automated tests and CI are still pending at the time this file was committed; see the pull-request checks for the final result.
+- Mobile PWA checks passed (workflow run 48).
+- Python test matrix passed on Python 3.11, 3.12 and 3.13 (workflow run 444), including compile, pytest, CLI smoke test and the mobile static validator.
+- JavaScript source files were syntax-checked; the correct-score matrix was exercised directly and its 36 cells plus residual mass summed to 1 within floating-point tolerance.
+- Cloudflare Pages branch preview deployment succeeded for the redesign commit.
+- No real Android device/screenshot test was available; visual QA on physical hardware remains a final manual check.
 
 ## Prompt 5 — Football data integrity reviewer
 
