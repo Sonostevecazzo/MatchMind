@@ -273,11 +273,15 @@
           }
           return selection&&Number.isFinite(probability)?{selection,probability,odd,group}:null;
          }).filter(Boolean);
-         if(mapped.length<2)return;
-         const margin=mapped.reduce((sum,x)=>sum+1/x.odd,0);
-         mapped.forEach(x=>{
-          const implied=(1/x.odd)/margin,ev=x.probability*x.odd-1,edge=x.probability-implied;
-          if(ev>0.03&&edge>0)candidates.push({matchKey,matchLabel,market:x.group,selection:x.selection,odd:x.odd,probability:x.probability,book:book.name||'Provider',ev,edge,updatedAt:c.oddsUpdatedAt});
+         const byMarket=new Map();
+         mapped.forEach(x=>{if(!byMarket.has(x.group))byMarket.set(x.group,[]);byMarket.get(x.group).push(x);});
+         byMarket.forEach(groupValues=>{
+          if(groupValues.length<2)return;
+          const margin=groupValues.reduce((sum,x)=>sum+1/x.odd,0);
+          groupValues.forEach(x=>{
+           const implied=(1/x.odd)/margin,ev=x.probability*x.odd-1,edge=x.probability-implied;
+           if(ev>0.03&&edge>0)candidates.push({matchKey,matchLabel,market:x.group,selection:x.selection,odd:x.odd,probability:x.probability,book:book.name||'Provider',ev,edge,updatedAt:c.oddsUpdatedAt});
+          });
          });
         });
        });
