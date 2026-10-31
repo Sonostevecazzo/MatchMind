@@ -43,6 +43,7 @@ for path in [
     subprocess.run(["node", "--check", str(path)], check=True)
 
 subprocess.run(["node", "--test", str(ROOT / "tests" / "player-context.test.mjs")], check=True)
+subprocess.run(["node", "--test", str(ROOT / "tests" / "backtest.test.mjs")], check=True)
 
 # Check the app's four main destinations and that page-specific routes are linked.
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
@@ -51,8 +52,11 @@ for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html",
 # Forecast transparency and stable team identity checks.
 assert "frosinone:512" in core, "Missing Frosinone crest mapping"
 assert "sampleEnough:h.played>=10&&a.played>=10" in core, "Forecast adequacy must require 10 prior matches per team"
+assert "function backtest(rows)" in core, "Missing chronological out-of-sample backtest"
+assert "backtest,playerApi" in core, "Backtest helper is not exposed to the UI"
 pages_js = (ROOT / "site-pages.js").read_text(encoding="utf-8")
 for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto"]:
     assert phrase in pages_js, f"Missing forecast transparency label: {phrase}"
 
-print("MatchMind multi-screen PWA, shared scripts, service worker, middleware and player API tests passed.")
+assert "forecastBacktest" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing historical backtest panel"
+print("MatchMind PWA, syntax, provider API and chronological backtest tests passed.")
