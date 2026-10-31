@@ -45,12 +45,12 @@ The app service worker does not cache the HTML page. Data already stored by the 
 
 - Current Serie A results/fixtures: open-matchday public CSV, refreshed when the app opens.
 - Historical Serie A scores: public football-dataset CSVs where available.
-- Forecasts: transparent Poisson baseline calculated locally; 1X2, BTTS and Over/Under 1.5/2.5/3.5. The match centre reports the historical date range and each team's actual sample size; a sample is labelled adequate only when at least 10 prior matches per team are available.
+- Forecasts: transparent Poisson baseline calculated locally; 1X2, BTTS and Over/Under 1.5/2.5/3.5. The match centre reports the historical date range and each team's actual sample size; a sample is labelled adequate only when at least 10 prior matches per team are available. The Intelligence page also runs a chronological walk-forward backtest: each tested fixture is forecast only with earlier-dated results, and fixtures are excluded unless both teams have at least 10 prior matches and the historical baseline has at least 30 prior matches. It reports 1X2 accuracy, log loss, multiclass Brier score, calibration bands and comparison with a Laplace-smoothed historical 1X2-frequency baseline.
 - A local browser cache keeps the last loaded match data available if the data provider is temporarily unavailable after the app is open.
 - Optional API-Football module: upcoming reported injuries/questionable players and a search for Serie A player season statistics plus up to five recent appearances (minutes, goals, assists, rating and other fields where the provider supplies them).
 - Optional OddsPapi module: Sisal IT prices for supported 1X2, BTTS and Over/Under 2.5 markets; the app compares them to MatchMind's estimate. Quotes are available only when Sisal offers the market for that fixture.
 - Optional football-data.org fallback: current season fixtures and delayed results when the primary public CSV source cannot be reached.
-- Potential value is flagged at estimated EV of at least +5% only when the historical sample is sufficient. If injury data is missing or incomplete, the comparison uses the base historical estimate, labels it as such and asks the user to verify lineups; no partial injury adjustment is applied.
+- Potential value is flagged at estimated EV of at least +3% only when the historical sample is sufficient. If injury data is missing or incomplete, the comparison uses the base historical estimate, labels it as such and asks the user to verify lineups; no partial injury adjustment is applied.
 - Missing keys, provider quota exhaustion and absent coverage are shown rather than filled with invented data. Secrets remain server-side.
 - The no-key public CSV source does not provide dependable player-level form, injuries, lineups or current pre-match odds.
 - Data providers can change URLs, coverage or availability; the app handles missing historical seasons gracefully.
@@ -85,7 +85,7 @@ A possible positive-value signal is shown only when:
 - at least two outcomes in the same market can be compared; and
 - the model's theoretical expected value is above +3%.
 
-Expected value is calculated as `(model_probability × decimal_odds) − 1`. This is an exploratory model-vs-market comparison, not evidence of a proven betting edge. The local Poisson model is not independently calibrated or validated for profitability; positive EV can be misleading when its probabilities are inaccurate. If data are missing, stale, or insufficient, the app should say that no suggestion is available rather than inventing one. The most likely outcome and the best-priced/value candidate are shown as different concepts.
+Expected value is calculated as `(model_probability × decimal_odds) − 1`. This is an exploratory model-vs-market comparison, not evidence of a proven betting edge. The local Poisson model is not independently calibrated or validated for profitability; positive EV can be misleading when its probabilities are inaccurate. The backtest is a predictive-quality diagnostic, not a profitability test: it does not simulate odds, bookmaker margin, stake sizing, limits or transaction costs. If data are missing, stale, or insufficient, the app should say that no suggestion is available rather than inventing one. The most likely outcome and the best-priced/value candidate are shown as different concepts.
 
 The **Fonti e copertura** page links to the upstream datasets and providers and explains their role and limitations. Provider API keys must remain encrypted Cloudflare Pages secrets.
 
