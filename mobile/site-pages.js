@@ -116,7 +116,7 @@
   (done?'<div class="notice warning">Replay storico: questa stima viene ricostruita dai dati precedenti alla partita. Non esiste una previsione pre-partita congelata e registrata all’epoca.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">DATI ESTERNI</div><h2>Quote e indisponibili</h2><p>Solo dati restituiti dal provider, quando disponibili.</p></div></div><div id="matchContext" class="panel panel-pad"><div class="loading-state">Verifica copertura e contesto partita…</div></div></section>')+
   '<section class="section"><div class="section-head"><div><div class="eyebrow">CONTESTO EDITORIALE</div><h2>Notizie recenti</h2><p>Articoli collegati alle due squadre, con fonte e data.</p></div></div><div id="matchNews" class="panel panel-pad"><div class="loading-state">Ricerca delle notizie…</div></div></section>'+
 
-  '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri il centro MatchMind Intelligence ↗</a></div>';
+  '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri AI Insights ↗</a></div>';
   if(!done){
    try{
     const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
