@@ -58,7 +58,7 @@
         '<option value="' + key + '"' + (row.market && key === row.market.key ? " selected" : "") + '>' + esc(label) + '</option>'
       ).join("");
       const strongest = bestMarket(row.match);
-      const suggestion = strongest && (!row.market || strongest.key !== row.market.key)
+      const suggestion = row.sampleEnough && strongest && (!row.market || strongest.key !== row.market.key)
         ? '<button type="button" class="secondary" data-fix="' + index + '">Proponi ' + esc(strongest.label) + " (" + pct(strongest.probability) + ')</button>'
         : "";
       return '<article class="player-item">' +
@@ -66,7 +66,7 @@
         '<div class="field"><label for="market-' + index + '">Selezione / correzione mercato</label><select id="market-' + index + '" data-market="' + index + '">' + options + '</select></div>' +
         '<div class="data-row"><span>Quota inserita</span><b>' + oddsText(row.odds) + '</b></div>' +
         '<div class="data-row"><span>Probabilità di pareggio quota</span><b>' + pct(row.odds ? 1 / row.odds : NaN) + '</b></div>' +
-        '<div class="data-row"><span>Campione storico</span><b>' + (row.sampleEnough ? "Adeguato" : "Insufficiente") + '</b></div>' +
+        '<div class="data-row"><span>Campione storico</span><b>' + (row.ok ? (row.sampleEnough ? "Adeguato" : "Insufficiente") : "Da verificare") + '</b></div>' +
         (row.reason ? '<div class="notice warning">' + esc(row.reason) + '</div>' : "") +
         (suggestion ? '<div style="margin-top:9px">' + suggestion + '</div>' : "") +
         '</article>';
@@ -114,7 +114,7 @@
   async function refreshSisal() {
     const target = $("sisalResults");
     const button = $("refreshSisal");
-    const valid = selections.filter(row => row.ok && row.sampleEnough);
+    const valid = selections.filter(row => row.ok);
     if (!valid.length) {
       target.innerHTML = '<div class="notice warning">Analizza prima una schedina con almeno una partita riconosciuta.</div>';
       return;
