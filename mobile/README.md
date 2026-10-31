@@ -19,7 +19,7 @@ The deployed app is public: anyone who has its Pages URL can open and use it. Do
 
 ### Enable additional data sources with free tiers
 
-The `functions/api/player-context.js` endpoint calls providers from Cloudflare Pages Functions. Keys stay on the server and are never inserted into browser code or sent back to the page.
+The `functions/api/player-context.js` endpoint calls providers from Cloudflare Pages Functions. The preferred setup stores provider keys as encrypted Cloudflare secrets. The Settings screen also supports an optional API-Football key for the current browser session: it is held in `sessionStorage` and sent to the same-origin Pages Function in a request header, never in the URL or response. This is browser-accessible session storage, not encrypted server-side storage; use it only on a trusted personal device. For persistent multi-device use, configure the Cloudflare secret.
 
 Optional sources:
 
@@ -35,7 +35,7 @@ In Cloudflare **Settings → Variables and Secrets**, add each available key as 
 | `FOOTBALL_DATA_API_KEY` | Backup Serie A fixtures/results when the primary CSV source is down |
 | `API_FOOTBALL_KEY` | Injuries, player statistics and recent appearances |
 
-After saving secrets, trigger a new deployment. You can add only the providers you want; the base app and existing public CSV source continue to work without them. Open the app's **Giocatori** or **Dati e copertura** section to see which connections are active.
+After saving secrets, trigger a new deployment. You can add only the providers you want; the base app and existing public CSV source continue to work without them. Open **Impostazioni** to enter and test an API-Football key for the current browser session, or configure encrypted secrets in Cloudflare for persistent use. The **Fonti e copertura** page shows which connections are active.
 
 API-Football injury data is cached at the edge for up to four hours and player searches/form for up to six hours. A recent-form lookup can use multiple provider calls; avoid repeatedly forcing the same search. Provider quotas, coverage and update timing can change.
 
@@ -68,10 +68,10 @@ The mobile PWA is organised into separate routes rather than one long dashboard:
 - `match.html`: match details, local statistical estimates and available prematch context.
 - `players.html`: player search and recent appearances, subject to API-Football coverage.
 - `analysis-lab.html`: dedicated MatchMind intelligence entry point.
-- `data.html`: provider status and data coverage.
+- `data.html`: provider status and data coverage.\n- `settings.html`: provider configuration, session key testing and app preferences.
 - `legacy-workbench.html`: preserved previous analysis workbench for continuity.
 
-The shared navigation and data layer lives in `site-core.js`; page-specific rendering lives in `site-pages.js`; responsive presentation lives in `site.css`. The service worker caches the independent screens and their shared assets for app-shell use. The home navigation shows only four primary destinations; contextual screens are reached from Explore, fixtures, teams or the match detail.
+The shared navigation and data layer lives in `site-core.js`; page-specific rendering lives in `site-pages.js`; responsive presentation lives in `site.css`. The service worker caches the independent screens and their shared assets for app-shell use. The mobile navigation provides five primary destinations: Home, Partite, Club, Analisi and Impostazioni. Provider coverage is linked from Impostazioni.
 
 
 ## Quote comparison and betting-analysis guidance
@@ -87,3 +87,10 @@ A possible positive-value signal is shown only when:
 Expected value is calculated as `(model_probability × decimal_odds) − 1`. This is an exploratory model-vs-market comparison, not evidence of a proven betting edge. The local Poisson model is not independently calibrated or validated for profitability; positive EV can be misleading when its probabilities are inaccurate. If data are missing, stale, or insufficient, the app should say that no suggestion is available rather than inventing one. The most likely outcome and the best-priced/value candidate are shown as different concepts.
 
 The **Fonti e copertura** page links to the upstream datasets and providers and explains their role and limitations. Provider API keys must remain encrypted Cloudflare Pages secrets.
+
+
+## Team and competition identity
+
+Team crests and the Serie A competition mark use API-Sports media URLs. Team names from the public CSV are normalized and mapped to stable API-Football team IDs; unknown names retain a generated initials fallback rather than displaying an unrelated crest. The league mark uses competition ID 135. Logo assets are loaded lazily and are not counted against the API-Football daily request quota according to its documentation. API-Sports states that third-party marks are supplied for identification only and may require separate permission from the relevant clubs or rights holders; verify licensing before public or commercial distribution.
+
+The match calendar includes a team dropdown in addition to search, date, round and season filters. Filter state is reset together from the clear-filters action.
