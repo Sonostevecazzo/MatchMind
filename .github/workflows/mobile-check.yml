@@ -34,5 +34,7 @@ jobs:
           node --check mobile/sw.js
       - name: Check Cloudflare Pages Function
         run: node --input-type=module --check < mobile/functions/api/player-context.js
+      - name: Test chronological round analysis
+        run: node --test mobile/tests/rounds.test.mjs
       - name: Test RSS parser
         run: node --test mobile/tests/news-rss.test.mjs
