@@ -48,4 +48,11 @@ subprocess.run(["node", "--test", str(ROOT / "tests" / "player-context.test.mjs"
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
 for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html", "settings.html"]:
     assert route in core, f"Missing primary navigation route: {route}"
+# Forecast transparency and stable team identity checks.
+assert "frosinone:512" in core, "Missing Frosinone crest mapping"
+assert "sampleEnough:h.played>=10&&a.played>=10" in core, "Forecast adequacy must require 10 prior matches per team"
+pages_js = (ROOT / "site-pages.js").read_text(encoding="utf-8")
+for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto"]:
+    assert phrase in pages_js, f"Missing forecast transparency label: {phrase}"
+
 print("MatchMind multi-screen PWA, shared scripts, service worker, middleware and player API tests passed.")
