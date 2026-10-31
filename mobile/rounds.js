@@ -57,6 +57,38 @@
   const combine=key=>{const valid=legs.filter(x=>x.eligible);if(valid.length!==legs.length||!valid.length)return {probability:null,legs:valid.length,required:legs.length,complete:false};if(valid.some(x=>x[key].probability===0))return {probability:0,legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};const log=valid.reduce((s,x)=>s+Math.log(x[key].probability),0);return {probability:Math.exp(log),legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};};
   return {available:true,round:first.round??null,from:fixtures[0].date,to:fixtures[fixtures.length-1].date,fixtures:legs,tickets:{oneXtwo:combine('oneXtwo'),btts:combine('btts'),underOver:combine('total')},selectionRule:'Per ogni mercato viene selezionato l’esito singolo con probabilità stimata più alta; linea totale fissa 2,5.',disclaimer:'Stime statistiche, non garanzie. Una schedina con molte selezioni può avere probabilità complessiva molto bassa.'};
  }
+ function buildProbabilityAssistant(fixtures,forecastFn,options={}){
+  const minLegs=Math.max(1,Math.floor(Number(options.minLegs)||4));
+  const maxLegs=Math.max(minLegs,Math.floor(Number(options.maxLegs)||6));
+  const candidates=[];
+  (Array.isArray(fixtures)?fixtures:[]).forEach(match=>{
+   const f=forecastFn(match),p=f&&f.probabilities;
+   if(!p||!f.sampleEnough)return;
+   const values=[
+    {market:'1X2',selection:'1',probability:p.home},
+    {market:'1X2',selection:'X',probability:p.draw},
+    {market:'1X2',selection:'2',probability:p.away},
+    {market:'Gol / No Gol',selection:'Gol',probability:p.btts},
+    {market:'Gol / No Gol',selection:'No Gol',probability:1-p.btts},
+    {market:'Over / Under 2,5',selection:'Over 2,5',probability:p.o25},
+    {market:'Over / Under 2,5',selection:'Under 2,5',probability:1-p.o25}
+   ].filter(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<=1);
+   values.sort((a,b)=>b.probability-a.probability);
+   if(values.length)candidates.push({...values[0],match,matchLabel:match.home+' – '+match.away});
+  });
+  const unique=candidates.sort((a,b)=>b.probability-a.probability).slice(0,maxLegs);
+  if(unique.length<minLegs)return {available:false,reason:'Dati storici sufficienti per meno di '+minLegs+' partite. Non completo la schedina con stime deboli.'};
+  // Without real prices, use the smallest requested number of legs to avoid
+  // needlessly reducing the joint probability. A bookmaker price is never inferred.
+  const legs=unique.slice(0,minLegs);
+  const probability=legs.reduce((value,leg)=>value*leg.probability,1);
+  return {
+   available:true,legs,probability,stake:null,payout:null,odds:null,
+   minLegs,maxLegs,source:'probability-only',
+   assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.',
+   disclaimer:'Modalità senza quote: la probabilità è una stima del modello, non è una quota di bookmaker e non consente di calcolare vincita, valore atteso o redditività. Verifica le quote reali prima di giocare.'
+  };
+ }
  function buildAssistant(candidates,options={}){
   const stake=Number(options.stake),minPayout=Number(options.minPayout),maxPayout=Number(options.maxPayout);
   const minLegs=Math.max(1,Math.floor(Number(options.minLegs)||4)),maxLegs=Math.max(minLegs,Math.floor(Number(options.maxLegs)||6));
@@ -83,5 +115,5 @@
   if(!best)return {available:false,reason:'Nessuna combinazione di '+minLegs+'–'+maxLegs+' eventi raggiunge la quota obiettivo '+minOdds.toFixed(2)+'–'+maxOdds.toFixed(2)+' usando quote aggiornate e mercati con valore atteso positivo.',candidates:valid.length,matches:groups.length,examined};
   return {...best,available:true,minOdds,maxOdds,examined,assumption:'Probabilità congiunta calcolata come prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.',disclaimer:'Stima statistica non calibrata come garanzia di vincita. Quote e disponibilità possono cambiare; controlla sempre il riepilogo del bookmaker prima di confermare.'};
  }
-  window.MatchMindRounds={standingsBefore,teamContext,matchContext,buildTicket,buildAssistant,seasonStart};
+  window.MatchMindRounds={standingsBefore,teamContext,matchContext,buildTicket,buildAssistant,buildProbabilityAssistant,seasonStart};
 })();
