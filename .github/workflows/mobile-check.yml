@@ -1,0 +1,38 @@
+name: Mobile PWA checks
+
+on:
+  push:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-check.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check browser scripts
+        run: |
+          node --check mobile/site-core.js
+          node --check mobile/site-pages.js
+          node --check mobile/rounds.js
+          node --check mobile/elo.js
+          node --check mobile/bets-engine.js
+          node --check mobile/bets.js
+          node --check mobile/sw.js
+      - name: Check Cloudflare Pages Function
+        run: node --input-type=module --check < mobile/functions/api/player-context.js
+      - name: Test RSS parser
+        run: node --test mobile/functions/lib/news-rss.test.mjs
