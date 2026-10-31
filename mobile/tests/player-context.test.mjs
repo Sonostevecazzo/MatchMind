@@ -97,8 +97,65 @@ test("status reports each configured provider without exposing key values", asyn
   }));
   const body = await response.json();
   assert.equal(body.configured, true);
-  assert.deepEqual(body.providers, { apiFootball: false, sisalOdds: true, footballData: true });
+  assert.deepEqual(body.providers, { apiFootball: false, sisalOdds: true, footballData: true, theOddsApi: false });
   assert.equal(JSON.stringify(body).includes("secret"), false);
+});
+
+test("The Odds API session key is accepted and its Serie A h2h feed is normalized", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const date = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+  globalThis.fetch = async (url) => {
+    const parsed = new URL(String(url));
+    assert.equal(parsed.hostname, "api.the-odds-api.com");
+    assert.equal(parsed.searchParams.get("apiKey"), "the-odds-session-secret");
+    assert.equal(parsed.searchParams.get("regions"), "eu");
+    assert.equal(parsed.searchParams.get("markets"), "h2h");
+    return apiResponse([{
+      id: "event-1", sport_key: "soccer_italy_serie_a",
+      commence_time: date, home_team: "Bologna", away_team: "Monza",
+      bookmakers: [{
+        key: "test-book", title: "Test Book", last_update: new Date().toISOString(),
+        markets: [{ key: "h2h", outcomes: [
+          { name: "Bologna", price: 1.8 },
+          { name: "Draw", price: 3.5 },
+          { name: "Monza", price: 4.5 }
+        ] }]
+      }]
+    }]);
+  };
+  const request = new Request("https://matchmind.test/api/player-context?type=odds-batch", {
+    headers: { "X-MatchMind-The-Odds-API-Key": "the-odds-session-secret" }
+  });
+  const response = await onRequestGet({ request, env: {} });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.configured, true);
+  assert.equal(body.events.length, 1);
+  assert.equal(body.events[0].source, "The Odds API");
+  assert.equal(body.events[0].bookmakers[0].name, "Test Book");
+  assert.deepEqual(body.events[0].bookmakers[0].bets[0].values.map(value => value.value), ["Home", "Draw", "Away"]);
+  assert.equal(JSON.stringify(body).includes("the-odds-session-secret"), false);
+});
+
+test("The Odds API status validates a session key without using live odds credits", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (url) => {
+    const parsed = new URL(String(url));
+    assert.equal(parsed.pathname, "/v4/sports");
+    assert.equal(parsed.searchParams.get("apiKey"), "the-odds-status-secret");
+    return apiResponse([{ key: "soccer_italy_serie_a", active: true }]);
+  };
+  const request = new Request("https://matchmind.test/api/player-context?type=test-the-odds-api", {
+    headers: { "X-MatchMind-The-Odds-API-Key": "the-odds-status-secret" }
+  });
+  const response = await onRequestGet({ request, env: {} });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.valid, true);
+  assert.equal(body.serieAAvailable, true);
+  assert.equal(JSON.stringify(body).includes("the-odds-status-secret"), false);
 });
 
 test("Sisal OddsPapi quotes work without API-Football and stay server-side", async (t) => {
