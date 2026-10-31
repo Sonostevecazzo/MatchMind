@@ -61,6 +61,18 @@ lab = (ROOT / "analysis-lab.html").read_text(encoding="utf-8")
 for control in ["assistantStake", "assistantMinPayout", "assistantMaxPayout", "assistantLegs", "assistantGenerate", "assistantResult"]:
     assert control in lab, f"Missing bet assistant control: {control}"
 assert "buildAssistant" in (ROOT / "rounds.js").read_text(encoding="utf-8"), "Missing target-based bet assistant optimizer"
+settings = (ROOT / "settings.html").read_text(encoding="utf-8")
+for control in ["apiFootballKey", "oddsPapiKey", "theOddsApiKey", "footballDataKey",
+                "saveOddsPapiKey", "saveTheOddsApiKey", "saveFootballDataKey"]:
+    assert control in settings, f"Missing provider key control: {control}"
+for secret in ["matchmind-oddspapi-session-key", "matchmind-the-odds-api-session-key",
+               "matchmind-football-data-session-key"]:
+    assert secret in core if "core" in globals() else secret in (ROOT / "site-pages.js").read_text(encoding="utf-8"), f"Missing session key handling: {secret}"
+provider_api = (ROOT / "functions" / "api" / "player-context.js").read_text(encoding="utf-8")
+for route in ['type === "test-oddspapi"', 'type === "test-the-odds-api"', 'type === "odds-batch"',
+              "soccer_italy_serie_a", "normalizeTheOddsEvents"]:
+    assert route in provider_api, f"Missing odds provider integration: {route}"
+assert "type=odds-batch" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Assistant must request the alternate batch odds feed"
 
 css = (ROOT / "site.css").read_text(encoding="utf-8")
 assert "grid-template-columns:repeat(6,minmax(0,1fr))" in css, "Mobile navigation must accommodate all six destinations"
