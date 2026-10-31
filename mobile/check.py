@@ -45,6 +45,7 @@ for path in [
 subprocess.run(["node", "--test", str(ROOT / "tests" / "player-context.test.mjs")], check=True)
 subprocess.run(["node", "--test", str(ROOT / "tests" / "backtest.test.mjs")], check=True)
 subprocess.run(["node", "--test", str(ROOT / "tests" / "elo.test.mjs")], check=True)
+subprocess.run(["node", "--test", str(ROOT / "tests" / "rounds.test.mjs")], check=True)
 
 # Check the app's four main destinations and that page-specific routes are linked.
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
@@ -58,6 +59,10 @@ assert "byClass" in core and "accuracyCI" in core and "bySeason" in core, "Missi
 elo = (ROOT / "elo.js").read_text(encoding="utf-8")
 assert "sameDateSnapshot:true" in elo and "aliasNormalization:true" in elo, "Missing Elo leakage and identity safeguards"
 assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Elo engine is not loaded by the Intelligence page"
+assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Round analysis engine is not loaded by the Intelligence page"
+assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
+assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
+assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"
 assert "loadData,backtest" in core, "Backtest helper is not exposed to the UI"
 pages_js = (ROOT / "site-pages.js").read_text(encoding="utf-8")
 for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto", "CALIBRAZIONE PER ESITO", "STABILITÀ NEL TEMPO"]:
