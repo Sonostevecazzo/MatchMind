@@ -96,7 +96,7 @@
     return blocks.map(block => {
       const source = block.lines.join(" ");
       const market = parseMarket(source);
-      if (!market) return { ok: false, match: block.fixture, reason: "Mercato non riconosciuto: controlla la selezione." };
+      if (!market) return { ok: false, match: block.fixture, market: null, odds: readOdds(source), reason: "Mercato non riconosciuto: selezionalo manualmente per completare il controllo." };
       const forecast = forecastFn(block.fixture);
       const probability = marketProbability(forecast, market.key);
       if (probability === null) return { ok: false, match: block.fixture, market, reason: "Probabilità del mercato non disponibile nel modello." };
