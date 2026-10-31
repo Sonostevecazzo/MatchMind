@@ -27,12 +27,12 @@
  }
  let matchFilter='upcoming',shownLimit=45,activeMatches=[];
  function initMatches(d){
-   const round=$('matchRound');const rounds=[...new Set(d.matches.map(m=>Number(m.round)).filter(n=>Number.isInteger(n)&&n>0))].sort((a,b)=>a-b);
+   const round=$('matchRound'),teamSelect=$('matchTeam');teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+MM().getTeams(d.matches).map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join('');const rounds=[...new Set(d.matches.map(m=>Number(m.round)).filter(n=>Number.isInteger(n)&&n>0))].sort((a,b)=>a-b);
    round.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+n+'">Giornata '+n+'</option>').join('');
    const render=()=>{
-    const q=MM().norm($('matchSearch').value),date=$('matchDate').value,gw=round.value,season=$('matchSeason').value;
+    const q=MM().norm($('matchSearch').value),date=$('matchDate').value,team=teamSelect.value,gw=round.value,season=$('matchSeason').value;
     const previousStart=MM().seasonStart()-1,previousFrom=previousStart+'-07-01',previousTo=MM().seasonStart()+'-07-01';let base=season==='previous'?d.history.filter(m=>MM().hasScore(m)&&m.date>=previousFrom&&m.date<previousTo):d.matches;
-    activeMatches=base.filter(m=>(!q||MM().norm(m.home).includes(q)||MM().norm(m.away).includes(q))&&(!date||m.date===date)&&(!gw||Number(m.round)===Number(gw)));
+    activeMatches=base.filter(m=>(!q||MM().norm(m.home).includes(q)||MM().norm(m.away).includes(q))&&(!date||m.date===date)&&(!team||MM().norm(m.home)===MM().norm(team)||MM().norm(m.away)===MM().norm(team))&&(!gw||Number(m.round)===Number(gw)));
     if(matchFilter==='upcoming')activeMatches=activeMatches.filter(MM().upcoming);
     else if(matchFilter==='finished')activeMatches=activeMatches.filter(MM().hasScore);
     else if(matchFilter==='stale')activeMatches=activeMatches.filter(m=>!MM().hasScore(m)&&!MM().upcoming(m));
@@ -44,8 +44,8 @@
     target.innerHTML=visible.length?groupCards(visible,matchFilter==='finished'||matchFilter==='stale'):'<div class="empty-state">Nessuna partita corrisponde ai filtri selezionati.</div>';
     $('moreMatches').hidden=activeMatches.length<=shownLimit;
    };
-   ['matchSearch','matchDate','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=45;render()}));
-   $('clearMatchFilters').addEventListener('click',()=>{$('matchSearch').value='';$('matchDate').value='';round.value='';$('matchSeason').value='current';shownLimit=45;render()});
+   ['matchSearch','matchDate','matchTeam','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=45;render()}));
+   $('clearMatchFilters').addEventListener('click',()=>{$('matchSearch').value='';$('matchDate').value='';teamSelect.value='';round.value='';$('matchSeason').value='current';shownLimit=45;render()});
    $('matchFilters').querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{matchFilter=b.dataset.filter;$('matchFilters').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));shownLimit=45;render()}));
    $('moreMatches').addEventListener('click',()=>{shownLimit+=45;render()});
    render();
