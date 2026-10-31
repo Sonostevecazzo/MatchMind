@@ -101,6 +101,26 @@ test("status reports each configured provider without exposing key values", asyn
   assert.equal(JSON.stringify(body).includes("secret"), false);
 });
 
+test("OddsPapi session key can be verified without exposing the token", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (url) => {
+    const parsed = new URL(String(url));
+    assert.equal(parsed.hostname, "api.oddspapi.io");
+    assert.equal(parsed.pathname, "/v4/account");
+    assert.equal(parsed.searchParams.get("apiKey"), "oddspapi-session-secret");
+    return apiResponse({ account: { status: "active" } });
+  };
+  const request = new Request("https://matchmind.test/api/player-context?type=test-oddspapi", {
+    headers: { "X-MatchMind-OddsPapi-Key": "oddspapi-session-secret" }
+  });
+  const response = await onRequestGet({ request, env: {} });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.valid, true);
+  assert.equal(JSON.stringify(body).includes("oddspapi-session-secret"), false);
+});
+
 test("The Odds API session key is accepted and its Serie A h2h feed is normalized", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
