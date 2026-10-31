@@ -284,12 +284,15 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
     assistantButton.disabled=true;assistantButton.textContent='Analisi in corso…';result.innerHTML='<div class="loading-state">Controllo campioni, quote e mercati prematch…</div>';
     try{
      const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0,alternativeEvents:0};
-     let alternativeEvents=[];
+     let alternativeEvents=[],oddsBatchAvailable=false;
      try{
       const batch=await MM().playerApi('type=odds-batch','the-odds-api-serie-a',5*60*1000);
       alternativeEvents=Array.isArray(batch.events)?batch.events:[];
       coverage.alternativeEvents=alternativeEvents.length;
+      oddsBatchAvailable=true;
      }catch{}
+     let sessionProviderKey=false;
+     try{sessionProviderKey=['matchmind-api-football-session-key','matchmind-oddspapi-session-key','matchmind-football-data-session-key','matchmind-the-odds-api-session-key'].some(key=>!!sessionStorage.getItem(key));}catch{}
      for(const match of fixtures){
       const forecast=MM().forecast(match,d.history);
       if(!forecast.sampleEnough){coverage.weakSample++;continue;}
@@ -341,8 +344,16 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
      const proposal=window.MatchMindRounds.buildAssistant(candidates,{stake,minPayout,maxPayout,minLegs,maxLegs});
      const pct=x=>fmt(x*100,2)+'%';
      const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · '+coverage.alternativeEvents+' eventi letti da The Odds API · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
-     if(!proposal.available){
-      result.innerHTML=coverageHtml+'<div class="notice warning" style="margin-top:9px">'+esc(proposal.reason)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">Nessuna quota è stata stimata o inventata. Riprova quando provider e campioni avranno copertura sufficiente.</small>';
+     if(!proposal.available&&!candidates.length){
+      const freeProposal=window.MatchMindRounds.buildProbabilityAssistant(fixtures,m=>MM().forecast(m,d.history),{minLegs,maxLegs});
+      if(freeProposal.available){
+       const freeRows=freeProposal.legs.map((x,i)=>'<div class="data-row"><span><b>'+(i+1)+'. '+esc(x.matchLabel)+'</b><small style="display:block;color:#91a0ae">'+esc(x.market)+' · '+esc(x.selection)+'</small></span><b>'+pct(x.probability)+'</b></div>').join('');
+       result.innerHTML=coverageHtml+'<div class="notice" style="margin-top:9px">Modalità dati pubblici senza chiavi: ho selezionato '+freeProposal.legs.length+' eventi con campione storico sufficiente.</div><div class="metric-grid" style="margin-top:10px"><div class="metric"><span>PROBABILITÀ CONGIUNTA STIMATA</span><b>'+pct(freeProposal.probability)+'</b></div><div class="metric"><span>EVENTI</span><b>'+freeProposal.legs.length+'</b></div><div class="metric"><span>QUOTE REALI</span><b>Non disponibili</b></div><div class="metric"><span>VINCITA € '+fmt(stake,2)+'</span><b>Non calcolabile</b></div></div><div class="eyebrow" style="margin-top:12px">SELEZIONI PROBABILISTICHE · NON SONO QUOTE</div>'+freeRows+'<div class="notice warning" style="margin-top:10px">L’obiettivo di vincita € '+fmt(minPayout,2)+'–€ '+fmt(maxPayout,2)+' non è verificabile senza quote bookmaker. Non ho inventato prezzi, EV o payout. '+esc(freeProposal.assumption)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">'+esc(freeProposal.disclaimer)+'</small>';
+      }else{
+       result.innerHTML=coverageHtml+'<div class="notice warning" style="margin-top:9px">'+esc(freeProposal.reason||proposal.reason)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">Le fonti gratuite non pubblicano quote bookmaker. Non completo una proposta senza campione sufficiente o prezzi reali.</small>';
+      }
+     }else if(!proposal.available){
+      result.innerHTML=coverageHtml+'<div class="notice warning" style="margin-top:9px">'+esc(proposal.reason)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">Nessuna combinazione soddisfa i limiti impostati con quote aggiornate e valore atteso positivo. Nessun prezzo è stato stimato.</small>';
      }else{
       const legsHtml=proposal.legs.map((x,i)=>'<div class="data-row"><span><b>'+(i+1)+'. '+esc(x.matchLabel)+'</b><small style="display:block;color:#91a0ae">'+esc(x.market)+' · '+esc(x.selection)+' · '+esc(x.book)+' · '+esc(x.source||'Provider')+'</small></span><b>'+fmt(x.odd,2)+'<small style="display:block;color:#91a0ae">'+pct(x.probability)+' · EV +'+fmt(x.ev*100,1)+'%</small></b></div>').join('');
       result.innerHTML=coverageHtml+'<div class="metric-grid" style="margin-top:10px"><div class="metric"><span>QUOTA COMPLESSIVA</span><b>'+fmt(proposal.odds,2)+'</b></div><div class="metric"><span>VINCITA POTENZIALE</span><b>€ '+fmt(proposal.payout,2)+'</b></div><div class="metric"><span>PROBABILITÀ CONGIUNTA</span><b>'+pct(proposal.probability)+'</b></div><div class="metric"><span>EVENTI</span><b>'+proposal.legs.length+'</b></div></div><div class="eyebrow" style="margin-top:12px">PROPOSTA · QUOTE DEL PROVIDER</div>'+legsHtml+'<div class="notice warning" style="margin-top:10px">La combinazione massimizza la probabilità stimata tra quelle che rispettano i parametri e superano il filtro EV +3%. Non è una garanzia di vincita. '+esc(proposal.disclaimer)+'</div>';
@@ -370,7 +381,7 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
  }
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
-  try{const d=await MM().loadData();setStatus(d.source==='cache'?'Stai usando i dati salvati localmente.':'Dati aggiornati · Serie A '+d.season+'/'+String(d.season+1).slice(-2),d.source==='cache'?'':'ok');
+  try{const d=await MM().loadData();const retrieved=d.updatedAt?new Date(d.updatedAt).toLocaleString('it-IT'):'orario non disponibile';setStatus(d.source==='cache'?'Offline · dati salvati localmente.':'Fonti: '+(d.source||'fonti pubbliche')+' · scaricati '+retrieved,d.source==='cache'?'':'ok');
    if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')initPlayers();else if(page==='data')initData();else if(page==='settings')initSettings();else if(page==='mind')initMind(d);
   }catch(e){setStatus('Dati non disponibili: '+e.message,'err');if(page==='settings')initSettings();else if(page==='data')initData();else{const targets={home:'homeNext',matches:'matchList',explore:'teamDirectory',league:'standingsBody',team:'teamContent',match:'matchDetail',mind:'mindFixtures'};const id=targets[page];if(id&&$(id))$(id).innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}}
  });
