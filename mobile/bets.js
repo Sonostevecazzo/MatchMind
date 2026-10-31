@@ -32,7 +32,7 @@
     const forecast = window.MM().forecast(row.match, data.history);
     const selected = marketChoices().find(item => item[0] === key);
     const probability = engine().marketProbability(forecast, key);
-    if (!selected || probability === null) return;
+    if (!selected || probability === null) return;\n    row.ok = true;
     row.market = { key, label: selected[1] };
     row.probability = probability;
     row.sampleEnough = Boolean(forecast.sampleEnough);
@@ -46,25 +46,24 @@
   function renderSlip() {
     const target = $("slipResults");
     if (!selections.length) {
-      target.innerHTML = '<div class="empty-state">Nessuna partita riconosciuta. Verifica che il testo contenga i nomi delle squadre e il mercato.</div>';
+      target.innerHTML = '<div class="empty-state">Nessuna partita riconosciuta. Verifica che il testo contenga i nomi delle squadre.</div>';
       return;
     }
-
     const combined = engine().combineSelections(selections);
     const cards = selections.map((row, index) => {
-      if (!row.ok) {
-        return '<article class="player-item"><b>' + esc(row.match ? row.match.home + " – " + row.match.away : "Selezione non riconosciuta") + '</b><div class="notice warning">' + esc(row.reason) + '</div></article>';
+      if (!row.match) {
+        return '<article class="player-item"><b>Selezione non riconosciuta</b><div class="notice warning">' + esc(row.reason) + '</div></article>';
       }
-      const options = marketChoices().map(([key, label]) =>
-        '<option value="' + key + '"' + (key === row.market.key ? " selected" : "") + '>' + esc(label) + '</option>'
+      const options = '<option value="">Seleziona il mercato</option>' + marketChoices().map(([key, label]) =>
+        '<option value="' + key + '"' + (row.market && key === row.market.key ? " selected" : "") + '>' + esc(label) + '</option>'
       ).join("");
       const strongest = bestMarket(row.match);
-      const suggestion = strongest && strongest.key !== row.market.key
-        ? '<button type="button" class="secondary" data-fix="' + index + '">Valuta ' + esc(strongest.label) + " (" + pct(strongest.probability) + ')</button>'
+      const suggestion = strongest && (!row.market || strongest.key !== row.market.key)
+        ? '<button type="button" class="secondary" data-fix="' + index + '">Proponi ' + esc(strongest.label) + " (" + pct(strongest.probability) + ')</button>'
         : "";
       return '<article class="player-item">' +
-        '<div class="player-item-head"><span><b>' + esc(row.match.home) + " – " + esc(row.match.away) + '</b><br><small>' + esc(row.match.date || "") + (row.match.time ? " · " + esc(row.match.time) : "") + '</small></span><b>' + pct(row.probability) + '</b></div>' +
-        '<div class="field"><label for="market-' + index + '">Mercato selezionato</label><select id="market-' + index + '" data-market="' + index + '">' + options + '</select></div>' +
+        '<div class="player-item-head"><span><b>' + esc(row.match.home) + " – " + esc(row.match.away) + '</b><br><small>' + esc(row.match.date || "") + (row.match.time ? " · " + esc(row.match.time) : "") + '</small></span><b>' + pct(row.ok ? row.probability : NaN) + '</b></div>' +
+        '<div class="field"><label for="market-' + index + '">Selezione / correzione mercato</label><select id="market-' + index + '" data-market="' + index + '">' + options + '</select></div>' +
         '<div class="data-row"><span>Quota inserita</span><b>' + oddsText(row.odds) + '</b></div>' +
         '<div class="data-row"><span>Probabilità di pareggio quota</span><b>' + pct(row.odds ? 1 / row.odds : NaN) + '</b></div>' +
         '<div class="data-row"><span>Campione storico</span><b>' + (row.sampleEnough ? "Adeguato" : "Insufficiente") + '</b></div>' +
@@ -72,7 +71,6 @@
         (suggestion ? '<div style="margin-top:9px">' + suggestion + '</div>' : "") +
         '</article>';
     }).join("");
-
     const summary = combined.available
       ? '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA SCHEDINA</span><b>' + pct(combined.probability) + '</b><small>' + esc(combined.assumption) + '</small></div>'
       : '<div class="notice warning">' + esc(combined.reason) + '</div>';
@@ -116,7 +114,7 @@
   async function refreshSisal() {
     const target = $("sisalResults");
     const button = $("refreshSisal");
-    const valid = selections.filter(row => row.ok);
+    const valid = selections.filter(row => row.ok && row.sampleEnough);
     if (!valid.length) {
       target.innerHTML = '<div class="notice warning">Analizza prima una schedina con almeno una partita riconosciuta.</div>';
       return;
@@ -208,7 +206,7 @@
       });
       $("slipResults").addEventListener("change", event => {
         const index = Number(event.target.dataset.market);
-        if (!Number.isInteger(index) || !selections[index] || !selections[index].ok) return;
+        if (!Number.isInteger(index) || !selections[index] || !selections[index].match) return;
         updateSelection(selections[index], event.target.value);
         renderSlip();
       });
@@ -216,7 +214,7 @@
         const button = event.target.closest("[data-fix]");
         if (!button) return;
         const index = Number(button.dataset.fix);
-        if (!selections[index] || !selections[index].ok) return;
+        if (!selections[index] || !selections[index].match) return;
         const best = bestMarket(selections[index].match);
         if (best) updateSelection(selections[index], best.key);
         renderSlip();
