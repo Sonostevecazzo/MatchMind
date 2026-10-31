@@ -209,7 +209,27 @@
    target.innerHTML=rows.map(([a,b,on])=>'<div class="data-row"><span>'+a+'</span><b style="color:'+(on?'var(--mint)':'var(--amber)')+'">'+(on?'Chiave configurata · validità da verificare':'Non configurato')+'</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">'+b+'</small>').join('')+usageHtml;}catch(e){target.innerHTML='<div class="notice warning">Non riesco a verificare i provider. Il calendario e il modello locale possono comunque funzionare.</div>';}}
   $('checkProviders').addEventListener('click',check);await check();
  }
- async function initMind(d){const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);$('mindFixtures').innerHTML=rows.length?rows.map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile per l’analisi.</div>';}
+ function backtestHTML(r){
+  if(!r.count)return '<div class="notice warning">Backtest non disponibile: nei dati caricati non ci sono abbastanza partite precedenti per entrambe le squadre (almeno 10 ciascuna) e almeno 30 partite complessive.</div>';
+  const pct=x=>fmt(x*100,1)+'%',metric=(label,a,b)=>'<div class="data-row"><span>'+label+'</span><b>'+fmt(a,3)+' · baseline '+fmt(b,3)+'</b></div>';
+  const bins=r.bins.map(x=>'<div class="data-row"><span>'+x.range+' · '+x.count+' partite</span><b>'+pct(x.confidence)+' previste / '+pct(x.hitRate)+' reali</b></div>').join('');
+  const enough=r.count>=100;
+  return '<div class="notice '+(enough?'good':'warning')+'">'+(enough?'Campione di verifica utilizzabile, ma non sufficiente da solo a dimostrare un vantaggio stabile.':'Campione ridotto: risultati preliminari, non conclusivi.')+' Il test usa solo risultati precedenti alla data di ogni partita.</div>'+
+   '<div class="stat-strip"><div class="stat-cell"><b>'+fmt(r.count)+'</b><span>PRONOSTICI TESTATI</span></div><div class="stat-cell"><b>'+pct(r.model.accuracy)+'</b><span>ESITO PIÙ PROBABILE CORRETTO</span></div><div class="stat-cell"><b>'+pct(r.baseline.accuracy)+'</b><span>BASELINE CORRETTA</span></div></div>'+
+   '<div class="data-row"><span>Finestra test</span><b>'+esc(r.from)+' – '+esc(r.to)+'</b></div>'+
+   '<div class="eyebrow" style="margin-top:12px">QUALITÀ PROBABILISTICA · PIÙ BASSO È MEGLIO</div>'+
+   metric('Log loss · modello',r.model.logLoss,r.baseline.logLoss)+metric('Brier score 1X2 · modello',r.model.brier,r.baseline.brier)+
+   '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE · PROBABILITÀ DEL SEGNO PIÙ ALTO</div>'+
+   '<p style="color:#91a0ae;font-size:10px;line-height:1.5">Confronto tra confidenza media assegnata al segno più probabile e frequenza con cui quel segno si è verificato.</p>'+bins+
+   '<div class="notice '+(r.beatsBaseline?'good':'warning')+'">'+(r.beatsBaseline?'Il modello batte la baseline sia in Brier score sia in log loss nel campione testato.':'Il modello non batte la baseline su entrambe le metriche: non emerge un vantaggio predittivo dimostrato.')+'</div>'+
+   '<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Baseline: frequenze 1X2 delle sole partite antecedenti, con smoothing Laplace. Esclusi i casi con meno di 10 gare storiche per una delle squadre. Non è un test di redditività: non include quote, margini, stake o commissioni.</small>';
+ }
+ async function initMind(d){
+  const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+  $('mindFixtures').innerHTML=rows.length?rows.map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile per l’analisi.</div>';
+  const target=$('forecastBacktest');
+  if(target){target.innerHTML='<div class="loading-state">Calcolo del backtest cronologico sui risultati storici…</div>';setTimeout(()=>{try{target.innerHTML=backtestHTML(MM().backtest(d.history));}catch(e){target.innerHTML='<div class="notice warning">Backtest non completato: '+esc(e.message)+'</div>';}},20);}
+ }
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
   try{const d=await MM().loadData();setStatus(d.source==='cache'?'Stai usando i dati salvati localmente.':'Dati aggiornati · Serie A '+d.season+'/'+String(d.season+1).slice(-2),d.source==='cache'?'':'ok');
