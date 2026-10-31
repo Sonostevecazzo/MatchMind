@@ -55,6 +55,13 @@ subprocess.run(["node", "--test", str(ROOT / "tests" / "bets-engine.test.cjs")],
 # Check the app's four main destinations and that page-specific routes are linked.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
 assert 'href="bets.html"' in home, "Bet checker is missing from the home shortcuts"
+
+assert 'pitch-art' not in home and 'home-hero-art' not in home, "Home page must not render the football pitch illustration"
+lab = (ROOT / "analysis-lab.html").read_text(encoding="utf-8")
+for control in ["assistantStake", "assistantMinPayout", "assistantMaxPayout", "assistantLegs", "assistantGenerate", "assistantResult"]:
+    assert control in lab, f"Missing bet assistant control: {control}"
+assert "buildAssistant" in (ROOT / "rounds.js").read_text(encoding="utf-8"), "Missing target-based bet assistant optimizer"
+
 css = (ROOT / "site.css").read_text(encoding="utf-8")
 assert "grid-template-columns:repeat(6,minmax(0,1fr))" in css, "Mobile navigation must accommodate all six destinations"
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
