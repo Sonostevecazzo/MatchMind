@@ -76,10 +76,12 @@ for route in ['type === "test-oddspapi"', 'type === "test-the-odds-api"', 'type 
 assert "type=odds-batch" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Assistant must request the alternate batch odds feed"
 
 css = (ROOT / "site.css").read_text(encoding="utf-8")
-assert "grid-template-columns:repeat(6,minmax(0,1fr))" in css, "Mobile navigation must accommodate all six destinations"
+assert "grid-template-columns:repeat(5,minmax(0,1fr))" in css, "Mobile navigation must use five primary destinations"
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
-for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html", "bets.html", "settings.html"]:
+for route in ["index.html", "matches.html", "league.html", "analysis-lab.html", "explore.html"]:
     assert route in core, f"Missing primary navigation route: {route}"
+assert "AI Insights" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "AI Insights destination is missing"
+assert "scoreMatrix" in core, "Correct-score probability matrix is missing from the forecast model"
 # Forecast transparency and stable team identity checks.
 assert "frosinone:512" in core, "Missing Frosinone crest mapping"
 assert "sampleEnough:h.played>=10&&a.played>=10" in core, "Forecast adequacy must require 10 prior matches per team"
@@ -91,6 +93,7 @@ assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "El
 assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Round analysis engine is not loaded by the Intelligence page"
 assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
 assert "bets.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker page is not cached by the service worker"
+assert "matchmind-pwa-v25-20261101" in (ROOT / "sw.js").read_text(encoding="utf-8"), "PWA cache version was not bumped for the redesigned shell"
 assert "bets-engine.js" in (ROOT / "sw.js").read_text(encoding="utf-8") and "bets.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker assets are not cached by the service worker"
 assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
 assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"

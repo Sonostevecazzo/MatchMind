@@ -4,6 +4,7 @@
  const qs=new URLSearchParams(location.search);
  const fmt=(v,d=0)=>Number(v||0).toLocaleString('it-IT',{maximumFractionDigits:d});
  const esc=s=>MM().esc(s);
+ const favoriteIcon=filled=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" '+(filled?'fill="currentColor"':'fill="none"')+'/></svg>';
  const matchCard=m=>{
   const done=MM().hasScore(m),state=MM().status(m),score=done?m.hg+' – '+m.ag:(m.time||'VS');
   const statusClass=done?'finished':state==='Da aggiornare'?'stale':'scheduled';
@@ -46,16 +47,16 @@
    };
    ['matchSearch','matchDate','matchTeam','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=45;render()}));
    $('clearMatchFilters').addEventListener('click',()=>{$('matchSearch').value='';$('matchDate').value='';teamSelect.value='';round.value='';$('matchSeason').value='current';shownLimit=45;render()});
-   $('matchFilters').querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{matchFilter=b.dataset.filter;$('matchFilters').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));shownLimit=45;render()}));
+    $('matchFilters').querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{matchFilter=b.dataset.filter;$('matchFilters').querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});shownLimit=45;render()}));
    $('moreMatches').addEventListener('click',()=>{shownLimit+=45;render()});
    render();
  }
  function initExplore(d){
    const target=$('teamDirectory'),search=$('teamSearch');
    const teams=MM().getTeams(d.matches);
-   function render(){const q=MM().norm(search.value),list=teams.filter(t=>MM().norm(t).includes(q));target.innerHTML=list.length?list.map(n=>'<div class="team-tile"><a href="'+MM().teamUrl(n)+'" style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">'+MM().badge(n)+'<b>'+esc(n)+'</b></a><button class="favorite-toggle" data-fav="'+esc(n)+'" title="Segui squadra" aria-label="Segui '+esc(n)+'">'+(MM().isFavorite(n)?'★':'☆')+'</button></div>').join(''):'<div class="empty-state">Nessuna squadra trovata.</div>';}
+   function render(){const q=MM().norm(search.value),list=teams.filter(t=>MM().norm(t).includes(q));target.innerHTML=list.length?list.map(n=>'<div class="team-tile"><a href="'+MM().teamUrl(n)+'" style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">'+MM().badge(n)+'<b>'+esc(n)+'</b></a><button class="favorite-toggle" data-fav="'+esc(n)+'" title="Segui squadra" aria-label="Segui '+esc(n)+'">'+(MM().isFavorite(n)?favoriteIcon(true):favoriteIcon(false))+'</button></div>').join(''):'<div class="empty-state">Nessuna squadra trovata.</div>';}
    search.addEventListener('input',render);
-   target.addEventListener('click',e=>{const b=e.target.closest('[data-fav]');if(!b)return;const active=MM().toggleFavorite(b.dataset.fav);b.textContent=active?'★':'☆';});
+   target.addEventListener('click',e=>{const b=e.target.closest('[data-fav]');if(!b)return;const active=MM().toggleFavorite(b.dataset.fav);b.innerHTML=active?favoriteIcon(true):favoriteIcon(false);});
    render();
  }
  function tableHTML(rows){
@@ -71,18 +72,18 @@
   const played=d.matches.filter(MM().hasScore),goals=played.reduce((s,m)=>s+Number(m.hg)+Number(m.ag),0);
   const home=played.filter(m=>m.hg>m.ag).length,draw=played.filter(m=>m.hg===m.ag).length,away=played.filter(m=>m.hg<m.ag).length;
   $('leagueStatsGrid').innerHTML='<div class="metric"><span>PARTITE CONCLUSE</span><b>'+played.length+'</b><small>risultati nel feed della stagione</small></div><div class="metric"><span>GOL TOTALI</span><b>'+goals+'</b><small>'+fmt(played.length?goals/played.length:0,2)+' per partita</small></div><div class="metric"><span>VITTORIE CASA</span><b>'+home+'</b><small>esiti con successo della squadra di casa</small></div><div class="metric"><span>PAREGGI / TRASFERTE</span><b>'+draw+' / '+away+'</b><small>pareggi e vittorie in trasferta</small></div>';
-  $('leagueTabs').querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{const view=b.dataset.view;$('leagueTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));$('leagueStandings').hidden=view!=='standings';$('leagueFixtures').hidden=view!=='fixtures';$('leagueStats').hidden=view!=='stats';}));
+  $('leagueTabs').querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{const view=b.dataset.view;$('leagueTabs').querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-selected',String(x===b));});$('leagueStandings').hidden=view!=='standings';$('leagueFixtures').hidden=view!=='fixtures';$('leagueStats').hidden=view!=='stats';}));
  }
  function initTeam(d){
   const name=qs.get('team')||'';const normName=MM().norm(name);const rows=d.matches.filter(m=>MM().norm(m.home)===normName||MM().norm(m.away)===normName).sort((a,b)=>a.date.localeCompare(b.date));
   if(!name||!rows.length){$('teamContent').innerHTML='<div class="empty-state">Squadra non trovata nei dati attualmente disponibili. Torna a <a class="text-link" href="explore.html">Esplora</a>.</div>';return;}
   const played=rows.filter(MM().hasScore),up=rows.filter(MM().upcoming),form=MM().teamStats(name,d.history);
   const wins=form.form.filter(x=>x==='W').length,draws=form.form.filter(x=>x==='D').length;
-  $('teamContent').innerHTML='<div class="team-hero">'+MM().badge(name)+'<div style="flex:1"><h1>'+esc(name)+'</h1><p>Serie A · profilo squadra</p></div><button id="teamFavorite">'+(MM().isFavorite(name)?'★ Seguita':'☆ Segui')+'</button></div>'+
+  $('teamContent').innerHTML='<div class="team-hero">'+MM().badge(name)+'<div style="flex:1"><h1>'+esc(name)+'</h1><p>Serie A · profilo squadra</p></div><button id="teamFavorite" class="favorite-action">'+(MM().isFavorite(name)?favoriteIcon(true)+' Seguita':favoriteIcon(false)+' Segui')+'</button></div>'+
   '<div class="stat-strip"><div class="stat-cell"><b>'+played.length+'</b><span>RISULTATI NEL FEED</span></div><div class="stat-cell"><b>'+wins+'V · '+draws+'N</b><span>ULTIME CINQUE</span></div><div class="stat-cell"><b>'+up.length+'</b><span>PROSSIME PARTITE</span></div></div>'+
   '<section class="section"><div class="section-head"><div><h2>Forma recente</h2><p>Ultimi risultati storici disponibili.</p></div></div><div class="panel panel-pad"><div class="form-row">'+(form.form.length?form.form.map(x=>'<span class="form-chip '+x+'">'+x+'</span>').join(''):'<span class="notice">Forma non disponibile</span>')+'</div><div class="data-row"><span>Gol segnati medi (ultime 10)</span><b>'+fmt(form.for,2)+'</b></div><div class="data-row"><span>Gol subiti medi (ultime 10)</span><b>'+fmt(form.against,2)+'</b></div></div></section>'+
   '<section class="section"><div class="section-head"><div><h2>Calendario e risultati</h2><p>Partite in cui compare '+esc(name)+'.</p></div></div><div class="fixture-list">'+groupCards(rows.slice(-25),true)+'</div></section>';
-  $('teamFavorite').addEventListener('click',()=>{const on=MM().toggleFavorite(name);$('teamFavorite').textContent=on?'★ Seguita':'☆ Segui';});
+  $('teamFavorite').addEventListener('click',()=>{const on=MM().toggleFavorite(name);$('teamFavorite').innerHTML=on?favoriteIcon(true)+' Seguita':favoriteIcon(false)+' Segui';});
  }
  function probCard(label,value){const pct=value*100;return '<div class="prob"><span>'+label+'</span><b>'+fmt(pct,1)+'%</b><div class="track"><i style="width:'+Math.max(0,Math.min(100,pct))+'%"></i></div></div>';}
  async function initMatch(d){
@@ -90,18 +91,32 @@
   const match=d.matches.find(m=>m.date===date&&key(m.home)===key(home)&&key(m.away)===key(away))||d.history.find(m=>m.date===date&&key(m.home)===key(home)&&key(m.away)===key(away));
   if(!match){$('matchDetail').innerHTML='<div class="empty-state">Partita non trovata. <a class="text-link" href="matches.html">Torna al calendario ↗</a></div>';return;}
   const done=MM().hasScore(match),f=MM().forecast(match,d.history),p=f.probabilities;
+  const scoreMatrixHtml=(()=>{
+   const rows=[];
+   for(let homeGoals=0;homeGoals<=5;homeGoals++){
+    const cells=[];
+    for(let awayGoals=0;awayGoals<=5;awayGoals++){
+     const cell=f.scoreMatrix.find(x=>x.homeGoals===homeGoals&&x.awayGoals===awayGoals);
+     const value=cell?cell.probability:0,heat=f.scoreMatrix.reduce((max,x)=>Math.max(max,x.probability),0);
+     cells.push('<td style="--heat:'+(heat?value/heat:0).toFixed(3)+'">'+fmt(value*100,1)+'%</td>');
+    }
+    rows.push('<tr><th scope="row">'+homeGoals+'</th>'+cells.join('')+'</tr>');
+   }
+   return '<section class="section score-matrix-section"><div class="section-head"><div><h2>Risultati esatti</h2><p>Probabilità dei punteggi più frequenti · casa per riga, trasferta per colonna.</p></div></div><div class="panel panel-pad"><div class="table-scroll"><table class="score-matrix-table"><thead><tr><th scope="col">CASA / OSPITE</th>'+[0,1,2,3,4,5].map(n=>'<th scope="col">'+n+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div><div class="score-matrix-tail">Altri punteggi (almeno una squadra oltre 5 gol): <b>'+fmt(f.scoreMatrixTail*100,1)+'%</b></div></div></section>';
+  })();
   const seasonContext=window.MatchMindRounds?.matchContext(match,d.history,d.matches);
   const seasonContextHtml=seasonContext?'<section class="section"><div class="section-head"><div><h2>Classifica e obiettivi stagionali</h2><p>Fotografia alla data della partita, senza usare risultati successivi.</p></div></div><div class="panel panel-pad">'+[seasonContext.home,seasonContext.away].map(t=>'<div class="data-row"><span>'+esc(t.team)+' · posizione '+(t.rank??'—')+' · '+(t.points??'—')+' pt</span><b>'+esc(t.objective)+'</b></div><small style="display:block;color:#91a0ae;font-size:9px;margin:0 0 10px">PG '+(t.played??'—')+' · DR '+(t.goalDifference??'—')+(t.pointsToFourth!==null&&t.pointsToFourth!==undefined?' · distanza 4ª: '+t.pointsToFourth+' pt':'')+(t.pointsToSixth!==null&&t.pointsToSixth!==undefined?' · distanza 6ª: '+t.pointsToSixth+' pt':'')+(t.pointsAboveSafety!==null&&t.pointsAboveSafety!==undefined?' · margine 17ª: '+t.pointsAboveSafety+' pt':'')+'</small>').join('')+'<small style="color:#91a0ae;font-size:9px;line-height:1.5">'+esc(seasonContext.disclaimer)+'</small></div></section>':'';
   $('matchDetail').innerHTML='<div class="match-detail-score"><div class="match-detail-meta"><img class="competition-logo-small" src="https://media.api-sports.io/football/leagues/135.png" alt="" onerror="this.remove()"> SERIE A · '+esc(MM().dateLabel(match))+(match.round?' · GIORNATA '+match.round:'')+'</div><div class="match-detail-teams"><div class="match-detail-side"><a href="'+MM().teamUrl(match.home)+'">'+MM().badge(match.home)+'</a><b>'+esc(match.home)+'</b></div><div class="match-detail-result '+(done?'':'pending')+'">'+(done?match.hg+' – '+match.ag:(match.time||'VS'))+'</div><div class="match-detail-side"><a href="'+MM().teamUrl(match.away)+'">'+MM().badge(match.away)+'</a><b>'+esc(match.away)+'</b></div></div><div style="margin-top:12px;color:#91a0ae;font-size:8px">'+(done?'RISULTATO ARCHIVIATO':MM().status(match).toUpperCase())+'</div></div>'+
-  '<section class="section analysis-section" style="margin-top:18px"><div class="section-head"><div><div class="eyebrow">MODELLO STATISTICO</div><h2>Analisi MatchMind</h2><p>Modello Poisson · '+f.historyCount+' partite archiviate nel campione.</p></div></div>'+(f.sampleEnough?'<div class="notice good">Base storica completa per questa stima: almeno 10 partite precedenti per ciascuna squadra. Le probabilità restano indicative e non sono una previsione certa.</div>':'<div class="notice warning">Campione squadra incompleto: '+esc(match.home)+' '+f.home.played+'/10 e '+esc(match.away)+' '+f.away.played+'/10 partite disponibili. Le probabilità sono esplorative e non vanno considerate robuste.</div>')+
+  '<section class="section analysis-section" style="margin-top:18px"><div class="section-head"><div><div class="eyebrow">MODELLO STATISTICO</div><h2>'+ (done?'Replay statistico storico':'Stima pre-partita') +'</h2><p>Modello Poisson · '+f.historyCount+' partite archiviate nel campione.</p></div></div>'+(f.sampleEnough?'<div class="notice good">Base storica completa per questa stima: almeno 10 partite precedenti per ciascuna squadra. Le probabilità restano indicative e non sono una previsione certa.</div>':'<div class="notice warning">Campione squadra incompleto: '+esc(match.home)+' '+f.home.played+'/10 e '+esc(match.away)+' '+f.away.played+'/10 partite disponibili. Le probabilità sono esplorative e non vanno considerate robuste.</div>')+
   '<div class="section-head" style="margin-top:12px"><div><h2>Probabilità 1X2</h2><p>Distribuzione stimata degli esiti</p></div></div><div class="prob-grid">'+probCard('1 · Casa',p.home)+probCard('X · Pareggio',p.draw)+probCard('2 · Trasferta',p.away)+'</div>'+
   '<div class="section-head" style="margin-top:13px"><div><h2>Mercati goal</h2><p>Probabilità derivate dalla distribuzione Poisson</p></div></div><div class="prob-grid">'+probCard('Gol',p.btts)+probCard('No Gol',1-p.btts)+probCard('Over 2,5',p.o25)+'</div><div class="prob-grid" style="margin-top:7px">'+probCard('Over 1,5',p.o15)+probCard('Over 3,5',p.o35)+probCard('Under 2,5',1-p.o25)+'</div>'+
+  scoreMatrixHtml+
   '<div class="panel panel-pad match-model-context" style="margin-top:14px"><div class="context-heading"><span>CONTESTO DEL MODELLO</span><small>Stime, non dati osservati</small></div><div class="data-row"><span>Partite usate · '+esc(match.home)+'</span><b>'+f.home.played+'</b></div><div class="data-row"><span>Partite usate · '+esc(match.away)+'</span><b>'+f.away.played+'</b></div><div class="data-row"><span>Periodo storico complessivo</span><b>'+(f.historyStart&&f.historyEnd?esc(f.historyStart)+' – '+esc(f.historyEnd):'Non disponibile')+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.home)+'</span><b>'+fmt(f.homeXg,2)+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.away)+'</span><b>'+fmt(f.awayXg,2)+'</b></div><div class="data-row"><span>Forma '+esc(match.home)+'</span><div class="form-row">'+(f.home.form.length?f.home.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div><div class="data-row"><span>Forma '+esc(match.away)+'</span><div class="form-row">'+(f.away.form.length?f.away.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div></div></section>'+
   seasonContextHtml+
-  (done?'<div class="notice">Partita conclusa: il contesto prematch e le quote non vengono presentati come dati correnti.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">DATI ESTERNI</div><h2>Quote e indisponibili</h2><p>Solo dati restituiti dal provider, quando disponibili.</p></div></div><div id="matchContext" class="panel panel-pad"><div class="loading-state">Verifica copertura e contesto partita…</div></div></section>')+
+  (done?'<div class="notice warning">Replay storico: questa stima viene ricostruita dai dati precedenti alla partita. Non esiste una previsione pre-partita congelata e registrata all’epoca.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">DATI ESTERNI</div><h2>Quote e indisponibili</h2><p>Solo dati restituiti dal provider, quando disponibili.</p></div></div><div id="matchContext" class="panel panel-pad"><div class="loading-state">Verifica copertura e contesto partita…</div></div></section>')+
   '<section class="section"><div class="section-head"><div><div class="eyebrow">CONTESTO EDITORIALE</div><h2>Notizie recenti</h2><p>Articoli collegati alle due squadre, con fonte e data.</p></div></div><div id="matchNews" class="panel panel-pad"><div class="loading-state">Ricerca delle notizie…</div></div></section>'+
 
-  '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri il centro MatchMind Intelligence ↗</a></div>';
+  '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri AI Insights ↗</a></div>';
   if(!done){
    try{
     const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
