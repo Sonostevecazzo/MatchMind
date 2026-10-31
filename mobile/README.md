@@ -41,7 +41,7 @@ After saving secrets, trigger a new deployment. You can add only the providers y
 
 API-Football injury data is cached at the edge for up to four hours and player searches/form for up to six hours. A recent-form lookup can use multiple provider calls; avoid repeatedly forcing the same search. Provider quotas, coverage and update timing can change.
 
-The app service worker does not cache the HTML page. Data already stored by the browser remains on that phone; lock your device.
+The service worker caches the app-shell pages, CSS and JavaScript for previously visited routes, but deliberately does not cache API responses. Match data and historical results are stored separately in the browser cache; offline views therefore depend on the last successful data refresh. Newly published fixtures, scores and news require a network connection.
 
 ## Data and limitations
 
