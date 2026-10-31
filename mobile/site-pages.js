@@ -295,7 +295,7 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
       if(!forecast.sampleEnough){coverage.weakSample++;continue;}
       try{
        const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
-       const alternative=alternativeEvents.find(event=>event.date===match.date&&MM().norm(event.home)===MM().norm(match.home)&&MM().norm(event.away)===MM().norm(match.away));
+       const alternative=alternativeEvents.find(event=>event.date===match.date&&MM().sameTeam(event.home,match.home)&&MM().sameTeam(event.away,match.away));
        const bookmakers=[
         ...(Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'OddsPapi · Sisal',updatedAt:c.oddsUpdatedAt})):[]),
         ...(alternative&&Array.isArray(alternative.bookmakers)?alternative.bookmakers.map(book=>({...book,source:'The Odds API',updatedAt:alternative.updatedAt})):[])
