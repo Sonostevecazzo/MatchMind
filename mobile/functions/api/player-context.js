@@ -310,7 +310,7 @@ function publicError(error) {
     provider_rejected_request: "API-Football ha rifiutato la richiesta. Verifica copertura e piano.",
     sisal_odds_invalid_key: "La chiave OddsPapi non è valida. Controlla la chiave nelle Impostazioni.",
     sisal_odds_restricted: "La chiave OddsPapi non include l'accesso alle quote Sisal. Controlla la copertura del piano.",
-    sisal_odds_quota_exceeded: "La quota OddsPapi è esaurita. Verifica il piano o attendi il rinnovo.",
+    sisal_odds_quota_exceeded: "La quota mensile OddsPapi è esaurita. Riprova al rinnovo o verifica il piano.",
     sisal_odds_rate_limited: "OddsPapi ha limitato le richieste. Riprova tra poco.",
     sisal_odds_unreachable: "OddsPapi non è raggiungibile in questo momento.",
     sisal_odds_http_error: "OddsPapi ha restituito un errore durante il recupero delle quote Sisal.",
@@ -878,7 +878,7 @@ export async function onRequestGet(context) {
         season,
         freePlanRequestsPerDay: apiFootballConfigured ? 100 : null,
         apiFootballUsage,
-        error: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured || theOddsApiConfigured ? null : "Nessun provider API key configurato. Calendario e storico pubblici restano disponibili.",
+        error: apiFootballConfigured || sisalOddsConfigured || footballDataConfigured || theOddsApiConfigured ? null : "API_FOOTBALL_KEY, ODDSPAPI_API_KEY, FOOTBALL_DATA_API_KEY o THE_ODDS_API_KEY non configurate. Calendario e storico pubblici restano disponibili.",
         providers: {
           apiFootball: apiFootballConfigured,
           sisalOdds: sisalOddsConfigured,
