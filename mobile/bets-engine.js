@@ -16,8 +16,8 @@
     { key: "under25", label: "Under 2,5", re: /(?:u\s*\/\s*o\s*2[,.]5\s*[:\-]?\s*under|under\s*2[,.]5)/i },
     { key: "over35", label: "Over 3,5", re: /(?:u\s*\/\s*o\s*3[,.]5\s*[:\-]?\s*over|over\s*3[,.]5)/i },
     { key: "under35", label: "Under 3,5", re: /(?:u\s*\/\s*o\s*3[,.]5\s*[:\-]?\s*under|under\s*3[,.]5)/i },
-    { key: "bttsYes", label: "Gol", re: /(?:both\s+teams\s+to\s+score|\bbtts\b|\bgol\b)(?!\s*\/)/i },
-    { key: "bttsNo", label: "No Gol", re: /(?:no\s+gol|no\s+goal|btts\s*no)/i }
+    { key: "bttsNo", label: "No Gol", re: /(?:no\s+gol|no\s+goal|btts\s*no)/i },
+    { key: "bttsYes", label: "Gol", re: /(?:both\s+teams\s+to\s+score|\bbtts\b|\bgol\b)/i }
   ];
 
   function matchFixture(text, fixtures, isUpcoming) {
@@ -56,8 +56,14 @@
   function readOdds(text) {
     const source = String(text || "");
     const explicit = source.match(/(?:quota|odd|odds|@)\s*[:=]?\s*(\d+(?:[,.]\d+)?)/i);
-    const matches = explicit ? [explicit] : [...source.matchAll(/\b(\d+[,.]\d{1,3})\b/g)];
-    for (const found of matches.slice().reverse()) {
+    if (explicit) {
+      const value = Number(String(explicit[1]).replace(",", "."));
+      return Number.isFinite(value) && value > 1 && value <= 1000 ? value : null;
+    }
+    const market = /(?:u\s*\/\s*o\s*[123][,.]5\s*[:\-]?\s*(?:over|under)|(?:over|under)\s*[123][,.]5)/i.exec(source);
+    const suffix = market ? source.slice(market.index + market[0].length) : source;
+    const matches = [...suffix.matchAll(/\b(\d+[,.]\d{1,3})\b/g)];
+    for (const found of matches.reverse()) {
       const value = Number(String(found[1]).replace(",", "."));
       if (Number.isFinite(value) && value > 1 && value <= 1000) return value;
     }
