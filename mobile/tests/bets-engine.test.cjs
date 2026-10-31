@@ -46,7 +46,7 @@ test("parses No Gol before the generic Gol market", () => {
 
 test("maps markets to model probabilities and complements correctly", () => {
   assert.equal(bets.marketProbability(forecast, "over25"), 0.57);
-  assert.equal(bets.marketProbability(forecast, "under25"), 0.43);
+  assert.ok(Math.abs(bets.marketProbability(forecast, "under25") - 0.43) < 1e-12);
   assert.equal(bets.marketProbability(forecast, "home"), 0.42);
   assert.equal(bets.marketProbability(forecast, "draw"), 0.28);
 });
