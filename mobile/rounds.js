@@ -24,9 +24,9 @@
   else if(lastSafe&&t.rank>=totalTeams-5&&t.pts-lastSafe.pts<=6)objective='Lotta salvezza';
   return {team,available:true,rank:t.rank,points:t.pts,played:t.played,goalDifference:t.gd,objective,pointsToFourth:gap(fourth),pointsToSixth:gap(sixth),pointsAboveSafety:lastSafe? t.pts-lastSafe.pts:null,inRelegationZone:relegation.some(x=>norm(x.name)===norm(team))};
  }
- function matchContext(match,rows){
-  const table=standingsBefore(rows,match.date);
-  return {table,home:teamContext(match.home,table),away:teamContext(match.away,table),asOf:match.date,disclaimer:'Obiettivi inferiti dalla classifica alla data della partita; non sono dichiarazioni ufficiali dei club.'};
+ function matchContext(match,rows,allTeamsRows=rows){
+  const table=standingsBefore(rows,match.date),start=seasonStart(match.date),totalTeams=new Set(allTeamsRows.filter(m=>m&&m.date>=start&&m.date.slice(0,7)<=match.date.slice(0,7)).flatMap(m=>[m.home,m.away]).filter(Boolean).map(norm)).size||20;
+  return {table,home:teamContext(match.home,table,totalTeams),away:teamContext(match.away,table,totalTeams),asOf:match.date,disclaimer:'Obiettivi inferiti dalla classifica alla data della partita; non sono dichiarazioni ufficiali dei club.'};
  }
  function buildTicket(rows,forecastFn){
   const upcoming=rows.filter(m=>m&&m.date&&(m.hg===null||m.hg===undefined||m.ag===null||m.ag===undefined)).slice().sort((a,b)=>a.date.localeCompare(b.date));
@@ -39,7 +39,7 @@
    const one=[['1',p.home],['X',p.draw],['2',p.away]].sort((a,b)=>b[1]-a[1])[0];
    const btts=[['Gol',p.btts],['No Gol',1-p.btts]].sort((a,b)=>b[1]-a[1])[0];
    const total=[['Over 2,5',p.o25],['Under 2,5',1-p.o25]].sort((a,b)=>b[1]-a[1])[0];
-   return {match,eligible:true,oneXtwo:{label:one[0],probability:one[1]},btts:{label:btts[0],probability:btts[1]},total:{label:total[0],probability:total[1]},context:matchContext(match,rows)};
+   return {match,eligible:true,oneXtwo:{label:one[0],probability:one[1]},btts:{label:btts[0],probability:btts[1]},total:{label:total[0],probability:total[1]},context:matchContext(match,rows,rows)};
   });
   const combine=key=>{const valid=legs.filter(x=>x.eligible);if(valid.length!==legs.length||!valid.length)return {probability:null,legs:valid.length,required:legs.length,complete:false};const log=valid.reduce((s,x)=>s+Math.log(Math.max(1e-15,x[key].probability)),0);return {probability:Math.exp(log),legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};};
   return {available:true,round:first.round??null,from:fixtures[0].date,to:fixtures[fixtures.length-1].date,fixtures:legs,tickets:{oneXtwo:combine('oneXtwo'),btts:combine('btts'),underOver:combine('total')},selectionRule:'Per ogni mercato viene selezionato l’esito singolo con probabilità stimata più alta; linea totale fissa 2,5.',disclaimer:'Stime statistiche, non garanzie. Una schedina con molte selezioni può avere probabilità complessiva molto bassa.'};
