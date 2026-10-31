@@ -63,6 +63,10 @@ assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), 
 assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
 assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
 assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"
+rounds = (ROOT / "rounds.js").read_text(encoding="utf-8")
+assert "m.date<localDate" in rounds and "options.isUpcoming" in rounds, "Ticket engine must exclude past unplayed fixtures"
+assert "Number.isFinite(v)" in rounds and "valid.length!==legs.length" in rounds, "Ticket probabilities must reject invalid or incomplete legs"
+assert "m.date<date" in rounds, "League snapshots must exclude same-date and future results"
 assert "loadData,backtest" in core, "Backtest helper is not exposed to the UI"
 pages_js = (ROOT / "site-pages.js").read_text(encoding="utf-8")
 for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto", "CALIBRAZIONE PER ESITO", "STABILITÀ NEL TEMPO"]:
