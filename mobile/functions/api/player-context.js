@@ -1,4 +1,4 @@
-import { parseGoogleNewsRss } from "../lib/news-rss.mjs";
+import { parseGoogleNewsRss } from "../_lib/news-rss.mjs";
 
 const API_BASE = "https://v3.football.api-sports.io";
 const SISAL_ODDS_API_BASE = "https://api.oddspapi.io/v4";
