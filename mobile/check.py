@@ -14,14 +14,18 @@ assert (ROOT / "sw.js").is_file()
 
 required_pages = [
     "index.html", "matches.html", "explore.html", "league.html",
-    "team.html", "match.html", "players.html", "analysis-lab.html", "data.html", "settings.html",
+    "team.html", "match.html", "players.html", "analysis-lab.html", "bets.html", "data.html", "settings.html",
 ]
 for name in required_pages:
     page = ROOT / name
     assert page.is_file(), f"Missing screen: {name}"
     html = page.read_text(encoding="utf-8")
     assert '<html lang="it">' in html, f"{name} must declare Italian language"
-    assert 'site-core.js' in html and 'site-pages.js' in html, f"{name} must use shared navigation and page controller"
+    assert "site-core.js" in html, f"{name} must use shared navigation"
+    if name == "bets.html":
+        assert "bets-engine.js" in html and "bets.js" in html, "Bet checker must load its engine and controller"
+    else:
+        assert "site-pages.js" in html, f"{name} must use the shared page controller"
 
 # The legacy workbench is retained as a fallback and its original inline JS is syntax-checked.
 legacy = (ROOT / "legacy-workbench.html").read_text(encoding="utf-8")
@@ -33,7 +37,7 @@ with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
     handle.flush()
     subprocess.run(["node", "--check", handle.name], check=True)
 
-for filename in ["site-core.js", "site-pages.js", "elo.js", "rounds.js", "sw.js"]:
+for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "bets.js", "elo.js", "rounds.js", "sw.js"]:
     subprocess.run(["node", "--check", str(ROOT / filename)], check=True)
 
 for path in [
@@ -46,10 +50,11 @@ subprocess.run(["node", "--test", str(ROOT / "tests" / "player-context.test.mjs"
 subprocess.run(["node", "--test", str(ROOT / "tests" / "backtest.test.mjs")], check=True)
 subprocess.run(["node", "--test", str(ROOT / "tests" / "elo.test.mjs")], check=True)
 subprocess.run(["node", "--test", str(ROOT / "tests" / "rounds.test.mjs")], check=True)
+subprocess.run(["node", "--test", str(ROOT / "tests" / "bets-engine.test.cjs")], check=True)
 
 # Check the app's four main destinations and that page-specific routes are linked.
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
-for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html", "settings.html"]:
+for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html", "bets.html", "settings.html"]:
     assert route in core, f"Missing primary navigation route: {route}"
 # Forecast transparency and stable team identity checks.
 assert "frosinone:512" in core, "Missing Frosinone crest mapping"
@@ -61,6 +66,8 @@ assert "sameDateSnapshot:true" in elo and "aliasNormalization:true" in elo, "Mis
 assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Elo engine is not loaded by the Intelligence page"
 assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Round analysis engine is not loaded by the Intelligence page"
 assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
+assert "bets.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker page is not cached by the service worker"
+assert "bets-engine.js" in (ROOT / "sw.js").read_text(encoding="utf-8") and "bets.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker assets are not cached by the service worker"
 assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
 assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"
 rounds = (ROOT / "rounds.js").read_text(encoding="utf-8")
