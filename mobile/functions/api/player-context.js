@@ -27,7 +27,7 @@ function hasProviderErrors(errors) {
   return Boolean(errors);
 }
 
-async function providerGet(path, params, context, ttlSeconds) {
+function getApiFootballKey(context) {\n  const supplied = context.request && context.request.headers.get("x-matchmind-api-key");\n  const key = supplied || (context.env && context.env.API_FOOTBALL_KEY) || "";\n  return /^[A-Za-z0-9_-]{20,256}$/.test(key) ? key : "";\n}\n\nasync function providerGet(path, params, context, ttlSeconds) {
   const providerUrl = new URL(path, API_BASE + "/");
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && String(value) !== "") {
@@ -54,7 +54,7 @@ async function providerGet(path, params, context, ttlSeconds) {
   try {
     response = await fetch(providerUrl.toString(), {
       method: "GET",
-      headers: { "x-apisports-key": context.env.API_FOOTBALL_KEY },
+      headers: { "x-apisports-key": apiKey },
       signal: AbortSignal.timeout(12000)
     });
   } catch {
@@ -101,7 +101,7 @@ async function providerGet(path, params, context, ttlSeconds) {
 async function readApiFootballUsage(context) {
   // API-Football /status is quota-free. Cache briefly to avoid needless polling.
   try {
-    const payload = await providerGet("status", {}, context, 60);
+    const payload = await providerGet("status", {}, context, 0);
     const account = payload && payload.response ? payload.response : {};
     const requests = account.requests || {};
     const current = Number(requests.current);
@@ -274,7 +274,7 @@ function errorStatus(error) {
 
 function publicError(error) {
   const messages = {
-    provider_invalid_key: "La chiave API-Football non è valida. Controlla il secret API_FOOTBALL_KEY su Cloudflare.",
+    provider_missing_key: "Inserisci una chiave API-Football valida oppure configura il secret API_FOOTBALL_KEY su Cloudflare.",\n    provider_invalid_key: "La chiave API-Football non è valida. Controlla il secret API_FOOTBALL_KEY su Cloudflare.",
     provider_rate_limited: "Limite API raggiunto. Il piano gratuito consente 100 richieste al giorno; riprova dopo il ripristino della quota.",
     provider_unreachable: "Il servizio dati non è raggiungibile in questo momento.",
     provider_http_error: "Il servizio dati ha restituito un errore.",
@@ -560,7 +560,7 @@ async function getMatchContext(context, season, requestUrl) {
     return responseJson({ configured: true, type: "match", error: "I dati prematch sono richiesti solo per le partite dei prossimi 14 giorni." }, 400);
   }
 
-  const apiFootballKey = context.env && context.env.API_FOOTBALL_KEY;
+  const apiFootballKey = getApiFootballKey(context);
   const sisalOddsKey = context.env && context.env.ODDSPAPI_API_KEY;
   const [fixtureLookup, oddsLookup] = await Promise.allSettled([
     apiFootballKey ? providerGet("fixtures", { league: SERIE_A_ID, season, date, timezone: "Europe/Rome" }, context, 12 * 60 * 60) : Promise.resolve(null),
@@ -760,7 +760,7 @@ async function getPlayerForm(context, season, requestUrl) {
 export async function onRequestGet(context) {
   const requestUrl = new URL(context.request.url);
   const env = context.env || {};
-  const apiFootballConfigured = Boolean(env.API_FOOTBALL_KEY);
+  const apiFootballConfigured = Boolean(getApiFootballKey(context));
   const sisalOddsConfigured = Boolean(env.ODDSPAPI_API_KEY);
   const footballDataConfigured = Boolean(env.FOOTBALL_DATA_API_KEY);
   const season = currentSeason();
