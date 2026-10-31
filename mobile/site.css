@@ -598,3 +598,39 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
  .player-item-head button{min-height:35px}.page-wrap .data-row{font-size:9px}
 }
 @media(max-width:370px){.analysis-section .prob b{font-size:18px}}
+
+/* Team and competition identity assets */
+.team-crest{position:relative;overflow:hidden;isolation:isolate}
+.team-crest .team-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:3px;z-index:2;background:var(--crest,#17242d)}
+.team-crest-fallback{position:relative;z-index:1}
+.competition-badge{position:relative;overflow:hidden}
+.competition-badge .competition-logo{width:100%;height:100%;object-fit:contain;padding:5px}
+.competition-logo-small{display:inline-block;width:16px;height:16px;object-fit:contain;flex:0 0 16px}
+.settings-page{max-width:850px}
+.settings-provider{margin:0 0 12px;padding:16px;border:1px solid #2b4147;border-radius:17px;background:linear-gradient(145deg,#14212a,#101820);box-shadow:0 9px 28px #0002}
+.settings-provider-head{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+.settings-provider-head>span:nth-child(2){display:grid;gap:3px;flex:1;min-width:0}
+.settings-provider-head b{font-size:13px}
+.settings-provider-head small{font-size:9px;color:#8e9da8;line-height:1.4}
+.provider-mark{display:grid;place-items:center;width:39px;height:39px;flex:0 0 39px;border-radius:12px;background:linear-gradient(145deg,#d5f89c,#8fc94c);color:#18220d;font-size:11px;font-weight:950}
+.provider-mark.odds{background:linear-gradient(145deg,#c7d8ff,#6f9ee7);color:#101d35}
+.provider-mark.football{background:linear-gradient(145deg,#f2e0b5,#c4a46a);color:#2a2110}
+.provider-live{padding:4px 7px;border:1px solid #355047;border-radius:7px;color:#a9e9ce;font-size:7px;font-weight:950;letter-spacing:.8px}
+.settings-page .field{margin-top:10px}
+.settings-page .field label{font-size:9px}
+.settings-page .field input{min-height:45px;font-size:12px}
+.settings-hint{margin:10px 0;color:#91a0aa;font-size:9px;line-height:1.65}
+.settings-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.settings-actions button{min-height:39px}
+.settings-status{margin-top:12px}
+.settings-usage{margin-top:8px}
+.settings-steps ol{padding-left:19px;margin:0 0 14px;color:#c1cbd2;font-size:10px;line-height:1.9}
+.settings-steps code{color:#d7f49b;font-size:9px}
+.settings-steps .text-link{display:inline-block;margin-top:10px}
+@media(max-width:700px){
+ .settings-provider{padding:13px;border-radius:15px}
+ .settings-provider-head b{font-size:12px}
+ .settings-actions{display:grid;grid-template-columns:1fr 1fr}
+ .settings-actions #saveSessionKey{grid-column:1/-1}
+ .settings-page .field input{font-size:11px}
+}
