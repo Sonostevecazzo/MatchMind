@@ -8,8 +8,7 @@ const old = new Date(now - 30 * 24 * 60 * 60 * 1000).toUTCString();
 const future = new Date(now + 3 * 60 * 60 * 1000).toUTCString();
 
 function item(title, url, date, source = "Test Sport") {
-  return "<item><title>" + title + "</title><link>" + url + "</link><pubDate>" + date +
-    "</pubDate><source url=\\"https://example.test\\">" + source + "</source></item>";
+  return `<item><title>${title}</title><link>${url}</link><pubDate>${date}</pubDate><source url="https://example.test">${source}</source></item>`;
 }
 
 test("parses CDATA, XML entities, source and publication date", () => {
