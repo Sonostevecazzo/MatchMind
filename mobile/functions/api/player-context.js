@@ -598,10 +598,10 @@ async function getTheOddsApiEvents(context) {
 
 async function getOddsPapiStatus(context) {
   if (!getOddsPapiKey(context)) return responseJson({ configured: false, provider: "OddsPapi", error: "Inserisci una chiave nelle Impostazioni." });
-  const url = new URL(SISAL_ODDS_API_BASE + "/sports");
+  const url = new URL(SISAL_ODDS_API_BASE + "/account");
   url.searchParams.set("apiKey", getOddsPapiKey(context));
-  const payload = await cachedExternalJson(context, "sisal_odds", url.toString(), "oddspapi/status/sports", { Accept: "application/json" }, 0);
-  if (!Array.isArray(payload)) throw new Error("sisal_odds_invalid_json");
+  const payload = await cachedExternalJson(context, "sisal_odds", url.toString(), "oddspapi/status/account", { Accept: "application/json" }, 0);
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("sisal_odds_invalid_json");
   return responseJson({ configured: true, valid: true, provider: "OddsPapi" });
 }
 
