@@ -34,7 +34,7 @@
   const isUpcoming=typeof options.isUpcoming==='function'?options.isUpcoming:m=>{
    if(!m||!m.date||scored(m)||m.date<localDate)return false;
    if(m.date>localDate)return true;
-   const time=/^\\d{1,2}:\\d{2}$/.test(String(m.time||''))?m.time:'';
+   const time=/^\d{1,2}:\d{2}$/.test(String(m.time||''))?m.time:'';
    if(!time)return true;
    const [hours,minutes]=time.split(':').map(Number);
    return new Date(now.getFullYear(),now.getMonth(),now.getDate(),hours,minutes).getTime()>=now.getTime();
