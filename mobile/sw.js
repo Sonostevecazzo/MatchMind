@@ -1,8 +1,8 @@
-const CACHE='matchmind-pwa-v14-20261031';
+const CACHE='matchmind-pwa-v15-20261031';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./data.html','./settings.html',
- './site.css','./site-core.js','./elo.js','./site-pages.js','./manifest.webmanifest','./icon.svg'
+ './site.css','./site-core.js','./elo.js','./rounds.js','./site-pages.js','./manifest.webmanifest','./icon.svg'
 ];
 
 self.addEventListener('install',event=>{
