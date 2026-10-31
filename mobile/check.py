@@ -33,7 +33,7 @@ with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
     handle.flush()
     subprocess.run(["node", "--check", handle.name], check=True)
 
-for filename in ["site-core.js", "site-pages.js", "sw.js"]:
+for filename in ["site-core.js", "site-pages.js", "elo.js", "sw.js"]:
     subprocess.run(["node", "--check", str(ROOT / filename)], check=True)
 
 for path in [
@@ -44,6 +44,7 @@ for path in [
 
 subprocess.run(["node", "--test", str(ROOT / "tests" / "player-context.test.mjs")], check=True)
 subprocess.run(["node", "--test", str(ROOT / "tests" / "backtest.test.mjs")], check=True)
+subprocess.run(["node", "--test", str(ROOT / "tests" / "elo.test.mjs")], check=True)
 
 # Check the app's four main destinations and that page-specific routes are linked.
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
@@ -54,6 +55,9 @@ assert "frosinone:512" in core, "Missing Frosinone crest mapping"
 assert "sampleEnough:h.played>=10&&a.played>=10" in core, "Forecast adequacy must require 10 prior matches per team"
 assert "function backtest(rows)" in core, "Missing chronological out-of-sample backtest"
 assert "byClass" in core and "accuracyCI" in core and "bySeason" in core, "Missing detailed backtest diagnostics"
+elo = (ROOT / "elo.js").read_text(encoding="utf-8")
+assert "sameDateSnapshot:true" in elo and "aliasNormalization:true" in elo, "Missing Elo leakage and identity safeguards"
+assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Elo engine is not loaded by the Intelligence page"
 assert "loadData,backtest" in core, "Backtest helper is not exposed to the UI"
 pages_js = (ROOT / "site-pages.js").read_text(encoding="utf-8")
 for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto", "CALIBRAZIONE PER ESITO", "STABILITÀ NEL TEMPO"]:
