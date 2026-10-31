@@ -212,7 +212,10 @@
  function backtestHTML(r){
   if(!r.count)return '<div class="notice warning">Backtest non disponibile: nei dati caricati non ci sono abbastanza partite precedenti per entrambe le squadre (almeno 10 ciascuna) e almeno 30 partite complessive.</div>';
   const pct=x=>fmt(x*100,1)+'%',metric=(label,a,b)=>'<div class="data-row"><span>'+label+'</span><b>'+fmt(a,3)+' · baseline '+fmt(b,3)+'</b></div>';
-  const bins=r.bins.map(x=>'<div class="data-row"><span>'+x.range+' · '+x.count+' partite</span><b>'+pct(x.confidence)+' previste / '+pct(x.hitRate)+' reali</b></div>').join('');
+  const bins=r.bins.map(x=>'<div class="data-row"><span>'+x.range+' · '+x.count+' pronostici</span><b>'+pct(x.confidence)+' previste / '+pct(x.hitRate)+' reali</b></div>').join('');
+  const classNames={home:'Vittoria casa',draw:'Pareggio',away:'Vittoria trasferta'};
+  const classRows=Object.entries(r.byClass||{}).map(([k,v])=>'<div class="data-row"><span>'+classNames[k]+' · probabilità media / frequenza reale</span><b>'+pct(v.predicted)+' / '+pct(v.observed)+'</b></div>').join('');
+  const seasonRows=Object.entries(r.bySeason||{}).map(([y,v])=>'<div class="data-row"><span>Stagione '+y+' · '+v.count+' test</span><b>'+pct(v.accuracy)+' · LL '+fmt(v.logLoss,3)+' · Brier '+fmt(v.brier,3)+'</b></div>').join('');
   const enough=r.count>=100;
   return '<div class="notice '+(enough?'good':'warning')+'">'+(enough?'Campione di verifica utilizzabile, ma non sufficiente da solo a dimostrare un vantaggio stabile.':'Campione ridotto: risultati preliminari, non conclusivi.')+' Il test usa solo risultati precedenti alla data di ogni partita.</div>'+
    '<div class="stat-strip"><div class="stat-cell"><b>'+fmt(r.count)+'</b><span>PRONOSTICI TESTATI</span></div><div class="stat-cell"><b>'+pct(r.model.accuracy)+'</b><span>ESITO PIÙ PROBABILE CORRETTO</span></div><div class="stat-cell"><b>'+pct(r.baseline.accuracy)+'</b><span>BASELINE CORRETTA</span></div></div>'+
