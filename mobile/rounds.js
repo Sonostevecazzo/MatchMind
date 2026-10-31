@@ -25,7 +25,7 @@
   return {team,available:true,rank:t.rank,points:t.pts,played:t.played,goalDifference:t.gd,objective,pointsToFourth:gap(fourth),pointsToSixth:gap(sixth),pointsAboveSafety:lastSafe? t.pts-lastSafe.pts:null,inRelegationZone:relegation.some(x=>norm(x.name)===norm(team))};
  }
  function matchContext(match,rows,allTeamsRows=rows){
-  const table=standingsBefore(rows,match.date),start=seasonStart(match.date),totalTeams=new Set(allTeamsRows.filter(m=>m&&m.date>=start&&m.date.slice(0,7)<=match.date.slice(0,7)).flatMap(m=>[m.home,m.away]).filter(Boolean).map(norm)).size||20;
+  const table=standingsBefore(rows,match.date),start=seasonStart(match.date),totalTeams=new Set(allTeamsRows.filter(m=>m&&m.date>=start).flatMap(m=>[m.home,m.away]).filter(Boolean).map(norm)).size||20;
   return {table,home:teamContext(match.home,table,totalTeams),away:teamContext(match.away,table,totalTeams),asOf:match.date,disclaimer:'Obiettivi inferiti dalla classifica alla data della partita; non sono dichiarazioni ufficiali dei club.'};
  }
  function buildTicket(rows,forecastFn){
