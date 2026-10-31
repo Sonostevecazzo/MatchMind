@@ -175,6 +175,32 @@
    }catch(e){$('playerForm').innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}finally{b.disabled=false;b.textContent='Forma recente';}
   });
  }
+ async function initSettings(){
+  const keyInput=$('apiFootballKey'),status=$('settingsProviderStatus'),usage=$('settingsApiUsage');
+  const readKey=()=>{try{return sessionStorage.getItem('matchmind-api-football-session-key')||''}catch{return ''}};
+  keyInput.value=readKey();
+  const headers=()=>{const h={Accept:'application/json'};const k=readKey();if(k)h['X-MatchMind-API-Key']=k;return h;};
+  async function verify(){
+   status.innerHTML='<div class="loading-state">Verifica della chiave con API-Football…</div>';usage.innerHTML='';
+   try{
+    const res=await fetch('./api/player-context?type=status',{headers:headers(),cache:'no-store'}),d=await res.json(),p=d.providers||{},u=d.apiFootballUsage;
+    if(!res.ok||!p.apiFootball||!u||!u.available)throw new Error(d.error||'Chiave non verificata dal provider.');
+    status.innerHTML='<div class="notice good">Connessione verificata · '+esc(u.plan||'Piano attivo')+' · '+fmt(u.remaining)+' richieste residue oggi.</div>';
+    usage.innerHTML='<div class="data-row"><span>Consumo giornaliero</span><b>'+fmt(u.current)+' / '+fmt(u.limitDay)+'</b></div><div class="data-row"><span>Residue</span><b>'+fmt(u.remaining)+'</b></div><div class="data-row"><span>Ultima verifica</span><b>'+new Date(u.checkedAt).toLocaleTimeString('it-IT')+'</b></div>';
+   }catch(e){status.innerHTML='<div class="notice warning">'+esc(e.message)+' Se hai appena inserito la chiave, controlla che sia corretta e che il piano sia attivo.</div>';}
+  }
+  $('saveSessionKey').addEventListener('click',async()=>{
+   const value=keyInput.value.trim();
+   if(!/^[A-Za-z0-9_-]{20,256}$/.test(value)){status.innerHTML='<div class="notice warning">Formato non valido. Incolla la chiave API-Football completa.</div>';return;}
+   try{sessionStorage.setItem('matchmind-api-football-session-key',value);}catch{status.innerHTML='<div class="notice warning">Il browser non consente di salvare la chiave nella sessione.</div>';return;}
+   await verify();
+  });
+  $('clearSessionKey').addEventListener('click',()=>{try{sessionStorage.removeItem('matchmind-api-football-session-key')}catch{}keyInput.value='';status.innerHTML='<div class="notice">Chiave rimossa dalla sessione corrente. Le richieste useranno il secret Cloudflare, se configurato.</div>';usage.innerHTML='';});
+  $('testSessionKey').addEventListener('click',verify);
+  $('copyCloudflareSteps').addEventListener('click',()=>GenCopy('API_FOOTBALL_KEY'));
+  if(readKey())await verify();else status.innerHTML='<div class="notice">Nessuna chiave inserita in questa sessione. Il calendario pubblico e il modello locale continuano a funzionare.</div>';
+ }
+ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
  async function initData(){
   const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const r=await fetch('./api/player-context?type=status',{headers:{Accept:'application/json'},cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · dati pubblici',true],['Probabilità statistiche','Modello Poisson locale',true],['Quote bookmaker','Sisal IT · OddsPapi',!!p.sisalOdds],['Infortuni e forma giocatori','API-Football',!!p.apiFootball],['Calendario di riserva','football-data.org',!!p.footballData]];const usage=d.apiFootballUsage;
    const usageHtml=!p.apiFootball?'':(usage&&usage.available
@@ -187,7 +213,7 @@
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
   try{const d=await MM().loadData();setStatus(d.source==='cache'?'Stai usando i dati salvati localmente.':'Dati aggiornati · Serie A '+d.season+'/'+String(d.season+1).slice(-2),d.source==='cache'?'':'ok');
-   if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')initPlayers();else if(page==='data')initData();else if(page==='mind')initMind(d);
+   if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')initPlayers();else if(page==='data')initData();else if(page==='settings')initSettings();else if(page==='mind')initMind(d);
   }catch(e){setStatus('Dati non disponibili: '+e.message,'err');const targets={home:'homeNext',matches:'matchList',explore:'teamDirectory',league:'standingsBody',team:'teamContent',match:'matchDetail',mind:'mindFixtures'};const id=targets[page];if(id&&$(id))$(id).innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}
  });
 })();
