@@ -91,6 +91,13 @@ The mobile PWA is organised into separate routes rather than one long dashboard:
 The shared navigation and data layer lives in `site-core.js`; page-specific rendering lives in `site-pages.js`; responsive presentation lives in `site.css`. The service worker caches the independent screens and their shared assets for app-shell use. The mobile navigation provides five primary destinations: Home, Partite, Club, Analisi and Impostazioni. Provider coverage is linked from Impostazioni.
 
 
+## Bet slip checker
+
+The **Le mie scommesse** screen (bets.html) accepts text copied from a Sisal ticket, groups fixture and market lines, matches upcoming Serie A fixtures in the local calendar, and compares the selected market with the local Poisson estimate. If a market is not recognised, the user can choose the correct market manually; the screen can also show the highest-probability market for a fixture as an alternative to review.
+
+The **Verifica quote Sisal** action calls the existing same-origin Cloudflare Pages Function (type=match) and reads only the supported Sisal IT odds returned by OddsPapi. It does not request Sisal credentials, log into a betting account, or place a bet. Quotes are market- and fixture-specific and may be unavailable; the UI surfaces provider errors rather than filling missing prices.
+
+The **Costruttore probabilistico** defaults to a 55% minimum estimated probability for the complete combination and limits the proposal to five selections. It only uses upcoming fixtures for which both teams meet the current historical-sample adequacy rule. The joint probability is the product of the individual model probabilities and explicitly assumes independence between matches; this assumption is not verified. The model is a Poisson baseline, not a validated betting strategy. The threshold is not a guarantee, an expected return, or evidence of positive value. The imported ticket draft is saved in the current browser's local storage on that device only; do not use shared devices for personal ticket records.
 ## Quote comparison and betting-analysis guidance
 
 The match detail page can compare available pre-match 1X2, BTTS and Over/Under 2.5 prices from Sisal IT only. It displays the provider and last update, uses the Sisal price returned for each outcome, removes the market overround by normalizing implied probabilities, and compares those values with the local Poisson estimate.

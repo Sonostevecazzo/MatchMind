@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080c11">
+<meta name="description" content="MatchMind · Controllo schedine Sisal">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./site.css">
+<title>MatchMind · Le mie scommesse</title>
+<script defer src="./bets-engine.js"></script>
+<script defer src="./site-core.js"></script>
+<script defer src="./bets.js"></script>
+</head>
+<body data-page="bets" data-title="Le mie scommesse" data-subtitle="Controlla una schedina e analizza le probabilità.">
+<div id="siteHeader"></div>
+<main class="page-wrap">
+ <div class="page-intro">
+  <div class="eyebrow">MATCHMIND / BET CHECKER</div>
+  <h1 id="pageTitle">Le mie scommesse</h1>
+  <p id="pageSubtitle">Controllo schedine Sisal e costruzione di combinazioni statistiche.</p>
+ </div>
+ <section class="section panel panel-pad" style="margin-bottom:14px">
+  <div class="section-head"><div><h2>Controlla una schedina Sisal</h2><p>Incolla il testo copiato dalla schedina oppure usa una riga per selezione: Squadra A - Squadra B | Over 2.5 | 1.75.</p></div></div>
+  <div class="field"><label for="slipText">Testo della schedina</label><textarea id="slipText" rows="8" placeholder="Bologna - Monza&#10;U/O 2.5: OVER 1.75&#10;&#10;Udinese - Roma&#10;U/O 1.5: OVER 1.15"></textarea></div>
+  <div class="settings-actions"><button id="checkSlip" type="button">Analizza schedina</button><button id="clearSlip" class="secondary" type="button">Pulisci</button></div>
+  <div id="slipResults" aria-live="polite" style="margin-top:12px"><div class="empty-state">Incolla una schedina per verificare partite, mercati, quote e probabilità.</div></div>
+ </section>
+ <section class="section panel panel-pad" style="margin-bottom:14px">
+  <div class="section-head"><div><h2>Confronto quote Sisal</h2><p>Recupera le quote disponibili tramite OddsPapi, senza accedere al tuo conto Sisal.</p></div></div>
+  <button id="refreshSisal" type="button" class="secondary">Verifica quote Sisal</button>
+  <div id="sisalResults" style="margin-top:12px"><div class="empty-state">Prima analizza una schedina, poi verifica la disponibilità delle quote aggiornate.</div></div>
+ </section>
+ <section class="section panel panel-pad" style="margin-bottom:14px">
+  <div class="section-head"><div><h2>Costruttore probabilistico</h2><p>Ricerca combinazioni la cui probabilità stimata complessiva raggiunga la soglia scelta.</p></div></div>
+  <div class="field"><label for="targetProbability">Probabilità minima dell'intera combinazione</label><select id="targetProbability"><option value="0.50">50%</option><option value="0.55" selected>55%</option><option value="0.60">60%</option><option value="0.65">65%</option><option value="0.70">70%</option></select></div>
+  <div class="field"><label for="maxLegs">Numero massimo di selezioni</label><select id="maxLegs"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option></select></div>
+  <button id="buildTicket" type="button">Genera proposta</button>
+  <div id="ticketResults" style="margin-top:12px"><div class="empty-state">La proposta sarà generata solo con dati storici sufficienti.</div></div>
+ </section>
+ <div class="notice warning">Le percentuali sono stime del modello statistico locale, non probabilità certificate né garanzie di vincita. La probabilità multipla usa il prodotto delle probabilità delle singole partite e assume indipendenza tra eventi. Quote e disponibilità possono cambiare; verifica sempre su Sisal. MatchMind non accede al conto Sisal e non piazza scommesse.</div>
+ <div class="status-line" id="globalStatus" aria-live="polite"></div>
+ <footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
+</main>
+</body>
+</html>
