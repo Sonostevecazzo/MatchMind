@@ -157,7 +157,7 @@ footer a{color:#a8ead4}
  .brand-link b{font-size:14px}
  .desktop-nav{display:none}
  .refresh-data{margin-left:auto;min-height:31px}
- .mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(10,14,20,.97);border-top:1px solid #2a3541;backdrop-filter:blur(18px);box-shadow:0 -9px 26px #0006}
+ .mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(10,14,20,.97);border-top:1px solid #2a3541;backdrop-filter:blur(18px);box-shadow:0 -9px 26px #0006}
  .nav-item{display:grid;justify-items:center;align-content:center;gap:2px;min-height:49px;border-radius:10px;color:#8090a0;font-size:8px;font-weight:800}
  .nav-icon{font-size:18px;line-height:1.2}
  .nav-item.active{background:#18302d;color:#b6f0dc}
