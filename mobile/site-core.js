@@ -91,10 +91,17 @@
   const isFavorite=name=>{try{return (JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]')).includes(name);}catch{return false;}};
   function toggleFavorite(name){const list=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]');}catch{return [];}})();const next=list.includes(name)?list.filter(x=>x!==name):[...list,name];saveCache('matchmind-favorites-v1',next);return next.includes(name);}
   function nav(active){
-    const links=[['index.html','⌂','Home','home'],['matches.html','▤','Partite','matches'],['explore.html','◈','Squadre','explore'],['analysis-lab.html','◉','Analisi','mind'],['data.html','⌁','Dati','data']];
-    const mobile=links.map(([href,icon,label,key])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'"><span class="nav-icon">'+icon+'</span><span>'+label+'</span></a>').join('');
-    const desktop=links.map(([href,,label,key])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'">'+label+'</a>').join('');
-    return '<header class="site-header"><a class="brand-link" href="index.html"><span class="brand-mark">M</span><span><b>MatchMind</b><small>FOOTBALL INTELLIGENCE</small></span></a><nav class="desktop-nav">'+desktop+'</nav><button class="refresh-data" id="installApp" type="button" hidden>＋ <span>Installa</span></button><button class="refresh-data" id="globalRefresh" type="button">↻ <span>Aggiorna</span></button></header><nav class="mobile-nav" aria-label="Navigazione principale">'+mobile+'</nav>';
+    const icons={
+      home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
+      matches:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M7 2v4m10-4v4M3 9h18m-13 4h3m-3 4h6"/></svg>',
+      explore:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 8v8l-9 5-9-5V8z"/><path d="m3 8 9 5 9-5M12 13v8m-4-16 4 5 4-5"/></svg>',
+      mind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><path d="M16 6h3v3"/></svg>',
+      data:'<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>'
+    };
+    const links=[['index.html','home','Home','home'],['matches.html','matches','Partite','matches'],['explore.html','explore','Club','explore'],['analysis-lab.html','mind','Analisi','mind'],['data.html','data','Dati','data']];
+    const mobile=links.map(([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>').join('');
+    const desktop=links.map(([href,key,label])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'>'+label+'</a>').join('');
+    return '<header class="site-header"><a class="brand-link" href="index.html" aria-label="MatchMind Home"><span class="brand-mark"><span>M</span></span><span class="brand-copy"><b>MatchMind</b><small>FOOTBALL INTELLIGENCE</small></span></a><nav class="desktop-nav" aria-label="Navigazione principale">'+desktop+'</nav><div class="header-actions"><button class="refresh-data install-action" id="installApp" type="button" hidden><span class="action-symbol">＋</span><span>Installa</span></button><button class="refresh-data refresh-action" id="globalRefresh" type="button" aria-label="Aggiorna dati"><span class="action-symbol">↻</span><span>Aggiorna</span></button></div></header><nav class="mobile-nav" aria-label="Navigazione principale">'+mobile+'</nav>';
   }
   function mountShell(active,title,subtitle){
     const header=$('siteHeader');if(header)header.innerHTML=nav(active);
