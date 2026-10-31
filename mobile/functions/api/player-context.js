@@ -334,9 +334,9 @@ function publicError(error) {
 
 function decodeXmlEntities(value) {
   return String(value || "")
-    .replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, "$1")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
     .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
-    .replace(/&#(\\d+);/g, (_, code) => String.fromCodePoint(parseInt(code, 10)))
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(parseInt(code, 10)))
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -402,11 +402,11 @@ async function getNewsContext(context, requestUrl) {
 
   const now = Date.now();
   const cutoff = now - 21 * 24 * 60 * 60 * 1000;
-  const articles = Array.from(xml.matchAll(/<item\\b[^>]*>([\\s\\S]*?)<\\/item>/gi), match => {
+  const articles = Array.from(xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi), match => {
     const item = match[1];
     const title = rssTag(item, "title");
     const link = rssTag(item, "link");
-    const sourceMatch = item.match(/<source\\b[^>]*>([\\s\\S]*?)<\\/source>/i);
+    const sourceMatch = item.match(/<source\b[^>]*>([\s\S]*?)<\/source>/i);
     const source = sourceMatch ? decodeXmlEntities(sourceMatch[1]).replace(/<[^>]*>/g, "").trim() : "Google News";
     const publishedText = rssTag(item, "pubDate");
     const published = Date.parse(publishedText);
