@@ -57,7 +57,7 @@
     const source = String(text || "");
     const explicit = source.match(/(?:quota|odd|odds|@)\s*[:=]?\s*(\d+(?:[,.]\d+)?)/i);
     const matches = explicit ? [explicit] : [...source.matchAll(/\b(\d+[,.]\d{1,3})\b/g)];
-    for (const found of matches) {
+    for (const found of matches.slice().reverse()) {
       const value = Number(String(found[1]).replace(",", "."));
       if (Number.isFinite(value) && value > 1 && value <= 1000) return value;
     }
