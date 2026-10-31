@@ -25,6 +25,28 @@ test("API route fails clearly and without leaking secrets when key is missing", 
   assert.equal(body.error.includes("test-secret"), false);
 });
 
+test("session API key is accepted through a request header and never returned", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(String(url)).pathname, "/status");
+    assert.equal(init.headers["x-apisports-key"], "session-test-key-0123456789abcdef");
+    return apiResponse({ errors: [], response: {
+      subscription: { plan: "Free", active: true },
+      requests: { current: 10, limit_day: 100 }
+    } });
+  };
+  const request = new Request("https://matchmind.test/api/player-context?type=status", {
+    headers: { "X-MatchMind-API-Key": "session-test-key-0123456789abcdef" }
+  });
+  const response = await onRequestGet({ request, env: {} });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.providers.apiFootball, true);
+  assert.equal(body.apiFootballUsage.remaining, 90);
+  assert.equal(JSON.stringify(body).includes("session-test-key"), false);
+});
+
 test("status route reads quota-free API-Football usage without exposing account data", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
