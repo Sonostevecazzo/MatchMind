@@ -220,10 +220,13 @@
   return '<div class="notice '+(enough?'good':'warning')+'">'+(enough?'Campione di verifica utilizzabile, ma non sufficiente da solo a dimostrare un vantaggio stabile.':'Campione ridotto: risultati preliminari, non conclusivi.')+' Il test usa solo risultati precedenti alla data di ogni partita.</div>'+
    '<div class="stat-strip"><div class="stat-cell"><b>'+fmt(r.count)+'</b><span>PRONOSTICI TESTATI</span></div><div class="stat-cell"><b>'+pct(r.model.accuracy)+'</b><span>ESITO PIÙ PROBABILE CORRETTO</span></div><div class="stat-cell"><b>'+pct(r.baseline.accuracy)+'</b><span>BASELINE CORRETTA</span></div></div>'+
    '<div class="data-row"><span>Finestra test</span><b>'+esc(r.from)+' – '+esc(r.to)+'</b></div>'+
+   '<div class="data-row"><span>IC 95% accuracy (Wilson)</span><b>'+pct(r.model.accuracyCI[0])+' – '+pct(r.model.accuracyCI[1])+'</b></div>'+
    '<div class="eyebrow" style="margin-top:12px">QUALITÀ PROBABILISTICA · PIÙ BASSO È MEGLIO</div>'+
    metric('Log loss · modello',r.model.logLoss,r.baseline.logLoss)+metric('Brier score 1X2 · modello',r.model.brier,r.baseline.brier)+
-   '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE · PROBABILITÀ DEL SEGNO PIÙ ALTO</div>'+
-   '<p style="color:#91a0ae;font-size:10px;line-height:1.5">Confronto tra confidenza media assegnata al segno più probabile e frequenza con cui quel segno si è verificato.</p>'+bins+
+   '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE PER ESITO</div>'+
+   '<p style="color:#91a0ae;font-size:10px;line-height:1.5">Probabilità media assegnata a ciascun esito e frequenza osservata nel campione.</p>'+classRows+
+   '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE DEL SEGNO PIÙ PROBABILE</div>'+bins+
+   '<div class="eyebrow" style="margin-top:12px">STABILITÀ NEL TEMPO</div>'+seasonRows+
    '<div class="notice '+(r.beatsBaseline?'good':'warning')+'">'+(r.beatsBaseline?'Il modello batte la baseline sia in Brier score sia in log loss nel campione testato.':'Il modello non batte la baseline su entrambe le metriche: non emerge un vantaggio predittivo dimostrato.')+'</div>'+
    '<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Baseline: frequenze 1X2 delle sole partite antecedenti, con smoothing Laplace. Esclusi i casi con meno di 10 gare storiche per una delle squadre. Non è un test di redditività: non include quote, margini, stake o commissioni.</small>';
  }
