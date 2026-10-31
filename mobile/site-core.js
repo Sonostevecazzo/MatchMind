@@ -31,7 +31,7 @@
       const hg=scoreArray?num(scoreArray[0]):num(score?.home??r.goals?.home??r.ft_home);
       const ag=scoreArray?num(scoreArray[1]):num(score?.away??r.goals?.away??r.ft_away);
       const roundText=String(r.round||r.matchday||'');
-      const roundMatch=roundText.match(/(\\d+)/);
+      const roundMatch=roundText.match(/(\d+)/);
       return {date:toISO(r.date||r.utcDate||''),time:r.time||'',round:roundMatch?num(roundMatch[1]):num(r.round),home,away,hg,ag,hs:null,as:null,ht:null,at:null,source:'openfootball',oddsH:null,oddsD:null,oddsA:null};
     }).filter(m=>m.date&&m.home&&m.away);
   }
