@@ -57,6 +57,22 @@ The app service worker does not cache the HTML page. Data already stored by the 
 - This is a research aid, not a trained AI model or a validated profitable betting system. Source attribution is shown in the app.
 
 
+## Forecast validation — reproducible benchmark
+
+A chronological walk-forward benchmark was run on the public Serie A CSV seasons 2021/22 through 2025/26 from [qhtexas/football-dataset](https://github.com/qhtexas/football-dataset/tree/main/datasets/serie-a). The extracted archive contained 1,900 completed fixtures from 2021-08-21 to 2026-05-24. The current Poisson model produced 1,733 eligible out-of-sample forecasts from 2021-10-30 to 2026-05-24 after requiring at least 30 earlier league matches and at least 10 earlier matches for each participating team. All fixtures on the target date were excluded from that forecast's history.
+
+| Model | Accuracy | Multiclass log loss | Multiclass Brier |
+| --- | ---: | ---: | ---: |
+| Current Poisson model | 50.03% | 1.0173 | 0.6090 |
+| Laplace-smoothed league-frequency baseline | 40.33% | 1.0875 | 0.6591 |
+
+The current model improved all three aggregate metrics in this specific five-season sample. The Wilson 95% interval for its accuracy is approximately 47.68%–52.38%. This interval concerns top-pick accuracy only; it does not establish a stable advantage over the baseline. The 80%–100% top-pick confidence band contained only 20 forecasts and achieved a 65% hit rate, so high-confidence forecasts require particular caution.
+
+A controlled venue-split experiment was also evaluated on the same 1,733 fixtures. It used each home team's prior home matches and each away team's prior away matches, with shrinkage toward league averages (five pseudo-matches). It did not improve on the current model: accuracy 50.09%, log loss 1.0213 and Brier 0.6113. It was therefore not adopted. This is an important negative result: added complexity is not automatically an improvement.
+
+The Intelligence page now reports calibration by 1/X/2 outcome, a Wilson interval for accuracy, and season-by-season diagnostics. The in-app backtest is recomputed from the currently loaded archive, so its results may differ if the provider changes or extends the data. This benchmark is a historical diagnostic, not a guarantee of future performance, a bookmaker comparison, or a profitability test. The public dataset's historical availability and completeness are external dependencies.
+
+
 ## Multi-screen navigation
 
 The mobile PWA is organised into separate routes rather than one long dashboard:
