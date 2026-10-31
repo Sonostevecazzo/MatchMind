@@ -57,5 +57,31 @@
   const combine=key=>{const valid=legs.filter(x=>x.eligible);if(valid.length!==legs.length||!valid.length)return {probability:null,legs:valid.length,required:legs.length,complete:false};if(valid.some(x=>x[key].probability===0))return {probability:0,legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};const log=valid.reduce((s,x)=>s+Math.log(x[key].probability),0);return {probability:Math.exp(log),legs:valid.length,required:legs.length,complete:true,assumption:'Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.'};};
   return {available:true,round:first.round??null,from:fixtures[0].date,to:fixtures[fixtures.length-1].date,fixtures:legs,tickets:{oneXtwo:combine('oneXtwo'),btts:combine('btts'),underOver:combine('total')},selectionRule:'Per ogni mercato viene selezionato l’esito singolo con probabilità stimata più alta; linea totale fissa 2,5.',disclaimer:'Stime statistiche, non garanzie. Una schedina con molte selezioni può avere probabilità complessiva molto bassa.'};
  }
- window.MatchMindRounds={standingsBefore,teamContext,matchContext,buildTicket,seasonStart};
+ function buildAssistant(candidates,options={}){
+  const stake=Number(options.stake),minPayout=Number(options.minPayout),maxPayout=Number(options.maxPayout);
+  const minLegs=Math.max(1,Math.floor(Number(options.minLegs)||4)),maxLegs=Math.max(minLegs,Math.floor(Number(options.maxLegs)||6));
+  if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(minPayout)||!Number.isFinite(maxPayout)||minPayout<=0||maxPayout<minPayout)return {available:false,reason:'Parametri di puntata o vincita non validi.'};
+  const minOdds=minPayout/stake,maxOdds=maxPayout/stake;
+  const valid=(Array.isArray(candidates)?candidates:[]).filter(x=>x&&x.matchKey&&x.matchLabel&&x.market&&x.selection&&Number.isFinite(x.odd)&&x.odd>1&&Number.isFinite(x.probability)&&x.probability>0&&x.probability<=1&&Number.isFinite(x.ev)&&x.ev>0.03);
+  const grouped=new Map();
+  valid.forEach(x=>{if(!grouped.has(x.matchKey))grouped.set(x.matchKey,[]);grouped.get(x.matchKey).push(x);});
+  const groups=[...grouped.values()].map(g=>g.sort((a,b)=>b.ev-a.ev).slice(0,6));
+  if(groups.length<minLegs)return {available:false,reason:'Non ci sono abbastanza partite con campione storico adeguato e almeno un mercato con valore atteso positivo superiore al 3%.'};
+  let best=null,examined=0;const chosen=[];
+  function visit(index,odds,probability,evSum){
+   if(odds>maxOdds)return;
+   if(chosen.length>=minLegs&&chosen.length<=maxLegs&&odds>=minOdds&&odds<=maxOdds){
+    examined++;const candidate={legs:chosen.slice(),odds,probability,stake,payout:stake*odds,evSum};
+    if(!best||candidate.probability>best.probability+1e-12||(Math.abs(candidate.probability-best.probability)<=1e-12&&candidate.evSum>best.evSum))best=candidate;
+   }
+   if(index>=groups.length||chosen.length===maxLegs)return;
+   if(chosen.length+(groups.length-index)<minLegs)return;
+   visit(index+1,odds,probability,evSum);
+   for(const leg of groups[index]){const nextOdds=odds*leg.odd;if(nextOdds>maxOdds)continue;chosen.push(leg);visit(index+1,nextOdds,probability*leg.probability,evSum+leg.ev);chosen.pop();}
+  }
+  visit(0,1,1,0);
+  if(!best)return {available:false,reason:'Nessuna combinazione di '+minLegs+'–'+maxLegs+' eventi raggiunge la quota obiettivo '+minOdds.toFixed(2)+'–'+maxOdds.toFixed(2)+' usando quote aggiornate e mercati con valore atteso positivo.',candidates:valid.length,matches:groups.length,examined};
+  return {...best,available:true,minOdds,maxOdds,examined,assumption:'Probabilità congiunta calcolata come prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.',disclaimer:'Stima statistica non calibrata come garanzia di vincita. Quote e disponibilità possono cambiare; controlla sempre il riepilogo del bookmaker prima di confermare.'};
+ }
+  window.MatchMindRounds={standingsBefore,teamContext,matchContext,buildTicket,buildAssistant,seasonStart};
 })();
