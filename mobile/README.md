@@ -43,8 +43,9 @@ The app service worker does not cache the HTML page. Data already stored by the 
 
 ## Data and limitations
 
-- Current Serie A results/fixtures: open-matchday public CSV, refreshed when the app opens.
-- Historical Serie A scores: public football-dataset CSVs where available.
+- Current Serie A results/fixtures: open-matchday public CSV, refreshed when the app opens; openfootball/football.json fills missing current-season fixtures/results when available.
+- Historical Serie A scores: public football-dataset CSVs where available, with openfootball JSON as a fallback for missing seasons.
+- Recent team-related articles: keyless Google News RSS search on each match detail page (up to six links from the previous 21 days). Headlines are editorial context only, not verified injury/lineup reports and not model inputs.
 - Forecasts: transparent Poisson baseline calculated locally; 1X2, BTTS and Over/Under 1.5/2.5/3.5. The match centre reports the historical date range and each team's actual sample size; a sample is labelled adequate only when at least 10 prior matches per team are available. The Intelligence page also runs a chronological walk-forward backtest: each tested fixture is forecast only with earlier-dated results, and fixtures are excluded unless both teams have at least 10 prior matches and the historical baseline has at least 30 prior matches. It reports 1X2 accuracy, log loss, multiclass Brier score, calibration bands and comparison with a Laplace-smoothed historical 1X2-frequency baseline.
 - A local browser cache keeps the last loaded match data available if the data provider is temporarily unavailable after the app is open.
 - Optional API-Football module: upcoming reported injuries/questionable players and a search for Serie A player season statistics plus up to five recent appearances (minutes, goals, assists, rating and other fields where the provider supplies them).
