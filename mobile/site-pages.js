@@ -214,6 +214,6 @@
   const page=document.body.dataset.page||'home';
   try{const d=await MM().loadData();setStatus(d.source==='cache'?'Stai usando i dati salvati localmente.':'Dati aggiornati · Serie A '+d.season+'/'+String(d.season+1).slice(-2),d.source==='cache'?'':'ok');
    if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')initPlayers();else if(page==='data')initData();else if(page==='settings')initSettings();else if(page==='mind')initMind(d);
-  }catch(e){setStatus('Dati non disponibili: '+e.message,'err');const targets={home:'homeNext',matches:'matchList',explore:'teamDirectory',league:'standingsBody',team:'teamContent',match:'matchDetail',mind:'mindFixtures'};const id=targets[page];if(id&&$(id))$(id).innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}
+  }catch(e){setStatus('Dati non disponibili: '+e.message,'err');if(page==='settings')initSettings();else if(page==='data')initData();else{const targets={home:'homeNext',matches:'matchList',explore:'teamDirectory',league:'standingsBody',team:'teamContent',match:'matchDetail',mind:'mindFixtures'};const id=targets[page];if(id&&$(id))$(id).innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}}
  });
 })();
