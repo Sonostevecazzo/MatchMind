@@ -138,12 +138,16 @@
         );
         const quote = matchingQuote(row, context);
         row.quote = quote;
-        const updated = context.oddsUpdatedAt && Number.isFinite(Date.parse(context.oddsUpdatedAt))
-          ? new Date(context.oddsUpdatedAt).toLocaleString("it-IT")
-          : "orario non comunicato";
+        const updateTime = context.oddsUpdatedAt && Number.isFinite(Date.parse(context.oddsUpdatedAt))
+          ? Date.parse(context.oddsUpdatedAt) : null;
+        const ageMinutes = updateTime === null ? null : Math.max(0, (Date.now() - updateTime) / 60000);
+        const updated = updateTime === null
+          ? "orario non comunicato"
+          : new Date(updateTime).toLocaleString("it-IT") + (ageMinutes > 120 ? " · DATI PIÙ VECCHI DI 2 ORE" : "");
         reports.push({
           row, quote, source: context.oddsSource || "Sisal · OddsPapi",
-          updated, error: context.oddsError || (!quote ? "Quota non disponibile per il mercato selezionato." : null)
+          updated, ageMinutes,
+          error: context.oddsError || (!quote ? "Quota non disponibile per il mercato selezionato." : null)
         });
       } catch (error) {
         reports.push({ row, error: error.message || "Errore provider" });
@@ -155,7 +159,7 @@
         return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' + esc(report.error || "Quota non disponibile per questo mercato") + '</small></span><b>—</b></div>';
       }
       const probability = report.row.probability;
-      const ev = report.row.sampleEnough ? probability * report.quote.odd - 1 : null;
+      const ev = report.row.sampleEnough && report.ageMinutes !== null && report.ageMinutes <= 120 ? probability * report.quote.odd - 1 : null;
       return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' +
         esc(report.source) + ' · ' + esc(report.updated) +
         '<br>Quota Sisal corrente: ' + oddsText(report.quote.odd) + ' · ' + esc(report.quote.bookmaker || "Sisal") +
@@ -172,9 +176,14 @@
     const target = $("ticketResults");
     const threshold = Number($("targetProbability").value);
     const maxLegs = Number($("maxLegs").value);
-    const upcoming = data.matches.filter(window.MM().upcoming);
+    const upcoming = data.matches.filter(window.MM().upcoming)
+      .slice().sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+    const first = upcoming[0];
+    const ticketFixtures = !first ? [] : (first.round !== null && first.round !== undefined
+      ? upcoming.filter(match => String(match.round) === String(first.round))
+      : upcoming.filter(match => Math.abs(Date.parse(match.date + "T12:00:00") - Date.parse(first.date + "T12:00:00")) <= 3 * 86400000));
     const result = engine().buildTicket(
-      upcoming,
+      ticketFixtures,
       match => window.MM().forecast(match, data.history),
       threshold,
       { maxLegs }
