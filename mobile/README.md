@@ -68,7 +68,8 @@ The mobile PWA is organised into separate routes rather than one long dashboard:
 - `match.html`: match details, local statistical estimates and available prematch context.
 - `players.html`: player search and recent appearances, subject to API-Football coverage.
 - `analysis-lab.html`: dedicated MatchMind intelligence entry point.
-- `data.html`: provider status and data coverage.\n- `settings.html`: provider configuration, session key testing and app preferences.
+- `data.html`: provider status and data coverage.
+- `settings.html`: provider configuration, session key testing and app preferences.
 - `legacy-workbench.html`: preserved previous analysis workbench for continuity.
 
 The shared navigation and data layer lives in `site-core.js`; page-specific rendering lives in `site-pages.js`; responsive presentation lives in `site.css`. The service worker caches the independent screens and their shared assets for app-shell use. The mobile navigation provides five primary destinations: Home, Partite, Club, Analisi and Impostazioni. Provider coverage is linked from Impostazioni.
