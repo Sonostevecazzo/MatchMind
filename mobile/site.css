@@ -634,3 +634,5 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
  .settings-actions #saveSessionKey{grid-column:1/-1}
  .settings-page .field input{font-size:11px}
 }
+
+.competition-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#17210a;font-size:21px;font-weight:950;z-index:1}.competition-fallback[hidden]{display:none}
