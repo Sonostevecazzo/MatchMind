@@ -23,6 +23,7 @@ The `functions/api/player-context.js` endpoint calls providers from Cloudflare P
 
 Optional sources:
 
+- **The Odds API** as an optional 1X2 feed from available European bookmakers: get a key at https://the-odds-api.com/. Coverage and quota depend on the current plan; the feed is not a substitute for Sisal-specific prices.
 - **OddsPapi** for Sisal IT quotes only: create a key at https://oddspapi.io/sportsbooks/sisal-it. MatchMind requests only `sisal.it` and supported 1X2, BTTS and Over/Under 2.5 markets. Fixture data are cached for 30 minutes, market metadata for 24 hours, and match quotes for 15 minutes; the browser reuses match context for 5 minutes.
 - **football-data.org** as a Serie A calendar/results fallback: register at https://www.football-data.org/client/register. Its free tier includes Serie A fixtures and delayed scores, with 10 requests/minute. MatchMind calls it only when the primary public CSV is unavailable and caches the season response for six hours.
 - **API-Football** for reported injuries, player-season stats and recent player appearances: create a free account at https://dashboard.api-football.com/register. Its free tier currently lists 100 requests/day. This source is still needed for Serie A injury and player data; the two alternatives above do not replace it.
@@ -31,6 +32,7 @@ In Cloudflare **Settings → Variables and Secrets**, add each available key as 
 
 | Secret name | Enables |
 | --- | --- |
+| `THE_ODDS_API_KEY` | Alternative 1X2 quotes from available EU bookmakers |
 | `ODDSPAPI_API_KEY` | Sisal IT pre-match quotes and the odds comparison |
 | `FOOTBALL_DATA_API_KEY` | Backup Serie A fixtures/results when the primary CSV source is down |
 | `API_FOOTBALL_KEY` | Injuries, player statistics and recent appearances |
