@@ -45,7 +45,7 @@ The app service worker does not cache the HTML page. Data already stored by the 
 
 - Current Serie A results/fixtures: open-matchday public CSV, refreshed when the app opens.
 - Historical Serie A scores: public football-dataset CSVs where available.
-- Forecasts: transparent Poisson baseline calculated locally; 1X2, BTTS and Over/Under 1.5/2.5/3.5.
+- Forecasts: transparent Poisson baseline calculated locally; 1X2, BTTS and Over/Under 1.5/2.5/3.5. The match centre reports the historical date range and each team's actual sample size; a sample is labelled adequate only when at least 10 prior matches per team are available.
 - A local browser cache keeps the last loaded match data available if the data provider is temporarily unavailable after the app is open.
 - Optional API-Football module: upcoming reported injuries/questionable players and a search for Serie A player season statistics plus up to five recent appearances (minutes, goals, assists, rating and other fields where the provider supplies them).
 - Optional OddsPapi module: Sisal IT prices for supported 1X2, BTTS and Over/Under 2.5 markets; the app compares them to MatchMind's estimate. Quotes are available only when Sisal offers the market for that fixture.
