@@ -209,7 +209,7 @@
    target.innerHTML=rows.map(([a,b,on])=>'<div class="data-row"><span>'+a+'</span><b style="color:'+(on?'var(--mint)':'var(--amber)')+'">'+(on?'Chiave configurata · validità da verificare':'Non configurato')+'</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">'+b+'</small>').join('')+usageHtml;}catch(e){target.innerHTML='<div class="notice warning">Non riesco a verificare i provider. Il calendario e il modello locale possono comunque funzionare.</div>';}}
   $('checkProviders').addEventListener('click',check);await check();
  }
- function backtestHTML(r){
+ function backtestHTML(r,e){
   if(!r.count)return '<div class="notice warning">Backtest non disponibile: nei dati caricati non ci sono abbastanza partite precedenti per entrambe le squadre (almeno 10 ciascuna) e almeno 30 partite complessive.</div>';
   const pct=x=>fmt(x*100,1)+'%',metric=(label,a,b)=>'<div class="data-row"><span>'+label+'</span><b>'+fmt(a,3)+' · baseline '+fmt(b,3)+'</b></div>';
   const bins=r.bins.map(x=>'<div class="data-row"><span>'+x.range+' · '+x.count+' pronostici</span><b>'+pct(x.confidence)+' previste / '+pct(x.hitRate)+' reali</b></div>').join('');
@@ -222,7 +222,7 @@
    '<div class="data-row"><span>Finestra test</span><b>'+esc(r.from)+' – '+esc(r.to)+'</b></div>'+
    '<div class="data-row"><span>IC 95% accuracy (Wilson)</span><b>'+pct(r.model.accuracyCI[0])+' – '+pct(r.model.accuracyCI[1])+'</b></div>'+
    '<div class="eyebrow" style="margin-top:12px">QUALITÀ PROBABILISTICA · PIÙ BASSO È MEGLIO</div>'+
-   metric('Log loss · modello',r.model.logLoss,r.baseline.logLoss)+metric('Brier score 1X2 · modello',r.model.brier,r.baseline.brier)+
+   metric('Log loss · modello',r.model.logLoss,r.baseline.logLoss)+metric('Brier score 1X2 · modello',r.model.brier,r.baseline.brier)+'<div class="eyebrow" style="margin-top:14px">ESPERIMENTO ELO · CONFRONTO INDIPENDENTE</div>'+'<div class="data-row"><span>Pronostici Elo testati</span><b>'+fmt(e?.count||0)+'</b></div>'+'<div class="data-row"><span>Accuratezza Elo</span><b>'+pct(e?.model?.accuracy||0)+'</b></div>'+'<div class="data-row"><span>Log loss Elo</span><b>'+fmt(e?.model?.logLoss||0,3)+'</b></div>'+'<div class="data-row"><span>Brier Elo</span><b>'+fmt(e?.model?.brier||0,3)+'</b></div>'+'<div class="notice warning">Elo sperimentale non calibrato: K=20, vantaggio casa=65 punti, rating iniziale=1500. Le metriche vanno lette insieme al numero di pronostici testati; il modello non sostituisce Poisson.</div>'+'<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Le partite della stessa data sono pronosticate dallo stesso snapshot dei rating. Gli aggiornamenti Elo avvengono solo dopo aver elaborato l'intera data. Squadre non presenti in archivio partono da 1500.</small>'+
    '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE PER ESITO</div>'+
    '<p style="color:#91a0ae;font-size:10px;line-height:1.5">Probabilità media assegnata a ciascun esito e frequenza osservata nel campione.</p>'+classRows+
    '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE DEL SEGNO PIÙ PROBABILE</div>'+bins+
@@ -234,7 +234,7 @@
   const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
   $('mindFixtures').innerHTML=rows.length?rows.map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile per l’analisi.</div>';
   const target=$('forecastBacktest');
-  if(target){target.innerHTML='<div class="loading-state">Calcolo del backtest cronologico sui risultati storici…</div>';setTimeout(()=>{try{target.innerHTML=backtestHTML(MM().backtest(d.history));}catch(e){target.innerHTML='<div class="notice warning">Backtest non completato: '+esc(e.message)+'</div>';}},20);}
+  if(target){target.innerHTML='<div class="loading-state">Calcolo del backtest cronologico sui risultati storici…</div>';setTimeout(()=>{try{target.innerHTML=backtestHTML(MM().backtest(d.history),MM().eloBacktest?MM().eloBacktest(d.history):null);}catch(e){target.innerHTML='<div class="notice warning">Backtest non completato: '+esc(e.message)+'</div>';}},20);}
  }
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
