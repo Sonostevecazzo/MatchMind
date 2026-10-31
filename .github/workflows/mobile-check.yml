@@ -35,4 +35,4 @@ jobs:
       - name: Check Cloudflare Pages Function
         run: node --input-type=module --check < mobile/functions/api/player-context.js
       - name: Test RSS parser
-        run: node --test mobile/functions/lib/news-rss.test.mjs
+        run: node --test mobile/tests/news-rss.test.mjs
