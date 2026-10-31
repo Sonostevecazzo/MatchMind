@@ -53,9 +53,10 @@ for route in ["index.html", "matches.html", "explore.html", "analysis-lab.html",
 assert "frosinone:512" in core, "Missing Frosinone crest mapping"
 assert "sampleEnough:h.played>=10&&a.played>=10" in core, "Forecast adequacy must require 10 prior matches per team"
 assert "function backtest(rows)" in core, "Missing chronological out-of-sample backtest"
+assert "byClass" in core and "accuracyCI" in core and "bySeason" in core, "Missing detailed backtest diagnostics"
 assert "loadData,backtest" in core, "Backtest helper is not exposed to the UI"
 pages_js = (ROOT / "site-pages.js").read_text(encoding="utf-8")
-for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto"]:
+for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto", "CALIBRAZIONE PER ESITO", "STABILITÀ NEL TEMPO"]:
     assert phrase in pages_js, f"Missing forecast transparency label: {phrase}"
 
 assert "forecastBacktest" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing historical backtest panel"
