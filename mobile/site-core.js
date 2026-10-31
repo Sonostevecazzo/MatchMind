@@ -116,7 +116,10 @@
         [...older,...current.filter(m=>hasScore(m))].forEach(m=>histMap.set(m.date+'|'+norm(m.home)+'|'+norm(m.away),m));
         data={matches:current,history:[...histMap.values()],season:y,source:used.join(' + ')||'fonti pubbliche',updatedAt:Date.now(),historySavedAt:histFresh?cached.historySavedAt:Date.now(),sourceMode:'keyless-public'};
         try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
-      }else if(!data.matches.length)throw new Error('Nessuna fonte pubblica ha restituito partite. Controlla la connessione e riprova.');
+      }else if(data.matches.length){
+        // Preserve the last known dataset, but never label it as freshly retrieved.
+        data={...data,source:'cache'};
+      }else throw new Error('Nessuna fonte pubblica ha restituito partite. Controlla la connessione e riprova.');
       return data;
     })().catch(error=>{
       dataPromise=null;
