@@ -56,3 +56,25 @@ test("walk-forward excludes every fixture played on the target date", () => {
   }));
   assert.equal(window.MM.backtest(rows).count, 0);
 });
+
+test("forecast exposes a coherent 0-5 correct-score matrix and explicit tail mass", () => {
+  const rows = Array.from({ length: 24 }, (_, i) => ({
+    date: new Date(Date.UTC(2023, 0, 1 + i)).toISOString().slice(0, 10),
+    home: i % 2 ? "Beta FC" : "Alpha FC",
+    away: i % 2 ? "Alpha FC" : "Beta FC",
+    hg: i % 4 === 0 ? 2 : 1,
+    ag: i % 3 === 0 ? 1 : 0
+  }));
+  const result = window.MM.forecast({
+    date: "2023-02-10",
+    home: "Alpha FC",
+    away: "Beta FC"
+  }, rows);
+  assert.equal(result.scoreMatrix.length, 36);
+  assert.ok(result.scoreMatrix.every(cell => cell.probability >= 0 && cell.probability <= 1));
+  const matrixMass = result.scoreMatrix.reduce((sum, cell) => sum + cell.probability, 0);
+  assert.ok(Math.abs(matrixMass + result.scoreMatrixTail - 1) < 1e-10);
+  const p = result.probabilities;
+  assert.ok(Math.abs(p.home + p.draw + p.away - 1) < 1e-10);
+  assert.ok(result.scoreMatrix.some(cell => cell.homeGoals === 0 && cell.awayGoals === 0));
+});
