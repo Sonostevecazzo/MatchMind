@@ -42,10 +42,13 @@
   const upcoming=rows.filter(m=>m&&m.date&&!scored(m)&&isUpcoming(m)).slice().sort((a,b)=>a.date.localeCompare(b.date));
   if(!upcoming.length)return {available:false,reason:'Nessuna partita futura disponibile.'};
   const first=upcoming[0],round=first.round;
-  const roundKey=round===null||round===undefined?'':String(round).trim();\n  const fixtures=roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000);
+  const roundKey=round===null||round===undefined?'':String(round).trim();
+  const fixtures=roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000);
   const legs=fixtures.map(match=>{
    const f=forecastFn(match),p=f&&f.probabilities;
-   if(!p||!f.sampleEnough)return {match,eligible:false,reason:'Campione storico insufficiente'};\n   const values=[p.home,p.draw,p.away,p.btts,p.o25];\n   if(!values.every(v=>Number.isFinite(v)&&v>=0&&v<=1)||Math.abs(p.home+p.draw+p.away-1)>.02)return {match,eligible:false,reason:'Probabilità del modello mancanti o non valide'};
+   if(!p||!f.sampleEnough)return {match,eligible:false,reason:'Campione storico insufficiente'};
+   const values=[p.home,p.draw,p.away,p.btts,p.o25];
+   if(!values.every(v=>Number.isFinite(v)&&v>=0&&v<=1)||Math.abs(p.home+p.draw+p.away-1)>.02)return {match,eligible:false,reason:'Probabilità del modello mancanti o non valide'};
    const one=[['1',p.home],['X',p.draw],['2',p.away]].sort((a,b)=>b[1]-a[1])[0];
    const btts=[['Gol',p.btts],['No Gol',1-p.btts]].sort((a,b)=>b[1]-a[1])[0];
    const total=[['Over 2,5',p.o25],['Under 2,5',1-p.o25]].sort((a,b)=>b[1]-a[1])[0];
