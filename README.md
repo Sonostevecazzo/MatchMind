@@ -89,7 +89,7 @@ API endpoints include `POST /sync/all`, `POST /sync/fixtures`, `POST /sync/injur
 
 ## Automatic live-provider verification
 
-The separate `provider-live-smoke` GitHub Actions workflow can be run manually or daily. To enable a real provider test without exposing credentials, add a repository Actions secret named `API_FOOTBALL_KEY` under **Settings → Secrets and variables → Actions**. The workflow checks the selected league/season coverage and exercises the fixtures, injuries and odds endpoints. If the secret is absent, the live check is intentionally skipped; the standard CI still runs mock-based tests. The local application still needs the key in its own private `.env` file.
+The separate `provider-live-smoke` GitHub Actions workflow runs daily and can also be started manually. Add a repository Actions secret named `API_FOOTBALL_KEY` under **Settings → Secrets and variables → Actions**. Its live step is deliberately a hard gate: it must execute and verify explicit fixtures, injuries and odds coverage for the active Serie A season, then call all three endpoints. A missing key, unsupported season, missing coverage or endpoint error fails the job; it is not counted as a successful skip. Provider access is plan- and season-dependent, so a key alone does not establish live coverage. The local application still needs the key in its own private `.env` file.
 
 ## What gets stored
 
