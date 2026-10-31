@@ -1,13 +1,13 @@
 {
-  "name": "MatchMind — Football Intelligence",
+  "name": "MatchMind — Serie A Intelligence",
   "short_name": "MatchMind",
-  "description": "Analisi statistica calcistica ottimizzata per smartphone",
+  "description": "Centro Serie A, risultati e analisi statistiche",
   "lang": "it-IT",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#090c12",
-  "theme_color": "#0b0d12",
+  "background_color": "#090d11",
+  "theme_color": "#090d11",
   "icons": [
     {"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
   ]
