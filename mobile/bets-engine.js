@@ -137,7 +137,6 @@
     }
 
     const markets = [
-      ["over15", "Over 1,5"], ["under15", "Under 1,5"],
       ["over25", "Over 2,5"], ["under25", "Under 2,5"],
       ["bttsYes", "Gol"], ["bttsNo", "No Gol"],
       ["home", "1"], ["draw", "X"], ["away", "2"]
@@ -150,7 +149,7 @@
       for (const [key, label] of markets) {
         const probability = marketProbability(forecast, key);
         if (probability === null) continue;
-        if (!best || probability > best.probability) best = { match, market: label, probability };
+        if (!best || probability > best.probability) best = { match, market: label, marketKey: key, probability };
       }
       if (best) candidates.push(best);
     }
