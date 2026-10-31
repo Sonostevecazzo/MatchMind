@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080c11"><meta name="description" content="MatchMind · Impostazioni e provider">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css">
+<title>MatchMind · Impostazioni</title><script defer src="./site-core.js"></script><script defer src="./site-pages.js"></script>
+</head>
+<body data-page="settings" data-title="Impostazioni" data-subtitle="Preferenze, fonti e connessioni dati.">
+<div id="siteHeader"></div>
+<main class="page-wrap settings-page">
+ <div class="page-intro"><div class="eyebrow">MATCHMIND / SETTINGS</div><h1 id="pageTitle">Impostazioni</h1><p id="pageSubtitle">Preferenze, fonti e connessioni dati.</p></div>
+ <section class="section">
+  <div class="section-head"><div><h2>Provider dati</h2><p>Configura le fonti realmente integrate nell'applicazione.</p></div></div>
+  <article class="settings-provider">
+   <div class="settings-provider-head"><span class="provider-mark">AF</span><span><b>API-Football</b><small>Giocatori, infortuni, fixture e statistiche supportate dal piano</small></span><span class="provider-live">API</span></div>
+   <div class="field"><label for="apiFootballKey">API key</label><input id="apiFootballKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Incolla la tua chiave API-Football"></div>
+   <p class="settings-hint">La chiave inserita qui viene conservata solo nella sessione corrente del browser (sessionStorage) e inviata al backend MatchMind tramite HTTPS. Non viene salvata nel repository né mostrata nell'URL. Per configurazione permanente e condivisa tra dispositivi, aggiungi il secret <b>API_FOOTBALL_KEY</b> su Cloudflare Pages.</p>
+   <div class="settings-actions"><button class="primary" id="saveSessionKey">Usa in questa sessione</button><button id="testSessionKey">Verifica</button><button class="ghost" id="clearSessionKey">Rimuovi</button></div>
+   <div id="settingsProviderStatus" class="settings-status" aria-live="polite"></div><div id="settingsApiUsage" class="settings-usage"></div>
+  </article>
+  <article class="settings-provider">
+   <div class="settings-provider-head"><span class="provider-mark odds">OD</span><span><b>OddsPapi · Sisal</b><small>Quote prematch, se abilitate dal piano</small></span><span class="provider-live">CLOUD</span></div>
+   <p class="settings-hint">Configurazione server-side tramite secret Cloudflare <b>ODDSPAPI_API_KEY</b>. La chiave non deve essere inserita nel browser.</p>
+  </article>
+  <article class="settings-provider">
+   <div class="settings-provider-head"><span class="provider-mark football">FD</span><span><b>football-data.org</b><small>Fonte secondaria per il calendario</small></span><span class="provider-live">CLOUD</span></div>
+   <p class="settings-hint">Configurazione server-side tramite secret Cloudflare <b>FOOTBALL_DATA_API_KEY</b>, quando necessaria.</p>
+  </article>
+ </section>
+ <section class="section">
+  <div class="section-head"><div><h2>Configurazione permanente su Cloudflare</h2><p>Per usare la stessa chiave su tutti i dispositivi.</p></div></div>
+  <div class="panel panel-pad settings-steps">
+   <ol><li>Apri il progetto Pages di MatchMind nella dashboard Cloudflare.</li><li>Vai in <b>Settings → Variables and Secrets</b>.</li><li>Seleziona <b>Add</b>, inserisci il nome <code>API_FOOTBALL_KEY</code> e incolla il valore della tua chiave.</li><li>Seleziona <b>Encrypt</b> per salvarla come secret, quindi salva e avvia un nuovo deployment.</li><li>Torna qui e premi <b>Verifica</b> per controllare lo stato del provider.</li></ol>
+   <button id="copyCloudflareSteps">Copia nome secret</button>
+   <p class="settings-hint">Le Pages Functions leggono i secrets tramite <code>context.env</code>. L'app non può modificare direttamente i secrets Cloudflare: la piattaforma non espone questa operazione alle normali richieste HTTP dell'applicazione.</p>
+   <a class="text-link" href="https://developers.cloudflare.com/pages/functions/bindings/" target="_blank" rel="noopener">Documentazione ufficiale Cloudflare ↗</a>
+  </div>
+ </section>
+ <section class="section">
+  <div class="section-head"><div><h2>Fonti e copertura</h2><p>Controlla gli aggiornamenti e i limiti dei provider.</p></div></div>
+  <a class="shortcut" href="data.html"><span class="shortcut-icon">ⓘ</span><span><b>Stato fonti e copertura</b><small>Consumo API, disponibilità e metodologia MatchMind</small></span></a>
+ </section>
+ <section class="section">
+  <div class="section-head"><div><h2>Preferenze applicazione</h2><p>Funzioni di navigazione e dati.</p></div></div>
+  <div class="panel panel-pad">
+   <div class="data-row"><span>Competizione predefinita</span><b>Serie A · Italia</b></div>
+   <div class="data-row"><span>Fuso orario</span><b>Europe/Rome</b></div>
+   <div class="data-row"><span>Cache locale</span><b>Attiva · fallback offline</b></div>
+   <div class="data-row"><span>Modello</span><b>Baseline statistica Poisson</b></div>
+  </div>
+ </section>
+ <div class="notice warning">Non inserire mai chiavi API in chat, screenshot, URL o repository pubblici. La chiave di sessione è accessibile al browser e va usata solo su un dispositivo personale fidato. Per uso stabile, preferisci il secret Cloudflare.</div>
+ <div class="status-line" id="globalStatus" aria-live="polite"></div><footer class="site-footer">MatchMind · Impostazioni e sicurezza provider.</footer>
+</main>
+</body></html>
