@@ -111,6 +111,14 @@
   '<div class="section-head" style="margin-top:12px"><div><h2>Probabilità 1X2</h2><p>Distribuzione stimata degli esiti</p></div></div><div class="prob-grid">'+probCard('1 · Casa',p.home)+probCard('X · Pareggio',p.draw)+probCard('2 · Trasferta',p.away)+'</div>'+
   '<div class="section-head" style="margin-top:13px"><div><h2>Mercati goal</h2><p>Probabilità derivate dalla distribuzione Poisson</p></div></div><div class="prob-grid">'+probCard('Gol',p.btts)+probCard('No Gol',1-p.btts)+probCard('Over 2,5',p.o25)+'</div><div class="prob-grid" style="margin-top:7px">'+probCard('Over 1,5',p.o15)+probCard('Over 3,5',p.o35)+probCard('Under 2,5',1-p.o25)+'</div>'+
   scoreMatrixHtml+
+  (()=>{
+   const e=MM().eventForecast(match,d.history);
+   const detail=(label,x)=>'<div class="data-row"><span>'+label+'</span><b>'+ (x.available?fmt(x.home,1)+' / '+fmt(x.away,1):'Campione insufficiente')+'</b></div>';
+   const metric=(label,x)=>'<div class="data-row"><span>'+label+'</span><b>'+ (x.available?fmt(x.total,1):'Non disponibile')+'</b></div>';
+   const cards='<section class="section"><div class="section-head"><div><div class="eyebrow">STATISTICHE AVANZATE</div><h2>Corner e cartellini</h2><p>Medie storiche per sede, ultime 8 gare precedenti. Stime esplorative, non quote.</p></div></div><div class="panel panel-pad">'+detail('Corner attesi · casa / trasferta',e.corners)+metric('Corner totali stimati',e.corners)+detail('Ammonizioni · casa / trasferta',e.yellowCards)+metric('Ammonizioni totali stimate',e.yellowCards)+'<small style="color:#91a0ae">Minimo 5 osservazioni per componente. Espulsioni, arbitro e cartellini rossi non sono stimati.</small></div></section>';
+   const ht='<section class="section"><div class="section-head"><div><h2>Primo tempo</h2><p>Stima esplorativa dei gol attesi nel primo tempo.</p></div></div><div class="panel panel-pad">'+(e.halfTime.available?'<div class="data-row"><span>Gol attesi casa / trasferta</span><b>'+fmt(e.halfTime.homeXg,2)+' / '+fmt(e.halfTime.awayXg,2)+'</b></div><div class="prob-grid">'+probCard('1° tempo · 1',e.halfTime.probabilities.home)+probCard('1° tempo · X',e.halfTime.probabilities.draw)+probCard('1° tempo · 2',e.halfTime.probabilities.away)+'</div>':'<div class="notice warning">Campione storico del primo tempo insufficiente: servono almeno 5 partite per ciascuna componente.</div>')+'</div></section>';
+   return cards+ht;
+  })()+
   '<div class="panel panel-pad match-model-context" style="margin-top:14px"><div class="context-heading"><span>CONTESTO DEL MODELLO</span><small>Stime, non dati osservati</small></div><div class="data-row"><span>Partite usate · '+esc(match.home)+'</span><b>'+f.home.played+'</b></div><div class="data-row"><span>Partite usate · '+esc(match.away)+'</span><b>'+f.away.played+'</b></div><div class="data-row"><span>Periodo storico complessivo</span><b>'+(f.historyStart&&f.historyEnd?esc(f.historyStart)+' – '+esc(f.historyEnd):'Non disponibile')+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.home)+'</span><b>'+fmt(f.homeXg,2)+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.away)+'</span><b>'+fmt(f.awayXg,2)+'</b></div><div class="data-row"><span>Forma '+esc(match.home)+'</span><div class="form-row">'+(f.home.form.length?f.home.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div><div class="data-row"><span>Forma '+esc(match.away)+'</span><div class="form-row">'+(f.away.form.length?f.away.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div></div></section>'+
   seasonContextHtml+
   (done?'<div class="notice warning">Replay storico: questa stima viene ricostruita dai dati precedenti alla partita. Non esiste una previsione pre-partita congelata e registrata all’epoca.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">DATI ESTERNI</div><h2>Quote e indisponibili</h2><p>Solo dati restituiti dal provider, quando disponibili.</p></div></div><div id="matchContext" class="panel panel-pad"><div class="loading-state">Verifica copertura e contesto partita…</div></div></section>')+
@@ -210,71 +218,51 @@
  }
  async function initSettings(){
   const providers=[
-   {id:'apiFootball',input:'apiFootballKey',storage:'matchmind-api-football-session-key',save:'saveSessionKey',test:'testSessionKey',clear:'clearSessionKey',status:'settingsProviderStatus',url:'type=status',kind:'apiFootball'},
-   {id:'oddsPapi',input:'oddsPapiKey',storage:'matchmind-oddspapi-session-key',save:'saveOddsPapiKey',test:'testOddsPapiKey',clear:'clearOddsPapiKey',status:'oddsPapiStatus',url:'type=test-oddspapi',kind:'oddsPapi'},
-   {id:'theOddsApi',input:'theOddsApiKey',storage:'matchmind-the-odds-api-session-key',save:'saveTheOddsApiKey',test:'testTheOddsApiKey',clear:'clearTheOddsApiKey',status:'theOddsApiStatus',url:'type=test-the-odds-api',kind:'theOddsApi'},
-   {id:'footballData',input:'footballDataKey',storage:'matchmind-football-data-session-key',save:'saveFootballDataKey',test:'testFootballDataKey',clear:'clearFootballDataKey',status:'footballDataStatus',url:null,kind:'footballData'}
+   {id:'apiFootball',input:'apiFootballKey',storage:'matchmind-api-football-session-key',save:'saveSessionKey',test:'testSessionKey',clear:'clearSessionKey',status:'settingsProviderStatus',url:'type=status'},
+   {id:'oddsPapi',input:'oddsPapiKey',storage:'matchmind-oddspapi-session-key',save:'saveOddsPapiKey',test:'testOddsPapiKey',clear:'clearOddsPapiKey',status:'oddsPapiStatus',url:'type=test-oddspapi'}
   ];
-  const read=provider=>{try{return sessionStorage.getItem(provider.storage)||''}catch{return ''}};
-  const headers=()=>{const h={Accept:'application/json'};providers.forEach(p=>{const key=read(p);if(key)h[({'apiFootball':'X-MatchMind-API-Key','oddsPapi':'X-MatchMind-OddsPapi-Key','theOddsApi':'X-MatchMind-The-Odds-API-Key','footballData':'X-MatchMind-Football-Data-Key'})[p.id]]=key;});return h;};
+  const read=p=>{try{return sessionStorage.getItem(p.storage)||''}catch{return ''}};
+  const headers=()=>{const h={Accept:'application/json'};providers.forEach(p=>{const v=read(p);if(v)h[p.id==='apiFootball'?'X-MatchMind-API-Key':'X-MatchMind-OddsPapi-Key']=v;});return h;};
   const clearCache=()=>{try{localStorage.removeItem('matchmind-player-cache-v1')}catch{}};
-  async function verify(provider){
-   const status=$(provider.status);if(!status)return;
+  async function verify(p){
+   const status=$(p.status);if(!status)return;
    status.innerHTML='<div class="loading-state">Verifica della connessione…</div>';
    try{
-    let url=provider.url, data;
-    if(provider.id==='footballData'){
-     const now=new Date(),season=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1;
-     url='type=fixtures&season='+season;
-    }
-    const res=await fetch('./api/player-context?'+url,{headers:headers(),cache:'no-store'});
-    data=await res.json();
-    if(!res.ok||data.configured===false||data.error)throw new Error(data.error||'Il provider non ha confermato la connessione.');
-    if(provider.id==='apiFootball'){
-     const usage=data.apiFootballUsage;
-     if(!data.providers?.apiFootball||!usage?.available)throw new Error('API-Football non ha confermato la chiave o lo stato del piano.');
+    const res=await fetch('./api/player-context?'+p.url,{headers:headers(),cache:'no-store'}),d=await res.json();
+    if(!res.ok||d.configured===false||d.error)throw new Error(d.error||'Il provider non ha confermato la connessione.');
+    if(p.id==='apiFootball'){
+     const usage=d.apiFootballUsage;
+     if(!d.providers?.apiFootball||!usage?.available)throw new Error('API-Football non ha confermato la chiave o la disponibilità del piano.');
      status.innerHTML='<div class="notice good">Connessione verificata · '+esc(usage.plan||'Piano attivo')+' · '+fmt(usage.remaining)+' richieste residue oggi.</div>';
-     $('settingsApiUsage').innerHTML='<div class="data-row"><span>Consumo giornaliero</span><b>'+fmt(usage.current)+' / '+fmt(usage.limitDay)+'</b></div><div class="data-row"><span>Residue</span><b>'+fmt(usage.remaining)+'</b></div><div class="data-row"><span>Ultima verifica</span><b>'+new Date(usage.checkedAt).toLocaleTimeString('it-IT')+'</b></div>';
-    }else if(provider.id==='theOddsApi'){
-     if(data.serieAAvailable!==true)throw new Error('Chiave valida, ma la competizione Serie A non risulta attiva nel catalogo restituito.');
-     status.innerHTML='<div class="notice good">Chiave valida · Serie A disponibile · verifica gratuita del catalogo completata.</div>';
-    }else if(provider.id==='oddsPapi'){
-     status.innerHTML='<div class="notice good">Connessione OddsPapi verificata. La presenza di quote Sisal dipende dal piano e dalla partita.</div>';
+     const box=$('settingsApiUsage');if(box)box.innerHTML='<div class="data-row"><span>Consumo giornaliero</span><b>'+fmt(usage.current)+' / '+fmt(usage.limitDay)+'</b></div><div class="data-row"><span>Residue</span><b>'+fmt(usage.remaining)+'</b></div>';
     }else{
-     status.innerHTML='<div class="notice good">football-data.org verificato · '+fmt((data.matches||[]).length)+' partite restituite per la stagione.</div>';
+     if(!d.providers?.sisalOdds)throw new Error('Connessione valida, ma quote Sisal non disponibili per questa chiave o questo piano.');
+     status.innerHTML='<div class="notice good">Connessione verificata · disponibilità quote Sisal soggetta a partita e mercato.</div>';
     }
-   }catch(e){
-    status.innerHTML='<div class="notice warning">'+esc(e.message)+' Controlla la chiave e i limiti del piano.</div>';
-    if(provider.id==='apiFootball')$('settingsApiUsage').innerHTML='';
-   }
+   }catch(e){status.innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';if(p.id==='apiFootball'&&$('settingsApiUsage'))$('settingsApiUsage').innerHTML='';}
   }
-  providers.forEach(provider=>{
-   const input=$(provider.input),status=$(provider.status);
-   if(!input||!status)return;
-   input.value=read(provider);
-   $(provider.save).addEventListener('click',async()=>{
-    const value=input.value.trim();
-    if(value.length<8){status.innerHTML='<div class="notice warning">Inserisci una chiave completa (almeno 8 caratteri).</div>';return;}
-    try{sessionStorage.setItem(provider.storage,value);}catch{status.innerHTML='<div class="notice warning">Il browser non consente di salvare la chiave nella sessione.</div>';return;}
-    clearCache();
-    await verify(provider);
+  providers.forEach(p=>{
+   const input=$(p.input),status=$(p.status);if(!input||!status)return;
+   input.value=read(p);
+   $(p.save).addEventListener('click',async()=>{
+    const value=input.value.trim();if(value.length<8){status.innerHTML='<div class="notice warning">Inserisci una chiave completa.</div>';return;}
+    try{sessionStorage.setItem(p.storage,value);}catch{status.innerHTML='<div class="notice warning">Il browser non consente di salvare la chiave nella sessione.</div>';return;}
+    clearCache();await verify(p);
    });
-   $(provider.test).addEventListener('click',()=>verify(provider));
-   $(provider.clear).addEventListener('click',()=>{
-    try{sessionStorage.removeItem(provider.storage)}catch{}
-    input.value='';clearCache();
-    status.innerHTML='<div class="notice">Chiave rimossa dalla sessione corrente. Verrà usato il secret Cloudflare, se configurato.</div>';
-    if(provider.id==='apiFootball')$('settingsApiUsage').innerHTML='';
+   $(p.test).addEventListener('click',()=>verify(p));
+   $(p.clear).addEventListener('click',()=>{
+    try{sessionStorage.removeItem(p.storage)}catch{}input.value='';clearCache();
+    status.innerHTML='<div class="notice">Chiave rimossa dalla sessione corrente.</div>';
+    if(p.id==='apiFootball'&&$('settingsApiUsage'))$('settingsApiUsage').innerHTML='';
    });
+   if(read(p))verify(p);
   });
-  $('copyCloudflareSteps').addEventListener('click',()=>GenCopy('API_FOOTBALL_KEY'));
-  const hasAny=providers.some(provider=>read(provider));
-  if(!hasAny)$('settingsProviderStatus').innerHTML='<div class="notice">Nessuna chiave inserita in questa sessione. Calendario pubblico e modello locale restano disponibili.</div>';
-  for(const provider of providers){if(read(provider))await verify(provider);}
-}
+  const copy=$('copyCloudflareSteps');if(copy)copy.addEventListener('click',()=>GenCopy('API_FOOTBALL_KEY'));
+ }
+
 function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
  async function initData(){
-  const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const h={Accept:'application/json'};try{[['matchmind-api-football-session-key','X-MatchMind-API-Key'],['matchmind-oddspapi-session-key','X-MatchMind-OddsPapi-Key'],['matchmind-football-data-session-key','X-MatchMind-Football-Data-Key'],['matchmind-the-odds-api-session-key','X-MatchMind-The-Odds-API-Key']].forEach(([k,v])=>{const value=sessionStorage.getItem(k);if(value)h[v]=value;})}catch{}const r=await fetch('./api/player-context?type=status',{headers:h,cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · CSV pubblici',true,'Fonte pubblica · senza API key'],['Calendario di riserva','openfootball · JSON pubblico',true,'Fonte pubblica · senza API key'],['Archivio storico','football-dataset · CSV pubblici',true,'Fonte pubblica · senza API key'],['Notizie recenti','Google News RSS · ricerca su richiesta',true,'Feed pubblico · senza API key'],['Quote 1X2 alternative','The Odds API · bookmaker UE',!!p.theOddsApi],['Quote Sisal','OddsPapi · se abilitate dal piano',!!p.sisalOdds],['Infortuni e forma giocatori','API-Football',!!p.apiFootball],['Calendario di riserva','football-data.org',!!p.footballData],['Probabilità statistiche','Modello Poisson locale',true,'Calcolo locale']];const usage=d.apiFootballUsage;
+  const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const h={Accept:'application/json'};try{[['matchmind-api-football-session-key','X-MatchMind-API-Key'],['matchmind-oddspapi-session-key','X-MatchMind-OddsPapi-Key']].forEach(([k,v])=>{const value=sessionStorage.getItem(k);if(value)h[v]=value;})}catch{}const r=await fetch('./api/player-context?type=status',{headers:h,cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · CSV pubblico',true,'Senza API key'],['Calendario di riserva','openfootball · JSON pubblico',true,'Senza API key'],['Archivio storico','football-dataset · CSV pubblici',true,'Senza API key'],['Statistiche evento','Corner, falli, cartellini e HT quando presenti',true,'Soglia campionaria applicata'],['Notizie recenti','Google News RSS · su richiesta',true,'Senza API key'],['Quote Sisal','OddsPapi · add-on',!!p.sisalOdds],['Giocatori e indisponibili','API-Football · add-on',!!p.apiFootball],['Probabilità statistiche','Poisson e medie locali',true,'Calcolo nel browser']];const usage=d.apiFootballUsage;
    const usageHtml=!p.apiFootball?'':(usage&&usage.available
     ?'<div class="data-row"><span>API-Football · consumo oggi</span><b>'+fmt(usage.current)+' / '+fmt(usage.limitDay)+' ('+fmt(usage.usedPercent,1)+'%)</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">Residue: '+fmt(usage.remaining)+(usage.plan?' · Piano '+esc(usage.plan):'')+(usage.subscriptionActive===false?' · Abbonamento non attivo':'')+' · Verificato '+new Date(usage.checkedAt).toLocaleTimeString('it-IT')+'</small>'
     :'<div class="data-row"><span>API-Football · consumo oggi</span><b style="color:var(--amber)">Non leggibile</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">La chiave è configurata, ma il provider non ha restituito il contatore. Verifica chiave e stato del servizio.</small>');
@@ -313,26 +301,13 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
     if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(minPayout)||!Number.isFinite(maxPayout)||minPayout<=0||maxPayout<minPayout){result.innerHTML='<div class="notice warning">Controlla puntata e intervallo della vincita potenziale.</div>';return;}
     assistantButton.disabled=true;assistantButton.textContent='Analisi in corso…';result.innerHTML='<div class="loading-state">Controllo campioni, quote e mercati prematch…</div>';
     try{
-     const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0,alternativeEvents:0};
-     let alternativeEvents=[],oddsBatchAvailable=false;
-     try{
-      const batch=await MM().playerApi('type=odds-batch','the-odds-api-serie-a',5*60*1000);
-      alternativeEvents=Array.isArray(batch.events)?batch.events:[];
-      coverage.alternativeEvents=alternativeEvents.length;
-      oddsBatchAvailable=true;
-     }catch{}
-     let sessionProviderKey=false;
-     try{sessionProviderKey=['matchmind-api-football-session-key','matchmind-oddspapi-session-key','matchmind-football-data-session-key','matchmind-the-odds-api-session-key'].some(key=>!!sessionStorage.getItem(key));}catch{}
+     const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0};
      for(const match of fixtures){
       const forecast=MM().forecast(match,d.history);
       if(!forecast.sampleEnough){coverage.weakSample++;continue;}
       try{
        const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
-       const alternative=alternativeEvents.find(event=>event.date===match.date&&MM().sameTeam(event.home,match.home)&&MM().sameTeam(event.away,match.away));
-       const bookmakers=[
-        ...(Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'OddsPapi · Sisal',updatedAt:c.oddsUpdatedAt})):[]),
-        ...(alternative&&Array.isArray(alternative.bookmakers)?alternative.bookmakers.map(book=>({...book,source:'The Odds API',updatedAt:alternative.updatedAt})):[])
-       ];
+       const bookmakers=Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'OddsPapi · Sisal',updatedAt:c.oddsUpdatedAt})):[];
        if(!bookmakers.length){coverage.missingOdds++;continue;}
        const freshBookmakers=bookmakers.filter(book=>book.updatedAt&&Number.isFinite(Date.parse(book.updatedAt))&&Math.max(0,(Date.now()-Date.parse(book.updatedAt))/60000)<=120);
        if(!freshBookmakers.length){coverage.staleOdds++;continue;}
@@ -373,7 +348,7 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
      }
      const proposal=window.MatchMindRounds.buildAssistant(candidates,{stake,minPayout,maxPayout,minLegs,maxLegs});
      const pct=x=>fmt(x*100,2)+'%';
-     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · '+coverage.alternativeEvents+' eventi letti da The Odds API · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
+     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · integrazione quote opzionale: OddsPapi · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
      if(!proposal.available&&!candidates.length){
       const freeProposal=window.MatchMindRounds.buildProbabilityAssistant(fixtures,m=>MM().forecast(m,d.history),{minLegs,maxLegs});
       if(freeProposal.available){

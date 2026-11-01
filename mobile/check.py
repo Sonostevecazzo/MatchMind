@@ -62,18 +62,16 @@ for control in ["assistantStake", "assistantMinPayout", "assistantMaxPayout", "a
     assert control in lab, f"Missing bet assistant control: {control}"
 assert "buildAssistant" in (ROOT / "rounds.js").read_text(encoding="utf-8"), "Missing target-based bet assistant optimizer"
 settings = (ROOT / "settings.html").read_text(encoding="utf-8")
-for control in ["apiFootballKey", "oddsPapiKey", "theOddsApiKey", "footballDataKey",
-                "saveOddsPapiKey", "saveTheOddsApiKey", "saveFootballDataKey"]:
-    assert control in settings, f"Missing provider key control: {control}"
-for secret in ["matchmind-oddspapi-session-key", "matchmind-the-odds-api-session-key",
-               "matchmind-football-data-session-key"]:
-    assert secret in (ROOT / "site-pages.js").read_text(encoding="utf-8"), f"Missing settings session-key handling: {secret}"
-    assert secret in (ROOT / "site-core.js").read_text(encoding="utf-8"), f"Missing request header for session key: {secret}"
-provider_api = (ROOT / "functions" / "api" / "player-context.js").read_text(encoding="utf-8")
-for route in ['type === "test-oddspapi"', 'type === "test-the-odds-api"', 'type === "odds-batch"',
-              "soccer_italy_serie_a", "normalizeTheOddsEvents"]:
-    assert route in provider_api, f"Missing odds provider integration: {route}"
-assert "type=odds-batch" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Assistant must request the alternate batch odds feed"
+for control in ["apiFootballKey", "oddsPapiKey", "saveOddsPapiKey", "saveSessionKey"]:
+    assert control in settings, f"Missing optional provider control: {control}"
+pages = (ROOT / "site-pages.js").read_text(encoding="utf-8")
+core = (ROOT / "site-core.js").read_text(encoding="utf-8")
+for secret in ["matchmind-api-football-session-key", "matchmind-oddspapi-session-key"]:
+    assert secret in pages, f"Missing optional settings session-key handling: {secret}"
+    assert secret in core, f"Missing optional request header for session key: {secret}"
+assert "type=odds-batch" not in pages, "The paid alternate odds aggregator must not be a required source"
+assert "function eventForecast" in core and "eventForecast," in core, "Free event forecast engine is missing"
+assert "home_corners_1h" in core and "home_yellow" in core, "Open-matchday event fields are not parsed"
 
 css = (ROOT / "site.css").read_text(encoding="utf-8")
 assert "grid-template-columns:repeat(5,minmax(0,1fr))" in css, "Mobile navigation must use five primary destinations"
@@ -93,7 +91,7 @@ assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "El
 assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Round analysis engine is not loaded by the Intelligence page"
 assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
 assert "bets.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker page is not cached by the service worker"
-assert "matchmind-pwa-v25-20261101" in (ROOT / "sw.js").read_text(encoding="utf-8"), "PWA cache version was not bumped for the redesigned shell"
+assert "matchmind-pwa-v26-20261101" in (ROOT / "sw.js").read_text(encoding="utf-8"), "PWA cache version was not bumped for the redesigned shell"
 assert "bets-engine.js" in (ROOT / "sw.js").read_text(encoding="utf-8") and "bets.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker assets are not cached by the service worker"
 assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
 assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"
