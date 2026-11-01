@@ -301,14 +301,12 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
     if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(minPayout)||!Number.isFinite(maxPayout)||minPayout<=0||maxPayout<minPayout){result.innerHTML='<div class="notice warning">Controlla puntata e intervallo della vincita potenziale.</div>';return;}
     assistantButton.disabled=true;assistantButton.textContent='Analisi in corso…';result.innerHTML='<div class="loading-state">Controllo campioni, quote e mercati prematch…</div>';
     try{
-     const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0,alternativeEvents:0};
-     let alternativeEvents=[];
+     const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0};
      for(const match of fixtures){
       const forecast=MM().forecast(match,d.history);
       if(!forecast.sampleEnough){coverage.weakSample++;continue;}
       try{
        const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
-       const alternative=alternativeEvents.find(event=>event.date===match.date&&MM().sameTeam(event.home,match.home)&&MM().sameTeam(event.away,match.away));
        const bookmakers=Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'OddsPapi · Sisal',updatedAt:c.oddsUpdatedAt})):[];
        if(!bookmakers.length){coverage.missingOdds++;continue;}
        const freshBookmakers=bookmakers.filter(book=>book.updatedAt&&Number.isFinite(Date.parse(book.updatedAt))&&Math.max(0,(Date.now()-Date.parse(book.updatedAt))/60000)<=120);
