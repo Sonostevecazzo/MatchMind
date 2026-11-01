@@ -91,7 +91,7 @@ assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "El
 assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Round analysis engine is not loaded by the Intelligence page"
 assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
 assert "bets.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker page is not cached by the service worker"
-assert re.search(r"matchmind-pwa-v27-\\d{8}", (ROOT / "sw.js").read_text(encoding="utf-8")), "PWA cache version was not bumped for the mobile scroll fix"
+assert re.search(r"matchmind-pwa-v27-\d{8}", (ROOT / "sw.js").read_text(encoding="utf-8")), "PWA cache version was not bumped for the mobile scroll fix"
 assert "bets-engine.js" in (ROOT / "sw.js").read_text(encoding="utf-8") and "bets.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker assets are not cached by the service worker"
 assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
 assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"
