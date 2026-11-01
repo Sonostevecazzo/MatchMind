@@ -228,7 +228,7 @@ body{background:
 .refresh-data:hover{border-color:#718348;background:#1a271d;color:var(--mint2)}
 .action-symbol{font-size:15px;line-height:1}
 .refresh-action .action-symbol{font-size:17px}
-.page-wrap{width:min(100% - 44px,1120px);height:calc(100dvh - 66px);padding:26px 0 42px;scrollbar-width:thin}
+.page-wrap{width:min(100% - 44px,1120px);min-height:calc(100dvh - 66px);padding:26px 0 42px;scrollbar-width:thin}
 .page-intro{margin:0 0 22px;align-items:flex-end}
 .page-intro h1{font-size:clamp(25px,3vw,34px);font-weight:900;letter-spacing:-1.6px}
 .page-intro p{font-size:11px;color:#91a0aa;line-height:1.6}
@@ -586,7 +586,7 @@ body{background:#090d11;color:var(--text);letter-spacing:0}
 .refresh-data{width:auto;height:36px;min-height:36px;padding:7px 10px;background:#141d23;border-color:#2c3a42;color:#d7dfe2}
 .action-symbol{display:grid;place-items:center;width:17px;height:17px;font-size:0}
 .action-symbol svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.page-wrap{width:min(100% - 40px,1120px);height:calc(100dvh - 64px);padding:22px 0 34px}
+.page-wrap{width:min(100% - 40px,1120px);min-height:calc(100dvh - 64px);padding:22px 0 34px}
 .page-intro{display:block;margin:0 0 20px}
 .page-intro .eyebrow{display:block;margin-bottom:5px;color:var(--mint);font-size:8px;letter-spacing:1.5px}
 .page-intro:after{display:none}
@@ -653,7 +653,7 @@ body{background:#090d11;color:var(--text);letter-spacing:0}
 [data-page="mind"] .section{margin-bottom:23px}
 [data-page="explore"] .team-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:700px){
-  body{height:100dvh;overflow:hidden;padding:0}
+  body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto;padding:0 0 calc(82px + env(safe-area-inset-bottom))}
   #siteHeader{height:58px;flex-basis:58px}
   .site-header{height:58px;padding:0 13px;gap:8px}
   .brand-mark{width:33px;height:33px}
@@ -663,7 +663,7 @@ body{background:#090d11;color:var(--text);letter-spacing:0}
   .refresh-data{width:35px;height:35px;min-height:35px;padding:0;border-radius:11px}
   .refresh-data span:not(.action-symbol){display:none}
   .refresh-data[hidden]{display:none}
-  .page-wrap{width:calc(100% - 24px);height:calc(100dvh - 58px - 72px - env(safe-area-inset-bottom));padding:15px 0 24px}
+  .page-wrap{width:calc(100% - 24px);height:auto;min-height:0;padding:15px 0 calc(100px + env(safe-area-inset-bottom))}
   .page-intro{margin:0 0 16px}
   .page-intro h1{font-size:24px}
   .page-intro p{font-size:10px}
