@@ -78,3 +78,23 @@ test("forecast exposes a coherent 0-5 correct-score matrix and explicit tail mas
   assert.ok(Math.abs(p.home + p.draw + p.away - 1) < 1e-10);
   assert.ok(result.scoreMatrix.some(cell => cell.homeGoals === 0 && cell.awayGoals === 0));
 });
+
+test("free Serie A event forecast uses only prior data and enforces minimum samples", () => {
+  const rows = [];
+  for (let i = 0; i < 8; i++) {
+    const date = new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10);
+    rows.push({ date, home: "Alpha FC", away: "Beta FC", hg: 1, ag: 0,
+      hc: 5, ac: 4, hy: 2, ay: 1, ht: 1, at: 0 });
+    rows.push({ date, home: "Beta FC", away: "Alpha FC", hg: 0, ag: 1,
+      hc: 3, ac: 6, hy: 1, ay: 2, ht: 0, at: 1 });
+  }
+  const target = { date: "2025-02-01", home: "Alpha FC", away: "Beta FC" };
+  const forecast = window.MM.eventForecast(target, rows);
+  assert.equal(forecast.corners.available, true);
+  assert.equal(forecast.yellowCards.available, true);
+  assert.equal(forecast.halfTime.available, true);
+  assert.ok(forecast.corners.total > 0);
+  assert.ok(forecast.halfTime.probabilities.home + forecast.halfTime.probabilities.draw + forecast.halfTime.probabilities.away > 0.999);
+  const futureOnly = window.MM.eventForecast(target, rows.map(row => ({ ...row, date: "2025-03-01" })));
+  assert.equal(futureOnly.corners.available, false);
+});
