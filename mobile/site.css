@@ -742,3 +742,27 @@ body{background:#090d11;color:var(--text);letter-spacing:0}
 .favorite-toggle{width:34px;height:34px;min-height:34px;padding:0;border-radius:10px;background:#17211b;border-color:#34452a;color:var(--mint)}
 .favorite-toggle svg,.favorite-action svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
 .favorite-action{white-space:nowrap}
+
+/* Transparent club crests: show the original badge artwork without UI tiles. */
+.team-crest{
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  isolation:auto!important;
+}
+.team-crest .team-logo{
+  background:transparent!important;
+  padding:0!important;
+  object-fit:contain;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.team-crest-fallback{
+  color:#aebbc5;
+  font-size:.72em;
+  font-weight:800;
+  letter-spacing:0;
+}
