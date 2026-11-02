@@ -76,8 +76,17 @@ assert "home_corners_1h" in core and "home_yellow" in core, "Open-matchday event
 css = (ROOT / "site.css").read_text(encoding="utf-8")
 assert "grid-template-columns:repeat(5,minmax(0,1fr))" in css, "Mobile navigation must use five primary destinations"
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
-for route in ["index.html", "matches.html", "league.html", "analysis-lab.html", "explore.html"]:
+for route in ["index.html", "matches.html", "analysis-lab.html", "bets.html", "explore.html"]:
     assert route in core, f"Missing primary navigation route: {route}"
+for label in ["Home", "Partite", "Analisi", "Scommesse", "Altro"]:
+    assert label in core, f"Missing primary navigation label: {label}"
+assert "page==='bets'?'bets'" in core, "Bet manager must have its own active navigation state"
+assert "page==='league'?'matches'" in core, "League screen must remain grouped under Partite"
+home = (ROOT / "index.html").read_text(encoding="utf-8")
+for hook in ["homePlayed", "homeUpcoming", "homeTeams", "homeStatus", "homeDot", "homeNext", "homeFavorites", "globalStatus"]:
+    assert hook in home, f"Home controller hook was removed: {hook}"
+for route in ["analysis-lab.html", "bets.html", "league.html", "explore.html"]:
+    assert f'href="{route}"' in home, f"Home quick access is missing {route}"
 assert "AI Insights" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "AI Insights destination is missing"
 assert "scoreMatrix" in core, "Correct-score probability matrix is missing from the forecast model"
 # Forecast transparency and stable team identity checks.
