@@ -81,7 +81,7 @@ for route in ["index.html", "matches.html", "analysis-lab.html", "bets.html", "e
 for label in ["Home", "Partite", "Analisi", "Scommesse", "Altro"]:
     assert label in core, f"Missing primary navigation label: {label}"
 assert "page==='bets'?'bets'" in core, "Bet manager must have its own active navigation state"
-assert "page==='league'?'matches'" in core, "League screen must remain grouped under Partite"
+assert "page==='league')?'matches'" in core, "League screen must remain grouped under Partite"
 home = (ROOT / "index.html").read_text(encoding="utf-8")
 for hook in ["homePlayed", "homeUpcoming", "homeTeams", "homeStatus", "homeDot", "homeNext", "homeFavorites", "globalStatus"]:
     assert hook in home, f"Home controller hook was removed: {hook}"
