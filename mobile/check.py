@@ -87,6 +87,11 @@ for hook in ["homePlayed", "homeUpcoming", "homeTeams", "homeStatus", "homeDot",
     assert hook in home, f"Home controller hook was removed: {hook}"
 for route in ["analysis-lab.html", "bets.html", "league.html", "explore.html"]:
     assert f'href="{route}"' in home, f"Home quick access is missing {route}"
+matches_page = (ROOT / "matches.html").read_text(encoding="utf-8")
+for hook in ["matchSearch", "matchDate", "matchTeam", "matchRound", "matchSeason", "matchFilters", "clearMatchFilters", "matchList"]:
+    assert hook in matches_page, f"Match filters lost controller hook: {hook}"
+assert '<details class="match-filter-advanced">' in matches_page, "Advanced match filters should use an accessible disclosure"
+assert 'href="league.html"' in matches_page, "Standings must remain reachable from Partite"
 assert "AI Insights" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "AI Insights destination is missing"
 assert "scoreMatrix" in core, "Correct-score probability matrix is missing from the forecast model"
 # Forecast transparency and stable team identity checks.
