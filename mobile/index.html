@@ -18,26 +18,26 @@
   <section class="home-hero" aria-labelledby="homeTitle">
     <div class="home-hero-copy">
       <div class="hero-kicker"><i></i> MATCHMIND · SERIE A</div>
-      <h1 id="homeTitle">Il campionato.<br><em>Dentro i numeri.</em></h1>
-      <p>Calendario, risultati, forma delle squadre e analisi statistiche delle partite di Serie A, in un unico spazio.</p>
+      <h1 id="homeTitle">La Serie A.<br><em>Dentro i numeri.</em></h1>
+      <p>Calendario, forma delle squadre e analisi statistiche. Dati e probabilità sempre accompagnati dalla loro copertura.</p>
       <div class="home-hero-actions">
-        <a href="matches.html">Vai alle partite <span aria-hidden="true">↗</span></a>
-        <a class="secondary" href="analysis-lab.html">Apri AI Insights</a>
+        <a href="matches.html">Esplora le partite <span aria-hidden="true">↗</span></a>
+        <a class="secondary" href="analysis-lab.html">Apri Analisi</a>
       </div>
       <div class="home-hero-status"><i id="homeDot" class="status-dot"></i><span id="homeStatus">Caricamento dati del campionato…</span></div>
     </div>
   </section>
 
   <section class="stat-strip home-stats" aria-label="Riepilogo Serie A">
-    <div class="stat-cell"><b id="homePlayed">—</b><span>RISULTATI ARCHIVIATI</span></div>
-    <div class="stat-cell"><b id="homeUpcoming">—</b><span>PARTITE FUTURE</span></div>
-    <div class="stat-cell"><b id="homeTeams">—</b><span>SQUADRE RILEVATE</span></div>
+    <div class="stat-cell"><b id="homePlayed">—</b><span>PARTITE CONCLUSE</span></div>
+    <div class="stat-cell"><b id="homeUpcoming">—</b><span>IN PROGRAMMA</span></div>
+    <div class="stat-cell"><b id="homeTeams">—</b><span>SQUADRE</span></div>
   </section>
 
   <div class="home-layout">
     <section class="section home-upcoming-section">
       <div class="section-head">
-        <div><div class="eyebrow">CALENDARIO</div><h2>Prossime partite</h2><p>Apri una partita per consultare dati, forma e probabilità disponibili.</p></div>
+        <div><div class="eyebrow">CALENDARIO</div><h2>Prossime partite</h2><p>Apri un incontro per consultare forma, dati e probabilità disponibili.</p></div>
         <a class="text-link" href="matches.html">Tutte le partite ↗</a>
       </div>
       <div id="homeNext" class="fixture-list"><div class="loading-state">Caricamento calendario…</div></div>
@@ -46,19 +46,21 @@
     <aside class="home-side">
       <section class="section">
         <div class="section-head">
-          <div><div class="eyebrow">PERSONALIZZAZIONE</div><h2>Le tue squadre</h2><p>Club salvati per un accesso rapido.</p></div>
-          <a class="text-link" href="explore.html">Altro ↗</a>
+          <div><div class="eyebrow">NAVIGAZIONE RAPIDA</div><h2>Strumenti</h2><p>Accesso diretto alle aree principali.</p></div>
         </div>
-        <div id="homeFavorites" class="team-grid"><div class="empty-state" style="grid-column:1/-1">Nessuna squadra salvata.</div></div>
+        <div class="shortcut-grid">
+          <a class="shortcut" href="analysis-lab.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/></svg></span><span><b>Analisi</b><small>Probabilità e modelli</small></span></a>
+          <a class="shortcut" href="bets.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h5m-5 4h8"/></svg></span><span><b>Scommesse</b><small>Controllo schedine</small></span></a>
+          <a class="shortcut" href="league.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/></svg></span><span><b>Classifica</b><small>Posizioni e statistiche</small></span></a>
+          <a class="shortcut" href="explore.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg></span><span><b>Esplora</b><small>Club e giocatori</small></span></a>
+        </div>
       </section>
       <section class="section">
-        <div class="section-head"><div><div class="eyebrow">ACCESSO RAPIDO</div><h2>Strumenti</h2><p>Le funzioni principali di MatchMind.</p></div></div>
-        <div class="shortcut-grid">
-          <a class="shortcut" href="analysis-lab.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/></svg></span><span><b>AI Insights</b><small>Probabilità e analisi partita</small></span></a>
-          <a class="shortcut" href="league.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/></svg></span><span><b>Classifica Serie A</b><small>Posizioni e statistiche</small></span></a>
-          <a class="shortcut" href="bets.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM8 10h8M8 14h5"/></svg></span><span><b>Schedine</b><small>Controllo e verifica selezioni</small></span></a>
-          <a class="shortcut" href="explore.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg></span><span><b>Altro</b><small>Club, giocatori e impostazioni</small></span></a>
+        <div class="section-head">
+          <div><div class="eyebrow">PERSONALIZZAZIONE</div><h2>Le tue squadre</h2><p>Club salvati per un accesso rapido.</p></div>
+          <a class="text-link" href="explore.html">Gestisci ↗</a>
         </div>
+        <div id="homeFavorites" class="team-grid"><div class="empty-state" style="grid-column:1/-1">Nessuna squadra salvata.</div></div>
       </section>
     </aside>
   </div>
