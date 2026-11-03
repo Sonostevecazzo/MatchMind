@@ -308,3 +308,101 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Bet checker: clear separation between labels and probability values. */
+body[data-page="bets"] .ocr-details {
+  margin: 10px 0 14px;
+  border: 1px solid #ffffff18;
+  border-radius: 12px;
+  background: #101820;
+  padding: 11px 13px;
+}
+body[data-page="bets"] .ocr-details summary {
+  color: #c4d2d7;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+}
+body[data-page="bets"] .ocr-details .field { margin: 10px 0 0; }
+body[data-page="bets"] .bet-percent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 76px;
+  color: #d8f59b;
+  font-size: 21px !important;
+  line-height: 1.1 !important;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.45px;
+  white-space: nowrap;
+}
+body[data-page="bets"] .bet-percent-total {
+  min-width: 0;
+  justify-content: flex-start;
+  color: #e2ffad;
+  font-size: clamp(30px, 8vw, 38px) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -1px;
+}
+body[data-page="bets"] .player-item-head {
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+}
+body[data-page="bets"] .player-item-head .bet-percent {
+  flex: 0 0 auto;
+  min-width: 82px;
+}
+body[data-page="bets"] .data-row {
+  gap: 12px;
+  align-items: center;
+}
+body[data-page="bets"] .data-row > span { min-width: 0; }
+body[data-page="bets"] .data-row > .bet-percent {
+  flex: 0 0 auto;
+  padding-left: 8px;
+}
+body[data-page="bets"] .metric {
+  padding: 17px;
+  border: 1px solid #d8f59b35;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #17251f, #111a20);
+}
+body[data-page="bets"] .metric > span {
+  display: block;
+  max-width: 34ch;
+  color: #b6c5bf;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 750;
+  letter-spacing: .45px;
+}
+body[data-page="bets"] .metric > .bet-percent-total {
+  display: block;
+  margin: 8px 0;
+}
+body[data-page="bets"] .metric > small {
+  display: block;
+  color: #aab8bd;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+@media (max-width: 700px) {
+  body[data-page="bets"] .bet-percent {
+    font-size: 22px !important;
+    min-width: 84px;
+  }
+  body[data-page="bets"] .bet-percent-total {
+    font-size: 36px !important;
+  }
+  body[data-page="bets"] .metric {
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  body[data-page="bets"] .player-item-head {
+    padding: 4px 0 12px;
+  }
+}
