@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v41-20261103-1x2-spacing';
+const CACHE='matchmind-pwa-v42-20261103-probability-builder';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',

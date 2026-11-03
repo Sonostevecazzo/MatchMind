@@ -953,3 +953,49 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 }
 
 .competition-picker{max-width:260px;margin-top:12px}.competition-picker label{display:block;margin-bottom:5px}.competition-picker select{width:100%}
+
+/* Manual probabilistic slip builder */
+.manual-builder{margin:18px 0 20px;padding:16px;border:1px solid var(--line,#263342);border-radius:16px;background:rgba(8,13,19,.55)}
+.manual-builder>.section-head{margin-bottom:12px}
+.manual-fixture-list{display:grid;gap:10px;margin:12px 0}
+.manual-fixture-card{padding:14px;border:1px solid var(--line,#263342);border-radius:14px;background:rgba(18,26,36,.82)}
+.manual-fixture-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.manual-fixture-heading b{display:block}
+.manual-fixture-heading small,.manual-selected-row small{display:block;margin-top:4px;color:var(--muted,#93a1b0)}
+.manual-picked-label{padding:4px 8px;border-radius:999px;background:rgba(86,201,147,.14);color:#72ddb0;font-size:.75rem;font-weight:700;white-space:nowrap}
+.manual-market-grid{display:grid;gap:8px}
+.manual-1x2-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.manual-other-market-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px}
+.manual-market-button{display:flex;min-width:0;min-height:52px;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border:1px solid var(--line,#344253);border-radius:11px;background:#111923;color:var(--text,#edf3f8);text-align:left}
+.manual-market-button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem;font-weight:650}
+.manual-market-button b{color:#a9d7ff;font-variant-numeric:tabular-nums}
+.manual-market-button.is-selected{border-color:#4aa3ff;background:rgba(35,112,184,.25);box-shadow:0 0 0 1px rgba(74,163,255,.24)}
+.manual-market-button:disabled{opacity:.45;cursor:not-allowed}
+.manual-other-markets{margin-top:10px;padding-top:9px;border-top:1px solid var(--line,#263342)}
+.manual-other-markets summary{cursor:pointer;color:#bdd3e8;font-size:.86rem;font-weight:650}
+.manual-sample-note{display:block;margin-top:10px;color:var(--muted,#93a1b0)}
+.manual-summary-card{padding:14px;border:1px solid rgba(74,163,255,.42);border-radius:14px;background:rgba(27,57,82,.22)}
+.manual-summary-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.manual-summary-top>div:first-child b{display:block;margin-top:4px}
+.manual-combined-probability{text-align:right}
+.manual-combined-probability span{display:block;color:var(--muted,#93a1b0);font-size:.82rem}
+.manual-combined-probability b{display:block;font-size:1.45rem}
+.manual-summary-card>small{display:block;margin-top:8px;color:var(--muted,#93a1b0)}
+.manual-sample-warning{margin-top:10px}
+.manual-selected-list{margin:10px 0}
+.manual-selected-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid rgba(125,145,165,.18)}
+.manual-selected-row>span:first-child{min-width:0}
+.manual-selected-row>span:first-child b{display:block;overflow-wrap:anywhere}
+.manual-selected-right{display:flex;align-items:center;gap:9px;white-space:nowrap}
+.manual-remove-button{width:32px;min-width:32px;height:32px;padding:0;border:1px solid var(--line,#344253);border-radius:50%;background:transparent;color:var(--text,#edf3f8);font-size:1.2rem;line-height:1}
+.manual-confirm-button{width:100%;margin-top:4px}
+.manual-odds-results{margin-top:12px}
+#manualBuilderStatus{min-height:1em}
+@media(max-width:560px){
+ .manual-builder{padding:12px}
+ .manual-fixture-card{padding:11px}
+ .manual-market-grid{gap:6px}
+ .manual-market-button{min-height:48px;padding:8px}
+ .manual-market-button span{font-size:.82rem}
+ .manual-summary-top{align-items:flex-start}
+}

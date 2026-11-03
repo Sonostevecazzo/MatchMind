@@ -152,7 +152,7 @@
     const target = Number(threshold);
     const requestedMaxLegs = Number(options && options.maxLegs);
     const maxLegs = Number.isFinite(requestedMaxLegs) && requestedMaxLegs > 0
-      ? Math.max(1, Math.min(8, Math.floor(requestedMaxLegs))) : 5;
+      ? Math.max(1, Math.min(15, Math.floor(requestedMaxLegs))) : 5;
     if (!Number.isFinite(target) || target <= 0 || target > 1) {
       return { available: false, reason: "Soglia probabilistica non valida." };
     }
