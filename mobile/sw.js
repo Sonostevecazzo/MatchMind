@@ -1,6 +1,6 @@
-const CACHE='matchmind-pwa-v48-20261103-odds-board';
+const CACHE='matchmind-pwa-v49-20261103-nba-center';
 const APP_SHELL=[
- './','./index.html','./matches.html','./explore.html','./league.html',
+ './','./index.html','./nba.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
  './site.css','./mobile-readable.css','./site-core.js','./site-pages.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg','./sisal-quotes.json'
 ];
