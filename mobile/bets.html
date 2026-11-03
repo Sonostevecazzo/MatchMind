@@ -15,40 +15,16 @@
 <script defer src="./site-core.js"></script>
 <script defer src="./bets.js"></script>
 </head>
-<body data-page="bets" data-title="Le mie scommesse" data-subtitle="Controlla una schedina e analizza le probabilità.">
+<body data-page="bets" data-title="Le mie scommesse" data-subtitle="Costruisci una schedina, archivia le tue selezioni e confronta le quote.">
 <div id="siteHeader"></div>
 <main class="page-wrap">
  <div class="page-intro">
   <div class="eyebrow">MATCHMIND / BET CHECKER</div>
   <h1 id="pageTitle">Le mie scommesse</h1>
-  <p id="pageSubtitle">Importa, controlla e archivia le tue schedine.</p>
+  <p id="pageSubtitle">Costruisci una schedina, archivia le tue selezioni e confronta le quote.</p>
  </div>
- <section class="section panel panel-pad bet-import-panel" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Importa la tua schedina</h2><p>Carica uno screenshot dalla galleria oppure condividi la giocata da Sisal a MatchMind.</p></div></div>
-  <div class="bet-import-actions">
-   <label class="button-like primary" for="slipImage">▧ Importa screenshot</label><input id="slipImage" type="file" accept="image/*" hidden>
-   <button id="shareSlip" type="button" class="secondary">Come condividere da Sisal</button>
-  </div>
-  <p id="ocrStatus" class="helper-text" aria-live="polite">Il riconoscimento automatico legge il testo dello screenshot; verifica sempre i dati estratti.</p>
-  <details class="ocr-details"><summary>Controlla il testo riconosciuto (facoltativo)</summary><div class="field"><textarea id="slipText" rows="5" aria-label="Testo riconosciuto dallo screenshot" placeholder="Il testo estratto apparirà qui."></textarea></div></details>
-  <div class="field bet-metadata-grid">
-   <div><label for="ticketStake">Importo giocato (€)</label><input id="ticketStake" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Es. 10,00"></div>
-   <div><label for="ticketPayout">Vincita potenziale (€)</label><input id="ticketPayout" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Facoltativo"></div>
-  </div>
-  <div class="settings-actions"><button id="checkSlip" type="button" class="primary">Analizza schedina</button><button id="clearSlip" class="secondary" type="button">Pulisci</button></div>
-  <div id="slipResults" aria-live="polite" style="margin-top:12px"><div class="empty-state">Importa uno screenshot o inserisci il testo per iniziare.</div></div>
- </section>
  <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Archivio schedine</h2><p>Conservate su questo dispositivo, con risultati aggiornabili.</p></div><button id="refreshArchive" type="button" class="secondary">Aggiorna risultati</button></div>
-  <div id="slipArchive" aria-live="polite"><div class="empty-state">Nessuna schedina archiviata.</div></div>
- </section>
- <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Confronto quote e benchmark</h2><p>Confronta le quote Sisal se configurate; in alternativa usa il benchmark 1X2 gratuito, senza API key.</p></div></div>
-  <button id="refreshSisal" type="button" class="secondary">Confronta quote disponibili</button>
-  <div id="sisalResults" style="margin-top:12px"><div class="empty-state">Prima analizza una schedina, poi verifica la disponibilità delle quote aggiornate.</div></div>
- </section>
- <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Costruttore probabilistico</h2><p>Componi una schedina selezionando esiti e percentuali, oppure genera una proposta automatica.</p></div></div>
+  <div class="section-head"><div><h2>Costruttore probabilistico</h2><p>Seleziona mercati e percentuali, anche dalla sezione Partite, oppure genera una proposta automatica.</p></div></div>
   <div class="field"><label for="targetProbability">Probabilità minima dell'intera combinazione</label><select id="targetProbability"><option value="0.50">50%</option><option value="0.55" selected>55%</option><option value="0.60">60%</option><option value="0.65">65%</option><option value="0.70">70%</option></select></div>
   <div class="field"><label for="maxLegs">Numero massimo di eventi (da 1 a 15)</label><input id="maxLegs" type="number" min="1" max="15" step="1" value="10" inputmode="numeric"></div>
   <div id="manualBuilder" class="manual-builder">
@@ -61,6 +37,16 @@
   </div>
   <button id="buildTicket" type="button">Genera proposta automatica</button>
   <div id="ticketResults" style="margin-top:12px"><div class="empty-state">La proposta sarà generata solo con dati storici sufficienti.</div></div>
+ </section>
+ <section class="section panel panel-pad" style="margin-bottom:14px">
+  <div class="section-head"><div><h2>Archivio schedine</h2><p>Conservate su questo dispositivo, con risultati aggiornabili.</p></div><button id="refreshArchive" type="button" class="secondary">Aggiorna risultati</button></div>
+  <p id="archiveStatus" class="helper-text" aria-live="polite"></p>
+  <div id="slipArchive" aria-live="polite"><div class="empty-state">Nessuna schedina archiviata.</div></div>
+ </section>
+ <section class="section panel panel-pad" style="margin-bottom:14px">
+  <div class="section-head"><div><h2>Confronto quote e benchmark</h2><p>Confronta le selezioni correnti con le quote e i benchmark disponibili.</p></div></div>
+  <button id="refreshSisal" type="button" class="secondary">Confronta quote selezionate</button>
+  <div id="sisalResults" style="margin-top:12px"><div class="empty-state">Scegli gli eventi nel Costruttore per confrontare le quote disponibili.</div></div>
  </section>
  <div class="notice warning">Le percentuali sono stime del modello statistico locale, non probabilità certificate né garanzie di vincita. La probabilità multipla usa il prodotto delle probabilità delle singole partite e assume indipendenza tra eventi. Quote e disponibilità possono cambiare; verifica sempre su Sisal. MatchMind non accede al conto Sisal e non piazza scommesse.</div>
  <div class="status-line" id="globalStatus" aria-live="polite"></div>

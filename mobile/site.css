@@ -999,3 +999,37 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .manual-market-button span{font-size:.82rem}
  .manual-summary-top{align-items:flex-start}
 }
+
+/* Match-list market picker and slip selections */
+.fixture-market-panel{margin-top:12px;padding:11px 12px;border:1px solid var(--line,#263342);border-radius:13px;background:rgba(8,13,19,.55)}
+.fixture-market-picker{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.fixture-market-picker label{color:var(--muted,#93a1b0);font-size:.82rem;font-weight:700}
+.fixture-market-picker select{width:auto;min-width:154px;max-width:68%;min-height:42px;padding:7px 34px 7px 10px;border:1px solid var(--line,#344253);border-radius:10px;background:#111923;color:var(--text,#edf3f8)}
+.fixture-market-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.fixture-market-options.two-outcome{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fixture-market-button{display:flex;min-width:0;min-height:46px;align-items:center;justify-content:space-between;gap:7px;padding:8px 9px;border:1px solid var(--line,#344253);border-radius:10px;background:#111923;color:var(--text,#edf3f8);text-align:left}
+.fixture-market-button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.84rem;font-weight:650}
+.fixture-market-button b{color:#a9d7ff;font-size:.88rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fixture-market-button.is-selected{border-color:#4aa3ff;background:rgba(35,112,184,.25);box-shadow:0 0 0 1px rgba(74,163,255,.24)}
+.fixture-market-button:disabled{opacity:.45}
+.fixture-market-sample{display:block;margin-top:8px;color:var(--muted,#93a1b0)}
+.match-slip-dock{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid rgba(74,163,255,.42);border-radius:14px;background:rgba(27,57,82,.25)}
+.match-slip-dock[hidden]{display:none}
+.match-slip-dock b,.match-slip-dock small{display:block}
+.match-slip-dock small{margin-top:3px;color:var(--muted,#93a1b0)}
+.match-slip-dock .button-like{white-space:nowrap}
+#matchPickNotice{min-height:0;margin:0}
+.manual-summary-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
+.manual-summary-actions .manual-confirm-button{margin-top:0}
+.manual-archive-button{min-height:46px}
+@media(max-width:560px){
+ .fixture-market-panel{padding:9px}
+ .fixture-market-options{gap:5px}
+ .fixture-market-button{min-height:43px;padding:7px 6px}
+ .fixture-market-button span{font-size:.78rem}
+ .fixture-market-button b{font-size:.8rem}
+ .fixture-market-picker select{min-width:136px}
+ .match-slip-dock{align-items:flex-start;flex-direction:column}
+ .match-slip-dock .button-like{width:100%;text-align:center}
+ .manual-summary-actions{grid-template-columns:1fr}
+}
