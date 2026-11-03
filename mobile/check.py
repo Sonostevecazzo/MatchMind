@@ -135,7 +135,7 @@ print("MatchMind PWA, syntax, provider API and chronological backtest tests pass
 # Local ticket archive, live-score refresh and provider transparency.
 bets_html = (ROOT / "bets.html").read_text(encoding="utf-8")
 bets_js = (ROOT / "bets.js").read_text(encoding="utf-8")
-for control in ["manualSlipSummary", "manualOdds", "buildTicket", "slipArchive", "refreshArchive", "refreshSisal"]:
+for control in ["manualSlipSummary", "manualOdds", "buildTicket", "slipArchive", "refreshArchive", "refreshSisal", "oddsBoard", "refreshOddsBoard"]:
     assert f'id="{control}"' in bets_html, f"Missing bet manager control: {control}"
 assert "matchmind-slip-archive-v1" in bets_js, "Local bet archive is missing"
 assert "type=live" in bets_js, "Archive live-score refresh is missing"
@@ -145,3 +145,6 @@ for page_name in ["explore.html", "data.html"]:
     page_html = (ROOT / page_name).read_text(encoding="utf-8")
     assert page_html.count("mobile-readable.css") == 1, f"{page_name} must load the mobile typography layer exactly once"
 print("MatchMind PWA, syntax, provider API, archive and chronological backtest checks passed.")
+
+assert "type === \"sisal-board\"" in (ROOT / "functions" / "api" / "player-context.js").read_text(encoding="utf-8"), "Live Sisal odds board endpoint is missing"
+assert "loadOddsBoard" in (ROOT / "bets.js").read_text(encoding="utf-8"), "Live odds board UI is missing"
