@@ -931,7 +931,7 @@ async function getMatchContext(context, season, requestUrl) {
       : (fixtureLookup.status === "rejected" ? publicError(fixtureLookup.reason) : (!fixtureId ? "La partita non è stata trovata da API-Football per recuperare le assenze." : null)));
   const oddsError = oddsAvailable ? null : (oddsLookup.status === "rejected"
     ? publicError(oddsLookup.reason)
-    : (!sisalOddsKey
+    : (!pulseScoreKey
       ? "Configura PULSESCORE_API_KEY su Cloudflare per attivare le quote Sisal."
       : (!oddsEvent ? "Sisal non ha quote prematch disponibili per questa partita o per questa data." : "Sisal non ha quote attive nei mercati supportati per questa partita.")));
 
