@@ -1,8 +1,8 @@
-const CACHE='matchmind-pwa-v43-20261103-bets-match-markets';
+const CACHE='matchmind-pwa-v44-20261103-home-sisal-quotes';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
- './site.css','./mobile-readable.css','./site-core.js','./site-pages.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
+ './site.css','./mobile-readable.css','./site-core.js','./site-pages.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg','./sisal-quotes.json'
 ];
 
 self.addEventListener('install',event=>{
@@ -29,7 +29,7 @@ self.addEventListener('fetch',event=>{
  if(request.method!=='GET')return;
 
  // Prefer the deployed HTML, CSS and JS. Use the cache only when offline.
- if(request.mode==='navigate'||url.pathname.endsWith('.html')||url.pathname.endsWith('/')||/\.(?:css|js|webmanifest|svg)$/.test(url.pathname)){
+ if(request.mode==='navigate'||url.pathname.endsWith('.html')||url.pathname.endsWith('/')||/\.(?:css|js|json|webmanifest|svg)$/.test(url.pathname)){
   event.respondWith((async()=>{
    try{
     const response=await fetch(request,{cache:'no-store'});

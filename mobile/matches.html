@@ -1,25 +1,12 @@
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090c11"><meta name="description" content="MatchMind · Football Intelligence"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css">
-<link rel="stylesheet" href="./mobile-readable.css?v=20261103-0737"><title>MatchMind · Partite</title><script defer src="./site-core.js"></script><script defer src="./site-pages.js"></script></head>
-<body data-page="matches" data-title="Partite" data-subtitle="Calendario, risultati e ricerca per squadra o giornata."><div id="siteHeader"></div><main class="page-wrap"><div class="page-intro"><div class="eyebrow">MATCHMIND / MATCHES</div><h1 id="pageTitle">Partite</h1><p id="pageSubtitle">Calendario, risultati e ricerca per squadra o giornata.</p></div>
-<section class="panel match-filter-panel" aria-label="Ricerca e filtri partite">
- <div class="field match-search-field"><label for="matchSearch">Cerca una squadra</label><input id="matchSearch" type="search" placeholder="Es. Inter, Milan, Roma…" autocomplete="off"></div>
- <div class="match-filter-toolbar">
-  <div class="filter-row match-filter-row" id="matchFilters" aria-label="Stato delle partite">
-   <button class="pill active" data-filter="upcoming" aria-pressed="true">In programma</button><button class="pill" data-filter="finished" aria-pressed="false">Risultati</button><button class="pill" data-filter="stale" aria-pressed="false">Da aggiornare</button><button class="pill" data-filter="all" aria-pressed="false">Tutte</button>
-  </div>
-  <a class="text-link match-standings-link" href="league.html">Classifica ↗</a>
- </div>
- <details class="match-filter-advanced">
-  <summary><span>Filtri avanzati</span><span class="filter-advanced-hint">Data, squadra, giornata e stagione</span></summary>
-  <div class="match-advanced-grid">
-   <div class="field"><label for="matchDate">Data</label><input id="matchDate" type="date"></div>
-   <div class="field"><label for="matchTeam">Squadra</label><select id="matchTeam"><option value="">Tutte le squadre</option></select></div>
-   <div class="field"><label for="matchRound">Giornata</label><select id="matchRound"><option value="">Tutte le giornate</option></select></div>
-   <div class="field"><label for="matchSeason">Stagione</label><select id="matchSeason"><option value="current">Corrente</option><option value="previous">Precedente</option></select></div>
-  </div>
-  <button class="ghost match-reset" id="clearMatchFilters" type="button">Azzera tutti i filtri</button>
- </details>
-</section>
-<div id="matchSlipActions" class="match-slip-dock" hidden aria-live="polite"><div><b><span id="matchSlipCount">0</span> selezioni in schedina</b><small>Tocca un esito per aggiungerlo o cambiarlo.</small></div><a class="button-like primary" href="./bets.html">Apri costruttore</a></div><p id="matchPickNotice" class="status-line" aria-live="polite"></p>
- <section class="section match-results-section"><div class="section-head"><div><h2 id="matchListTitle">In programma</h2><p id="matchListSummary">Partite disponibili nel calendario.</p></div></div><div id="matchList" class="fixture-list"><div class="loading-state">Caricamento…</div></div><div style="text-align:center;margin-top:12px"><button id="moreMatches" class="ghost" hidden>Carica altre partite</button></div></section><div class="status-line" id="globalStatus" aria-live="polite"></div><footer class="site-footer">MatchMind · Dati soggetti alla copertura delle fonti. Le analisi sono stime statistiche.</footer></main></body></html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0;url=./index.html#matchesSection">
+<title>MatchMind · Partite</title>
+<script>const target=new URL("./index.html",location.href);target.search=location.search;target.hash="matchesSection";location.replace(target.href);</script>
+</head>
+<body><p>Il calendario è ora nella <a href="./index.html#matchesSection">Home</a>.</p></body>
+</html>

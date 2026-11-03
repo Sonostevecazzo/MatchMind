@@ -56,6 +56,43 @@
     return null;
   }
 
+  let sisalSnapshotPromise = null;
+
+  async function sisalSnapshotQuote(row) {
+    if (!sisalSnapshotPromise) {
+      sisalSnapshotPromise = fetch("./sisal-quotes.json", { cache: "no-store" })
+        .then(response => {
+          if (!response.ok) throw new Error("Foglio quote Sisal non disponibile.");
+          return response.json();
+        })
+        .catch(error => {
+          sisalSnapshotPromise = null;
+          throw error;
+        });
+    }
+    const snapshot = await sisalSnapshotPromise;
+    const match = (snapshot.matches || []).find(item =>
+      item.date === row.match.date &&
+      window.MM.norm(item.home) === window.MM.norm(row.match.home) &&
+      window.MM.norm(item.away) === window.MM.norm(row.match.away)
+    );
+    if (!match || !match.odds) return null;
+    const marketKey = row.market.key;
+    const odd = Number(match.odds[marketKey]);
+    if (!Number.isFinite(odd) || odd <= 1) return null;
+    const sourceTime = Date.parse(snapshot.sourceLastModified || snapshot.checkedAt || "");
+    const checkedTime = Date.parse(snapshot.checkedAt || "");
+    return {
+      row,
+      quote: { odd, bookmaker: "Sisal" },
+      source: "Sisal · Foglio quote ufficiale (istantanea)",
+      updated: Number.isFinite(sourceTime) ? new Date(sourceTime).toISOString() : null,
+      checkedAt: Number.isFinite(checkedTime) ? new Date(checkedTime).toISOString() : null,
+      ageMinutes: Number.isFinite(sourceTime) ? Math.max(0, (Date.now() - sourceTime) / 60000) : null,
+      kind: "sisal-snapshot"
+    };
+  }
+
   async function refreshSisal(rowsToCheck, targetElement, actionButton, forceFresh) {
     const target = targetElement || $("sisalResults");
     const button = actionButton || $("refreshSisal");
@@ -68,6 +105,7 @@
     button.disabled = true;
     button.textContent = "Verifica in corso…";
     target.innerHTML = '<div class="loading-state">Controllo delle quote disponibili e del benchmark gratuito, senza API key…</div>';
+    if (forceFresh) sisalSnapshotPromise = null;
     const reports = [];
     for (const row of valid) {
       let report = null;
@@ -88,12 +126,19 @@
           const ageMinutes = updateTime === null ? null : Math.max(0, (Date.now() - updateTime) / 60000);
           report = {
             row, quote, source: context.oddsSource || "Sisal · PulseScore",
-            updated: updateTime === null ? "orario non comunicato" : new Date(updateTime).toLocaleString("it-IT"),
+            updated: updateTime === null ? null : new Date(updateTime).toISOString(),
             ageMinutes, kind: "bookmaker"
           };
         }
       } catch (_) {
         // Fall through to the public, keyless fair-odds feed.
+      }
+      if (!report) {
+        try {
+          report = await sisalSnapshotQuote(row);
+        } catch (_) {
+          // Keep the existing benchmark fallback when the published snapshot is unavailable.
+        }
       }
       if (!report && window.MatchMindTipsAudit && ["home", "draw", "away"].includes(row.market.key)) {
         try {
@@ -122,10 +167,10 @@
           // Keep the explicit unavailable state below; never invent a price.
         }
       }
-      if (!report && !["over25", "under25", "bttsYes", "bttsNo", "home", "draw", "away"].includes(row.market.key)) {
-        report = { row, error: "Le fonti collegate non coprono questo mercato. Al momento espongono 1X2, Gol/No Gol e Over/Under 2,5." };
+      if (!report && !["over15", "under15", "over25", "under25", "over35", "under35", "bttsYes", "bttsNo", "home", "draw", "away"].includes(row.market.key)) {
+        report = { row, error: "Il foglio ufficiale copre 1X2, Under/Over 1,5, 2,5 e 3,5, Gol e No Gol; il mercato non è presente in questa fotografia." };
       }
-      if (!report) report = { row, error: "Nessuna quota disponibile per questa partita e questo mercato. Il benchmark gratuito copre solo 1X2." };
+      if (!report) report = { row, error: "Nessuna quota disponibile per questa partita e questo mercato nelle fonti collegate." };
       reports.push(report);
     }
     target.innerHTML = reports.map(report => {
@@ -139,8 +184,10 @@
       const ev = actualSoft && report.row.sampleEnough && report.ageMinutes !== null &&
         report.ageMinutes <= freshnessLimit && Number.isFinite(report.quote.odd)
         ? probability * report.quote.odd - 1 : null;
-      const quoteLabel = report.kind === "fair-only" ? "Quota equa (margine rimosso)" :
+      const quoteLabel = report.kind === "sisal-snapshot" ? "Quota Sisal dal foglio pubblicato · non live" :
+        report.kind === "fair-only" ? "Quota equa (margine rimosso)" :
         report.kind === "best-soft" ? "Migliore quota bookmaker segnalata" : "Quota Sisal corrente";
+      const updatedLabel = report.kind === "sisal-snapshot" ? "PDF aggiornato " : "Aggiornato ";
       const fairLine = Number.isFinite(report.quote.fairOdds)
         ? '<br>Benchmark equo: ' + oddsText(report.quote.fairOdds) +
           (Number.isFinite(report.quote.fairProbability) ? ' (' + pct(report.quote.fairProbability) + ')' : '') : '';
@@ -148,13 +195,14 @@
         ? '<br>Differenza rispetto al fair: ' + (report.quote.priceGap >= 0 ? '+' : '') + pct(report.quote.priceGap) +
           ' · stato: ' + esc(report.quote.status || "non specificato") : '';
       return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' +
-        esc(report.source) + (report.updated ? ' · aggiornato ' + esc(new Date(report.updated).toLocaleString("it-IT")) : '') +
+        esc(report.source) + (report.updated ? ' · ' + updatedLabel + esc(new Date(report.updated).toLocaleString("it-IT")) : '') +
+        (report.checkedAt ? '<br>Estratto il ' + esc(new Date(report.checkedAt).toLocaleString("it-IT")) : '') +
         '<br>' + quoteLabel + ': ' + oddsText(report.quote.odd) + ' · ' + esc(report.quote.bookmaker || "—") +
         fairLine + gapLine +
         (report.row.odds ? '<br>Quota sulla schedina: ' + oddsText(report.row.odds) : '') +
         (ev === null ? '' : '<br>EV teorico esplorativo vs quota: ' + (ev >= 0 ? '+' : '') + pct(ev)) +
         '</small></span><b class="bet-percent">' + pct(probability) + '</b></div>';
-    }).join("") + '<div class="notice warning">TipsAudit fornisce quote eque 1X2 senza margine e, quando presente, il miglior prezzo soft rilevato: non è necessariamente Sisal né una quota garantita ancora giocabile. Le quote eque non sono prezzi bookmaker. Per Over/Under e Gol/No Gol serve una fonte specifica del mercato. L’EV è solo esplorativo e dipende dall’affidabilità del modello.</div><small class="helper-text">Fonte benchmark: <a href="https://tipsaudit.com/api" target="_blank" rel="noopener">TipsAudit API</a> · dati aggiornati periodicamente · nessuna chiave richiesta.</small>';
+    }).join("") + '<div class="notice warning">Il foglio quote Sisal è una fotografia pubblicata: può non corrispondere a una quota ancora disponibile e non è in tempo reale. PulseScore è preferito quando restituisce quote correnti. TipsAudit fornisce benchmark equi senza margine e, quando presente, prezzi soft che non sono necessariamente Sisal. Le quote eque non sono prezzi bookmaker; il PDF Sisal non viene usato per stimare l’EV.</div><small class="helper-text">Fonte Sisal: <a href="https://www.sisal.it/scommesse-matchpoint/foglio-quote" target="_blank" rel="noopener">Foglio quote ufficiale</a> · aggiornato secondo la pubblicazione del PDF. Benchmark: <a href="https://tipsaudit.com/api" target="_blank" rel="noopener">TipsAudit API</a>.</small>';
     button.disabled = false;
     button.textContent = idleText;
   }
