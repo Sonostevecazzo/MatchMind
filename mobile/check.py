@@ -22,8 +22,11 @@ for name in required_pages:
     html = page.read_text(encoding="utf-8")
     assert '<html lang="it">' in html, f"{name} must declare Italian language"
     assert "site-core.js" in html, f"{name} must use shared navigation"
+    assert "mobile-readable.css" in html, f"{name} must load the dedicated mobile typography layer"
     if name == "bets.html":
         assert "bets-engine.js" in html and "bets.js" in html, "Bet checker must load its engine and controller"
+        assert re.search(r'<input id="slipImage"[^>]*accept="image/\\*"[^>]*hidden>', html), "Screenshot picker must accept gallery images"
+        assert not re.search(r'<input id="slipImage"[^>]*capture=', html), "Screenshot picker must not force the camera"
     else:
         assert "site-pages.js" in html, f"{name} must use the shared page controller"
 
