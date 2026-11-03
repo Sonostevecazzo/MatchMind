@@ -144,7 +144,7 @@
             ? Date.parse(context.oddsUpdatedAt) : null;
           const ageMinutes = updateTime === null ? null : Math.max(0, (Date.now() - updateTime) / 60000);
           report = {
-            row, quote, source: context.oddsSource || "Sisal · OddsPapi",
+            row, quote, source: context.oddsSource || "Sisal · PulseScore",
             updated: updateTime === null ? "orario non comunicato" : new Date(updateTime).toLocaleString("it-IT"),
             ageMinutes, kind: "bookmaker"
           };
