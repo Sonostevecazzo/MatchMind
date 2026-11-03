@@ -170,7 +170,8 @@
               },
               source: "TipsAudit · quote eque 1X2",
               updated: prediction.generated_at || prediction.fair_read_at || null,
-              ageMinutes: null,
+              ageMinutes: Number.isFinite(Date.parse(prediction.generated_at || prediction.fair_read_at || ""))
+                ? Math.max(0, (Date.now() - Date.parse(prediction.generated_at || prediction.fair_read_at)) / 60000) : null,
               kind: benchmark.softOdds ? "best-soft" : "fair-only"
             };
           }
@@ -188,7 +189,9 @@
       }
       const probability = report.row.probability;
       const actualSoft = report.kind === "best-soft" || report.kind === "bookmaker";
-      const ev = actualSoft && report.row.sampleEnough && Number.isFinite(report.quote.odd)
+      const freshnessLimit = report.kind === "bookmaker" ? 120 : 90;
+      const ev = actualSoft && report.row.sampleEnough && report.ageMinutes !== null &&
+        report.ageMinutes <= freshnessLimit && Number.isFinite(report.quote.odd)
         ? probability * report.quote.odd - 1 : null;
       const quoteLabel = report.kind === "fair-only" ? "Quota equa (margine rimosso)" :
         report.kind === "best-soft" ? "Migliore quota bookmaker segnalata" : "Quota Sisal corrente";
