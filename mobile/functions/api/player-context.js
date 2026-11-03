@@ -1062,7 +1062,8 @@ export async function onRequestGet(context) {
         error: apiFootballConfigured || pulseScoreConfigured || footballDataConfigured || theOddsApiConfigured ? null : "API_FOOTBALL_KEY, PULSESCORE_API_KEY, FOOTBALL_DATA_API_KEY o THE_ODDS_API_KEY non configurate. Calendario e storico pubblici restano disponibili.",
         providers: {
           apiFootball: apiFootballConfigured,
-          sisalOdds: pulseScoreConfigured,\n          pulseScore: pulseScoreConfigured,
+          sisalOdds: pulseScoreConfigured,
+          pulseScore: pulseScoreConfigured,
           footballData: footballDataConfigured,
           theOddsApi: theOddsApiConfigured
         }
