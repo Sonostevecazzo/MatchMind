@@ -64,17 +64,17 @@
         ? '<button type="button" class="secondary" data-fix="' + index + '">Proponi ' + esc(strongest.label) + " (" + pct(strongest.probability) + ')</button>'
         : "";
       return '<article class="player-item">' +
-        '<div class="player-item-head"><span><b>' + esc(row.match.home) + " – " + esc(row.match.away) + '</b><br><small>' + esc(row.match.date || "") + (row.match.time ? " · " + esc(row.match.time) : "") + '</small></span><b>' + pct(row.ok ? row.probability : NaN) + '</b></div>' +
+        '<div class="player-item-head"><span><b>' + esc(row.match.home) + " – " + esc(row.match.away) + '</b><br><small>' + esc(row.match.date || "") + (row.match.time ? " · " + esc(row.match.time) : "") + '</small></span><b class="bet-percent">'+ pct(row.ok ? row.probability : NaN) + '</b></div>' +
         '<div class="field"><label for="market-' + index + '">Selezione / correzione mercato</label><select id="market-' + index + '" data-market="' + index + '">' + options + '</select></div>' +
         '<div class="data-row"><span>Quota inserita</span><b>' + oddsText(row.odds) + '</b></div>' +
-        '<div class="data-row"><span>Probabilità di pareggio quota</span><b>' + pct(row.odds ? 1 / row.odds : NaN) + '</b></div>' +
+        '<div class="data-row"><span>Probabilità di pareggio quota</span><b class="bet-percent">'+ pct(row.odds ? 1 / row.odds : NaN) + '</b></div>' +
         '<div class="data-row"><span>Campione storico</span><b>' + (row.ok ? (row.sampleEnough ? "Adeguato" : "Insufficiente") : "Da verificare") + '</b></div>' +
         (row.reason ? '<div class="notice warning">' + esc(row.reason) + '</div>' : "") +
         (suggestion ? '<div style="margin-top:9px">' + suggestion + '</div>' : "") +
         '</article>';
     }).join("");
     const summary = combined.available
-      ? '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA SCHEDINA</span><b>' + pct(combined.probability) + '</b><small>' + esc(combined.assumption) + '</small></div>'
+      ? '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA SCHEDINA</span><b class="bet-percent bet-percent-total">'+ pct(combined.probability) + '</b><small>' + esc(combined.assumption) + '</small></div>'
       : '<div class="notice warning">' + esc(combined.reason) + '</div>';
     target.innerHTML = summary + cards;
   }
@@ -239,8 +239,8 @@
       ok: true, match: item.match, market: { key: item.marketKey, label: item.market },
       probability: item.probability, sampleEnough: true, odds: null
     }));
-    target.innerHTML = '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA COMBINAZIONE</span><b>' + pct(result.probability) + '</b><small>Obiettivo minimo: ' + pct(result.threshold) + ' · ' + result.selections.length + (result.selections.length === 1 ? ' selezione' : ' selezioni') + '</small></div>' +
-      result.selections.map(item => '<div class="data-row"><span><b>' + esc(item.match.home) + " – " + esc(item.match.away) + '</b><small style="display:block;color:#8c9aa8">' + esc(item.match.date) + ' · ' + esc(item.market) + '</small></span><b>' + pct(item.probability) + '</b></div>').join("") +
+    target.innerHTML = '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA COMBINAZIONE</span><b class="bet-percent bet-percent-total">'+ pct(result.probability) + '</b><small>Obiettivo minimo: ' + pct(result.threshold) + ' · ' + result.selections.length + (result.selections.length === 1 ? ' selezione' : ' selezioni') + '</small></div>' +
+      result.selections.map(item => '<div class="data-row"><span><b>' + esc(item.match.home) + " – " + esc(item.match.away) + '</b><small style="display:block;color:#8c9aa8">' + esc(item.match.date) + ' · ' + esc(item.market) + '</small></span><b class="bet-percent">' + pct(item.probability) + '</b></div>').join("") +
       '<div class="settings-actions"><button id="refreshSuggestedSisal" type="button" class="secondary" data-idle-text="Verifica quote della proposta">Verifica quote della proposta</button></div><div id="suggestedOdds" style="margin-top:10px"></div>' +
       '<div class="notice warning">' + esc(result.assumption) + " " + esc(result.warning) + '</div>';
   }
