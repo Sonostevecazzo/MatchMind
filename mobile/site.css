@@ -951,3 +951,5 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .mobile-nav .nav-item{font-size:10px!important}
  .home-page .stat-cell span{font-size:10px!important}
 }
+
+.competition-picker{max-width:260px;margin-top:12px}.competition-picker label{display:block;margin-bottom:5px}.competition-picker select{width:100%}

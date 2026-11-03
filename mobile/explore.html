@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090d11"><meta name="description" content="MatchMind · Club, giocatori e strumenti Serie A">
+<meta name="theme-color" content="#090d11"><meta name="description" content="MatchMind · Competizioni e squadre">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css">
 <link rel="stylesheet" href="./mobile-readable.css?v=20261103-0117">
 <link rel="stylesheet" href="./mobile-readable.css?v=20261103-0117">
@@ -13,15 +13,15 @@
 <main class="page-wrap">
  <div class="page-intro"><div class="eyebrow">MATCHMIND / ESPLORA</div><h1 id="pageTitle">Altro</h1><p id="pageSubtitle">Club, giocatori, schedine e configurazione.</p></div>
  <section class="section">
-  <div class="section-head"><div><h2>Competizione</h2><p>MatchMind è concentrato sulla Serie A.</p></div></div>
+  <div class="section-head"><div><h2>Competizione</h2><p>Scegli Serie A o Champions League dal selettore.</p></div></div>
   <a class="panel competition-entry" href="league.html" style="display:flex;align-items:center;gap:13px;padding:15px">
-   <span class="competition-badge"><img class="competition-logo" src="https://media.api-sports.io/football/leagues/135.png" alt="Logo Serie A" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.remove()"><span class="competition-fallback">A</span></span>
-   <span style="flex:1;min-width:0"><b style="display:block;font-size:13px">Serie A · Italia</b><small style="color:#9aa6ad;font-size:9px">Classifica, calendario e statistiche</small></span>
+   <span class="competition-badge"><img class="competition-logo" id="exploreCompetitionLogo" src="https://media.api-sports.io/football/leagues/135.png" alt="Logo competizione" loading="lazy" onload="this.nextElementSibling.hidden=true" onerror="this.remove()"><span class="competition-fallback">A</span></span>
+   <span style="flex:1;min-width:0"><b id="exploreCompetitionName" style="display:block;font-size:13px">Serie A · Italia</b><small style="color:#9aa6ad;font-size:9px">Classifica, calendario e statistiche</small></span>
    <span aria-hidden="true" style="color:var(--mint)">↗</span>
   </a>
  </section>
  <section class="section">
-  <div class="section-head"><div><h2>Squadre Serie A</h2><p>Apri il profilo di un club o salvalo tra i preferiti.</p></div></div>
+  <div class="section-head"><div><h2 id="exploreTeamsTitle">Squadre</h2><p>Apri il profilo di una squadra o salvala tra i preferiti.</p></div></div>
   <div class="field" style="margin-bottom:10px"><label for="teamSearch">Cerca squadra</label><input id="teamSearch" type="search" placeholder="Es. Inter, Milan, Roma…"></div>
   <div id="teamDirectory" class="team-grid"><div class="loading-state">Caricamento squadre…</div></div>
  </section>
@@ -35,7 +35,7 @@
   </div>
  </section>
  <div class="status-line" id="globalStatus" aria-live="polite"></div>
- <footer class="site-footer">MatchMind · Serie A Intelligence.</footer>
+ <footer class="site-footer">MatchMind · Football Intelligence.</footer>
 </main>
 </body>
 </html>
