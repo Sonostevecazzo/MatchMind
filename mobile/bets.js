@@ -6,7 +6,6 @@
   let data = null;
   let suggestedSelections = [];
   let manualFixtures = [];
-  let manualVisibleCount = 24;
   const manualSelections = new Map();
   const MANUAL_SELECTIONS_KEY = "matchmind-manual-selections-v1";
 
@@ -239,7 +238,7 @@
     const rows = manualRows();
     const maxLegs = getMaxLegs();
     const overLimit = rows.length > maxLegs;
-    let summary = '<div class="empty-state">Scegli 1, X o 2 per una partita. Gli altri mercati sono sotto “Altri mercati”.</div>';
+    let summary = '<div class="empty-state">Vai in Partite e scegli un esito: le selezioni e la probabilità della schedina compariranno qui.</div>';
     if (rows.length) {
       const hasAllProbabilities = rows.every(row => Number.isFinite(row.probability) && row.probability >= 0 && row.probability <= 1);
       const combined = hasAllProbabilities ? rows.reduce((total, row) => total * row.probability, 1) : null;
@@ -265,45 +264,6 @@
   }
 
   function renderManualBuilder() {
-    const target = $("manualFixtureList");
-    if (!target) return;
-    if (!data) {
-      target.innerHTML = '<div class="empty-state">Carico calendario e storico…</div>';
-      return;
-    }
-    if (!manualFixtures.length) {
-      target.innerHTML = '<div class="empty-state">Non ci sono partite future per la competizione selezionata.</div>';
-      $("manualLoadMore").hidden = true;
-      renderManualSummary();
-      return;
-    }
-    const openMarkets = new Set(Array.from(target.querySelectorAll("details[open]")).map(item => item.dataset.manualMarkets));
-    target.innerHTML = manualFixtures.slice(0, manualVisibleCount).map((match, index) => {
-      const fixtureKey = manualFixtureId(match);
-      const selected = manualSelections.get(fixtureKey);
-      const forecast = window.MM.forecast(match, data.history);
-      const markets = marketChoices().map(([key, label]) => ({
-        key, label, probability: engine().marketProbability(forecast, key)
-      }));
-      const primary = markets.filter(item => ["home", "draw", "away"].includes(item.key));
-      const extras = markets.filter(item => !["home", "draw", "away"].includes(item.key));
-      const sample = forecast.sampleEnough ? 'Campione storico adeguato' :
-        'Stima disponibile con campione storico limitato' +
-        (Number.isFinite(Number(forecast.historyCount)) ? ' (' + Number(forecast.historyCount) + ' risultati)' : '');
-      return '<article class="manual-fixture-card"><div class="manual-fixture-heading"><span><b>' +
-        esc(match.home + ' – ' + match.away) + '</b><small>' + esc(match.date + (match.time ? ' · ' + match.time : '')) +
-        '</small></span>' + (selected ? '<span class="manual-picked-label">Selezionata</span>' : '') + '</div>' +
-        '<div class="manual-market-grid manual-1x2-grid">' +
-        primary.map(item => manualMarketButton(index, item, selected && selected.market.key)).join('') +
-        '</div><details class="manual-other-markets" data-manual-markets="' + index + '"' +
-        (openMarkets.has(String(index)) ? ' open' : '') + '><summary>Altri mercati</summary>' +
-        '<div class="manual-market-grid manual-other-market-grid">' +
-        extras.map(item => manualMarketButton(index, item, selected && selected.market.key)).join('') +
-        '</div></details><small class="manual-sample-note">' + esc(sample) + '</small></article>';
-    }).join('');
-    const moreButton = $("manualLoadMore");
-    moreButton.hidden = manualVisibleCount >= manualFixtures.length;
-    moreButton.textContent = 'Carica altre partite (' + Math.min(24, manualFixtures.length - manualVisibleCount) + ')';
     renderManualSummary();
   }
 
@@ -355,7 +315,6 @@
       .filter(window.MM.upcoming)
       .slice()
       .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
-    manualVisibleCount = Math.min(24, manualFixtures.length);
     restoreManualSelections();
     const maxInput = $("maxLegs");
     if (maxInput && manualSelections.size > getMaxLegs()) maxInput.value = String(manualSelections.size);
@@ -371,39 +330,6 @@
     const buildButton = $("buildTicket");
     const quoteButton = $("refreshSisal");
     $("globalStatus").textContent = "Carico calendario e risultati storici…";
-
-    $("manualFixtureList").addEventListener("click", event => {
-      const button = event.target.closest("[data-manual-market]");
-      if (!button || $("manualOdds").dataset.busy === "true") return;
-      const match = manualFixtures[Number(button.dataset.manualMatch)];
-      const market = marketChoices().find(item => item[0] === button.dataset.manualMarket);
-      if (!match || !market) return;
-      const fixtureKey = manualFixtureId(match);
-      const current = manualSelections.get(fixtureKey);
-      if (current && current.market.key === market[0]) {
-        manualSelections.delete(fixtureKey);
-      } else {
-        if (!current && manualSelections.size >= getMaxLegs()) {
-          $("manualBuilderStatus").textContent = "Hai raggiunto il massimo di " + getMaxLegs() + " eventi. Aumenta il limite o rimuovi una selezione.";
-          return;
-        }
-        const forecast = window.MM.forecast(match, data.history);
-        const probability = engine().marketProbability(forecast, market[0]);
-        if (!Number.isFinite(probability)) return;
-        manualSelections.set(fixtureKey, {
-          ok: true, match,
-          market: { key: market[0], label: market[1] },
-          probability,
-          sampleEnough: Boolean(forecast.sampleEnough),
-          historyCount: Number(forecast.historyCount || 0),
-          odds: null
-        });
-      }
-      persistManualSelections();
-      $("manualBuilderStatus").textContent = "";
-      clearManualOdds();
-      renderManualBuilder();
-    });
 
     $("manualSlipSummary").addEventListener("click", async event => {
       const remove = event.target.closest("[data-remove-manual]");
@@ -434,10 +360,6 @@
       }
     });
 
-    $("manualLoadMore").addEventListener("click", () => {
-      manualVisibleCount = Math.min(manualVisibleCount + 24, manualFixtures.length);
-      renderManualBuilder();
-    });
     $("maxLegs").addEventListener("change", () => {
       $("maxLegs").value = String(getMaxLegs());
       clearManualOdds();
@@ -478,7 +400,7 @@
       if (manualRows().length) clearManualOdds();
     } catch (error) {
       $("globalStatus").textContent = "Dati non disponibili: " + (error.message || "errore sconosciuto");
-      $("manualFixtureList").innerHTML = '<div class="notice warning">Non è stato possibile caricare calendario e storico. Riprova tra poco.</div>';
+      $("manualBuilderStatus").textContent = "Non è stato possibile caricare calendario e storico. Riprova tra poco."; 
       $("ticketResults").innerHTML = '<div class="notice warning">Non è stato possibile caricare calendario e storico. Premi “Genera proposta automatica” per riprovare.</div>';
     }
   });
