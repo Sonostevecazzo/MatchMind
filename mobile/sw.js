@@ -1,8 +1,8 @@
-const CACHE='matchmind-pwa-v33-20261103-bet-ui';
+const CACHE='matchmind-pwa-v34-20261103-keyless-odds';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
- './site.css','./mobile-readable.css','./site-core.js','./site-pages.js','./bets-engine.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
+ './site.css','./mobile-readable.css','./site-core.js','./site-pages.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
 ];
 
 self.addEventListener('install',event=>{
