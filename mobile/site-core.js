@@ -124,7 +124,40 @@
     });
     return dataPromise;
   }
-  const sameTeam=(a,b)=>{const x=norm(a),y=norm(b);if(!x||!y)return false;if(x===y||(Math.min(x.length,y.length)>=5&&(x.includes(y)||y.includes(x))))return true;const groups=[['inter','internazionale','intermilan'],['milan','acmilan'],['verona','hellasverona'],['roma','asroma'],['lazio','sslazio'],['juventus','juve'],['napoli','sscnapoli'],['fiorentina','acffiorentina'],['sassuolo','ussassuolo'],['cagliari','cagliaricalcio'],['udinese','udinesecalcio'],['torino','torinofc'],['genoa','genoacfc'],['parma','parmacalcio'],['lecce','uslecce'],['pisa','pisasc']];return groups.some(g=>g.includes(x)&&g.includes(y));};
+  const TEAM_ALIASES=[
+    ['inter','internazionale','intermilan','internazionalemilano'],
+    ['milan','acmilan','acmilan1899'],
+    ['verona','hellasverona','hellasveronafc'],
+    ['roma','asroma','asromafc'],
+    ['lazio','sslazio'],
+    ['juventus','juve','juventusfc'],
+    ['napoli','sscnapoli'],
+    ['fiorentina','acffiorentina'],
+    ['sassuolo','ussassuolo'],
+    ['cagliari','cagliaricalcio'],
+    ['udinese','udinesecalcio'],
+    ['torino','torinofc','torinofc1906'],
+    ['genoa','genoacfc','genoacfc1893'],
+    ['parma','parmacalcio','parmacalcio1913'],
+    ['lecce','uslecce'],
+    ['pisa','pisasc','pisasportingclub'],
+    ['atalanta','atalantabc','atalantabergamasca','atalantabergamascacalcio'],
+    ['bologna','bolognafc','bolognafc1909'],
+    ['como','como1907'],
+    ['cremonese','uscremonese'],
+    ['empoli','empolifc','empolifc1920'],
+    ['monza','acmonza','monza1912'],
+    ['venezia','veneziafc'],
+    ['sampdoria','ucsampdoria'],
+    ['frosinone','frosinonecalcio'],
+    ['salernitana','ussalernitana1919']
+  ];
+  const sameTeam=(a,b)=>{
+    const x=norm(a),y=norm(b);
+    if(!x||!y)return false;
+    if(x===y)return true;
+    return TEAM_ALIASES.some(group=>group.includes(x)&&group.includes(y));
+  };
   const hasScore=m=>m&&m.hg!==null&&m.hg!==undefined&&m.ag!==null&&m.ag!==undefined&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag));
   const dateLabel=m=>{if(!m||!m.date)return 'Data da definire';const d=new Date(m.date+'T12:00:00');return d.toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long'})+(m.time?' · '+m.time:'');};
   const shortDate=m=>{if(!m||!m.date)return 'Data da definire';return new Date(m.date+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});};
@@ -146,13 +179,12 @@
   }
   function poisson(l,g){if(l<=0)return g===0?1:0;let p=Math.exp(-l);for(let i=1;i<=g;i++)p*=l/i;return p;}
   function probs(lh,la){let h=0,d=0,a=0,btts=0,o15=0,o25=0,o35=0,total=0;for(let x=0;x<=30;x++)for(let y=0;y<=30;y++){const p=poisson(lh,x)*poisson(la,y);total+=p;if(x>y)h+=p;else if(x===y)d+=p;else a+=p;if(x>0&&y>0)btts+=p;if(x+y>=2)o15+=p;if(x+y>=3)o25+=p;if(x+y>=4)o35+=p;}return{home:h/total,draw:d/total,away:a/total,btts:btts/total,o15:o15/total,o25:o25/total,o35:o35/total};}
-  function teamStats(team,rows){const k=norm(team),list=rows.filter(m=>hasScore(m)&&(norm(m.home)===k||norm(m.away)===k)).sort((a,b)=>a.date.localeCompare(b.date)).slice(-10);if(!list.length)return{played:0,for:1.25,against:1.25,form:[]};let gf=0,ga=0;for(const m of list){const home=norm(m.home)===k;gf+=home?Number(m.hg):Number(m.ag);ga+=home?Number(m.ag):Number(m.hg);}return{played:list.length,for:gf/list.length,against:ga/list.length,form:list.slice(-5).map(m=>{const x=Number(m.hg),y=Number(m.ag),home=norm(m.home)===k;return(home?x>y:y>x)?'W':x===y?'D':'L';})};}
+  function teamStats(team,rows){const list=(rows||[]).filter(m=>hasScore(m)&&(sameTeam(m.home,team)||sameTeam(m.away,team))).sort((a,b)=>a.date.localeCompare(b.date)).slice(-10);if(!list.length)return{played:0,for:1.25,against:1.25,form:[]};let gf=0,ga=0;const isHome=m=>sameTeam(m.home,team);for(const m of list){const home=isHome(m);gf+=home?Number(m.hg):Number(m.ag);ga+=home?Number(m.ag):Number(m.hg);}return{played:list.length,for:gf/list.length,against:ga/list.length,form:list.slice(-5).map(m=>{const x=Number(m.hg),y=Number(m.ag),home=isHome(m);return(home?x>y:y>x)?'W':x===y?'D':'L';})};}
   function forecast(match,history){const hist=history.filter(x=>hasScore(x)&&x.date<match.date);const league=hist.length?hist.reduce((s,x)=>s+Number(x.hg),0)/hist.length:1.35;const awayLeague=hist.length?hist.reduce((s,x)=>s+Number(x.ag),0)/hist.length:1.1;const h=teamStats(match.home,hist),a=teamStats(match.away,hist);const homeXg=Math.max(.15,Math.min(4.5,league*((h.for+.7)/(league+.7))*((a.against+.7)/(awayLeague+.7))*1.06));const awayXg=Math.max(.15,Math.min(4.5,awayLeague*((a.for+.7)/(awayLeague+.7))*((h.against+.7)/(league+.7))));const dates=hist.map(m=>m.date).filter(Boolean).sort();const scoreMatrix=[];let matrixMass=0;for(let homeGoals=0;homeGoals<=5;homeGoals++)for(let awayGoals=0;awayGoals<=5;awayGoals++){const probability=poisson(homeXg,homeGoals)*poisson(awayXg,awayGoals);matrixMass+=probability;scoreMatrix.push({homeGoals,awayGoals,probability});}return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates.at(-1)||null,home:h,away:a,homeXg,awayXg,probabilities:probs(homeXg,awayXg),scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:h.played>=10&&a.played>=10};}
   function eventForecast(match,history){
     const before=String(match&&match.date||'');
     const samples=(team,venue,field,max=8)=>{
-      const k=norm(team);
-      const values=(history||[]).filter(m=>hasScore(m)&&m.date&&m.date<before&&norm(m[venue])===k&&Number.isFinite(m[field])&&m[field]>=0&&m[field]<=40)
+      const values=(history||[]).filter(m=>hasScore(m)&&m.date&&m.date<before&&sameTeam(m[venue],team)&&Number.isFinite(m[field])&&m[field]>=0&&m[field]<=40)
         .sort((a,b)=>a.date.localeCompare(b.date)).slice(-max).map(m=>m[field]);
       return {count:values.length,mean:values.length?values.reduce((sum,value)=>sum+value,0)/values.length:null};
     };

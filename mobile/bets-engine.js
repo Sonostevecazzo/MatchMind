@@ -20,6 +20,18 @@
     { key: "bttsYes", label: "Gol", re: /(?:both\s+teams\s+to\s+score|\bbtts\b|\bgol\b)/i }
   ];
 
+  const BET_MARKETS = [
+    ["over15", "Over 1,5"], ["under15", "Under 1,5"],
+    ["over25", "Over 2,5"], ["under25", "Under 2,5"],
+    ["over35", "Over 3,5"], ["under35", "Under 3,5"],
+    ["bttsYes", "Gol"], ["bttsNo", "No Gol"],
+    ["home", "1"], ["draw", "X"], ["away", "2"]
+  ];
+
+  function marketChoices() {
+    return BET_MARKETS.map(([key, label]) => [key, label]);
+  }
+
   function matchFixture(text, fixtures, isUpcoming) {
     const haystack = normalize(text);
     const eligible = (fixtures || []).filter(match => !isUpcoming || isUpcoming(match));
@@ -113,12 +125,19 @@
   }
 
   function combineSelections(selections) {
-    const rows = selections || [];
+    const rows = Array.isArray(selections) ? selections : [];
     if (!rows.length) return { available: false, reason: "Nessuna selezione valida." };
-    if (rows.some(row => !row.ok || !row.sampleEnough || !Number.isFinite(row.probability))) {
-      return { available: false, reason: "Non tutte le selezioni hanno dati e campione sufficienti." };
+    if (rows.some(row => !row || !row.ok || !row.sampleEnough ||
+        !Number.isFinite(row.probability) || row.probability < 0 || row.probability > 1)) {
+      return { available: false, reason: "Non tutte le selezioni hanno probabilità e campione sufficienti." };
     }
-    const ids = rows.map(row => normalize(row.match && row.match.home) + "|" + normalize(row.match && row.match.away) + "|" + (row.match && row.match.date || ""));
+    if (rows.some(row => !row.match || !row.match.home || !row.match.away || !row.match.date)) {
+      return { available: false, reason: "Una o più selezioni non sono associate a una partita valida." };
+    }
+    const ids = rows.map(row => {
+      const teams = [normalize(row.match.home), normalize(row.match.away)].sort();
+      return teams.join("|") + "|" + row.match.date;
+    });
     if (new Set(ids).size !== ids.length) {
       return { available: false, reason: "Sono presenti più selezioni sulla stessa partita: la probabilità congiunta richiede un modello di correlazione." };
     }
@@ -131,30 +150,67 @@
 
   function buildTicket(fixtures, forecastFn, threshold, options) {
     const target = Number(threshold);
-    const maxLegs = Math.max(1, Math.min(8, Number(options && options.maxLegs) || 5));
+    const requestedMaxLegs = Number(options && options.maxLegs);
+    const maxLegs = Number.isFinite(requestedMaxLegs) && requestedMaxLegs > 0
+      ? Math.max(1, Math.min(8, Math.floor(requestedMaxLegs))) : 5;
     if (!Number.isFinite(target) || target <= 0 || target > 1) {
       return { available: false, reason: "Soglia probabilistica non valida." };
     }
+    if (typeof forecastFn !== "function") {
+      return { available: false, reason: "Modello probabilistico non disponibile." };
+    }
 
-    const markets = [
-      ["over25", "Over 2,5"], ["under25", "Under 2,5"],
-      ["bttsYes", "Gol"], ["bttsNo", "No Gol"],
-      ["home", "1"], ["draw", "X"], ["away", "2"]
-    ];
+    const uniqueFixtures = [];
+    const seen = new Set();
+    for (const match of Array.isArray(fixtures) ? fixtures : []) {
+      if (!match || !match.home || !match.away || !match.date) continue;
+      const id = [normalize(match.home), normalize(match.away)].sort().join("|") + "|" + match.date;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      uniqueFixtures.push(match);
+    }
+    if (!uniqueFixtures.length) {
+      return {
+        available: false,
+        reason: "Non ci sono partite future nella giornata selezionata.",
+        eligibleFixtures: 0,
+        upcomingFixtures: 0,
+        threshold: target
+      };
+    }
+
     const candidates = [];
-    for (const match of fixtures || []) {
-      const forecast = forecastFn(match);
+    for (const match of uniqueFixtures) {
+      let forecast;
+      try {
+        forecast = forecastFn(match);
+      } catch (_) {
+        continue;
+      }
       if (!forecast || !forecast.sampleEnough) continue;
       let best = null;
-      for (const [key, label] of markets) {
+      for (const [key, label] of BET_MARKETS) {
         const probability = marketProbability(forecast, key);
         if (probability === null) continue;
-        if (!best || probability > best.probability) best = { match, market: label, marketKey: key, probability };
+        if (!best || probability > best.probability) {
+          best = { match, market: label, marketKey: key, probability, historyCount: forecast.historyCount || 0 };
+        }
       }
       if (best) candidates.push(best);
     }
 
-    candidates.sort((a, b) => b.probability - a.probability);
+    candidates.sort((a, b) => b.probability - a.probability ||
+      String(a.match.date).localeCompare(String(b.match.date)));
+    if (!candidates.length) {
+      return {
+        available: false,
+        reason: "Le partite ci sono, ma lo storico non raggiunge il campione minimo (10 risultati per squadra). Aggiorna i dati storici e riprova.",
+        eligibleFixtures: 0,
+        upcomingFixtures: uniqueFixtures.length,
+        threshold: target
+      };
+    }
+
     const chosen = [];
     let joint = 1;
     for (const candidate of candidates) {
@@ -167,16 +223,22 @@
     if (!chosen.length) {
       return {
         available: false,
-        reason: "Nessuna selezione con campione sufficiente raggiunge la soglia richiesta. Nessuna schedina proposta.",
-        eligibleFixtures: candidates.length
+        reason: "La soglia minima richiesta non è raggiungibile con i dati disponibili.",
+        eligibleFixtures: candidates.length,
+        upcomingFixtures: uniqueFixtures.length,
+        bestSelection: candidates[0],
+        bestProbability: candidates[0].probability,
+        threshold: target
       };
     }
     return {
       available: true, selections: chosen, probability: joint, threshold: target,
+      eligibleFixtures: candidates.length,
+      upcomingFixtures: uniqueFixtures.length,
       assumption: "Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.",
-      warning: "Il modello non è una garanzia e non dimostra redditività. La combinazione va confrontata con quote Sisal aggiornate."
+      warning: "Il modello non è una garanzia e non dimostra redditività. La combinazione va confrontata con quote aggiornate."
     };
   }
 
-  return { normalize, matchFixture, parseMarket, marketProbability, readOdds, parseSlip, combineSelections, buildTicket };
+  return { normalize, matchFixture, parseMarket, marketProbability, readOdds, parseSlip, combineSelections, buildTicket, marketChoices };
 });
