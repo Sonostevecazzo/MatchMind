@@ -217,52 +217,50 @@
   });
  }
  async function initSettings(){
-  const providers=[
-   {id:'apiFootball',input:'apiFootballKey',storage:'matchmind-api-football-session-key',save:'saveSessionKey',test:'testSessionKey',clear:'clearSessionKey',status:'settingsProviderStatus',url:'type=status'},
-   {id:'oddsPapi',input:'oddsPapiKey',storage:'matchmind-oddspapi-session-key',save:'saveOddsPapiKey',test:'testOddsPapiKey',clear:'clearOddsPapiKey',status:'oddsPapiStatus',url:'type=test-oddspapi'}
-  ];
-  const read=p=>{try{return sessionStorage.getItem(p.storage)||''}catch{return ''}};
-  const headers=()=>{const h={Accept:'application/json'};providers.forEach(p=>{const v=read(p);if(v)h[p.id==='apiFootball'?'X-MatchMind-API-Key':'X-MatchMind-OddsPapi-Key']=v;});return h;};
+  const provider={id:'apiFootball',input:'apiFootballKey',storage:'matchmind-api-football-session-key',save:'saveSessionKey',test:'testSessionKey',clear:'clearSessionKey',status:'settingsProviderStatus',url:'type=status'};
+  const read=()=>{try{return sessionStorage.getItem(provider.storage)||''}catch{return ''}};
+  const headers=()=>{const h={Accept:'application/json'};const v=read();if(v)h['X-MatchMind-API-Key']=v;return h;};
   const clearCache=()=>{try{localStorage.removeItem('matchmind-player-cache-v1')}catch{}};
-  async function verify(p){
-   const status=$(p.status);if(!status)return;
+  async function verify(){
+   const status=$(provider.status);if(!status)return;
    status.innerHTML='<div class="loading-state">Verifica della connessione…</div>';
    try{
-    const res=await fetch('./api/player-context?'+p.url,{headers:headers(),cache:'no-store'}),d=await res.json();
+    const res=await fetch('./api/player-context?'+provider.url,{headers:headers(),cache:'no-store'}),d=await res.json();
     if(!res.ok||d.configured===false||d.error)throw new Error(d.error||'Il provider non ha confermato la connessione.');
-    if(p.id==='apiFootball'){
-     const usage=d.apiFootballUsage;
-     if(!d.providers?.apiFootball||!usage?.available)throw new Error('API-Football non ha confermato la chiave o la disponibilità del piano.');
-     status.innerHTML='<div class="notice good">Connessione verificata · '+esc(usage.plan||'Piano attivo')+' · '+fmt(usage.remaining)+' richieste residue oggi.</div>';
-     const box=$('settingsApiUsage');if(box)box.innerHTML='<div class="data-row"><span>Consumo giornaliero</span><b>'+fmt(usage.current)+' / '+fmt(usage.limitDay)+'</b></div><div class="data-row"><span>Residue</span><b>'+fmt(usage.remaining)+'</b></div>';
-    }else{
-     if(!d.providers?.sisalOdds)throw new Error('Connessione valida, ma quote Sisal non disponibili per questa chiave o questo piano.');
-     status.innerHTML='<div class="notice good">Connessione verificata · disponibilità quote Sisal soggetta a partita e mercato.</div>';
-    }
-   }catch(e){status.innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';if(p.id==='apiFootball'&&$('settingsApiUsage'))$('settingsApiUsage').innerHTML='';}
+    const usage=d.apiFootballUsage;
+    if(!d.providers?.apiFootball||!usage?.available)throw new Error('API-Football non ha confermato la chiave o la disponibilità del piano.');
+    status.innerHTML='<div class="notice good">Connessione verificata · '+esc(usage.plan||'Piano attivo')+' · '+fmt(usage.remaining)+' richieste residue oggi.</div>';
+    const box=$('settingsApiUsage');if(box)box.innerHTML='<div class="data-row"><span>Consumo giornaliero</span><b>'+fmt(usage.current)+' / '+fmt(usage.limitDay)+'</b></div><div class="data-row"><span>Residue</span><b>'+fmt(usage.remaining)+'</b></div>';
+   }catch(e){status.innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';if($('settingsApiUsage'))$('settingsApiUsage').innerHTML='';}
   }
-  providers.forEach(p=>{
-   const input=$(p.input),status=$(p.status);if(!input||!status)return;
-   input.value=read(p);
-   $(p.save).addEventListener('click',async()=>{
+  const input=$(provider.input),status=$(provider.status);
+  if(input&&status){
+   input.value=read();
+   $(provider.save).addEventListener('click',async()=>{
     const value=input.value.trim();if(value.length<8){status.innerHTML='<div class="notice warning">Inserisci una chiave completa.</div>';return;}
-    try{sessionStorage.setItem(p.storage,value);}catch{status.innerHTML='<div class="notice warning">Il browser non consente di salvare la chiave nella sessione.</div>';return;}
-    clearCache();await verify(p);
+    try{sessionStorage.setItem(provider.storage,value);}catch{status.innerHTML='<div class="notice warning">Il browser non consente di salvare la chiave nella sessione.</div>';return;}
+    clearCache();await verify();
    });
-   $(p.test).addEventListener('click',()=>verify(p));
-   $(p.clear).addEventListener('click',()=>{
-    try{sessionStorage.removeItem(p.storage)}catch{}input.value='';clearCache();
+   $(provider.test).addEventListener('click',verify);
+   $(provider.clear).addEventListener('click',()=>{
+    try{sessionStorage.removeItem(provider.storage)}catch{}input.value='';clearCache();
     status.innerHTML='<div class="notice">Chiave rimossa dalla sessione corrente.</div>';
-    if(p.id==='apiFootball'&&$('settingsApiUsage'))$('settingsApiUsage').innerHTML='';
+    if($('settingsApiUsage'))$('settingsApiUsage').innerHTML='';
    });
-   if(read(p))verify(p);
+   if(read())verify();
+  }
+  const pulseButton=$('testPulseScoreKey'),pulseStatus=$('pulseScoreStatus');
+  if(pulseButton&&pulseStatus)pulseButton.addEventListener('click',async()=>{
+   pulseStatus.innerHTML='<div class="loading-state">Verifica PulseScore…</div>';
+   try{const res=await fetch('./api/player-context?type=test-pulsescore',{cache:'no-store'}),data=await res.json();if(!res.ok||!data.valid)throw new Error(data.error||'PulseScore non ha confermato la chiave.');pulseStatus.innerHTML='<div class="notice good">Connessione PulseScore verificata. La disponibilità delle quote dipende dalla partita e dai mercati Sisal.</div>';}catch(e){pulseStatus.innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}
   });
+  if(pulseButton)pulseButton.click();
   const copy=$('copyCloudflareSteps');if(copy)copy.addEventListener('click',()=>GenCopy('API_FOOTBALL_KEY'));
  }
 
 function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
  async function initData(){
-  const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const h={Accept:'application/json'};try{[['matchmind-api-football-session-key','X-MatchMind-API-Key'],['matchmind-oddspapi-session-key','X-MatchMind-OddsPapi-Key']].forEach(([k,v])=>{const value=sessionStorage.getItem(k);if(value)h[v]=value;})}catch{}const r=await fetch('./api/player-context?type=status',{headers:h,cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · CSV pubblico',true,'Senza API key'],['Calendario di riserva','openfootball · JSON pubblico',true,'Senza API key'],['Archivio storico','football-dataset · CSV pubblici',true,'Senza API key'],['Statistiche evento','Corner, falli, cartellini e HT quando presenti',true,'Soglia campionaria applicata'],['Notizie recenti','Google News RSS · su richiesta',true,'Senza API key'],['Quote Sisal','OddsPapi · add-on',!!p.sisalOdds],['Giocatori e indisponibili','API-Football · add-on',!!p.apiFootball],['Probabilità statistiche','Poisson e medie locali',true,'Calcolo nel browser']];const usage=d.apiFootballUsage;
+  const check=async()=>{const target=$('providerStatus');target.innerHTML='<div class="loading-state">Verifica…</div>';try{const h={Accept:'application/json'};try{[['matchmind-api-football-session-key','X-MatchMind-API-Key']].forEach(([k,v])=>{const value=sessionStorage.getItem(k);if(value)h[v]=value;})}catch{}const r=await fetch('./api/player-context?type=status',{headers:h,cache:'no-store'});const d=await r.json(),p=d.providers||{};const rows=[['Calendario e risultati','open-matchday · CSV pubblico',true,'Senza API key'],['Calendario di riserva','openfootball · JSON pubblico',true,'Senza API key'],['Archivio storico','football-dataset · CSV pubblici',true,'Senza API key'],['Statistiche evento','Corner, falli, cartellini e HT quando presenti',true,'Soglia campionaria applicata'],['Notizie recenti','Google News RSS · su richiesta',true,'Senza API key'],['Quote Sisal','PulseScore · secret server',!!p.pulseScore],['Giocatori e indisponibili','API-Football · add-on',!!p.apiFootball],['Probabilità statistiche','Poisson e medie locali',true,'Calcolo nel browser']];const usage=d.apiFootballUsage;
    const usageHtml=!p.apiFootball?'':(usage&&usage.available
     ?'<div class="data-row"><span>API-Football · consumo oggi</span><b>'+fmt(usage.current)+' / '+fmt(usage.limitDay)+' ('+fmt(usage.usedPercent,1)+'%)</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">Residue: '+fmt(usage.remaining)+(usage.plan?' · Piano '+esc(usage.plan):'')+(usage.subscriptionActive===false?' · Abbonamento non attivo':'')+' · Verificato '+new Date(usage.checkedAt).toLocaleTimeString('it-IT')+'</small>'
     :'<div class="data-row"><span>API-Football · consumo oggi</span><b style="color:var(--amber)">Non leggibile</b></div><small style="display:block;color:#7f8d9b;font-size:8px;margin:0 0 8px">La chiave è configurata, ma il provider non ha restituito il contatore. Verifica chiave e stato del servizio.</small>');
@@ -307,7 +305,7 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
       if(!forecast.sampleEnough){coverage.weakSample++;continue;}
       try{
        const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
-       const bookmakers=Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'OddsPapi · Sisal',updatedAt:c.oddsUpdatedAt})):[];
+       const bookmakers=Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'PulseScore · Sisal',updatedAt:c.oddsUpdatedAt})):[];
        if(!bookmakers.length){coverage.missingOdds++;continue;}
        const freshBookmakers=bookmakers.filter(book=>book.updatedAt&&Number.isFinite(Date.parse(book.updatedAt))&&Math.max(0,(Date.now()-Date.parse(book.updatedAt))/60000)<=120);
        if(!freshBookmakers.length){coverage.staleOdds++;continue;}
@@ -348,7 +346,7 @@ function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProv
      }
      const proposal=window.MatchMindRounds.buildAssistant(candidates,{stake,minPayout,maxPayout,minLegs,maxLegs});
      const pct=x=>fmt(x*100,2)+'%';
-     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · integrazione quote opzionale: OddsPapi · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
+     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · integrazione quote opzionale: PulseScore · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
      if(!proposal.available&&!candidates.length){
       const freeProposal=window.MatchMindRounds.buildProbabilityAssistant(fixtures,m=>MM().forecast(m,d.history),{minLegs,maxLegs});
       if(freeProposal.available){
