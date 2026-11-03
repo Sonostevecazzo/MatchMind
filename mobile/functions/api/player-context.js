@@ -928,6 +928,31 @@ async function getPlayerForm(context, season, requestUrl) {
   return responseJson({ configured: true, type: "form", source: "API-Football", ...data });
 }
 
+async function getLiveFixtures(context, season) {
+  if (!getApiFootballKey(context)) {
+    return responseJson({ configured: false, type: "live", error: "API_FOOTBALL_KEY non configurata: risultati live non disponibili." });
+  }
+  const payload = await providerGet("fixtures", { live: "all", league: SERIE_A_ID, season, timezone: "Europe/Rome" }, context, 30);
+  const fixtures = (Array.isArray(payload && payload.response) ? payload.response : []).map(item => {
+    const fixture = item.fixture || {};
+    const teams = item.teams || {};
+    const goals = item.goals || {};
+    const status = fixture.status || {};
+    return {
+      id: fixture.id == null ? null : Number(fixture.id),
+      date: isoDate(fixture.date),
+      elapsed: status.elapsed == null ? null : Number(status.elapsed),
+      status: status.short || "LIVE",
+      statusLong: status.long || "In corso",
+      home: teams.home && teams.home.name || "",
+      away: teams.away && teams.away.name || "",
+      homeGoals: goals.home == null ? null : Number(goals.home),
+      awayGoals: goals.away == null ? null : Number(goals.away)
+    };
+  }).filter(item => item.home && item.away);
+  return responseJson({ configured: true, type: "live", source: "API-Football", updatedAt: new Date().toISOString(), fixtures });
+}
+
 export async function onRequestGet(context) {
   const requestUrl = new URL(context.request.url);
   const env = context.env || {};
@@ -957,6 +982,7 @@ export async function onRequestGet(context) {
       });
     }
     if (type === "news") return await getNewsContext(context, requestUrl);
+    if (type === "live") return await getLiveFixtures(context, season);
     if (type === "test-oddspapi") return await getOddsPapiStatus(context);
     if (type === "test-the-odds-api") return await getTheOddsApiStatus(context);
     if (type === "odds-batch") return await getTheOddsApiEvents(context);
