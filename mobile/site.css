@@ -899,3 +899,55 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  body[data-page="bets"] .bet-metadata-grid{grid-template-columns:1fr}
  body[data-page="bets"] .page-wrap{width:calc(100% - 20px)}
 }
+
+
+/* Mobile readability pass: replace the compact desktop-derived scale across the app. */
+@media(max-width:700px){
+ body{font-size:16px!important;line-height:1.6!important}
+ .page-wrap{font-size:16px!important}
+ .page-intro .eyebrow,.eyebrow{font-size:11px!important;letter-spacing:1px}
+ .page-intro h1,.hero-card h1,.home-hero h1{font-size:clamp(30px,8vw,38px)!important;line-height:1.12!important}
+ .page-intro p,.hero-card p,.home-hero p{font-size:15px!important;line-height:1.55!important}
+ .section-head h2,.panel-head h2,.panel-head h3{font-size:21px!important;line-height:1.25!important}
+ .section-head p,.panel-head p{font-size:14px!important;line-height:1.5!important}
+ .date-divider{font-size:14px!important}
+ .date-divider small,.fixture-head,.fixture-state,.fixture-foot{font-size:12px!important;letter-spacing:0}
+ .fixture-team b,.fixture-side b{font-size:15px!important;line-height:1.3!important}
+ .fixture-score{font-size:23px!important}
+ .fixture-score.pending{font-size:15px!important}
+ .fixture-main{gap:8px;padding:12px}
+ .fixture-teams{gap:11px}
+ .fixture-team{gap:9px}
+ .fixture-team .team-crest{width:34px;height:34px;flex-basis:34px}
+ .fixture-foot a,.fixture-foot button{font-size:12px!important;min-height:36px;padding:7px 10px}
+ .stat-cell b,.home-page .stat-cell b{font-size:22px!important}
+ .stat-cell span,.home-page .stat-cell span{font-size:11px!important;line-height:1.35}
+ .shortcut b,.team-tile b{font-size:14px!important;line-height:1.35}
+ .shortcut small{font-size:12px!important;line-height:1.4}
+ .team-tile{padding:12px}
+ .competition-hero h2{font-size:21px!important}
+ .competition-hero p{font-size:14px!important}
+ .league-table th{font-size:12px!important}
+ .league-table td,.league-table td.club a{font-size:13px!important}
+ .field label{font-size:14px!important;line-height:1.4}
+ .field input,.field select,.field textarea,.field textarea,.search-row input{font-size:17px!important;min-height:50px;padding:12px}
+ .page-wrap button,.page-wrap .pill,.page-wrap .text-link{font-size:14px!important;min-height:44px}
+ .notice,.empty-state,.metric small,.metric span{font-size:13px!important;line-height:1.55}
+ .metric b{font-size:24px!important}
+ .data-row{font-size:15px!important;line-height:1.5}
+ .data-row small{font-size:13px!important}
+ .page-wrap .data-row{font-size:15px!important}
+ .mobile-nav .nav-item{font-size:11px!important}
+ .mobile-nav .nav-icon{width:24px!important;height:24px!important}
+ .mobile-nav .nav-icon svg{width:22px!important;height:22px!important}
+ .pill{font-size:13px!important;min-height:40px!important;padding:8px 13px}
+ .match-filter-advanced summary{font-size:14px!important}
+ .match-search-field input{font-size:17px!important}
+ .status-line,.site-footer{font-size:12px!important}
+}
+@media(max-width:380px){
+ .fixture-horizontal{grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr)!important}
+ .fixture-side b{font-size:13px!important}
+ .mobile-nav .nav-item{font-size:10px!important}
+ .home-page .stat-cell span{font-size:10px!important}
+}
