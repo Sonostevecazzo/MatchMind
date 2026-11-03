@@ -24,15 +24,13 @@
   <p id="pageSubtitle">Costruisci una schedina, archivia le tue selezioni e confronta le quote.</p>
  </div>
  <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Costruttore probabilistico</h2><p>Seleziona mercati e percentuali, anche dalla sezione Partite, oppure genera una proposta automatica.</p></div></div>
+  <div class="section-head"><div><h2>Costruttore probabilistico</h2><p>Le selezioni aggiunte da Partite appariranno qui; puoi anche generare una proposta automatica.</p></div></div>
   <div class="field"><label for="targetProbability">Probabilità minima dell'intera combinazione</label><select id="targetProbability"><option value="0.50">50%</option><option value="0.55" selected>55%</option><option value="0.60">60%</option><option value="0.65">65%</option><option value="0.70">70%</option></select></div>
   <div class="field"><label for="maxLegs">Numero massimo di eventi (da 1 a 15)</label><input id="maxLegs" type="number" min="1" max="15" step="1" value="10" inputmode="numeric"></div>
   <div id="manualBuilder" class="manual-builder">
-   <div class="section-head"><div><h3>Crea la schedina</h3><p>Tocca un esito per aggiungerlo. Ogni partita può avere una sola selezione.</p></div></div>
-   <div id="manualSlipSummary" aria-live="polite"><div class="empty-state">Carico le partite future…</div></div>
+   <div class="section-head"><div><h3>Selezioni manuali</h3><p>Scegli gli esiti in Partite: qui puoi rivedere e gestire la schedina.</p></div></div>
+   <div id="manualSlipSummary" aria-live="polite"><div class="empty-state">Le selezioni fatte in Partite compariranno qui.</div></div>
    <p id="manualBuilderStatus" class="helper-text" aria-live="polite"></p>
-   <div id="manualFixtureList" class="manual-fixture-list"></div>
-   <button id="manualLoadMore" type="button" class="secondary" hidden>Carica altre partite</button>
    <div id="manualOdds" class="manual-odds-results" aria-live="polite"><div class="empty-state">Dopo aver scelto gli eventi, conferma la schedina per controllare le quote disponibili.</div></div>
   </div>
   <button id="buildTicket" type="button">Genera proposta automatica</button>
