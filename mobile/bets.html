@@ -30,7 +30,7 @@
    <button id="shareSlip" type="button" class="secondary">Come condividere da Sisal</button>
   </div>
   <p id="ocrStatus" class="helper-text" aria-live="polite">Il riconoscimento automatico legge il testo dello screenshot; verifica sempre i dati estratti.</p>
-  <div class="field"><label for="slipText">Testo riconosciuto (modificabile)</label><textarea id="slipText" rows="5" placeholder="Il testo dello screenshot apparirà qui."></textarea></div>
+  <details class="ocr-details"><summary>Controlla il testo riconosciuto (facoltativo)</summary><div class="field"><textarea id="slipText" rows="5" aria-label="Testo riconosciuto dallo screenshot" placeholder="Il testo estratto apparirà qui."></textarea></div></details>
   <div class="field bet-metadata-grid">
    <div><label for="ticketStake">Importo giocato (€)</label><input id="ticketStake" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Es. 10,00"></div>
    <div><label for="ticketPayout">Vincita potenziale (€)</label><input id="ticketPayout" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Facoltativo"></div>
