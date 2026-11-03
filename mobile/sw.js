@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v38-20261103-transparent-team-logos';
+const CACHE='matchmind-pwa-v39-20261103-percentages-only';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
