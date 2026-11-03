@@ -286,7 +286,7 @@
     const rows = manualRows();
     const maxLegs = getMaxLegs();
     const overLimit = rows.length > maxLegs;
-    let summary = '<div class="empty-state">Vai in Partite e scegli un esito: le selezioni e la probabilità della schedina compariranno qui.</div>';
+    let summary = '<div class="empty-state">Vai al calendario della Home e scegli gli esiti: le selezioni e la probabilità della schedina compariranno qui.</div>';
     if (rows.length) {
       const hasAllProbabilities = rows.every(row => Number.isFinite(row.probability) && row.probability >= 0 && row.probability <= 1);
       const combined = hasAllProbabilities ? rows.reduce((total, row) => total * row.probability, 1) : null;
