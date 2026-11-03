@@ -207,7 +207,7 @@
         fairLine + gapLine +
         (report.row.odds ? '<br>Quota sulla schedina: ' + oddsText(report.row.odds) : '') +
         (ev === null ? '' : '<br>EV teorico esplorativo vs quota: ' + (ev >= 0 ? '+' : '') + pct(ev)) +
-        '</small></span><b>' + pct(probability) + '</b></div>';
+        '</small></span><b class="bet-percent">' + pct(probability) + '</b></div>';
     }).join("") + '<div class="notice warning">TipsAudit fornisce quote eque 1X2 senza margine e, quando presente, il miglior prezzo soft rilevato: non è necessariamente Sisal né una quota garantita ancora giocabile. Le quote eque non sono prezzi bookmaker. Per Over/Under e Gol/No Gol serve una fonte specifica del mercato. L’EV è solo esplorativo e dipende dall’affidabilità del modello.</div><small class="helper-text">Fonte benchmark: <a href="https://tipsaudit.com/api" target="_blank" rel="noopener">TipsAudit API</a> · dati aggiornati periodicamente · nessuna chiave richiesta.</small>';
     button.disabled = false;
     button.textContent = idleText;
