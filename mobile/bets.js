@@ -121,12 +121,14 @@
       target.innerHTML = '<div class="notice warning">Non ci sono selezioni riconosciute da verificare.</div>';
       return;
     }
-    const idleText = button.dataset.idleText || "Verifica quote Sisal";
+    const idleText = button.dataset.idleText || "Confronta quote disponibili";
     button.disabled = true;
     button.textContent = "Verifica in corso…";
-    target.innerHTML = '<div class="loading-state">Richiesta delle quote prematch Sisal tramite OddsPapi…</div>';
+    target.innerHTML = '<div class="loading-state">Controllo delle quote disponibili e del benchmark gratuito, senza API key…</div>';
     const reports = [];
     for (const row of valid) {
+      let report = null;
+      // Try the optional Sisal feed first. It remains an add-on, never a requirement.
       try {
         const params = "type=match&date=" + encodeURIComponent(row.match.date) +
           "&home=" + encodeURIComponent(row.match.home) +
@@ -134,39 +136,76 @@
         const context = await window.MM().playerApi(
           params,
           "match:" + row.match.date + ":" + window.MM().norm(row.match.home) + ":" + window.MM().norm(row.match.away),
-          5 * 60 * 1000
+          5 *  60 * 1000
         );
         const quote = matchingQuote(row, context);
-        row.quote = quote;
-        const updateTime = context.oddsUpdatedAt && Number.isFinite(Date.parse(context.oddsUpdatedAt))
-          ? Date.parse(context.oddsUpdatedAt) : null;
-        const ageMinutes = updateTime === null ? null : Math.max(0, (Date.now() - updateTime) / 60000);
-        const updated = updateTime === null
-          ? "orario non comunicato"
-          : new Date(updateTime).toLocaleString("it-IT") + (ageMinutes > 120 ? " · DATI PIÙ VECCHI DI 2 ORE" : "");
-        reports.push({
-          row, quote, source: context.oddsSource || "Sisal · OddsPapi",
-          updated, ageMinutes,
-          error: context.oddsError || (!quote ? "Quota non disponibile per il mercato selezionato." : null)
-        });
-      } catch (error) {
-        reports.push({ row, error: error.message || "Errore provider" });
+        if (quote) {
+          const updateTime = context.oddsUpdatedAt && Number.isFinite(Date.parse(context.oddsUpdatedAt))
+            ? Date.parse(context.oddsUpdatedAt) : null;
+          const ageMinutes = updateTime === null ? null : Math.max(0, (Date.now() - updateTime) / 60000);
+          report = {
+            row, quote, source: context.oddsSource || "Sisal · OddsPapi",
+            updated: updateTime === null ? "orario non comunicato" : new Date(updateTime).toLocaleString("it-IT"),
+            ageMinutes, kind: "bookmaker"
+          };
+        }
+      } catch (_) {
+        // Fall through to the public, keyless fair-odds feed.
       }
+      if (!report && window.MatchMindTipsAudit && ["home", "draw", "away"].includes(row.market.key)) {
+        try {
+          const prediction = await window.MatchMindTipsAudit.findMatch(row.match);
+          const benchmark = prediction && window.MatchMindTipsAudit.quoteFor(row.market.key, prediction);
+          if (benchmark) {
+            report = {
+              row, quote: {
+                odd: benchmark.softOdds || benchmark.fairOdds,
+                bookmaker: benchmark.softOdds ? benchmark.bookmaker : "Benchmark fair (senza margine)",
+                fairOdds: benchmark.fairOdds,
+                fairProbability: benchmark.fairProbability,
+                softOdds: benchmark.softOdds,
+                priceGap: benchmark.priceGap,
+                status: benchmark.status,
+                fairSource: benchmark.fairSource
+              },
+              source: "TipsAudit · quote eque 1X2",
+              updated: prediction.generated_at || prediction.fair_read_at || null,
+              ageMinutes: null,
+              kind: benchmark.softOdds ? "best-soft" : "fair-only"
+            };
+          }
+        } catch (_) {
+          // Keep the explicit unavailable state below; never invent a price.
+        }
+      }
+      if (!report) report = { row, error: "Nessuna quota disponibile per questa partita e questo mercato. Il benchmark gratuito copre solo 1X2." };
+      reports.push(report);
     }
     target.innerHTML = reports.map(report => {
       const title = esc(report.row.match.home + " – " + report.row.match.away);
       if (!report.quote) {
-        return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' + esc(report.error || "Quota non disponibile per questo mercato") + '</small></span><b>—</b></div>';
+        return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' + esc(report.error) + '</small></span><b>—</b></div>';
       }
       const probability = report.row.probability;
-      const ev = report.row.sampleEnough && report.ageMinutes !== null && report.ageMinutes <= 120 ? probability * report.quote.odd - 1 : null;
+      const actualSoft = report.kind === "best-soft" || report.kind === "bookmaker";
+      const ev = actualSoft && report.row.sampleEnough && Number.isFinite(report.quote.odd)
+        ? probability * report.quote.odd - 1 : null;
+      const quoteLabel = report.kind === "fair-only" ? "Quota equa (margine rimosso)" :
+        report.kind === "best-soft" ? "Migliore quota bookmaker segnalata" : "Quota Sisal corrente";
+      const fairLine = Number.isFinite(report.quote.fairOdds)
+        ? '<br>Benchmark equo: ' + oddsText(report.quote.fairOdds) +
+          (Number.isFinite(report.quote.fairProbability) ? ' (' + pct(report.quote.fairProbability) + ')' : '') : '';
+      const gapLine = Number.isFinite(report.quote.priceGap)
+        ? '<br>Differenza rispetto al fair: ' + (report.quote.priceGap >= 0 ? '+' : '') + pct(report.quote.priceGap) +
+          ' · stato: ' + esc(report.quote.status || "non specificato") : '';
       return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' +
-        esc(report.source) + ' · ' + esc(report.updated) +
-        '<br>Quota Sisal corrente: ' + oddsText(report.quote.odd) + ' · ' + esc(report.quote.bookmaker || "Sisal") +
+        esc(report.source) + (report.updated ? ' · aggiornato ' + esc(new Date(report.updated).toLocaleString("it-IT")) : '') +
+        '<br>' + quoteLabel + ': ' + oddsText(report.quote.odd) + ' · ' + esc(report.quote.bookmaker || "—") +
+        fairLine + gapLine +
         (report.row.odds ? '<br>Quota sulla schedina: ' + oddsText(report.row.odds) : '') +
-        (ev === null ? '' : '<br>EV teorico esplorativo: ' + (ev >= 0 ? '+' : '') + pct(ev)) +
+        (ev === null ? '' : '<br>EV teorico esplorativo vs quota: ' + (ev >= 0 ? '+' : '') + pct(ev)) +
         '</small></span><b>' + pct(probability) + '</b></div>';
-    }).join("") + '<div class="notice warning">Le quote sono mostrate solo quando il provider le restituisce per la partita e il mercato richiesti. L’EV è un confronto teorico basato sul modello, non una prova di vantaggio reale.</div>';
+    }).join("") + '<div class="notice warning">TipsAudit fornisce quote eque 1X2 senza margine e, quando presente, il miglior prezzo soft rilevato: non è necessariamente Sisal né una quota garantita ancora giocabile. Le quote eque non sono prezzi bookmaker. Per Over/Under e Gol/No Gol serve una fonte specifica del mercato. L’EV è solo esplorativo e dipende dall’affidabilità del modello.</div><small class="helper-text">Fonte benchmark: <a href="https://tipsaudit.com/api" target="_blank" rel="noopener">TipsAudit API</a> · dati aggiornati periodicamente · nessuna chiave richiesta.</small>';
     button.disabled = false;
     button.textContent = idleText;
   }
@@ -242,7 +281,7 @@
         if (best) updateSelection(selections[index], best.key);
         renderSlip();
       });
-      $("refreshSisal").dataset.idleText = "Verifica quote Sisal";
+      $("refreshSisal").dataset.idleText = "Confronta quote disponibili";
       $("refreshSisal").addEventListener("click", () => refreshSisal(selections));
       $("ticketResults").addEventListener("click", event => {
         if (event.target.closest("#refreshSuggestedSisal")) refreshSisal(suggestedSelections, $("suggestedOdds"), $("refreshSuggestedSisal"));
