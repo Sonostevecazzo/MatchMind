@@ -23,6 +23,11 @@
   <h1 id="pageTitle">Le mie scommesse</h1>
   <p id="pageSubtitle">Costruisci una schedina, archivia le tue selezioni e confronta le quote.</p>
  </div>
+ <section class="section panel panel-pad odds-board" style="margin-bottom:14px">
+  <div class="section-head"><div><h2>Quote Serie A</h2><p>Quote bookmaker disponibili online, aggiornate dalla fonte collegata. Non sono benchmark statistici.</p></div><button id="refreshOddsBoard" type="button" class="secondary">Aggiorna quote</button></div>
+  <p id="oddsBoardStatus" class="helper-text" aria-live="polite">Caricamento delle quote disponibili…</p>
+  <div id="oddsBoard" aria-live="polite"><div class="empty-state">Attendo il listino quote…</div></div>
+ </section>
  <section class="section panel panel-pad" style="margin-bottom:14px">
   <div class="section-head"><div><h2>Costruttore probabilistico</h2><p>Le selezioni aggiunte dal calendario della Home appariranno qui; puoi anche generare una proposta automatica.</p></div></div>
   <div class="field"><label for="targetProbability">Probabilità minima dell'intera combinazione</label><select id="targetProbability"><option value="0.50">50%</option><option value="0.55" selected>55%</option><option value="0.60">60%</option><option value="0.65">65%</option><option value="0.70">70%</option></select></div>
