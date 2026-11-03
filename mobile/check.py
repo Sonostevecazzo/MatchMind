@@ -69,8 +69,8 @@ for control in ["assistantStake", "assistantMinPayout", "assistantMaxPayout", "a
     assert control in lab, f"Missing bet assistant control: {control}"
 assert "buildAssistant" in (ROOT / "rounds.js").read_text(encoding="utf-8"), "Missing target-based bet assistant optimizer"
 settings = (ROOT / "settings.html").read_text(encoding="utf-8")
-for control in ["apiFootballKey", "oddsPapiKey", "saveOddsPapiKey", "saveSessionKey"]:
-    assert control in settings, f"Missing optional provider control: {control}"
+for control in ["apiFootballKey", "saveSessionKey", "testSessionKey", "clearSessionKey", "testPulseScoreKey"]:
+    assert f'id="{control}"' in settings, f"Missing optional provider control: {control}"
 pages = (ROOT / "site-pages.js").read_text(encoding="utf-8")
 core = (ROOT / "site-core.js").read_text(encoding="utf-8")
 for secret in ["matchmind-api-football-session-key", "matchmind-oddspapi-session-key"]:
@@ -132,16 +132,16 @@ for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra
 assert "forecastBacktest" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing historical backtest panel"
 print("MatchMind PWA, syntax, provider API and chronological backtest tests passed.")
 
-# Screenshot import, PWA share target, personal archive and optional live scores.
+# Local ticket archive, live-score refresh and provider transparency.
 bets_html = (ROOT / "bets.html").read_text(encoding="utf-8")
 bets_js = (ROOT / "bets.js").read_text(encoding="utf-8")
-manifest = json.loads((ROOT / "manifest.webmanifest").read_text(encoding="utf-8"))
-for control in ["slipImage", "shareSlip", "ticketStake", "ticketPayout", "slipArchive", "refreshArchive"]:
-    assert control in bets_html, f"Missing bet import/archive control: {control}"
-assert manifest.get("share_target", {}).get("action") == "./share-target", "PWA share target is missing"
-assert "matchmind-shared-imports" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Share target POST storage is missing"
-assert "cdn.jsdelivr.net/npm/tesseract.js" in bets_js, "Screenshot OCR loader is missing"
+for control in ["manualSlipSummary", "manualOdds", "buildTicket", "slipArchive", "refreshArchive", "refreshSisal"]:
+    assert f'id="{control}"' in bets_html, f"Missing bet manager control: {control}"
 assert "matchmind-slip-archive-v1" in bets_js, "Local bet archive is missing"
 assert "type=live" in bets_js, "Archive live-score refresh is missing"
 assert "function getLiveFixtures" in (ROOT / "functions" / "api" / "player-context.js").read_text(encoding="utf-8"), "Live Serie A endpoint is missing"
-assert "body{font-size:16px;line-height:1.6}" in css, "Readable typography overrides are missing"
+assert "font-size:17px !important" in (ROOT / "mobile-readable.css").read_text(encoding="utf-8"), "Readable typography overrides are missing"
+for page_name in ["explore.html", "data.html"]:
+    page_html = (ROOT / page_name).read_text(encoding="utf-8")
+    assert page_html.count("mobile-readable.css") == 1, f"{page_name} must load the mobile typography layer exactly once"
+print("MatchMind PWA, syntax, provider API, archive and chronological backtest checks passed.")
