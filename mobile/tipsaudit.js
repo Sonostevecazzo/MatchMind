@@ -14,7 +14,7 @@
 
   function sameTeam(a, b) {
     const x = normalize(a), y = normalize(b);
-    return Boolean(x && y && (x === y || (Math.min(x.length, y.length) >= 5 && (x.includes(y) || y.includes(x))));
+    return Boolean(x && y && (x === y || (Math.min(x.length, y.length) >= 5 && (x.includes(y) || y.includes(x)))));
   }
 
   function localDate(iso) {
