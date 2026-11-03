@@ -25,7 +25,7 @@ for name in required_pages:
     assert "mobile-readable.css" in html, f"{name} must load the dedicated mobile typography layer"
     if name == "bets.html":
         assert "bets-engine.js" in html and "bets.js" in html, "Bet checker must load its engine and controller"
-        assert re.search(r'<input id="slipImage"[^>]*accept="image/\\*"[^>]*hidden>', html), "Screenshot picker must accept gallery images"
+        assert re.search(r'<input id="slipImage"[^>]*accept="image/\*"[^>]*hidden>', html), "Screenshot picker must accept gallery images"
         assert not re.search(r'<input id="slipImage"[^>]*capture=', html), "Screenshot picker must not force the camera"
     else:
         assert "site-pages.js" in html, f"{name} must use the shared page controller"
@@ -108,6 +108,7 @@ assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "El
 assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Round analysis engine is not loaded by the Intelligence page"
 assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
 assert "bets.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker page is not cached by the service worker"
+assert "'./mobile-readable.css'" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Dedicated mobile typography layer is missing from the PWA app shell"
 assert re.search(r"matchmind-pwa-v\d+-\d{8}", (ROOT / "sw.js").read_text(encoding="utf-8")), "PWA cache version was not bumped after a frontend change"
 assert "bets-engine.js" in (ROOT / "sw.js").read_text(encoding="utf-8") and "bets.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker assets are not cached by the service worker"
 assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
