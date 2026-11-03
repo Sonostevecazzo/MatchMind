@@ -13,7 +13,7 @@ assert manifest.get("name") and manifest.get("display") == "standalone"
 assert (ROOT / "sw.js").is_file()
 
 required_pages = [
-    "index.html", "matches.html", "explore.html", "league.html",
+    "index.html", "nba.html", "matches.html" "explore.html", "league.html",
     "team.html", "match.html", "players.html", "analysis-lab.html", "bets.html", "data.html", "settings.html",
 ]
 for name in required_pages:
@@ -43,7 +43,7 @@ with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
     handle.flush()
     subprocess.run(["node", "--check", handle.name], check=True)
 
-for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "tipsaudit.js", "bets.js", "elo.js", "rounds.js", "sw.js"]:
+for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "tipsaudit.js", "bets.js", "nba.js", "elo.js", "rounds.js", "sw.js"]:
     subprocess.run(["node", "--check", str(ROOT / filename)], check=True)
 
 for path in [
@@ -148,3 +148,6 @@ print("MatchMind PWA, syntax, provider API, archive and chronological backtest c
 
 assert "type === \"sisal-board\"" in (ROOT / "functions" / "api" / "player-context.js").read_text(encoding="utf-8"), "Live Sisal odds board endpoint is missing"
 assert "loadOddsBoard" in (ROOT / "bets.js").read_text(encoding="utf-8"), "Live odds board UI is missing"
+
+assert "nba.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "NBA page missing from PWA shell"
+assert "type === \"boxscore\"" in (ROOT / "functions" / "api" / "nba.js").read_text(encoding="utf-8"), "NBA boxscore endpoint missing"
