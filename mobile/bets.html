@@ -19,13 +19,26 @@
  <div class="page-intro">
   <div class="eyebrow">MATCHMIND / BET CHECKER</div>
   <h1 id="pageTitle">Le mie scommesse</h1>
-  <p id="pageSubtitle">Controllo schedine Sisal e costruzione di combinazioni statistiche.</p>
+  <p id="pageSubtitle">Importa, controlla e archivia le tue schedine.</p>
  </div>
+ <section class="section panel panel-pad bet-import-panel" style="margin-bottom:14px">
+  <div class="section-head"><div><h2>Importa la tua schedina</h2><p>Carica uno screenshot dalla galleria oppure condividi la giocata da Sisal a MatchMind.</p></div></div>
+  <div class="bet-import-actions">
+   <label class="button-like primary" for="slipImage">▧ Importa screenshot</label><input id="slipImage" type="file" accept="image/*" capture="environment" hidden>
+   <button id="shareSlip" type="button" class="secondary">Condividi schedina</button>
+  </div>
+  <p id="ocrStatus" class="helper-text" aria-live="polite">Il riconoscimento automatico legge il testo dello screenshot; verifica sempre i dati estratti.</p>
+  <div class="field"><label for="slipText">Testo riconosciuto (modificabile)</label><textarea id="slipText" rows="5" placeholder="Il testo dello screenshot apparirà qui."></textarea></div>
+  <div class="field bet-metadata-grid">
+   <div><label for="ticketStake">Importo giocato (€)</label><input id="ticketStake" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Es. 10,00"></div>
+   <div><label for="ticketPayout">Vincita potenziale (€)</label><input id="ticketPayout" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Facoltativo"></div>
+  </div>
+  <div class="settings-actions"><button id="checkSlip" type="button" class="primary">Analizza schedina</button><button id="clearSlip" class="secondary" type="button">Pulisci</button></div>
+  <div id="slipResults" aria-live="polite" style="margin-top:12px"><div class="empty-state">Importa uno screenshot o inserisci il testo per iniziare.</div></div>
+ </section>
  <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Controlla una schedina Sisal</h2><p>Incolla il testo copiato dalla schedina oppure usa una riga per selezione: Squadra A - Squadra B | Over 2.5 | 1.75.</p></div></div>
-  <div class="field"><label for="slipText">Testo della schedina</label><textarea id="slipText" rows="8" placeholder="Bologna - Monza&#10;U/O 2.5: OVER 1.75&#10;&#10;Udinese - Roma&#10;U/O 1.5: OVER 1.15"></textarea></div>
-  <div class="settings-actions"><button id="checkSlip" type="button">Analizza schedina</button><button id="clearSlip" class="secondary" type="button">Pulisci</button></div>
-  <div id="slipResults" aria-live="polite" style="margin-top:12px"><div class="empty-state">Incolla una schedina per verificare partite, mercati, quote e probabilità.</div></div>
+  <div class="section-head"><div><h2>Archivio schedine</h2><p>Conservate su questo dispositivo, con risultati aggiornabili.</p></div><button id="refreshArchive" type="button" class="secondary">Aggiorna risultati</button></div>
+  <div id="slipArchive" aria-live="polite"><div class="empty-state">Nessuna schedina archiviata.</div></div>
  </section>
  <section class="section panel panel-pad" style="margin-bottom:14px">
   <div class="section-head"><div><h2>Confronto quote Sisal</h2><p>Recupera le quote disponibili tramite OddsPapi, senza accedere al tuo conto Sisal.</p></div></div>
