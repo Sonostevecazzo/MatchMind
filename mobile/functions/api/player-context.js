@@ -564,7 +564,7 @@ async function getPulseScoreSisalEvents(context, date, home, away) {
   const headers = { "x-secret": key, Accept: "application/json" };
   const leagueUrl = PULSESCORE_API_BASE + "/soccer/leagues/" + encodeURIComponent("Serie A") + "/events";
   const fixturesPayload = await cachedExternalJson(
-    context, "pulsescore", leagueUrl, "pulsescore/serie-a/events", headers, 60
+    context, "pulsescore", leagueUrl, "pulsescore/serie-a/events", headers, 300
   );
   const fixture = pulseScoreRows(fixturesPayload).find(item => {
     const kickoff = localDateTime(item && item.startTime);
@@ -576,7 +576,7 @@ async function getPulseScoreSisalEvents(context, date, home, away) {
   if (!fixture || !fixture.eventId) return { configured: true, events: [], source: "PulseScore" };
   const eventUrl = PULSESCORE_API_BASE + "/soccer/events/" + encodeURIComponent(fixture.eventId);
   const detailPayload = await cachedExternalJson(
-    context, "pulsescore", eventUrl, "pulsescore/event/" + fixture.eventId, headers, 60
+    context, "pulsescore", eventUrl, "pulsescore/event/" + fixture.eventId, headers, 300
   );
   const detail = pulseScoreEvent(detailPayload);
   if (!detail || !Array.isArray(detail.markets)) throw new Error("pulsescore_invalid_json");
@@ -597,7 +597,7 @@ async function testPulseScoreFixture(context, date, home, away) {
   try {
     const headers = { "x-secret": key, Accept: "application/json" };
     const url = PULSESCORE_API_BASE + "/soccer/leagues/" + encodeURIComponent("Serie A") + "/events";
-    const payload = await cachedExternalJson(context, "pulsescore", url, "pulsescore/serie-a/events", headers, 60);
+    const payload = await cachedExternalJson(context, "pulsescore", url, "pulsescore/serie-a/events", headers, 300);
     const rows = pulseScoreRows(payload);
     const match = rows.find(item => {
       const kickoff = localDateTime(item && item.startTime);
