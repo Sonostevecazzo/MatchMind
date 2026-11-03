@@ -285,6 +285,7 @@
     font-size: 12px !important;
     line-height: 1.4 !important;
   }
+  body[data-page="matches"] .fixture-center-label,
   body[data-page="mind"] .fixture-center-label {
     display: none !important;
   }
