@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v44-20261103-home-sisal-quotes';
+const CACHE='matchmind-pwa-v45-20261103-four-item-home';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
