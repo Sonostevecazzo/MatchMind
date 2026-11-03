@@ -9,7 +9,7 @@
 
   const pct = value => Number.isFinite(value) ? (value * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%" : "—";
   const oddsText = value => Number.isFinite(value) ? value.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 3 }) : "non disponibile";
-  const esc = value => window.MM().esc(String(value == null ? "" : value));
+  const esc = value => window.MM.esc(String(value == null ? "" : value));
 
   function marketChoices() {
     return [
@@ -22,7 +22,7 @@
   }
 
   function bestMarket(match) {
-    const forecast = window.MM().forecast(match, data.history);
+    const forecast = window.MM.forecast(match, data.history);
     return marketChoices().map(([key, label]) => ({
       key, label, probability: engine().marketProbability(forecast, key)
     })).filter(item => Number.isFinite(item.probability))
@@ -30,7 +30,7 @@
   }
 
   function updateSelection(row, key) {
-    const forecast = window.MM().forecast(row.match, data.history);
+    const forecast = window.MM.forecast(row.match, data.history);
     const selected = marketChoices().find(item => item[0] === key);
     const probability = engine().marketProbability(forecast, key);
     if (!selected || probability === null) return;
@@ -133,9 +133,9 @@
         const params = "type=match&date=" + encodeURIComponent(row.match.date) +
           "&home=" + encodeURIComponent(row.match.home) +
           "&away=" + encodeURIComponent(row.match.away);
-        const context = await window.MM().playerApi(
+        const context = await window.MM.playerApi(
           params,
-          "match:" + row.match.date + ":" + window.MM().norm(row.match.home) + ":" + window.MM().norm(row.match.away),
+          "match:" + row.match.date + ":" + window.MM.norm(row.match.home) + ":" + window.MM.norm(row.match.away),
           5 *  60 * 1000
         );
         const quote = matchingQuote(row, context);
@@ -218,7 +218,7 @@
     const target = $("ticketResults");
     const threshold = Number($("targetProbability").value);
     const maxLegs = Number($("maxLegs").value);
-    const upcoming = data.matches.filter(window.MM().upcoming)
+    const upcoming = data.matches.filter(window.MM.upcoming)
       .slice().sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
     const first = upcoming[0];
     const ticketFixtures = !first ? [] : (first.round !== null && first.round !== undefined
@@ -226,7 +226,7 @@
       : upcoming.filter(match => Math.abs(Date.parse(match.date + "T12:00:00") - Date.parse(first.date + "T12:00:00")) <= 3 * 86400000));
     const result = engine().buildTicket(
       ticketFixtures,
-      match => window.MM().forecast(match, data.history),
+      match => window.MM.forecast(match, data.history),
       threshold,
       { maxLegs }
     );
@@ -247,7 +247,7 @@
 
   document.addEventListener("DOMContentLoaded", async () => {
     try {
-      data = await window.MM().loadData();
+      data = await window.MM.loadData();
       $("globalStatus").textContent = (data.source === "cache" ? "Dati caricati dalla cache locale" : "Dati aggiornati") +
         " · " + data.matches.length + " partite nel calendario.";
       try { $("slipText").value = localStorage.getItem("matchmind-slip-draft-v1") || ""; } catch (_) {}
@@ -258,8 +258,8 @@
         selections = engine().parseSlip(
           $("slipText").value,
           data.matches,
-          match => window.MM().forecast(match, data.history),
-          window.MM().upcoming
+          match => window.MM.forecast(match, data.history),
+          window.MM.upcoming
         );
         renderSlip();
       });
@@ -305,15 +305,15 @@
 const $=id=>document.getElementById(id),KEY="matchmind-slip-archive-v1";
 let data=null,archive=[];try{archive=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(archive))archive=[];}catch(_){}
 const cash=n=>Number(n)>0?"€ "+Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
-const esc=s=>window.MM().esc(String(s==null?"":s));
+const esc=s=>window.MM.esc(String(s==null?"":s));
 function save(){try{localStorage.setItem(KEY,JSON.stringify(archive));}catch(_){$("ocrStatus").textContent="Archivio pieno: elimina alcune schedine.";}}
-function rows(){return window.MatchMindBets.parseSlip($("slipText").value,data.matches,m=>window.MM().forecast(m,data.history),window.MM().upcoming).filter(x=>x.match).map(x=>({home:x.match.home,away:x.match.away,date:x.match.date,market:x.market&&x.market.label||"Da verificare",marketKey:x.market&&x.market.key||"",odds:x.odds||null,probability:x.probability||null,status:"Da aggiornare"}));}
+function rows(){return window.MatchMindBets.parseSlip($("slipText").value,data.matches,m=>window.MM.forecast(m,data.history),window.MM.upcoming).filter(x=>x.match).map(x=>({home:x.match.home,away:x.match.away,date:x.match.date,market:x.market&&x.market.label||"Da verificare",marketKey:x.market&&x.market.key||"",odds:x.odds||null,probability:x.probability||null,status:"Da aggiornare"}));}
 function render(){const el=$("slipArchive");if(!el)return;if(!archive.length){el.innerHTML='<div class="empty-state">Nessuna schedina archiviata.</div>';return;}el.innerHTML=archive.map(t=>'<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+new Date(t.createdAt).toLocaleString("it-IT")+'</b><span>'+t.selections.length+' eventi</span></div><div class="archive-ticket-meta"><span>Giocata: '+cash(t.stake)+'</span><span>Vincita potenziale: '+cash(t.payout)+'</span></div>'+t.selections.map(x=>'<div class="data-row"><span><b>'+esc(x.home)+' – '+esc(x.away)+'</b><small>'+esc(x.market)+' · '+esc(x.date)+'</small></span><b>'+esc(x.result||x.status||"Da aggiornare")+'</b></div>').join("")+'<div class="settings-actions"><button data-share-ticket="'+esc(t.id)+'" type="button" class="secondary">Condividi</button><button data-delete-ticket="'+esc(t.id)+'" type="button" class="secondary">Elimina</button></div></article>').join("");}
 function saveCurrent(){const list=rows();if(!list.length){$("ocrStatus").textContent="Matching non riuscito: correggi il testo e ripeti l'analisi.";return;}archive.unshift({id:"slip-"+Date.now(),createdAt:new Date().toISOString(),stake:Number($("ticketStake").value)||null,payout:Number($("ticketPayout").value)||null,selections:list});archive=archive.slice(0,100);save();render();$("ocrStatus").textContent="Schedina archiviata su questo dispositivo.";}
 function share(t){const message=["MatchMind · Schedina","Archiviata: "+new Date(t.createdAt).toLocaleString("it-IT"),"Importo: "+cash(t.stake),"Vincita potenziale: "+cash(t.payout),...t.selections.map(x=>x.home+" – "+x.away+" | "+x.market+" | "+(x.odds||"quota n.d.")+" | "+(x.result||x.status||"Da aggiornare"))].join("\n");if(navigator.share){navigator.share({title:"Schedina MatchMind",text:message}).catch(e=>{if(e.name!=="AbortError")navigator.clipboard&&navigator.clipboard.writeText(message);});}else if(navigator.clipboard)navigator.clipboard.writeText(message).then(()=>$("ocrStatus").textContent="Schedina copiata negli appunti.");}
 function loadOCR(){return new Promise((resolve,reject)=>{if(window.Tesseract)return resolve(window.Tesseract);const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";sc.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error("OCR non disponibile"));sc.onerror=()=>reject(new Error("Impossibile caricare OCR. Controlla la connessione."));document.head.appendChild(sc);});}
 async function ocr(file){if(!file||!file.type.startsWith("image/"))return;if(file.size>12*1024*1024){$("ocrStatus").textContent="Immagine troppo grande (massimo 12 MB).";return;}const btn=$("checkSlip");btn.disabled=true;$("ocrStatus").textContent="Lettura screenshot in corso…";try{const T=await loadOCR(),r=await T.recognize(file,"ita+eng",{logger:m=>{if(m.status==="recognizing text")$("ocrStatus").textContent="Riconoscimento: "+Math.round((m.progress||0)*100)+"%";}});$("slipText").value=String(r.data.text||"").trim();$("slipText").dispatchEvent(new Event("input",{bubbles:true}));$("ocrStatus").textContent="Testo estratto. Verifica i dati e correggi eventuali errori.";if($("slipText").value.trim())btn.click();}catch(e){$("ocrStatus").textContent=e.message||"OCR non riuscito.";}finally{btn.disabled=false;}}
-async function refresh(){const b=$("refreshArchive");b.disabled=true;b.textContent="Aggiornamento…";try{data=await window.MM().loadData(true);let live=[];try{const liveData=await window.MM().playerApi("type=live","archive-live",60*1000);live=Array.isArray(liveData.fixtures)?liveData.fixtures:[];}catch(_){}archive=archive.map(t=>({...t,selections:t.selections.map(x=>{const liveMatch=live.find(y=>window.MM().norm(y.home)===window.MM().norm(x.home)&&window.MM().norm(y.away)===window.MM().norm(x.away));const m=data.matches.find(y=>y.date===x.date&&window.MM().norm(y.home)===window.MM().norm(x.home)&&window.MM().norm(y.away)===window.MM().norm(x.away));return liveMatch?{...x,result:(liveMatch.homeGoals??"—")+"–"+(liveMatch.awayGoals??"—"),status:"LIVE"+(liveMatch.elapsed?" · "+liveMatch.elapsed+"’":"")}:({...x,result:m&&m.hg!=null&&m.ag!=null?m.hg+"–"+m.ag:null,status:m&&m.hg!=null&&m.ag!=null?"Conclusa":m&&window.MM().upcoming(m)?"Da iniziare":"Risultato non disponibile"});})}));save();render();$("ocrStatus").textContent="Risultati aggiornati con l'ultimo calendario disponibile; non è un feed live minuto per minuto.";}catch(e){$("ocrStatus").textContent="Aggiornamento non riuscito: "+e.message;}finally{b.disabled=false;b.textContent="Aggiorna risultati";}}
+async function refresh(){const b=$("refreshArchive");b.disabled=true;b.textContent="Aggiornamento…";try{data=await window.MM.loadData(true);let live=[];try{const liveData=await window.MM.playerApi("type=live","archive-live",60*1000);live=Array.isArray(liveData.fixtures)?liveData.fixtures:[];}catch(_){}archive=archive.map(t=>({...t,selections:t.selections.map(x=>{const liveMatch=live.find(y=>window.MM.norm(y.home)===window.MM.norm(x.home)&&window.MM.norm(y.away)===window.MM.norm(x.away));const m=data.matches.find(y=>y.date===x.date&&window.MM.norm(y.home)===window.MM.norm(x.home)&&window.MM.norm(y.away)===window.MM.norm(x.away));return liveMatch?{...x,result:(liveMatch.homeGoals??"—")+"–"+(liveMatch.awayGoals??"—"),status:"LIVE"+(liveMatch.elapsed?" · "+liveMatch.elapsed+"’":"")}:({...x,result:m&&m.hg!=null&&m.ag!=null?m.hg+"–"+m.ag:null,status:m&&m.hg!=null&&m.ag!=null?"Conclusa":m&&window.MM.upcoming(m)?"Da iniziare":"Risultato non disponibile"});})}));save();render();$("ocrStatus").textContent="Risultati aggiornati con l'ultimo calendario disponibile; non è un feed live minuto per minuto.";}catch(e){$("ocrStatus").textContent="Aggiornamento non riuscito: "+e.message;}finally{b.disabled=false;b.textContent="Aggiorna risultati";}}
 async function receive(){if(new URLSearchParams(location.search).get("import")!=="shared")return;try{const db=await new Promise((ok,no)=>{const q=indexedDB.open("matchmind-shared-imports",1);q.onupgradeneeded=()=>q.result.createObjectStore("items",{keyPath:"id",autoIncrement:true});q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error);});const tx=db.transaction("items","readwrite"),st=tx.objectStore("items"),q=st.getAll();q.onsuccess=()=>{const item=q.result.at(-1);if(item&&item.file)ocr(item.file);else if(item&&item.text){$("slipText").value=item.text;$("checkSlip").click();}st.clear();};}catch(e){$("ocrStatus").textContent="Condivisione non riuscita: "+e.message;}history.replaceState({},"",location.pathname);}
-document.addEventListener("DOMContentLoaded",async()=>{try{data=await window.MM().loadData();}catch(_){}$("slipImage").addEventListener("change",e=>ocr(e.target.files&&e.target.files[0]));$("slipResults").addEventListener("click",e=>{if(e.target.closest("#archiveCurrentSlip"))saveCurrent();if(e.target.closest("#shareCurrentSlip"))share({createdAt:new Date().toISOString(),stake:Number($("ticketStake").value)||null,payout:Number($("ticketPayout").value)||null,selections:rows()});});const archiveObserver=new MutationObserver(()=>{if($("slipResults").querySelector(".player-item")&&!$("archiveCurrentSlip")){const d=document.createElement("div");d.className="settings-actions";d.style.marginTop="14px";d.innerHTML='<button id="archiveCurrentSlip" class="primary" type="button">Archivia schedina</button><button id="shareCurrentSlip" class="secondary" type="button">Condividi</button>';$("slipResults").appendChild(d);}});archiveObserver.observe($("slipResults"),{childList:true,subtree:true});$("slipArchive").addEventListener("click",e=>{const d=e.target.closest("[data-delete-ticket]"),s=e.target.closest("[data-share-ticket]");if(d){archive=archive.filter(x=>x.id!==d.dataset.deleteTicket);save();render();}if(s){const t=archive.find(x=>x.id===s.dataset.shareTicket);if(t)share(t);}});$("refreshArchive").addEventListener("click",refresh);$("shareSlip").addEventListener("click",()=>$("ocrStatus").textContent="Apri la schedina in Sisal, premi Condividi e seleziona MatchMind. Se non compare, installa prima MatchMind dalla funzione Aggiungi a schermata Home del browser. In alternativa usa Importa screenshot.");render();receive();});
+document.addEventListener("DOMContentLoaded",async()=>{try{data=await window.MM.loadData();}catch(_){}$("slipImage").addEventListener("change",e=>ocr(e.target.files&&e.target.files[0]));$("slipResults").addEventListener("click",e=>{if(e.target.closest("#archiveCurrentSlip"))saveCurrent();if(e.target.closest("#shareCurrentSlip"))share({createdAt:new Date().toISOString(),stake:Number($("ticketStake").value)||null,payout:Number($("ticketPayout").value)||null,selections:rows()});});const archiveObserver=new MutationObserver(()=>{if($("slipResults").querySelector(".player-item")&&!$("archiveCurrentSlip")){const d=document.createElement("div");d.className="settings-actions";d.style.marginTop="14px";d.innerHTML='<button id="archiveCurrentSlip" class="primary" type="button">Archivia schedina</button><button id="shareCurrentSlip" class="secondary" type="button">Condividi</button>';$("slipResults").appendChild(d);}});archiveObserver.observe($("slipResults"),{childList:true,subtree:true});$("slipArchive").addEventListener("click",e=>{const d=e.target.closest("[data-delete-ticket]"),s=e.target.closest("[data-share-ticket]");if(d){archive=archive.filter(x=>x.id!==d.dataset.deleteTicket);save();render();}if(s){const t=archive.find(x=>x.id===s.dataset.shareTicket);if(t)share(t);}});$("refreshArchive").addEventListener("click",refresh);$("shareSlip").addEventListener("click",()=>$("ocrStatus").textContent="Apri la schedina in Sisal, premi Condividi e seleziona MatchMind. Se non compare, installa prima MatchMind dalla funzione Aggiungi a schermata Home del browser. In alternativa usa Importa screenshot.");render();receive();});
 })();
