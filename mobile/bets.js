@@ -452,6 +452,11 @@
       $("ticketResults").innerHTML = '<div class="notice warning">Non è stato possibile caricare calendario e storico. Premi “Genera proposta automatica” per riprovare.</div>';
     }
   });
+document.addEventListener("DOMContentLoaded", () => {
+  const refreshButton = $("refreshOddsBoard");
+  if (refreshButton) refreshButton.addEventListener("click", () => loadOddsBoard(true));
+  loadOddsBoard(false);
+});
 })();
 
 
@@ -497,6 +502,44 @@ async function refresh(){
  }catch(e){$("archiveStatus").textContent="Aggiornamento non riuscito: "+e.message;}
  finally{b.disabled=false;b.textContent="Aggiorna risultati";}
 }
+  async function loadOddsBoard(forceFresh) {
+    const target = $("oddsBoard"), status = $("oddsBoardStatus"), button = $("refreshOddsBoard");
+    if (!target || !status || !button) return;
+    button.disabled = true; button.textContent = "Aggiornamento…";
+    status.textContent = "Recupero quote aggiornate da PulseScore…";
+    try {
+      const result = await window.MM.playerApi("type=sisal-board", "sisal-board", forceFresh ? 0 : 90 * 1000);
+      if (!result.configured) {
+        target.innerHTML = '<div class="notice warning">' + esc(result.error || "Feed quote non configurato.") + '</div>';
+        status.textContent = "Feed quote non attivo";
+        return;
+      }
+      if (result.error) throw new Error(result.error);
+      const events = Array.isArray(result.events) ? result.events : [];
+      if (!events.length) {
+        target.innerHTML = '<div class="empty-state">Nessuna quota prematch disponibile per le prossime partite di Serie A.</div>';
+      } else {
+        target.innerHTML = events.map(event => {
+          const markets = (event.bookmakers || []).flatMap(book => (book.bets || []).map(market => ({
+            bookmaker: book.title || book.name || "Sisal", name: market.name, values: market.values || []
+          })));
+          const marketHtml = markets.map(market => {
+            const values = market.values.map(value => '<span class="odds-chip"><small>' + esc(value.value) + '</small><b>' + esc(oddsText(Number(String(value.odd).replace(",", ".")))) + '</b></span>').join("");
+            return '<div class="odds-market"><div class="odds-market-title">' + esc(market.name) + ' · ' + esc(market.bookmaker) + '</div><div class="odds-values">' + values + '</div></div>';
+          }).join("");
+          return '<article class="odds-board-card"><div class="odds-board-heading"><b>' + esc(event.home) + ' – ' + esc(event.away) + '</b><span>' + esc((event.dateTime && event.dateTime.date || "") + " · " + (event.dateTime && event.dateTime.time || "")) + '</span></div>' + (marketHtml || '<p class="helper-text">Mercati non disponibili.</p>') + '<small class="helper-text">Fonte: Sisal · PulseScore' + (event.updatedAt ? ' · aggiornato ' + esc(new Date(event.updatedAt).toLocaleString("it-IT")) : '') + '</small></article>';
+        }).join("");
+      }
+      status.textContent = "Ultimo controllo: " + new Date(result.updatedAt || Date.now()).toLocaleString("it-IT") +
+        (result.unavailableMatches ? " · " + result.unavailableMatches + " partite senza mercati attivi" : "");
+    } catch (error) {
+      target.innerHTML = '<div class="notice warning">' + esc(error.message || "Quote temporaneamente non disponibili.") + '</div>';
+      status.textContent = "Aggiornamento non riuscito";
+    } finally {
+      button.disabled = false; button.textContent = "Aggiorna quote";
+    }
+  }
+
 document.addEventListener("DOMContentLoaded",()=>{
  $("manualSlipSummary").addEventListener("click",async e=>{if(e.target.closest("#archiveManualSlip"))await saveCurrent();});
  $("slipArchive").addEventListener("click",async e=>{
