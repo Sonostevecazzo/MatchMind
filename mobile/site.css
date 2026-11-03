@@ -283,7 +283,7 @@ body{background:
 .preview-head{margin:10px 0 8px;color:var(--mint);font-size:8px;letter-spacing:1.3px}
 .preview-head small{color:#84929b;font-size:8px}
 .preview-probs{gap:10px}
-.preview-probs>div{grid-template-columns:14px 1fr;gap:4px 6px}
+.preview-probs>div{grid-template-columns:1fr;gap:4px 6px;text-align:center}
 .preview-probs span{font-size:9px;color:#9ba8b0}
 .preview-probs b{font-size:11px;color:#f1f5f4}
 .preview-probs i{height:4px;background:#2a3740}
