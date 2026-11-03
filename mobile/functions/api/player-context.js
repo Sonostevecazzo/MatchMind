@@ -587,6 +587,57 @@ async function getPulseScoreSisalEvents(context, date, home, away) {
   };
 }
 
+
+async function getSisalOddsBoard(context) {
+  const key = getPulseScoreKey(context);
+  if (!key) return responseJson({
+    configured: false, provider: "Sisal · PulseScore", events: [],
+    error: "Secret PULSESCORE_API_KEY non configurato su Cloudflare Pages."
+  });
+  try {
+    const headers = { "x-secret": key, Accept: "application/json" };
+    const url = PULSESCORE_API_BASE + "/soccer/leagues/" + encodeURIComponent("Serie A") + "/events";
+    const payload = await cachedExternalJson(context, "pulsescore", url, "pulsescore/serie-a/events", headers, 90);
+    const now = Date.now();
+    const fixtures = pulseScoreRows(payload).filter(item => {
+      const kickoff = Date.parse(item && item.startTime);
+      const countryMatches = !item.country || String(item.country).toUpperCase() === "ITA";
+      return countryMatches && Number.isFinite(kickoff) && kickoff >= now - 2 * 60 * 60 * 1000
+        && kickoff <= now + 7 * 24 * 60 * 60 * 1000 && item.eventId;
+    }).sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime)).slice(0, 6);
+    const settled = await Promise.allSettled(fixtures.map(async fixture => {
+      const detailUrl = PULSESCORE_API_BASE + "/soccer/events/" + encodeURIComponent(fixture.eventId);
+      const detailPayload = await cachedExternalJson(context, "pulsescore", detailUrl,
+        "pulsescore/event/" + fixture.eventId, headers, 90);
+      const detail = pulseScoreEvent(detailPayload);
+      if (!detail || !Array.isArray(detail.markets)) return null;
+      const converted = convertPulseScoreEvent({
+        ...fixture, ...detail,
+        home: detail.home || fixture.home, away: detail.away || fixture.away
+      });
+      const event = {
+        home_team: converted.home_team, away_team: converted.away_team,
+        commence_time: converted.commence_time, bookmakers: converted.bookmakers
+      };
+      return {
+        id: converted.id, home: event.home_team, away: event.away_team,
+        dateTime: localDateTime(event.commence_time),
+        updatedAt: oddsEventUpdatedAt(event), bookmakers: normalizeOddsBookmakers(event)
+      };
+    }));
+    const events = settled.filter(x => x.status === "fulfilled" && x.value && x.value.bookmakers.length)
+      .map(x => x.value);
+    return responseJson({
+      configured: true, provider: "Sisal · PulseScore", source: "PulseScore",
+      updatedAt: new Date().toISOString(), events,
+      unavailableMatches: settled.length - events.length
+    });
+  } catch (error) {
+    return responseJson({ configured: true, provider: "Sisal · PulseScore", events: [],
+      error: publicError(error), retryable: true }, errorStatus(error));
+  }
+}
+
 async function getPreferredSisalOddsEvents(context, date, home, away) {
   return getPulseScoreSisalEvents(context, date, home, away);
 }
@@ -1071,6 +1122,7 @@ export async function onRequestGet(context) {
     }
     if (type === "news") return await getNewsContext(context, requestUrl);
     if (type === "live") return await getLiveFixtures(context, season);
+    if (type === "sisal-board") return await getSisalOddsBoard(context);
     if (type === "test-pulsescore") {
       const date = requestUrl.searchParams.get("date");
       const home = requestUrl.searchParams.get("home");
