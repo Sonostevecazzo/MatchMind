@@ -185,3 +185,15 @@
     font-size: 15px !important;
   }
 }
+
+
+/* Header labels are part of the same mobile readability scale. */
+@media (max-width: 700px) {
+  body[data-page] .site-header .brand-copy b {
+    font-size: 16px !important;
+  }
+  body[data-page] .site-header .brand-copy small {
+    font-size: 9px !important;
+    letter-spacing: 0.8px !important;
+  }
+}
