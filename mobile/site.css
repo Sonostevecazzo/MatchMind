@@ -1033,3 +1033,17 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .match-slip-dock .button-like{width:100%;text-align:center}
  .manual-summary-actions{grid-template-columns:1fr}
 }
+
+
+/* Live odds board */
+.odds-board-card{margin:12px 0;padding:14px;border:1px solid var(--line,#263342);border-radius:14px;background:rgba(8,13,19,.55)}
+.odds-board-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.odds-board-heading b{font-size:1rem}
+.odds-board-heading span{color:var(--muted,#93a1b0);font-size:.82rem;white-space:nowrap}
+.odds-market{padding:10px 0;border-top:1px solid rgba(125,145,165,.18)}
+.odds-market-title{margin-bottom:8px;color:var(--muted,#93a1b0);font-size:.82rem;font-weight:700}
+.odds-values{display:flex;flex-wrap:wrap;gap:7px}
+.odds-chip{display:flex;min-width:64px;flex-direction:column;gap:3px;padding:7px 9px;border:1px solid var(--line,#344253);border-radius:9px;background:#111923}
+.odds-chip small{color:var(--muted,#93a1b0);font-size:.72rem}
+.odds-chip b{font-size:.95rem;font-variant-numeric:tabular-nums}
+@media(max-width:560px){.odds-board-card{padding:11px}.odds-board-heading{flex-direction:column;gap:4px}}
