@@ -21,11 +21,10 @@
    <div id="settingsProviderStatus" class="settings-status" aria-live="polite"></div><div id="settingsApiUsage" class="settings-usage"></div>
   </article>
   <article class="settings-provider">
-   <div class="settings-provider-head"><span class="provider-mark odds">OD</span><span><b>OddsPapi · Sisal · opzionale</b><small>Quote bookmaker reali per confronto e controllo schedine</small></span><span class="provider-live">ADD-ON</span></div>
-   <div class="field"><label for="oddsPapiKey">API key</label><input id="oddsPapiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Incolla la chiave OddsPapi"></div>
-   <div class="settings-actions"><button class="primary" id="saveOddsPapiKey">Usa in questa sessione</button><button id="testOddsPapiKey">Verifica</button><button class="ghost" id="clearOddsPapiKey">Rimuovi</button></div>
-   <div id="oddsPapiStatus" class="settings-status" aria-live="polite"></div>
-   <p class="settings-hint">Solo se possiedi già un accesso. Nessuna chiave è necessaria per le probabilità statistiche; senza quote reali non vengono calcolati EV, payout o proposte basate su prezzi bookmaker.</p>
+   <div class="settings-provider-head"><span class="provider-mark odds">S</span><span><b>PulseScore · quote Sisal</b><small>Gestita dal server tramite secret Cloudflare</small></span><span class="provider-live">SERVER</span></div>
+   <p class="settings-hint">La chiave PulseScore viene configurata in Cloudflare come secret PULSESCORE_API_KEY e non va inserita qui. Il recupero dipende dalla disponibilità della partita e dei mercati Sisal.</p>
+   <div class="settings-actions"><button id="testPulseScoreKey">Verifica PulseScore</button></div>
+   <div id="pulseScoreStatus" class="settings-status" aria-live="polite"></div>
   </article>
  </section>
  
