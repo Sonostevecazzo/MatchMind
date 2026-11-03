@@ -282,7 +282,7 @@ body{background:
 .fixture-preview{padding:0 14px 12px;border-top:1px solid #ffffff0b}
 .preview-head{margin:10px 0 8px;color:var(--mint);font-size:8px;letter-spacing:1.3px}
 .preview-head small{color:#84929b;font-size:8px}
-.preview-probs{gap:10px}
+.preview-probs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .preview-probs>div{grid-template-columns:1fr;gap:4px 6px;text-align:center}
 .preview-probs span{font-size:9px;color:#9ba8b0}
 .preview-probs b{font-size:11px;color:#f1f5f4}
