@@ -40,7 +40,7 @@ with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
     handle.flush()
     subprocess.run(["node", "--check", handle.name], check=True)
 
-for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "bets.js", "elo.js", "rounds.js", "sw.js"]:
+for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "tipsaudit.js", "bets.js", "elo.js", "rounds.js", "sw.js"]:
     subprocess.run(["node", "--check", str(ROOT / filename)], check=True)
 
 for path in [
@@ -54,6 +54,7 @@ subprocess.run(["node", "--test", str(ROOT / "tests" / "backtest.test.mjs")], ch
 subprocess.run(["node", "--test", str(ROOT / "tests" / "elo.test.mjs")], check=True)
 subprocess.run(["node", "--test", str(ROOT / "tests" / "rounds.test.mjs")], check=True)
 subprocess.run(["node", "--test", str(ROOT / "tests" / "bets-engine.test.cjs")], check=True)
+subprocess.run(["node", "--test", str(ROOT / "tests" / "tipsaudit.test.cjs")], check=True)
 
 # Check the app's four main destinations and that page-specific routes are linked.
 home = (ROOT / "index.html").read_text(encoding="utf-8")
@@ -110,6 +111,8 @@ assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analy
 assert "bets.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker page is not cached by the service worker"
 assert "'./mobile-readable.css'" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Dedicated mobile typography layer is missing from the PWA app shell"
 assert re.search(r"matchmind-pwa-v\d+-\d{8}", (ROOT / "sw.js").read_text(encoding="utf-8")), "PWA cache version was not bumped after a frontend change"
+assert "tipsaudit.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "TipsAudit keyless odds module is not cached by the service worker"
+assert "tipsaudit.js" in (ROOT / "bets.html").read_text(encoding="utf-8"), "TipsAudit keyless odds module is not loaded by the bet checker"
 assert "bets-engine.js" in (ROOT / "sw.js").read_text(encoding="utf-8") and "bets.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker assets are not cached by the service worker"
 assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
 assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"
