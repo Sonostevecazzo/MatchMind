@@ -848,3 +848,25 @@ body{background:#090d11;color:var(--text);letter-spacing:0}
  .match-advanced-grid{grid-template-columns:1fr;gap:9px}
  .filter-advanced-hint{display:none}
 }
+
+/* Accessible typography and bet import/archive */
+body{font-size:16px;line-height:1.6}
+.page-intro h1{font-size:clamp(30px,7vw,38px);line-height:1.12}
+.page-intro p,.section-head p,.panel-head p,.helper-text{font-size:14px;line-height:1.5;color:#b3c0cb}
+.eyebrow,.field label{font-size:12px;letter-spacing:.45px}
+.section-head h2,.panel-head h2,.panel-head h3{font-size:20px;line-height:1.25}
+.field input,.field select,.field textarea,textarea{font-size:16px;line-height:1.5;min-height:48px;padding:11px 12px}
+button,.button-like{font-size:15px;min-height:48px;padding:11px 15px}
+.data-row{font-size:15px;line-height:1.45}
+.data-row small,.status-line,.site-footer,.empty-state,.notice{font-size:13px;line-height:1.5}
+.fixture-team b{font-size:14px}.fixture-score{font-size:20px}.fixture-foot,.fixture-head{font-size:11px}
+.bet-import-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.button-like{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;font-weight:800;text-align:center;cursor:pointer}
+.button-like.primary{background:var(--mint);color:#062017;border:1px solid var(--mint)}
+.bet-metadata-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.helper-text{margin:8px 0 12px}
+.archive-ticket{border:1px solid var(--line);border-radius:13px;padding:13px;margin:10px 0;background:#101821}
+.archive-ticket-head,.archive-ticket-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
+.archive-ticket-meta{color:#b3c0cb;margin:8px 0;flex-wrap:wrap}
+.archive-ticket-selections{border-top:1px solid var(--line);padding-top:5px}
+@media(max-width:380px){.bet-import-actions,.bet-metadata-grid{grid-template-columns:1fr}.page-intro h1{font-size:30px}}
