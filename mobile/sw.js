@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v34-20261103-keyless-odds';
+const CACHE='matchmind-pwa-v35-20261103-bet-ui';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
