@@ -552,6 +552,7 @@ function pulseScoreRows(payload) {
   for (const key of ["events", "data", "results", "items", "response"]) {
     if (Array.isArray(payload && payload[key])) return payload[key];
     if (payload && payload[key] && Array.isArray(payload[key].events)) return payload[key].events;
+    if (payload && payload[key] && Array.isArray(payload[key].data)) return payload[key].data;
   }
   return [];
 }
@@ -658,6 +659,29 @@ async function getPreferredSisalOddsEvents(context, date, home, away) {
     return { ...fallback, source: "OddsPapi" };
   }
   return { configured: false, events: [], source: null };
+}
+
+async function testPulseScoreFixture(context, date, home, away) {
+  const key = getPulseScoreKey(context);
+  if (!key) return responseJson({ configured: false, error: "Secret PULSESCORE_API_KEY non configurato." });
+  try {
+    const headers = { "x-secret": key, Accept: "application/json" };
+    const url = PULSESCORE_API_BASE + "/soccer/leagues/" + encodeURIComponent("Serie A") + "/events";
+    const payload = await cachedExternalJson(context, "pulsescore", url, "pulsescore/serie-a/events", headers, 60);
+    const rows = pulseScoreRows(payload);
+    const match = rows.find(item => {
+      const kickoff = localDateTime(item && item.startTime);
+      return kickoff.date === date && sameTeamName(home, item && item.home) && sameTeamName(away, item && item.away);
+    });
+    return responseJson({
+      configured: true, valid: true, provider: "PulseScore", eventCount: rows.length,
+      requested: { date, home, away },
+      match: match ? { eventId: Boolean(match.eventId), home: match.home || null, away: match.away || null, startTime: match.startTime || null, country: match.country || null } : null,
+      sample: rows.slice(0, 4).map(item => ({ home: item.home || null, away: item.away || null, startTime: item.startTime || null, country: item.country || null }))
+    });
+  } catch (error) {
+    return responseJson({ configured: true, valid: false, provider: "PulseScore", error: publicError(error) }, errorStatus(error));
+  }
 }
 
 async function getPulseScoreStatus(context) {
@@ -1127,7 +1151,13 @@ export async function onRequestGet(context) {
     if (type === "news") return await getNewsContext(context, requestUrl);
     if (type === "live") return await getLiveFixtures(context, season);
     if (type === "test-oddspapi") return await getOddsPapiStatus(context);
-    if (type === "test-pulsescore") return await getPulseScoreStatus(context);
+    if (type === "test-pulsescore") {
+      const date = requestUrl.searchParams.get("date");
+      const home = requestUrl.searchParams.get("home");
+      const away = requestUrl.searchParams.get("away");
+      if (date && home && away) return await testPulseScoreFixture(context, date, home, away);
+      return await getPulseScoreStatus(context);
+    }
     if (type === "test-the-odds-api") return await getTheOddsApiStatus(context);
     if (type === "odds-batch") return await getTheOddsApiEvents(context);
     if (type === "fixtures") {
