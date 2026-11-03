@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v47-20261103-live-refresh';
+const CACHE='matchmind-pwa-v48-20261103-odds-board';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
