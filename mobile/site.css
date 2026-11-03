@@ -69,7 +69,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .fixture-teams{display:grid;gap:8px;min-width:0}
 .fixture-team{display:flex;align-items:center;gap:9px;min-width:0}
 .fixture-team b{font-size:11px;line-height:1.25;overflow-wrap:anywhere}
-.team-crest{display:inline-grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:8px;border:1px solid #ffffff1b;background:var(--crest,#293b4a);color:#f5fbff;font-size:8px;font-weight:950;letter-spacing:-.2px}
+.team-crest{position:relative;display:inline-grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:0;border:0;background:transparent;color:#f5fbff;font-size:8px;font-weight:950;letter-spacing:-.2px;box-shadow:none;overflow:visible}
 .fixture-score{font-size:17px;font-weight:950;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
 .fixture-score.pending{font-size:11px;color:#8492a0}
 .fixture-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #26313c;padding:6px 10px;color:#7e8c9a;font-size:8px}
@@ -271,7 +271,7 @@ body{background:
 .fixture-side{display:flex;align-items:center;gap:10px;min-width:0}
 .fixture-side.away{flex-direction:row-reverse;text-align:right}
 .fixture-side b{font-size:12px;font-weight:850;line-height:1.25;overflow-wrap:anywhere}
-.fixture-side .team-crest{width:38px;height:38px;flex:0 0 38px;border-radius:13px;font-size:10px;box-shadow:inset 0 1px #ffffff20,0 5px 12px #0003}
+.fixture-side .team-crest{width:38px;height:38px;flex:0 0 38px;border-radius:0;border:0;background:transparent;font-size:10px;box-shadow:none}
 .fixture-center{display:grid;justify-items:center;gap:3px;min-width:0}
 .fixture-score{font-size:24px;font-weight:950;letter-spacing:-1px;line-height:1.1}
 .fixture-score.pending{font-size:22px;color:var(--mint);font-variant-numeric:tabular-nums}
@@ -527,7 +527,7 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
 
 /* Team and competition identity assets */
 .team-crest{position:relative;overflow:hidden;isolation:isolate}
-.team-crest .team-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:3px;z-index:2;background:var(--crest,#17242d)}
+.team-crest .team-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:0;z-index:2;background:transparent}
 .team-crest-fallback{position:relative;z-index:1}
 .competition-badge{position:relative;overflow:hidden}
 .competition-badge .competition-logo{width:100%;height:100%;object-fit:contain;padding:5px}
