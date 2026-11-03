@@ -1,0 +1,187 @@
+/* Dedicated Android mobile typography layer.
+   Loaded after site.css to override legacy compact declarations deterministically. */
+@media (max-width: 700px) {
+  html {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+
+  body[data-page] {
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: 0 0 calc(84px + env(safe-area-inset-bottom)) !important;
+    font-size: 17px !important;
+    line-height: 1.55 !important;
+  }
+
+  body[data-page] .page-wrap {
+    width: calc(100% - 24px) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 16px 0 calc(100px + env(safe-area-inset-bottom)) !important;
+    font-size: 17px !important;
+    line-height: 1.55 !important;
+  }
+
+  /* Neutralize the many legacy 7–12px declarations on inline text. */
+  body[data-page] .page-wrap :is(p, span, b, strong, a, label, small, li, td, th, input, select, textarea, button) {
+    font-size: inherit !important;
+    line-height: inherit;
+  }
+
+  body[data-page] .page-wrap .page-intro h1,
+  body[data-page] .page-wrap h1 {
+    font-size: 34px !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.8px !important;
+  }
+
+  body[data-page] .page-wrap .home-hero h1,
+  body[data-page] .page-wrap .hero-card h1 {
+    font-size: 36px !important;
+    line-height: 1.08 !important;
+  }
+
+  body[data-page] .page-wrap h2,
+  body[data-page] .page-wrap .section-head h2,
+  body[data-page] .page-wrap .panel-head h2 {
+    font-size: 22px !important;
+    line-height: 1.25 !important;
+  }
+
+  body[data-page] .page-wrap h3 {
+    font-size: 19px !important;
+    line-height: 1.3 !important;
+  }
+
+  body[data-page] .page-wrap p,
+  body[data-page] .page-wrap .section-head p,
+  body[data-page] .page-wrap .panel-head p,
+  body[data-page] .page-wrap .helper-text {
+    font-size: 16px !important;
+    line-height: 1.55 !important;
+  }
+
+  body[data-page] .page-wrap .eyebrow,
+  body[data-page] .page-wrap .field label {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0.35px !important;
+  }
+
+  body[data-page] .page-wrap .fixture-head,
+  body[data-page] .page-wrap .fixture-foot,
+  body[data-page] .page-wrap .date-divider,
+  body[data-page] .page-wrap .match-detail-meta {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0 !important;
+  }
+
+  body[data-page] .page-wrap .fixture-team b,
+  body[data-page] .page-wrap .fixture-side b,
+  body[data-page] .page-wrap .team-tile b,
+  body[data-page] .page-wrap .shortcut b {
+    font-size: 17px !important;
+    line-height: 1.3 !important;
+  }
+
+  body[data-page] .page-wrap .fixture-score,
+  body[data-page] .page-wrap .metric b,
+  body[data-page] .page-wrap .prob b {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+  }
+
+  body[data-page] .page-wrap .data-row,
+  body[data-page] .page-wrap .archive-ticket-head,
+  body[data-page] .page-wrap .archive-ticket-meta {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+
+  body[data-page] .page-wrap .data-row small,
+  body[data-page] .page-wrap .archive-ticket small,
+  body[data-page] .page-wrap .metric small,
+  body[data-page] .page-wrap .shortcut small,
+  body[data-page] .page-wrap .date-divider small {
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+  }
+
+  body[data-page] .page-wrap .notice,
+  body[data-page] .page-wrap .empty-state,
+  body[data-page] .page-wrap .metric span,
+  body[data-page] .page-wrap .prob,
+  body[data-page] .page-wrap .text-link {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+
+  body[data-page] .page-wrap .league-table th,
+  body[data-page] .page-wrap .league-table td,
+  body[data-page] .page-wrap .league-table td.club a {
+    font-size: 14px !important;
+  }
+
+  body[data-page] .page-wrap .field input,
+  body[data-page] .page-wrap .field select,
+  body[data-page] .page-wrap .field textarea,
+  body[data-page] .page-wrap input,
+  body[data-page] .page-wrap select,
+  body[data-page] .page-wrap textarea,
+  body[data-page] .page-wrap button,
+  body[data-page] .page-wrap .button-like,
+  body[data-page] .page-wrap .pill {
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    min-height: 48px;
+  }
+
+  body[data-page] .page-wrap .team-crest {
+    font-size: 12px !important;
+  }
+
+  body[data-page] .page-wrap .stat-cell b {
+    font-size: 23px !important;
+  }
+
+  body[data-page] .page-wrap .stat-cell span {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+
+  body[data-page] .status-line,
+  body[data-page] .site-footer {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  body[data-page] .mobile-nav .nav-item {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  body[data-page] .mobile-nav .nav-icon,
+  body[data-page] .mobile-nav .nav-icon svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  body[data-page] .fixture-horizontal {
+    gap: 6px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body[data-page] .page-wrap {
+    width: calc(100% - 20px) !important;
+  }
+  body[data-page] .page-wrap .fixture-team b,
+  body[data-page] .page-wrap .fixture-side b {
+    font-size: 15px !important;
+  }
+}
