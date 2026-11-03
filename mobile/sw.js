@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v45-20261103-four-item-home';
+const CACHE='matchmind-pwa-v46-20261103-ux-cleanup';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
