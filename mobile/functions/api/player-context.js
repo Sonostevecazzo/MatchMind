@@ -437,15 +437,6 @@ function sameTeamName(left, right) {
   return TEAM_NAME_GROUPS.some(group => group.includes(a) && group.includes(b));
 }
 
-function oddsPapiUrl(path, key, params = {}) {
-  const url = new URL(SISAL_ODDS_API_BASE + path);
-  url.searchParams.set("apiKey", key);
-  for (const [name, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(name, String(value));
-  }
-  return url.toString();
-}
-
 function marketKind(market) {
   const name = normalizeTeamName(market && market.marketName);
   const period = normalizeTeamName(market && market.period);
