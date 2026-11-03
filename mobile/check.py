@@ -120,3 +120,17 @@ for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra
 
 assert "forecastBacktest" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing historical backtest panel"
 print("MatchMind PWA, syntax, provider API and chronological backtest tests passed.")
+
+# Screenshot import, PWA share target, personal archive and optional live scores.
+bets_html = (ROOT / "bets.html").read_text(encoding="utf-8")
+bets_js = (ROOT / "bets.js").read_text(encoding="utf-8")
+manifest = json.loads((ROOT / "manifest.webmanifest").read_text(encoding="utf-8"))
+for control in ["slipImage", "shareSlip", "ticketStake", "ticketPayout", "slipArchive", "refreshArchive"]:
+    assert control in bets_html, f"Missing bet import/archive control: {control}"
+assert manifest.get("share_target", {}).get("action") == "./share-target", "PWA share target is missing"
+assert "matchmind-shared-imports" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Share target POST storage is missing"
+assert "cdn.jsdelivr.net/npm/tesseract.js" in bets_js, "Screenshot OCR loader is missing"
+assert "matchmind-slip-archive-v1" in bets_js, "Local bet archive is missing"
+assert "type=live" in bets_js, "Archive live-score refresh is missing"
+assert "function getLiveFixtures" in (ROOT / "functions" / "api" / "player-context.js").read_text(encoding="utf-8"), "Live Serie A endpoint is missing"
+assert "body{font-size:16px;line-height:1.6}" in css, "Readable typography overrides are missing"
