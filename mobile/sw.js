@@ -1,8 +1,8 @@
-const CACHE='matchmind-pwa-v31-20261103';
+const CACHE='matchmind-pwa-v32-readable-20261103';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
- './site.css','./site-core.js','./site-pages.js','./bets-engine.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
+ './site.css','./mobile-readable.css','./site-core.js','./site-pages.js','./bets-engine.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
 ];
 
 self.addEventListener('install',event=>{
