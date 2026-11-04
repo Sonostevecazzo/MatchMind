@@ -25,7 +25,7 @@
       const y=seasonStart(),cached=readCache();
       if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       const headers={Accept:'application/json'};
-      const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store'});
+      const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(10000)});
       let payload={};try{payload=await response.json();}catch{}
       if(!response.ok||payload.error||payload.configured===false){
         const message=payload.error||'Fonte pubblica openfootball non disponibile.';
