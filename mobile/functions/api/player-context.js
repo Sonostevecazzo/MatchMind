@@ -1144,70 +1144,10 @@ async function getCanonicalCalendar(context, season) {
 }
 
 export async function onRequestGet(context) {
-  const requestUrl = new URL(context.request.url);
-  const env = context.env || {};
-  const apiFootballConfigured = Boolean(getApiFootballKey(context));
-  const pulseScoreConfigured = Boolean(getPulseScoreKey(context));
-  const footballDataConfigured = Boolean(getFootballDataKey(context));
-  const theOddsApiConfigured = Boolean(getTheOddsApiKey(context));
-  const season = currentSeason();
-  const type = requestUrl.searchParams.get("type") || "";
-  try {
-    if (type === "status") {
-      const apiFootballUsage = apiFootballConfigured ? await readApiFootballUsage(context) : null;
-      return responseJson({
-        configured: apiFootballConfigured,
-        type: "status",
-        source: apiFootballConfigured ? "API-Football" : (pulseScoreConfigured ? "Sisal · PulseScore" : (footballDataConfigured ? "football-data.org" : null)),
-        season,
-        freePlanRequestsPerDay: apiFootballConfigured ? 100 : null,
-        apiFootballUsage,
-        error: apiFootballConfigured ? null : "API_FOOTBALL_KEY non configurata. Calendario, risultati e storico richiedono una chiave API-Football.",
-        providers: {
-          apiFootball: apiFootballConfigured,
-          sisalOdds: pulseScoreConfigured,
-          pulseScore: pulseScoreConfigured,
-          footballData: footballDataConfigured,
-          theOddsApi: theOddsApiConfigured
-        }
-      });
-    }
-    if (type === "calendar") return await getCanonicalCalendar(context, season);
-    if (type === "news") return await getNewsContext(context, requestUrl);
-    if (type === "live") return await getLiveFixtures(context, season);
-    if (type === "sisal-board") return await getSisalOddsBoard(context);
-    if (type === "test-pulsescore") {
-      const date = requestUrl.searchParams.get("date");
-      const home = requestUrl.searchParams.get("home");
-      const away = requestUrl.searchParams.get("away");
-      if (date && home && away) return await testPulseScoreFixture(context, date, home, away);
-      return await getPulseScoreStatus(context);
-    }
-    if (type === "test-the-odds-api") return await getTheOddsApiStatus(context);
-    if (type === "odds-batch") return await getTheOddsApiEvents(context);
-    if (type === "fixtures") {
-      const requestedSeason = Number(requestUrl.searchParams.get("season") || season);
-      if (!Number.isInteger(requestedSeason) || requestedSeason < 1990 || requestedSeason > season + 1) {
-        return responseJson({ configured: true, type: "fixtures", error: "Stagione non valida." }, 400);
-      }
-      return await getFootballDataFixtures(context, requestedSeason);
-    }
-    if (["injuries", "search", "form"].includes(type) && !apiFootballConfigured) {
-      return responseJson({
-        configured: false,
-        error: "API_FOOTBALL_KEY non configurata. Aggiungi la chiave come secret su Cloudflare Pages per attivare indisponibili e dati giocatore."
-      });
-    }
-    if (type === "injuries") return await getInjuries(context, season);
-    if (type === "match") return await getMatchContext(context, season, requestUrl);
-    if (type === "search") return await searchPlayers(context, season, (requestUrl.searchParams.get("q") || "").trim());
-    if (type === "form") return await getPlayerForm(context, season, requestUrl);
-    return responseJson({ configured: true, error: "Tipo richiesta non supportato." }, 400);
-  } catch (error) {
-    return responseJson({
-      configured: true,
-      error: publicError(error),
-      retryable: error.message.endsWith("_rate_limited") || error.message.endsWith("_unreachable") || error.message.endsWith("_http_error") || error.message === "odds_quota_exceeded"
-    }, errorStatus(error));
-  }
+  return responseJson({
+    configured: true,
+    error: "Le vecchie integrazioni sono state disattivate. MatchMind utilizza il nuovo calendario pubblico senza chiavi API.",
+    source: "public-dataset",
+    retryable: false
+  }, 410);
 }
