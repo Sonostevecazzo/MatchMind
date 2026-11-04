@@ -273,26 +273,30 @@ function backtestHTML(r,e){
   }
   const aiTarget=$('adaptiveAIStatus');
   if(aiTarget){
-   const model=window.MatchMindAI&&window.MatchMindAI.modelFor(d.competition);
-   const allModels=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-ai-model-v1')||'{}')}catch(_){return{}}})();
-   const current=allModels[d.competition]||null;
-   if(model&&model.approved){
-    const v=model.validation||{};
-    aiTarget.innerHTML='<div class="notice good">Calibrazione adattiva attiva · temperatura '+fmt(model.temperature,3)+'. Il controllo walk-forward ha migliorato entrambe le metriche rispetto al modello non calibrato.</div>'+
-     '<div class="data-row"><span>Previsioni storiche valutate</span><b>'+fmt(model.scoredForecasts)+'</b></div>'+
-     '<div class="data-row"><span>Campione addestramento / validazione</span><b>'+fmt(model.trainingCount)+' / '+fmt(model.validationCount)+'</b></div>'+
-     '<div class="data-row"><span>Log loss · baseline → calibrata</span><b>'+fmt(v.baselineLogLoss,4)+' → '+fmt(v.calibratedLogLoss,4)+'</b></div>'+
-     '<div class="data-row"><span>Brier · baseline → calibrata</span><b>'+fmt(v.baselineBrier,4)+' → '+fmt(v.calibratedBrier,4)+'</b></div>'+
-     '<small>Ultimo addestramento: '+esc(new Date(model.updatedAt).toLocaleString('it-IT'))+'. Riaddestramento giornaliero locale quando vengono caricati i dati.</small>';
-   }else{
-    const status=current&&current.status==='not_better_than_baseline'?'Il test non ha dimostrato un miglioramento: resta attiva la baseline Poisson.':'Campione insufficiente per addestrare e validare la calibrazione.';
-    aiTarget.innerHTML='<div class="notice warning">Calibrazione adattiva non attiva. '+esc(status)+'</div>'+
-     '<div class="data-row"><span>Partite storiche disponibili</span><b>'+fmt(current?.trainedMatches||0)+'</b></div>'+
-     '<div class="data-row"><span>Previsioni cronologiche valide</span><b>'+fmt(current?.scoredForecasts||0)+'</b></div>'+
-     '<small>Il modello non modifica le probabilità finché non supera la validazione fuori campione. Addestramento giornaliero sul dispositivo quando apri MatchMind con connessione.</small>';
-   }
-   const explanation=forecasts.length&&window.MatchMindAI?window.MatchMindAI.explain(forecasts[0].match,forecasts[0].forecast):[];
-   if(explanation.length)aiTarget.innerHTML+='<div class="eyebrow" style="margin-top:14px">LETTURA AI · PROSSIMA PARTITA</div><ul>'+explanation.map(reason=>'<li>'+esc(reason)+'</li>').join('')+'</ul><small>Spiegazione basata su indicatori osservabili del modello; non è una certezza sull&#39;esito.</small>';
+   const competitions=['serie-a','champions-league'];
+   const labels={'serie-a':'Serie A','champions-league':'Champions League'};
+   const models=competitions.map(id=>{
+    let saved=null;try{saved=JSON.parse(localStorage.getItem('matchmind-ai-model-v1')||'{}')[id]||null}catch(_){}
+    const model=window.MatchMindAI&&window.MatchMindAI.modelFor(id);
+    const count=d.history.filter(m=>(m.competition||'serie-a')===id&&MM().hasScore(m)).length;
+    return{id,label:labels[id],count,model,saved};
+   });
+   const selected=models.find(x=>x.id===d.competition)||models[0];
+   const active=Boolean(selected.model&&selected.model.approved);
+   const status=active?'Calibrazione verificata attiva':'Previsioni standard · calibrazione non attiva';
+   const statusText=selected.saved?.status==='not_better_than_baseline'?'Il test non ha trovato un miglioramento affidabile.':selected.count<120?'Archivio storico ancora insufficiente per validare la calibrazione.':'La calibrazione non ha superato tutti i controlli.';
+   const rows=models.map(x=>{
+    const m=x.saved,ok=Boolean(m&&m.approved);
+    const state=ok?'Attiva':m?.status==='not_better_than_baseline'?'Non migliora':'Dati insufficienti';
+    return '<div class="ai-competition-row"><span><b>'+x.label+'</b><small>'+fmt(x.count)+' risultati storici disponibili</small></span><strong class="'+(ok?'is-active':'')+'">'+state+'</strong></div>';
+   }).join('');
+   const v=selected.saved?.validation||{};
+   const metrics=selected.saved?'<div class="ai-metrics"><div><small>Log Loss</small><b>'+fmt(v.baselineLogLoss,3)+' → '+fmt(v.calibratedLogLoss,3)+'</b><small>'+((v.improvementLogLoss||0)>0?'migliora':'non migliora')+'</small></div><div><small>Brier Score</small><b>'+fmt(v.baselineBrier,3)+' → '+fmt(v.calibratedBrier,3)+'</b><small>'+((v.improvementBrier||0)>0?'migliora':'non migliora')+'</small></div></div>':'';
+   aiTarget.innerHTML='<div class="ai-status '+(active?'is-active':'')+'"><span class="ai-status-dot"></span><div><b>'+status+'</b><small>'+labels[d.competition]+' · '+(active?'le probabilità 1X2 sono calibrate':'resta attivo il modello Poisson originale')+'</small></div></div>'+
+    '<p class="ai-summary">'+(active?'La calibrazione ha superato il confronto cronologico su dati non usati per stimare il parametro.':'Per ora MatchMind non modifica le probabilità: '+statusText)+'</p>'+
+    '<div class="ai-competition-list">'+rows+'</div>'+
+    (selected.saved?'<div class="ai-validation"><b>Verifica storica · '+labels[d.competition]+'</b><div class="ai-data-row"><span>Previsioni ricostruite</span><strong>'+fmt(selected.saved.scoredForecasts)+'</strong></div><div class="ai-data-row"><span>Campione addestramento / verifica</span><strong>'+fmt(selected.saved.trainingCount)+' / '+fmt(selected.saved.validationCount)+'</strong></div>'+metrics+'</div>':'')+
+    '<small class="ai-footnote">Il test ricostruisce le previsioni usando solo partite precedenti. La calibrazione riguarda 1X2; non dimostra un vantaggio economico né garantisce vincite.</small>';
   }
     const target=$('forecastBacktest');
   if(target){
