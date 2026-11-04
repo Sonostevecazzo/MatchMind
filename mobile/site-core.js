@@ -116,7 +116,36 @@
   const playerUrl=null;
   function teamInitials(name){return String(name||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase().slice(0,2);}
   function teamColor(name){let n=0;for(const c of String(name||''))n=(n*31+c.charCodeAt(0))|0;return 'hsl('+Math.abs(n)%360+' 35% 28%)';}
-  function badge(name){const fallback=esc(teamInitials(name));return '<span class="team-crest team-crest-text" aria-label="'+esc(name)+'"><span class="team-crest-fallback">'+fallback+'</span></span>';}
+  // Club crests are presentation assets, independent from the retired API-Football data feed.
+  const LOGO_ROOT='https://raw.githubusercontent.com/JoseArroyave/football-logos/main/logos/';
+  const TEAM_LOGOS={
+    internazionale:'italy/Inter.svg',inter:'italy/Inter.svg',intermilan:'italy/Inter.svg',
+    monza:'italy/AC_Monza.svg',udinese:'italy/Udinese.svg',como:'italy/Como_1907.svg',como1907:'italy/Como_1907.svg',
+    genoa:'italy/Genoa.svg',napoli:'italy/Napoli.svg',parma:'italy/Parma.svg',cagliari:'italy/Cagliari.svg',
+    frosinone:'italy/Frosinone_Calcio.svg',juventus:'italy/Juventus.svg',venezia:'italy/Venezia.svg',
+    lecce:'italy/Lecce.svg',atalanta:'italy/Atalanta.svg',sassuolo:'italy/Sassuolo.svg',
+    torino:'italy/Torino.svg',milan:'italy/Milan.svg',fiorentina:'italy/Fiorentina.svg',
+    bologna:'italy/Bologna.svg',lazio:'italy/Lazio.svg',roma:'italy/Roma.svg',hellasverona:'italy/Hellas_Verona.svg',
+    arsenal:'england/Arsenal.svg',astonvilla:'england/Aston_Villa.svg',liverpool:'england/Liverpool_FC.svg',
+    manchestercity:'england/Manchester_City.svg',mancity:'england/Manchester_City.svg',
+    manchesterunited:'england/Manchester_United.svg',manutd:'england/Manchester_United.svg',
+    newcastle:'england/Newcastle_United.svg',atleti:'spain/Atletico_Madrid.svg',
+    atleticodemadrid:'spain/Atletico_Madrid.svg',barcelona:'spain/Barcelona.svg',
+    villarreal:'spain/Villarreal.svg',realbetis:'spain/Real_Betis.svg',betis:'spain/Real_Betis.svg',
+    realmadrid:'spain/Real_Madrid.svg',bayernmuenchen:'germany/Bayern_München.svg',
+    bayernmunich:'germany/Bayern_Munich.svg',borussiadortmund:'germany/Borussia_Dortmund.svg',
+    dortmund:'germany/Borussia_Dortmund.svg',leipzig:'germany/RB_Leipzig.svg',
+    rbleipzig:'germany/RB_Leipzig.svg',stuttgart:'germany/VfB_Stuttgart.svg',
+    lille:'france/Lille.svg',lens:'france/RC_Lens.svg',psg:'france/Paris_Saint-Germain_(PSG).svg',
+    paris:'france/Paris_Saint-Germain_(PSG).svg',porto:'portugal/FC_Porto.svg',
+    benfica:'portugal/Benfica.svg',sportingcp:'portugal/Sporting_CP.svg',
+    feyenoord:'netherlands/Feyenoord.svg',psv:'netherlands/PSV_Eindhoven.svg',
+    galatasaray:'turkey/Galatasaray.svg',fenerbahce:'turkey/Fenerbahçe.svg',
+    lask:'austria/LASK.svg',bodoglimt:'norway/BodøGlimt.svg',viking:'norway/Viking_FK.svg',
+    slovanbratislava:'slovakia/Slovan_Bratislava.svg'
+  };
+  function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
+  function badge(name){const fallback=esc(teamInitials(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(name)+'">'+(src?'<img class="team-logo" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove()">':'')+'<span class="team-crest-fallback">'+fallback+'</span></span>';}
   function getTeams(rows){return [...new Set(rows.flatMap(m=>[m.home,m.away]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));}
   function groupByDate(rows){const map=new Map();rows.forEach(m=>{const k=m.date||'unknown';if(!map.has(k))map.set(k,[]);map.get(k).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
   function standings(rows){
