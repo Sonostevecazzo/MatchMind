@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v54-20261104-team-crests';
+const CACHE='matchmind-pwa-v55-20261104-statistical-bets';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
