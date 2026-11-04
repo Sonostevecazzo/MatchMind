@@ -132,7 +132,7 @@
     newcastle:'england/Newcastle_United.svg',atleti:'spain/Atletico_Madrid.svg',
     atleticodemadrid:'spain/Atletico_Madrid.svg',barcelona:'spain/Barcelona.svg',
     villarreal:'spain/Villarreal.svg',realbetis:'spain/Real_Betis.svg',betis:'spain/Real_Betis.svg',
-    realmadrid:'spain/Real_Madrid.svg',bayernmunchen:'germany/Bayern_München.svg',bayernmunch en:'germany/Bayern_München.svg',
+    realmadrid:'spain/Real_Madrid.svg',bayernmunchen:'germany/Bayern_München.svg',
     bayernmunich:'germany/Bayern_Munich.svg',borussiadortmund:'germany/Borussia_Dortmund.svg',bdortmund:'germany/Borussia_Dortmund.svg',
     dortmund:'germany/Borussia_Dortmund.svg',leipzig:'germany/RB_Leipzig.svg',
     rbleipzig:'germany/RB_Leipzig.svg',stuttgart:'germany/VfB_Stuttgart.svg',
