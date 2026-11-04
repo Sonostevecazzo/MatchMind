@@ -98,26 +98,30 @@
   }
   function renderSimulation(match) {
     const home = match.home, away = match.away;
-    const possessionHome = asNumber(statValue(home, "Ball Possession"));
-    const possessionAway = asNumber(statValue(away, "Ball Possession"));
+    const rawHomePossession = asNumber(statValue(home, "Ball Possession"));
+    const rawAwayPossession = asNumber(statValue(away, "Ball Possession"));
+    const possessionHome = rawHomePossession ?? (rawAwayPossession == null ? null : 100 - rawAwayPossession);
     const shotsHome = asNumber(statValue(home, "Total Shots"));
     const shotsAway = asNumber(statValue(away, "Total Shots"));
+    const pressureAvailable = possessionHome !== null || shotsHome !== null || shotsAway !== null;
     const pressureHome = (possessionHome == null ? 50 : possessionHome) * .55 + (shotsHome == null || shotsAway == null || shotsHome + shotsAway === 0 ? 50 : shotsHome / (shotsHome + shotsAway) * 100) * .45;
     const elapsed = number(match.elapsed) || 0;
     const formationInfo = buildPlayers(home, away, pressureHome, elapsed, lastDetail?.lineups || []);
     const homeAttacking = pressureHome >= 50;
     const pressure = Math.round(homeAttacking ? pressureHome : 100 - pressureHome);
-    const ballX = homeAttacking ? 520 + pressure * 2.4 : 380 - pressure * 2.4;
-    const ballY = 280 + Math.sin(elapsed / 3.4) * 78 + (pressure - 50) * 0.28;
+    const ballX = !pressureAvailable ? 450 : homeAttacking ? 520 + pressure * 2.4 : 380 - pressure * 2.4;
+    const ballY = !pressureAvailable ? 280 : 280 + Math.sin(elapsed / 3.4) * 78 + (pressure - 50) * 0.28;
     $("liveBall").setAttribute("cx", String(Math.max(70, Math.min(830, ballX))));
     $("liveBall").setAttribute("cy", String(Math.max(75, Math.min(485, ballY))));
     const team = homeAttacking ? home.name : away.name;
-    $("livePressure").innerHTML = '<div><span>Pressione stimata</span><b>' + esc(team) + ' · ' + pressure + '/100</b></div><div class="pressure-track"><i style="width:' + pressure + '%"></i></div>';
+    $("livePressure").innerHTML = pressureAvailable
+      ? '<div><span>Pressione stimata</span><b>' + esc(team) + ' · ' + pressure + '/100</b></div><div class="pressure-track"><i style="width:' + pressure + '%"></i></div>'
+      : '<div><span>Pressione stimata</span><b>Non disponibile</b></div>';
     const formationLabel = formationInfo.homeFormation && formationInfo.awayFormation ? "Moduli dal provider: " + formationInfo.homeFormation + " vs " + formationInfo.awayFormation + ". " : "";
     const gridLabel = formationInfo.homeGrid && formationInfo.awayGrid ? "Schieramenti iniziali basati sulla griglia delle formazioni. " : "Almeno una formazione non è disponibile: uso una disposizione schematica. ";
-    $("simulationCaption").textContent = formationLabel + gridLabel + (possessionHome == null && shotsHome == null
-      ? "Statistiche di pressione non disponibili: il pallone resta in posizione neutra. Le posizioni sono di formazione, non tracking live."
-      : "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Il movimento è illustrativo e non rappresenta coordinate live dei giocatori.");
+    $("simulationCaption").textContent = formationLabel + gridLabel + (pressureAvailable
+      ? "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Il movimento è illustrativo e non rappresenta coordinate live dei giocatori."
+      : "Statistiche di pressione non disponibili: il pallone resta neutro. Le posizioni sono di formazione, non tracking live.");
   }
 
   function renderStats(match) {
