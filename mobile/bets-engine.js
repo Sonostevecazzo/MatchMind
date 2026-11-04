@@ -187,7 +187,9 @@
       } catch (_) {
         continue;
       }
-      if (!forecast || Number(forecast.minTeamSample ?? Math.min(forecast.home?.played || 0, forecast.away?.played || 0)) < 3) continue;
+      if (!forecast) continue;
+      const support = Number.isFinite(forecast.minTeamSample) ? forecast.minTeamSample : (forecast.sampleEnough ? 10 : Math.min(forecast.home?.played || 0, forecast.away?.played || 0));
+      if (support < 3) continue;
       let best = null;
       const fixtureKey = [normalize(match.home), normalize(match.away)].sort().join("|") + "|" + match.date;
       const preferredKey = options && options.marketOverrides && options.marketOverrides[fixtureKey];
