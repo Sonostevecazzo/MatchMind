@@ -115,3 +115,28 @@ test("forecast exposes venue form, standings and manual availability adjustments
   assert.ok(adjusted.homeXg<base.homeXg);
   assert.ok(adjusted.homeVenue.played>0);
 });
+
+
+test("historical baseline backtest ignores a previously activated local AI calibration", () => {
+  const rows = [];
+  for (let i = 0; i < 90; i++) {
+    const score = i % 3 === 0 ? [2, 0] : i % 3 === 1 ? [0, 1] : [1, 1];
+    rows.push({
+      date: new Date(Date.UTC(2021, 0, 1 + i)).toISOString().slice(0, 10),
+      home: i % 2 ? "Beta FC" : "Alpha FC",
+      away: i % 2 ? "Alpha FC" : "Beta FC",
+      hg: score[0],
+      ag: score[1],
+      competition: "serie-a"
+    });
+  }
+  const withoutAI = window.MM.backtest(rows);
+  window.MatchMindAI = {
+    modelFor: () => ({ approved: true, temperature: 2.5 }),
+    applyTemperature: () => ({ home: 0.98, draw: 0.01, away: 0.01 })
+  };
+  const withAIStored = window.MM.backtest(rows);
+  assert.equal(withAIStored.count, withoutAI.count);
+  assert.equal(withAIStored.model.logLoss, withoutAI.model.logLoss);
+  assert.equal(withAIStored.model.brier, withoutAI.model.brier);
+});
