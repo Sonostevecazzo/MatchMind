@@ -40,7 +40,7 @@ assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
 assert 'href="bets.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
-assert "sampleEnough:h.played>=10&&a.played>=10" in core
+assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
 assert "matchmind-pwa-v55-20261104-statistical-bets" in (ROOT/"sw.js").read_text(encoding="utf-8")
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
