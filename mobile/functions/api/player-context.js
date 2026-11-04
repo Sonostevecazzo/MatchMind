@@ -1097,7 +1097,7 @@ function normalizeCanonicalFixture(item, competition) {
   const home=teams.home||{}, away=teams.away||{}, league=item&&item.league||{};
   const status=fixture.status||{}, date=fixture.date||"";
   const roundText=String(league.round||"");
-  const roundMatch=roundText.match(/(\\d+)/);
+  const roundMatch=roundText.match(/(\d+)/);
   const finished=["FT","AET","PEN"].includes(String(status.short||""));
   return {
     id:fixture.id==null?null:Number(fixture.id),date:date.slice(0,10),
@@ -1117,20 +1117,22 @@ async function getCanonicalCalendar(context, season) {
     return responseJson({configured:false,type:"calendar",error:"Per calendario, risultati e storico è necessaria una chiave API-Football. Inseriscila in Impostazioni."},503);
   }
   const competitions=[{id:"serie-a",league:SERIE_A_ID},{id:"champions-league",league:2}];
-  const matches=[],history=[],errors=[];
-  for (const competition of competitions) {
-    for (let year=season;year>=season-4;year--) {
-      try {
-        const ttl=year===season?120:24*60*60;
-        const payload=await providerGet("fixtures",{league:competition.league,season:year,timezone:"Europe/Rome"},context,ttl);
-        const rows=(Array.isArray(payload&&payload.response)?payload.response:[])
-          .map(item=>normalizeCanonicalFixture(item,competition.id)).filter(item=>item.date&&item.home&&item.away);
-        if(year===season)matches.push(...rows);
-        history.push(...rows.filter(item=>item.hg!==null&&item.ag!==null));
-      } catch(error) {
-        errors.push(competition.id+" "+year+": "+(error&&error.message||"provider_error"));
-      }
+  const jobs=competitions.flatMap(competition=>Array.from({length:5},(_,index)=>({competition,year:season-index})));
+  const results=await Promise.allSettled(jobs.map(async job=>{
+    const ttl=job.year===season?120:24*60*60;
+    const payload=await providerGet("fixtures",{league:job.competition.league,season:job.year,timezone:"Europe/Rome"},context,ttl);
+    return {job,rows:(Array.isArray(payload&&payload.response)?payload.response:[])
+      .map(item=>normalizeCanonicalFixture(item,job.competition.id)).filter(item=>item.date&&item.home&&item.away)};
+  }));
+  for(const result of results){
+    if(result.status!=="fulfilled"){
+      const job=jobs[results.indexOf(result)];
+      errors.push(job.competition.id+" "+job.year+": "+(result.reason&&result.reason.message||"provider_error"));
+      continue;
     }
+    const {job,rows}=result.value;
+    if(job.year===season)matches.push(...rows);
+    history.push(...rows.filter(item=>item.hg!==null&&item.ag!==null));
   }
   if(!matches.length) return responseJson({configured:true,type:"calendar",error:"API-Football non ha restituito il calendario corrente. "+(errors[0]||"")},502);
   return responseJson({
@@ -1153,13 +1155,13 @@ export async function onRequestGet(context) {
     if (type === "status") {
       const apiFootballUsage = apiFootballConfigured ? await readApiFootballUsage(context) : null;
       return responseJson({
-        configured: apiFootballConfigured || pulseScoreConfigured || footballDataConfigured || theOddsApiConfigured,
+        configured: apiFootballConfigured,
         type: "status",
         source: apiFootballConfigured ? "API-Football" : (pulseScoreConfigured ? "Sisal · PulseScore" : (footballDataConfigured ? "football-data.org" : null)),
         season,
         freePlanRequestsPerDay: apiFootballConfigured ? 100 : null,
         apiFootballUsage,
-        error: apiFootballConfigured || pulseScoreConfigured || footballDataConfigured || theOddsApiConfigured ? null : "API_FOOTBALL_KEY, PULSESCORE_API_KEY, FOOTBALL_DATA_API_KEY o THE_ODDS_API_KEY non configurate. Calendario e storico pubblici restano disponibili.",
+        error: apiFootballConfigured ? null : "API_FOOTBALL_KEY non configurata. Calendario, risultati e storico richiedono una chiave API-Football.",
         providers: {
           apiFootball: apiFootballConfigured,
           sisalOdds: pulseScoreConfigured,
