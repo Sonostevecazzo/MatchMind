@@ -2,7 +2,21 @@ name: tests
 on:
   push:
     branches: [main]
+    paths:
+      - "matchmind/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - ".github/workflows/tests.yml"
   pull_request:
+    paths:
+      - "matchmind/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - ".github/workflows/tests.yml"
   workflow_dispatch:
 
 # Keep only the newest run for a branch/PR; stale runs waste runner time.
