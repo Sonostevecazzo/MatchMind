@@ -19,11 +19,12 @@
   const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
   function readCache(){try{const own=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');return own&&Array.isArray(own.matches)?own:null;}catch{return null;}}
   let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'openfootball',updatedAt:null};
+  function trainAvailableModels(history){if(!window.MatchMindAI)return;for(const competition of Object.keys(COMPETITIONS))window.MatchMindAI.train(history,(match,prior)=>forecast(match,prior,{__skipAI:true}),competition);}
   async function loadData(force=false){
     if(dataPromise&&!force)return dataPromise;
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
-      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;if(window.MatchMindAI)window.MatchMindAI.train(data.history,(m,h)=>forecast(m,h,{__skipAI:true}),getSelectedCompetition());return data;}
+      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;trainAvailableModels(data.history);return data;}
       const headers={Accept:'application/json'};
       const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(10000)});
       let payload={};try{payload=await response.json();}catch{}
@@ -35,7 +36,7 @@
       if(!Array.isArray(payload.matches)||!payload.matches.length)throw new Error('Il dataset pubblico non ha restituito partite per questa stagione.');
       data={matches:payload.matches,history:Array.isArray(payload.history)?payload.history:[],season:payload.season||y,source:'openfootball',updatedAt:Date.now(),sourceMode:'public-dataset'};
       try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
-      if(window.MatchMindAI)window.MatchMindAI.train(data.history,(m,h)=>forecast(m,h,{__skipAI:true}),getSelectedCompetition());
+      trainAvailableModels(data.history);
       return data;
     })().catch(error=>{dataPromise=null;throw error;});
     return dataPromise;
@@ -223,10 +224,13 @@
     const dates=hist.map(m=>m.date).filter(Boolean).sort(),scoreMatrix=[];let matrixMass=0;
     for(let homeGoals=0;homeGoals<=5;homeGoals++)for(let awayGoals=0;awayGoals<=5;awayGoals++){const probability=poisson(homeXg,homeGoals)*poisson(awayXg,awayGoals);matrixMass+=probability;scoreMatrix.push({homeGoals,awayGoals,probability});}
     const minTeamSample=Math.min(h.played,a.played),confidence=minTeamSample>=10?"alta":minTeamSample>=6?"media":minTeamSample>=3?"limitata":"molto bassa";
-    const rawProbabilities=probs(homeXg,awayXg);
+    const poissonProbabilities=probs(homeXg,awayXg);
+    const eloProbabilities=options.__forcePoisson?null:(window.MatchMindElo&&window.MatchMindElo.eloProbabilities(match,hist));
+    const rawProbabilities=eloProbabilities?{...poissonProbabilities,home:eloProbabilities.home,draw:eloProbabilities.draw,away:eloProbabilities.away}:poissonProbabilities;
+    const predictionMethod=eloProbabilities?'elo-1x2-poisson-goals':'poisson';
     const aiModel=options.__skipAI?null:(window.MatchMindAI&&window.MatchMindAI.modelFor(competition));
     const probabilities=aiModel&&aiModel.approved?{...rawProbabilities,...window.MatchMindAI.applyTemperature(rawProbabilities,aiModel.temperature)}:rawProbabilities;
-    return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates[dates.length-1]||null,home:h,away:a,homeVenue:hv,awayVenue:av,homeXg,awayXg,probabilities,rawProbabilities,aiCalibration:{applied:Boolean(aiModel&&aiModel.approved),temperature:aiModel?.temperature??1,status:aiModel?.status||"not_trained"},scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:minTeamSample>=10,minTeamSample,confidence,standings,modelFactors:{weightedRecentForm:true,homeAwaySplits:true,standingsPressure:true,manualAbsenceAdjustment:{attackingHome:attAbsH,defensiveHome:defAbsH,attackingAway:attAbsA,defensiveAway:defAbsA},manualMotivation:{home:motivationHome,away:motivationAway}},method:"Poisson con forma recente ponderata, rendimento casa/trasferta, classifica cronologica e correzioni manuali; calibrazione AI 1X2 solo se validata",limitations:"La calibrazione adattiva modifica solo 1X2 e viene attivata solo se migliora log loss e Brier in un test cronologico separato. Assenze e motivazione specifica non sono fornite da un feed affidabile."};
+    return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates[dates.length-1]||null,home:h,away:a,homeVenue:hv,awayVenue:av,homeXg,awayXg,probabilities,rawProbabilities,poissonProbabilities,eloProbabilities,predictionMethod,aiCalibration:{applied:Boolean(aiModel&&aiModel.approved),temperature:aiModel?.temperature??1,status:aiModel?.status||"not_trained"},scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:minTeamSample>=10,minTeamSample,confidence,standings,modelFactors:{weightedRecentForm:true,homeAwaySplits:true,standingsPressure:true,manualAbsenceAdjustment:{attackingHome:attAbsH,defensiveHome:defAbsH,attackingAway:attAbsA,defensiveAway:defAbsA},manualMotivation:{home:motivationHome,away:motivationAway}},method:predictionMethod==="elo-1x2-poisson-goals"?"Elo per le probabilità 1X2; Poisson per xG, risultato esatto e mercati goal":"Poisson per 1X2 e mercati goal; Elo non disponibile per campione insufficiente",limitations:"La calibrazione adattiva modifica solo 1X2 e viene attivata solo se migliora log loss e Brier in un test cronologico separato. Assenze e motivazione specifica non sono fornite da un feed affidabile."};
   }
 function eventForecast(match,history){
     const before=String(match&&match.date||''),competition=match&&match.competition||'serie-a';
@@ -255,7 +259,7 @@ function eventForecast(match,history){
     for(let i=0;i<played.length;i++){
       const target=played[i],prior=played.slice(0,i).filter(m=>m.date<target.date);
       if(prior.length<30)continue;
-      const f=forecast(target,prior);
+      const f=forecast(target,prior,{__skipAI:true,__forcePoisson:true});
       if(!f.sampleEnough)continue;
       const actual=Number(target.hg)>Number(target.ag)?'home':Number(target.hg)<Number(target.ag)?'away':'draw';
       const counts={home:0,draw:0,away:0};

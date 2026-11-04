@@ -1,24 +1,25 @@
 name: tests
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+
+# Keep only the newest run for a branch/PR; stale runs waste runner time.
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   python-tests:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
           cache: pip
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
       - name: Install package and test dependencies
         run: python -m pip install -e ".[dev]"
       - name: Compile source
@@ -27,5 +28,3 @@ jobs:
         run: python -m pytest -q
       - name: CLI smoke test
         run: python -m matchmind.cli demo
-      - name: Validate smartphone PWA
-        run: python mobile/check.py

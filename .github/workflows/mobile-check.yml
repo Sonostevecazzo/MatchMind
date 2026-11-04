@@ -1,7 +1,7 @@
 name: Mobile PWA checks
-
 on:
   push:
+    branches: [main]
     paths:
       - "mobile/**"
       - ".github/workflows/mobile-check.yml"
@@ -13,32 +13,19 @@ on:
 permissions:
   contents: read
 
+# Keep only the newest run for a branch/PR; stale runs waste runner time.
+concurrency:
+  group: mobile-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  javascript:
-    runs-on: ubuntu-latest
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Check browser scripts
-        run: |
-          node --check mobile/site-core.js
-          node --check mobile/ai-engine.js
-          node --check mobile/site-pages.js
-          node --check mobile/rounds.js
-          node --check mobile/elo.js
-          node --check mobile/bets-engine.js
-          node --check mobile/bets.js
-          node --check mobile/live.js
-          node --check mobile/sw.js
-      - name: Check Cloudflare Pages Functions
-        run: |
-          node --input-type=module --check < mobile/functions/api/public-calendar.js
-          node --input-type=module --check < mobile/functions/api/live-match.js
-      - name: Test chronological round analysis and live data normalization
-        run: node --test mobile/tests/ai-engine.test.mjs mobile/tests/rounds.test.mjs mobile/tests/live-match.test.mjs
-      - name: Run complete PWA validation suite
+      # mobile/check.py runs the complete static PWA audit, JavaScript syntax
+      # checks, Cloudflare Function checks, and every mobile unit-test suite.
+      - name: Validate PWA and run mobile tests
         run: python mobile/check.py

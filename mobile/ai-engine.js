@@ -1,6 +1,6 @@
 (function(root){
   "use strict";
-  const STORAGE="matchmind-ai-model-v1", VERSION="temperature-calibration-v1";
+  const STORAGE="matchmind-ai-model-v2-elo", VERSION="elo-temperature-calibration-v1";
   const MIN_SCORED=120, MIN_VALIDATION=40, DAY=86400000;
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const classes=["home","draw","away"];
@@ -98,6 +98,7 @@
       else if(forecast.awayXg>forecast.homeXg+.25)reasons.push("Il modello stima una produzione offensiva maggiore per la squadra ospite.");
     }
     if(!forecast.sampleEnough)reasons.push("Il campione storico è limitato: la previsione ha affidabilità ridotta.");
+    if(forecast.predictionMethod==="elo-1x2-poisson-goals")reasons.push("Le probabilità 1X2 derivano dal rating Elo; i mercati goal restano stimati con Poisson.");
     if(forecast.aiCalibration?.applied)reasons.push("La probabilità 1X2 è stata calibrata con un modello adattivo che ha superato il controllo cronologico.");
     if(!reasons.length)reasons.push("I dati disponibili non mostrano un fattore storico dominante.");
     return reasons;

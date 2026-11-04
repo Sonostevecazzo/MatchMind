@@ -8,3 +8,31 @@
 .analysis-page .panel .text-link{display:inline-block;margin-top:8px}
 @media(max-width:700px){.analysis-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.analysis-summary{padding:13px}.analysis-summary b{font-size:26px}}
 @media(max-width:360px){.analysis-summary-grid{grid-template-columns:1fr 1fr}.analysis-summary span{font-size:11px}}
+
+.ai-status{display:flex;align-items:center;gap:11px;padding:13px;border:1px solid #5b4930;border-radius:12px;background:#211b13}
+.ai-status.is-active{border-color:#365d49;background:#12221a}
+.ai-status-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#d5a34f}
+.ai-status.is-active .ai-status-dot{background:#75c99a}
+.ai-status b,.ai-status small{display:block}
+.ai-status b{font-size:14px;color:#f1f4ed}
+.ai-status small{margin-top:4px;color:#9eaaa5;font-size:11px}
+.ai-summary{margin:12px 0;color:#c1ccca;font-size:13px;line-height:1.55}
+.ai-competition-list{display:grid;gap:0;border-top:1px solid #2a383d;border-bottom:1px solid #2a383d}
+.ai-competition-row,.ai-data-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #26343a}
+.ai-competition-row:last-child,.ai-data-row:last-child{border-bottom:0}
+.ai-competition-row span b,.ai-competition-row span small{display:block}
+.ai-competition-row span b{font-size:12px}
+.ai-competition-row span small,.ai-competition-row strong{font-size:11px;color:#9ba9a8}
+.ai-competition-row strong.is-active{color:#85d4a1}
+.ai-validation{margin-top:13px;padding:12px;border:1px solid #2a383d;border-radius:11px}
+.ai-validation> b{font-size:12px}
+.ai-data-row span{font-size:11px;color:#9ba9a8}
+.ai-data-row strong{font-size:12px;font-variant-numeric:tabular-nums}
+.ai-metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.ai-metrics>div{padding:10px;border-radius:9px;background:#111b20}
+.ai-metrics small,.ai-metrics b{display:block}
+.ai-metrics small{font-size:10px;color:#9ba9a8}
+.ai-metrics b{margin:5px 0;font-size:15px;font-variant-numeric:tabular-nums}
+.ai-footnote{display:block;margin-top:12px;color:#879795;font-size:10px;line-height:1.5}
+.ai-technical-details summary{padding:13px 0;color:#aebbb8;font-size:13px;cursor:pointer}
+@media(max-width:360px){.ai-metrics b{font-size:13px}}

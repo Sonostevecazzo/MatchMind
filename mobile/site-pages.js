@@ -190,7 +190,7 @@
   const seasonContext=match.competition==='champions-league'?null:window.MatchMindRounds?.matchContext(match,d.history,d.matches);
   const seasonContextHtml=seasonContext?'<section class="section"><div class="section-head"><div><h2>Classifica e obiettivi stagionali</h2><p>Fotografia alla data della partita, senza usare risultati successivi.</p></div></div><div class="panel panel-pad">'+[seasonContext.home,seasonContext.away].map(t=>'<div class="data-row"><span>'+esc(t.team)+' · posizione '+(t.rank??'—')+' · '+(t.points??'—')+' pt</span><b>'+esc(t.objective)+'</b></div><small style="display:block;color:#91a0ae;font-size:9px;margin:0 0 10px">PG '+(t.played??'—')+' · DR '+(t.goalDifference??'—')+(t.pointsToFourth!==null&&t.pointsToFourth!==undefined?' · distanza 4ª: '+t.pointsToFourth+' pt':'')+(t.pointsToSixth!==null&&t.pointsToSixth!==undefined?' · distanza 6ª: '+t.pointsToSixth+' pt':'')+(t.pointsAboveSafety!==null&&t.pointsAboveSafety!==undefined?' · margine 17ª: '+t.pointsAboveSafety+' pt':'')+'</small>').join('')+'<small style="color:#91a0ae;font-size:9px;line-height:1.5">'+esc(seasonContext.disclaimer)+'</small></div></section>':'';
   $('matchDetail').innerHTML='<div class="match-detail-score"><div class="match-detail-meta"><img class="competition-logo-small" src="https://media.api-sports.io/football/leagues/'+MM().competitionInfo(match).logo+'.png" alt="" onerror="this.remove()"> '+esc(MM().competitionInfo(match).name.toUpperCase())+' · '+esc(MM().dateLabel(match))+(match.round?' · GIORNATA '+match.round:'')+'</div><div class="match-detail-teams"><div class="match-detail-side"><a href="'+MM().teamUrl(match.home)+'">'+MM().badge(match.home)+'</a><b>'+esc(match.home)+'</b></div><div class="match-detail-result '+(done?'':'pending')+'">'+(done?match.hg+' – '+match.ag:(match.time||'VS'))+'</div><div class="match-detail-side"><a href="'+MM().teamUrl(match.away)+'">'+MM().badge(match.away)+'</a><b>'+esc(match.away)+'</b></div></div><div style="margin-top:12px;color:#91a0ae;font-size:8px">'+(done?'RISULTATO ARCHIVIATO':MM().status(match).toUpperCase())+'</div></div>'+
-  '<section class="section analysis-section" style="margin-top:18px"><div class="section-head"><div><div class="eyebrow">MODELLO STATISTICO</div><h2>'+ (done?'Replay statistico storico':'Stima pre-partita') +'</h2><p>Modello Poisson · '+f.historyCount+' partite archiviate nel campione.</p></div></div>'+(f.sampleEnough?'<div class="notice good">Base storica completa per questa stima: almeno 10 partite precedenti per ciascuna squadra. Le probabilità restano indicative e non sono una previsione certa.</div>':'<div class="notice warning">Campione squadra incompleto: '+esc(match.home)+' '+f.home.played+'/10 e '+esc(match.away)+' '+f.away.played+'/10 partite disponibili. Le probabilità sono esplorative e non vanno considerate robuste.</div>')+
+  '<section class="section analysis-section" style="margin-top:18px"><div class="section-head"><div><div class="eyebrow">MODELLO STATISTICO</div><h2>'+ (done?'Replay statistico storico':'Stima pre-partita') +'</h2><p>'+ (f.predictionMethod==='elo-1x2-poisson-goals'?'Elo per 1X2 · Poisson per i mercati goal':'Poisson · Elo non disponibile per campione insufficiente') +' · '+f.historyCount+' partite archiviate nel campione.</p></div></div>'+(f.sampleEnough?'<div class="notice good">Base storica completa per questa stima: almeno 10 partite precedenti per ciascuna squadra. Le probabilità restano indicative e non sono una previsione certa.</div>':'<div class="notice warning">Campione squadra incompleto: '+esc(match.home)+' '+f.home.played+'/10 e '+esc(match.away)+' '+f.away.played+'/10 partite disponibili. Le probabilità sono esplorative e non vanno considerate robuste.</div>')+
   '<div class="section-head" style="margin-top:12px"><div><h2>Probabilità 1X2</h2><p>Distribuzione stimata degli esiti</p></div></div><div class="prob-grid">'+probCard('1 · Casa',p.home)+probCard('X · Pareggio',p.draw)+probCard('2 · Trasferta',p.away)+'</div>'+
   '<div class="section-head" style="margin-top:13px"><div><h2>Mercati goal</h2><p>Probabilità derivate dalla distribuzione Poisson</p></div></div><div class="prob-grid">'+probCard('Gol',p.btts)+probCard('No Gol',1-p.btts)+probCard('Over 2,5',p.o25)+'</div><div class="prob-grid" style="margin-top:7px">'+probCard('Over 1,5',p.o15)+probCard('Over 3,5',p.o35)+probCard('Under 2,5',1-p.o25)+'</div>'+
   scoreMatrixHtml+
@@ -248,7 +248,7 @@ function backtestHTML(r,e){
    '<div class="data-row"><span>Finestra test</span><b>'+esc(r.from)+' – '+esc(r.to)+'</b></div>'+
    '<div class="data-row"><span>IC 95% accuracy (Wilson)</span><b>'+pct(r.model.accuracyCI[0])+' – '+pct(r.model.accuracyCI[1])+'</b></div>'+
    '<div class="eyebrow" style="margin-top:12px">QUALITÀ PROBABILISTICA · PIÙ BASSO È MEGLIO</div>'+
-   metric('Log loss · modello',r.model.logLoss,r.baseline.logLoss)+metric('Brier score 1X2 · modello',r.model.brier,r.baseline.brier)+'<div class="eyebrow" style="margin-top:14px">ESPERIMENTO ELO · CONFRONTO INDIPENDENTE</div>'+'<div class="data-row"><span>Pronostici Elo testati</span><b>'+fmt(e?.count||0)+'</b></div>'+'<div class="data-row"><span>Accuratezza Elo</span><b>'+pct(e?.model?.accuracy||0)+'</b></div>'+'<div class="data-row"><span>Log loss Elo</span><b>'+fmt(e?.model?.logLoss||0,3)+'</b></div>'+'<div class="data-row"><span>Brier Elo</span><b>'+fmt(e?.model?.brier||0,3)+'</b></div>'+'<div class="notice warning">Elo sperimentale non calibrato: K=20, vantaggio casa=40 punti, rating iniziale=1500. Le metriche vanno lette insieme al numero di pronostici testati; il modello non sostituisce Poisson.</div>'+'<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Le partite della stessa data sono pronosticate dallo stesso snapshot dei rating. Gli aggiornamenti Elo avvengono solo dopo aver elaborato la data. Squadre non presenti in archivio partono da 1500.</small>'+
+   metric('Log loss · modello',r.model.logLoss,r.baseline.logLoss)+metric('Brier score 1X2 · modello',r.model.brier,r.baseline.brier)+'<div class="eyebrow" style="margin-top:14px">ESPERIMENTO ELO · CONFRONTO INDIPENDENTE</div>'+'<div class="data-row"><span>Pronostici Elo testati</span><b>'+fmt(e?.count||0)+'</b></div>'+'<div class="data-row"><span>Accuratezza Elo</span><b>'+pct(e?.model?.accuracy||0)+'</b></div>'+'<div class="data-row"><span>Log loss Elo</span><b>'+fmt(e?.model?.logLoss||0,3)+'</b></div>'+'<div class="data-row"><span>Brier Elo</span><b>'+fmt(e?.model?.brier||0,3)+'</b></div>'+'<div class="notice warning">Elo 1X2 con K=20, vantaggio casa=40 punti e rating iniziale=1500. Elo viene usato per 1X2 quando sono disponibili almeno 30 risultati di campionato e 10 partite precedenti per ciascuna squadra; Poisson continua a stimare i mercati goal. Le metriche vanno lette insieme al campione.</div>'+'<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Le partite della stessa data sono pronosticate dallo stesso snapshot dei rating. Gli aggiornamenti Elo avvengono solo dopo aver elaborato la data. Squadre non presenti in archivio partono da 1500.</small>'+
    '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE PER ESITO</div>'+
    '<p style="color:#91a0ae;font-size:10px;line-height:1.5">Probabilità media assegnata a ciascun esito e frequenza osservata nel campione.</p>'+classRows+
    '<div class="eyebrow" style="margin-top:12px">CALIBRAZIONE DEL SEGNO PIÙ PROBABILE</div>'+bins+
@@ -273,26 +273,30 @@ function backtestHTML(r,e){
   }
   const aiTarget=$('adaptiveAIStatus');
   if(aiTarget){
-   const model=window.MatchMindAI&&window.MatchMindAI.modelFor(d.competition);
-   const allModels=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-ai-model-v1')||'{}')}catch(_){return{}}})();
-   const current=allModels[d.competition]||null;
-   if(model&&model.approved){
-    const v=model.validation||{};
-    aiTarget.innerHTML='<div class="notice good">Calibrazione adattiva attiva · temperatura '+fmt(model.temperature,3)+'. Il controllo walk-forward ha migliorato entrambe le metriche rispetto al modello non calibrato.</div>'+
-     '<div class="data-row"><span>Previsioni storiche valutate</span><b>'+fmt(model.scoredForecasts)+'</b></div>'+
-     '<div class="data-row"><span>Campione addestramento / validazione</span><b>'+fmt(model.trainingCount)+' / '+fmt(model.validationCount)+'</b></div>'+
-     '<div class="data-row"><span>Log loss · baseline → calibrata</span><b>'+fmt(v.baselineLogLoss,4)+' → '+fmt(v.calibratedLogLoss,4)+'</b></div>'+
-     '<div class="data-row"><span>Brier · baseline → calibrata</span><b>'+fmt(v.baselineBrier,4)+' → '+fmt(v.calibratedBrier,4)+'</b></div>'+
-     '<small>Ultimo addestramento: '+esc(new Date(model.updatedAt).toLocaleString('it-IT'))+'. Riaddestramento giornaliero locale quando vengono caricati i dati.</small>';
-   }else{
-    const status=current&&current.status==='not_better_than_baseline'?'Il test non ha dimostrato un miglioramento: resta attiva la baseline Poisson.':'Campione insufficiente per addestrare e validare la calibrazione.';
-    aiTarget.innerHTML='<div class="notice warning">Calibrazione adattiva non attiva. '+esc(status)+'</div>'+
-     '<div class="data-row"><span>Partite storiche disponibili</span><b>'+fmt(current?.trainedMatches||0)+'</b></div>'+
-     '<div class="data-row"><span>Previsioni cronologiche valide</span><b>'+fmt(current?.scoredForecasts||0)+'</b></div>'+
-     '<small>Il modello non modifica le probabilità finché non supera la validazione fuori campione. Addestramento giornaliero sul dispositivo quando apri MatchMind con connessione.</small>';
-   }
-   const explanation=forecasts.length&&window.MatchMindAI?window.MatchMindAI.explain(forecasts[0].match,forecasts[0].forecast):[];
-   if(explanation.length)aiTarget.innerHTML+='<div class="eyebrow" style="margin-top:14px">LETTURA AI · PROSSIMA PARTITA</div><ul>'+explanation.map(reason=>'<li>'+esc(reason)+'</li>').join('')+'</ul><small>Spiegazione basata su indicatori osservabili del modello; non è una certezza sull&#39;esito.</small>';
+   const competitions=['serie-a','champions-league'];
+   const labels={'serie-a':'Serie A','champions-league':'Champions League'};
+   const models=competitions.map(id=>{
+    let saved=null;try{saved=JSON.parse(localStorage.getItem('matchmind-ai-model-v2-elo')||'{}')[id]||null}catch(_){}
+    const model=window.MatchMindAI&&window.MatchMindAI.modelFor(id);
+    const count=d.history.filter(m=>(m.competition||'serie-a')===id&&MM().hasScore(m)).length;
+    return{id,label:labels[id],count,model,saved};
+   });
+   const selected=models.find(x=>x.id===d.competition)||models[0];
+   const active=Boolean(selected.model&&selected.model.approved);
+   const status=active?'Calibrazione verificata attiva':'Elo 1X2 attivo · calibrazione non attiva';
+   const statusText=selected.saved?.status==='not_better_than_baseline'?'Il test non ha trovato un miglioramento affidabile.':selected.count<120?'Archivio storico ancora insufficiente per validare la calibrazione.':'La calibrazione non ha superato tutti i controlli.';
+   const rows=models.map(x=>{
+    const m=x.saved,ok=Boolean(m&&m.approved);
+    const state=ok?'Attiva':m?.status==='not_better_than_baseline'?'Non migliora':'Dati insufficienti';
+    return '<div class="ai-competition-row"><span><b>'+x.label+'</b><small>'+fmt(x.count)+' risultati storici disponibili</small></span><strong class="'+(ok?'is-active':'')+'">'+state+'</strong></div>';
+   }).join('');
+   const v=selected.saved?.validation||{};
+   const metrics=selected.saved?'<div class="ai-metrics"><div><small>Log Loss</small><b>'+fmt(v.baselineLogLoss,3)+' → '+fmt(v.calibratedLogLoss,3)+'</b><small>'+((v.improvementLogLoss||0)>0?'migliora':'non migliora')+'</small></div><div><small>Brier Score</small><b>'+fmt(v.baselineBrier,3)+' → '+fmt(v.calibratedBrier,3)+'</b><small>'+((v.improvementBrier||0)>0?'migliora':'non migliora')+'</small></div></div>':'';
+   aiTarget.innerHTML='<div class="ai-status '+(active?'is-active':'')+'"><span class="ai-status-dot"></span><div><b>'+status+'</b><small>'+labels[d.competition]+' · '+(active?'le probabilità 1X2 sono calibrate':'restano attivi Elo per 1X2 e Poisson per i mercati goal')+'</small></div></div>'+
+    '<p class="ai-summary">'+(active?'La calibrazione ha superato il confronto cronologico su dati non usati per stimare il parametro.':'La calibrazione non modifica le probabilità: '+statusText)+'</p>'+
+    '<div class="ai-competition-list">'+rows+'</div>'+
+    (selected.saved?'<div class="ai-validation"><b>Verifica storica · '+labels[d.competition]+'</b><div class="ai-data-row"><span>Previsioni ricostruite</span><strong>'+fmt(selected.saved.scoredForecasts)+'</strong></div><div class="ai-data-row"><span>Campione addestramento / verifica</span><strong>'+fmt(selected.saved.trainingCount)+' / '+fmt(selected.saved.validationCount)+'</strong></div>'+metrics+'</div>':'')+
+    '<small class="ai-footnote">Il test ricostruisce le previsioni usando solo partite precedenti. La calibrazione riguarda 1X2; non dimostra un vantaggio economico né garantisce vincite.</small>';
   }
     const target=$('forecastBacktest');
   if(target){

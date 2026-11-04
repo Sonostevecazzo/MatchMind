@@ -4,9 +4,11 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile(new URL("../site-core.js", import.meta.url), "utf8");
+const eloSource = await readFile(new URL("../elo.js", import.meta.url), "utf8");
 const window = {};
 const document = { addEventListener() {}, getElementById() { return null; }, body: { dataset: {} } };
 vm.runInNewContext(source, { window, document, localStorage: { getItem() { return null; }, setItem() {} }, Date, Math, Number, String, Object, Array, Map, Set, Intl, URLSearchParams, console });
+vm.runInNewContext(eloSource, { window, Math, Number, String, Map, Set, Array, Object, Error });
 
 test("walk-forward backtest uses only earlier matches and returns valid 1X2 metrics", () => {
   const rows = [];
@@ -114,4 +116,45 @@ test("forecast exposes venue form, standings and manual availability adjustments
   assert.ok(["alta","media","limitata","molto bassa"].includes(base.confidence));
   assert.ok(adjusted.homeXg<base.homeXg);
   assert.ok(adjusted.homeVenue.played>0);
+});
+
+
+test("historical baseline backtest ignores a previously activated local AI calibration", () => {
+  const rows = [];
+  for (let i = 0; i < 90; i++) {
+    const score = i % 3 === 0 ? [2, 0] : i % 3 === 1 ? [0, 1] : [1, 1];
+    rows.push({
+      date: new Date(Date.UTC(2021, 0, 1 + i)).toISOString().slice(0, 10),
+      home: i % 2 ? "Beta FC" : "Alpha FC",
+      away: i % 2 ? "Alpha FC" : "Beta FC",
+      hg: score[0],
+      ag: score[1],
+      competition: "serie-a"
+    });
+  }
+  const withoutAI = window.MM.backtest(rows);
+  window.MatchMindAI = {
+    modelFor: () => ({ approved: true, temperature: 2.5 }),
+    applyTemperature: () => ({ home: 0.98, draw: 0.01, away: 0.01 })
+  };
+  const withAIStored = window.MM.backtest(rows);
+  assert.equal(withAIStored.count, withoutAI.count);
+  assert.equal(withAIStored.model.logLoss, withoutAI.model.logLoss);
+  assert.equal(withAIStored.model.brier, withoutAI.model.brier);
+});
+
+test("production forecast uses Elo for 1X2 and Poisson for goal markets when history is adequate",()=>{
+ const rows=[];
+ for(let i=0;i<45;i++){
+  rows.push({date:new Date(Date.UTC(2024,0,1+i)).toISOString().slice(0,10),home:i%2?'Beta FC':'Alpha FC',away:i%2?'Alpha FC':'Beta FC',hg:i%3?2:0,ag:i%3?0:1,competition:'serie-a'});
+ }
+ const f=window.MM.forecast({date:'2024-03-01',home:'Alpha FC',away:'Beta FC',competition:'serie-a'},rows);
+ assert.equal(f.predictionMethod,'elo-1x2-poisson-goals');
+ assert.ok(f.eloProbabilities);
+ assert.ok(Math.abs(f.probabilities.home+f.probabilities.draw+f.probabilities.away-1)<1e-10);
+ assert.equal(f.probabilities.btts,f.poissonProbabilities.btts);
+ assert.equal(f.probabilities.o25,f.poissonProbabilities.o25);
+ const baseline=window.MM.forecast({date:'2024-03-01',home:'Alpha FC',away:'Beta FC',competition:'serie-a'},rows,{__forcePoisson:true});
+ assert.equal(baseline.predictionMethod,'poisson');
+ assert.equal(baseline.eloProbabilities,null);
 });
