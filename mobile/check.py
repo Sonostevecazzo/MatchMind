@@ -50,7 +50,9 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v61-20261104-adaptive-live" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v63-20261104-fallback-live-nav" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "./functions/api/live-match.js" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "900000" in (ROOT/"bets.js").read_text(encoding="utf-8")
