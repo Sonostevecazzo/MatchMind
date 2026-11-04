@@ -26,6 +26,7 @@ jobs:
       - name: Check browser scripts
         run: |
           node --check mobile/site-core.js
+          node --check mobile/ai-engine.js
           node --check mobile/site-pages.js
           node --check mobile/rounds.js
           node --check mobile/elo.js
@@ -38,6 +39,6 @@ jobs:
           node --input-type=module --check < mobile/functions/api/public-calendar.js
           node --input-type=module --check < mobile/functions/api/live-match.js
       - name: Test chronological round analysis and live data normalization
-        run: node --test mobile/tests/rounds.test.mjs mobile/tests/live-match.test.mjs
+        run: node --test mobile/tests/ai-engine.test.mjs mobile/tests/rounds.test.mjs mobile/tests/live-match.test.mjs
       - name: Run complete PWA validation suite
         run: python mobile/check.py

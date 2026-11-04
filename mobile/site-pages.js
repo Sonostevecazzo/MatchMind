@@ -271,7 +271,30 @@ function backtestHTML(r,e){
     '<article class="analysis-summary"><span>Storico medio</span><b>'+fmt(meanHistory,1)+'</b><small>Partite precedenti per incontro</small></article></div>'+
     '<div class="notice">'+(limited?'Sono presenti '+limited+' partite con campione insufficiente.':'Tutte le partite future hanno superato la soglia minima del campione.')+' La soglia è un controllo di copertura, non una misura di accuratezza o calibrazione.</div>';
   }
-  const target=$('forecastBacktest');
+  const aiTarget=$('adaptiveAIStatus');
+  if(aiTarget){
+   const model=window.MatchMindAI&&window.MatchMindAI.modelFor(d.competition);
+   const allModels=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-ai-model-v1')||'{}')}catch(_){return{}}})();
+   const current=allModels[d.competition]||null;
+   if(model&&model.approved){
+    const v=model.validation||{};
+    aiTarget.innerHTML='<div class="notice good">Calibrazione adattiva attiva · temperatura '+fmt(model.temperature,3)+'. Il controllo walk-forward ha migliorato entrambe le metriche rispetto al modello non calibrato.</div>'+
+     '<div class="data-row"><span>Previsioni storiche valutate</span><b>'+fmt(model.scoredForecasts)+'</b></div>'+
+     '<div class="data-row"><span>Campione addestramento / validazione</span><b>'+fmt(model.trainingCount)+' / '+fmt(model.validationCount)+'</b></div>'+
+     '<div class="data-row"><span>Log loss · baseline → calibrata</span><b>'+fmt(v.baselineLogLoss,4)+' → '+fmt(v.calibratedLogLoss,4)+'</b></div>'+
+     '<div class="data-row"><span>Brier · baseline → calibrata</span><b>'+fmt(v.baselineBrier,4)+' → '+fmt(v.calibratedBrier,4)+'</b></div>'+
+     '<small>Ultimo addestramento: '+esc(new Date(model.updatedAt).toLocaleString('it-IT'))+'. Riaddestramento giornaliero locale quando vengono caricati i dati.</small>';
+   }else{
+    const status=current&&current.status==='not_better_than_baseline'?'Il test non ha dimostrato un miglioramento: resta attiva la baseline Poisson.':'Campione insufficiente per addestrare e validare la calibrazione.';
+    aiTarget.innerHTML='<div class="notice warning">Calibrazione adattiva non attiva. '+esc(status)+'</div>'+
+     '<div class="data-row"><span>Partite storiche disponibili</span><b>'+fmt(current?.trainedMatches||0)+'</b></div>'+
+     '<div class="data-row"><span>Previsioni cronologiche valide</span><b>'+fmt(current?.scoredForecasts||0)+'</b></div>'+
+     '<small>Il modello non modifica le probabilità finché non supera la validazione fuori campione. Addestramento giornaliero sul dispositivo quando apri MatchMind con connessione.</small>';
+   }
+   const explanation=forecasts.length&&window.MatchMindAI?window.MatchMindAI.explain(forecasts[0].match,forecasts[0].forecast):[];
+   if(explanation.length)aiTarget.innerHTML+='<div class="eyebrow" style="margin-top:14px">LETTURA AI · PROSSIMA PARTITA</div><ul>'+explanation.map(reason=>'<li>'+esc(reason)+'</li>').join('')+'</ul><small>Spiegazione basata su indicatori osservabili del modello; non è una certezza sull&#39;esito.</small>';
+  }
+    const target=$('forecastBacktest');
   if(target){
    target.innerHTML='<div class="loading-state">Calcolo del backtest cronologico sui risultati storici…</div>';
    setTimeout(()=>{try{target.innerHTML=backtestHTML(MM().backtest(d.history),MM().eloBacktest?MM().eloBacktest(d.history):null);}catch(e){target.innerHTML='<div class="notice warning">Backtest non completato: '+esc(e.message)+'</div>'; }},20);
