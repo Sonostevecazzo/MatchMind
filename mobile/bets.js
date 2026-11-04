@@ -129,7 +129,16 @@ document.addEventListener("DOMContentLoaded",async()=>{
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
-  contexts=read(CONTEXT_KEY,{});archive=read(ARCHIVE_KEY,[]);if(!Array.isArray(archive))archive=[];
+  contexts=read(CONTEXT_KEY,{});
+  archive=read(ARCHIVE_KEY,[]);
+  if(!Array.isArray(archive))archive=[];
+  if(!archive.length){
+    const legacy=read("matchmind-slip-archive-v1",[]);
+    if(Array.isArray(legacy)&&legacy.length){
+      archive=legacy.map(ticket=>({...ticket,probability:Number.isFinite(ticket.probability)?ticket.probability:(ticket.selections||[]).reduce((v,item)=>v*(Number.isFinite(item.probability)?item.probability:1),1)}));
+      save(ARCHIVE_KEY,archive);
+    }
+  }
   renderFixtures();renderSlip();renderArchive();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
