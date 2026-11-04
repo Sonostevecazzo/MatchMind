@@ -1,32 +1,38 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080c11">
-<meta name="description" content="MatchMind · Controllo schedine Sisal">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="./site.css">
-<link rel="stylesheet" href="./mobile-readable.css?v=20261103-1025">
-<title>MatchMind · Le mie scommesse</title>
-<script defer src="./bets-engine.js"></script>
-<script defer src="./tipsaudit.js"></script>
-<script defer src="./site-core.js"></script>
-<script defer src="./bets.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080c11">
+<meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261104-model-builder">
+<title>MatchMind · Scommesse</title>
+<script defer src="./bets-engine.js"></script><script defer src="./site-core.js"></script><script defer src="./bets.js"></script>
 </head>
-<body data-page="bets" data-title="Le mie scommesse" data-subtitle="Costruisci una schedina, archivia le selezioni e inserisci manualmente le quote.">
+<body data-page="bets" data-title="Scommesse" data-subtitle="Analisi statistiche, selezioni e proposte probabilistiche.">
 <div id="siteHeader"></div>
 <main class="page-wrap">
- <div class="page-intro">
-  <div class="eyebrow">MATCHMIND / BET CHECKER</div>
-  <h1 id="pageTitle">Le mie scommesse</h1>
-  <p id="pageSubtitle">Costruisci una schedina, archivia le tue selezioni e confronta le quote.</p>
- </div>
- <section class="section panel panel-pad"><h2>Quote</h2><p>Inserisci manualmente le quote del bookmaker nella schedina. Non è attivo alcun collegamento automatico con Sisal o altri operatori.</p></section>
- <div class="notice warning">Le percentuali sono stime del modello statistico locale, non probabilità certificate né garanzie di vincita. La probabilità multipla usa il prodotto delle probabilità delle singole partite e assume indipendenza tra eventi. Quote e disponibilità possono cambiare; verifica sempre su Sisal. MatchMind non accede al conto Sisal e non piazza scommesse.</div>
- <div class="status-line" id="globalStatus" aria-live="polite"></div>
- <footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
+ <div class="page-intro"><div class="eyebrow">MATCHMIND / BET BUILDER</div><h1 id="pageTitle">Scommesse</h1><p id="pageSubtitle">Costruisci la tua schedina o chiedi al modello una proposta basata sui dati.</p></div>
+ <section class="section panel panel-pad" id="automaticBuilder">
+  <div class="section-head"><div><div class="eyebrow">ANALISI AUTOMATICA</div><h2>Costruttore probabilistico</h2><p>La proposta valuta le partite della prossima giornata, usando le tue selezioni come preferenze quando sono già presenti.</p></div></div>
+  <div class="field"><label for="targetProbability">Probabilità obiettivo della combinazione: <b id="targetProbabilityLabel">55%</b></label><input id="targetProbability" type="range" min="0" max="100" step="1" value="55"><div class="range-scale"><span>0%</span><span>50%</span><span>100%</span></div></div>
+  <div class="field"><label for="maxLegs">Numero massimo di partite</label><select id="maxLegs"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option></select></div>
+  <button id="buildTicket" type="button" class="primary">Genera proposta statistica</button>
+  <div id="ticketResults" style="margin-top:14px"><div class="empty-state">La proposta sarà calcolata dopo il caricamento del calendario e dello storico.</div></div>
+ </section>
+ <section class="section panel panel-pad" id="manualBuilder">
+  <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Seleziona gli esiti sulle partite future. Puoi anche specificare indisponibilità e motivazione quando hai informazioni attendibili.</p></div></div>
+  <div class="field"><label for="matchSearch">Cerca una squadra o una partita</label><input id="matchSearch" type="search" placeholder="Es. Inter, Milan, Roma…"></div>
+  <div id="manualFixtures" class="manual-fixture-list"><div class="loading-state">Caricamento calendario…</div></div>
+  <div class="section-head" style="margin-top:18px"><div><h3>Riepilogo schedina</h3></div></div>
+  <div id="manualSlipSummary"><div class="empty-state">Non hai ancora selezionato partite.</div></div>
+  <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
+ </section>
+ <section class="section panel panel-pad">
+  <div class="section-head"><div><div class="eyebrow">ARCHIVIO LOCALE</div><h2>Schedine salvate</h2></div></div>
+  <div id="archiveStatus" class="status-line" aria-live="polite"></div><div id="slipArchive"><div class="empty-state">Nessuna schedina archiviata.</div></div>
+  <button id="refreshArchive" type="button" class="secondary">Aggiorna risultati</button>
+ </section>
+ <div class="notice warning">Le percentuali sono stime statistiche, non garanzie. Il valore combinato è un prodotto delle probabilità delle singole partite e assume indipendenza tra eventi; la correlazione può cambiare il risultato. MatchMind non conosce automaticamente le formazioni ufficiali, gli infortuni o le squalifiche: inserisci solo indisponibilità verificate.</div>
+ <div id="globalStatus" class="status-line" aria-live="polite"></div><footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
 </main>
 </body>
 </html>
