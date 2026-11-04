@@ -21,7 +21,7 @@ for name in required:
   assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
-  assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html
+  assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html
  else: assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
@@ -50,7 +50,7 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v59-20261104-live-matchsim" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v60-20261104-live-lineups" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "./functions/api/live-match.js" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "300000" in (ROOT/"bets.js").read_text(encoding="utf-8")
