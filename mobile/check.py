@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parent
 manifest=json.loads((ROOT/"manifest.webmanifest").read_text(encoding="utf-8"))
 assert manifest.get("name") and manifest.get("display")=="standalone"
 assert (ROOT/"sw.js").is_file()
-required=["index.html","matches.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
+required=["index.html","matches.html","live.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
 for name in required:
  p=ROOT/name
  assert p.is_file(),f"Missing screen: {name}"
@@ -24,11 +24,11 @@ scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
 with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
-for filename in ["site-core.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","elo.js","rounds.js","sw.js"]:
+for filename in ["site-core.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
 for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js"]:
  subprocess.run(["node","--check",str(path)],check=True)
-for test in ["public-calendar.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs"]:
+for test in ["public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
@@ -39,11 +39,14 @@ assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert "bets.html" in core and "Schedina" in core
+assert "live.html" in core and "Live" in core
 assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v57-20261104-navigation-cleanup" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v58-20261104-live-matchsim" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert (ROOT/"functions"/"api"/"live-match.js").is_file()
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
