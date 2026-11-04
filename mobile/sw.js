@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v50-20261104-single-football-source';
+const CACHE='matchmind-pwa-v51-20261104-public-data';
 const APP_SHELL=[
  './','./index.html','./nba.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
