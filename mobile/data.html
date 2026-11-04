@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090c11"><meta name="description" content="MatchMind · Fonti aperte e copertura"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261104-open-data"><title>MatchMind · Fonti e copertura</title><script defer src="./site-core.js"></script><script defer src="./site-pages.js"></script></head>
-<body data-page="data" data-title="Fonti e copertura" data-subtitle="Fonti pubbliche senza chiavi API, con limiti dichiarati."><div id="siteHeader"></div><main class="page-wrap"><div class="page-intro"><div class="eyebrow">MATCHMIND / DATA</div><h1 id="pageTitle">Fonti e copertura</h1><p id="pageSubtitle">Fonti pubbliche senza chiavi API, con limiti dichiarati.</p></div>
-<section class="panel"><div class="panel-head"><div><h2>Fonte calendario e statistiche</h2><p>CSV pubblici, normalizzati lato server.</p></div><button id="checkProviders" type="button">Verifica</button></div><div class="panel-body" id="providerStatus"><div class="notice">Open-matchday: Serie A e Champions League. Archivio storico Serie A da openfootball.</div></div></section>
+<body data-page="data" data-title="Fonti e copertura" data-subtitle="Fonti pubbliche per il calendario; provider live opzionale con chiave server-side."><div id="siteHeader"></div><main class="page-wrap"><div class="page-intro"><div class="eyebrow">MATCHMIND / DATA</div><h1 id="pageTitle">Fonti e copertura</h1><p id="pageSubtitle">Fonti pubbliche senza chiavi API, con limiti dichiarati.</p></div>
+<section class="panel"><div class="panel-head"><div><h2>Fonte calendario e statistiche</h2><p>CSV pubblici per lo storico; API-Football opzionale per il Live.</p></div><button id="checkProviders" type="button">Verifica</button></div><div class="panel-body" id="providerStatus"><div class="notice">Open-matchday: Serie A e Champions League. Archivio storico Serie A da openfootball.</div></div></section>
 <section class="section" style="margin-top:14px"><div class="section-head"><div><h2>Dati disponibili</h2><p>Copertura verificata sul dataset 2026/27 al 4 novembre 2026.</p></div></div><div class="panel panel-pad">
 <div class="data-row"><span>Serie A · calendario</span><b>280 incontri</b></div>
 <div class="data-row"><span>Serie A · risultati</span><b>100 partite</b></div>
@@ -9,7 +9,8 @@
 <div class="data-row"><span>Serie A · minuti dei gol</span><b>96/100 righe</b></div>
 <div class="data-row"><span>Champions League · calendario</span><b>81 incontri</b></div>
 <div class="data-row"><span>Champions League · risultati</span><b>63 partite</b></div>
-<div class="data-row"><span>Champions League · statistiche evento</span><b>Copertura non presente nel dataset</b></div>
+<div class="data-row"><span>Champions League · statistiche evento</span><b>Copertura non presente nel dataset pubblico</b></div>
+<div class="data-row"><span>Live · punteggi, eventi e statistiche</span><b>API-Football · richiede secret Cloudflare</b></div>
 <div class="data-row"><span>Archivio storico Serie A</span><b>5 stagioni aggiuntive</b></div>
 </div></section>
 <section class="section"><div class="section-head"><div><h2>Fonti utilizzate</h2></div></div><div class="panel panel-pad">
@@ -25,7 +26,8 @@
 <div class="data-row"><span>Formazioni ufficiali e probabili</span><b>Non integrate</b></div>
 <div class="data-row"><span>xG per tutte le partite di Serie A</span><b>Non integrato</b></div>
 <div class="data-row"><span>Statistiche giocatori aggiornate</span><b>Non integrate</b></div>
+<div class="data-row"><span>Coordinate reali dei calciatori</span><b>Non disponibili nel feed Live usato</b></div>
 <p>Le fonti gratuite individuate per questi dati sono parziali, soggette a restrizioni o prive di una copertura stabile per l'intera competizione.</p>
 </div></section>
 <section class="section"><div class="section-head"><div><h2>Licenza e utilizzo</h2></div></div><div class="notice warning">Attenzione: open-matchday dichiara uso informativo non commerciale; i dati upstream mantengono i propri termini. football-data.co.uk limita l'uso gratuito a quello personale/accademico. Questa integrazione è adatta a un prototipo personale, non a una pubblicazione commerciale o monetizzata senza autorizzazioni specifiche.</div></section>
-<footer class="site-footer">MatchMind · Nessuna chiave API. Dati non live; verificare sempre gli eventi presso fonti ufficiali.</footer></main></body></html>
+<footer class="site-footer">MatchMind · Il calendario pubblico non è live. Il Live richiede API_FOOTBALL_KEY salvata come secret server-side su Cloudflare.</footer></main></body></html>
