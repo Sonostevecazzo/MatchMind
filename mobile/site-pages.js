@@ -283,7 +283,7 @@ function backtestHTML(r,e){
    });
    const selected=models.find(x=>x.id===d.competition)||models[0];
    const active=Boolean(selected.model&&selected.model.approved);
-   const status=active?'Calibrazione verificata attiva':'Previsioni standard · calibrazione non attiva';
+   const status=active?'Calibrazione verificata attiva':'Elo 1X2 attivo · calibrazione non attiva';
    const statusText=selected.saved?.status==='not_better_than_baseline'?'Il test non ha trovato un miglioramento affidabile.':selected.count<120?'Archivio storico ancora insufficiente per validare la calibrazione.':'La calibrazione non ha superato tutti i controlli.';
    const rows=models.map(x=>{
     const m=x.saved,ok=Boolean(m&&m.approved);
