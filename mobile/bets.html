@@ -10,7 +10,13 @@
 <body data-page="bets" data-title="Scommesse" data-subtitle="Analisi statistiche, selezioni e proposte probabilistiche.">
 <div id="siteHeader"></div>
 <main class="page-wrap">
- <div class="page-intro"><div class="eyebrow">MATCHMIND / BET BUILDER</div><h1 id="pageTitle">Scommesse</h1><p id="pageSubtitle">Costruisci la tua schedina o chiedi al modello una proposta basata sui dati.</p></div>
+ <div class="page-intro"><div class="eyebrow">MATCHMIND / BET MANAGER</div><h1 id="pageTitle">Schedine</h1><p id="pageSubtitle">Un solo spazio per costruire, seguire e archiviare le tue schedine.</p></div>
+ <div class="bets-tabs" role="tablist" aria-label="Gestione schedine">
+  <button type="button" class="bets-tab active" role="tab" aria-selected="true" data-bets-tab="create">Crea</button>
+  <button type="button" class="bets-tab" role="tab" aria-selected="false" data-bets-tab="live">In corso</button>
+  <button type="button" class="bets-tab" role="tab" aria-selected="false" data-bets-tab="archive">Archivio</button>
+ </div>
+ <div id="betsTabCreate" class="bets-tab-panel" role="tabpanel">
  <section class="section panel panel-pad" id="automaticBuilder">
   <div class="section-head"><div><div class="eyebrow">ANALISI AUTOMATICA</div><h2>Costruttore probabilistico</h2><p>La proposta valuta le partite della prossima giornata, usando le tue selezioni come preferenze quando sono già presenti.</p></div></div>
   <div class="field"><label for="targetProbability">Probabilità obiettivo della combinazione: <b id="targetProbabilityLabel">55%</b></label><input id="targetProbability" type="range" min="0" max="100" step="1" value="55"><div class="range-scale"><span>0%</span><span>50%</span><span>100%</span></div></div>
@@ -26,10 +32,19 @@
   <div id="manualSlipSummary"><div class="empty-state">Non hai ancora selezionato partite.</div></div>
   <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
  </section>
- <section class="section panel panel-pad">
-  <div class="section-head"><div><div class="eyebrow">ARCHIVIO LOCALE</div><h2>Schedine salvate</h2></div></div>
-  <div id="archiveStatus" class="status-line" aria-live="polite"></div><div id="slipArchive"><div class="empty-state">Nessuna schedina archiviata.</div></div>
-  <button id="refreshArchive" type="button" class="secondary">Aggiorna risultati</button>
+ </div>
+ <section id="betsTabLive" class="bets-tab-panel" role="tabpanel" hidden>
+  <section class="section panel panel-pad">
+   <div class="section-head"><div><div class="eyebrow">MONITORAGGIO</div><h2>Schedine aperte</h2><p>Stato degli eventi, punteggio live e risultati. Aggiorna solo quando ti serve.</p></div><button id="refreshArchive" type="button" class="secondary">Aggiorna</button></div>
+   <div id="archiveStatus" class="status-line" aria-live="polite"></div>
+   <div id="openTickets"><div class="empty-state">Nessuna schedina da monitorare. Salva una schedina dalla scheda Crea.</div></div>
+  </section>
+ </section>
+ <section id="betsTabArchive" class="bets-tab-panel" role="tabpanel" hidden>
+  <section class="section panel panel-pad">
+   <div class="section-head"><div><div class="eyebrow">ARCHIVIO LOCALE</div><h2>Schedine concluse</h2><p>Storico delle schedine con tutti gli eventi conclusi.</p></div></div>
+   <div id="slipArchive"><div class="empty-state">Nessuna schedina conclusa.</div></div>
+  </section>
  </section>
  <div class="notice warning">Le percentuali sono stime statistiche, non garanzie. Il valore combinato è un prodotto delle probabilità delle singole partite e assume indipendenza tra eventi; la correlazione può cambiare il risultato. MatchMind non conosce automaticamente le formazioni ufficiali, gli infortuni o le squalifiche: inserisci solo indisponibilità verificate.</div>
  <div id="globalStatus" class="status-line" aria-live="polite"></div><footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
