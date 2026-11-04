@@ -32,7 +32,7 @@ for test in ["public-calendar.test.mjs","backtest.test.mjs","elo.test.mjs","roun
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
-assert "api.public-calendar" in core and "open-matchday" in calendar
+assert "./api/public-calendar" in core and "open-matchday" in calendar
 assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
 assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
