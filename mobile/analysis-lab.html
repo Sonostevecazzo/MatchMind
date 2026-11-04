@@ -24,13 +24,17 @@
   <div id="analysisOverview" class="analysis-overview"><div class="loading-state">Calcolo copertura…</div></div>
  </section>
  <section class="section">
+  <div class="section-head"><div><h2>MatchMind Adaptive AI</h2><p>Calibrazione appresa dai risultati precedenti, attivata soltanto se supera un test fuori campione.</p></div></div>
+  <div id="adaptiveAIStatus" class="panel panel-pad"><div class="loading-state">Verifica del modello adattivo…</div></div>
+ </section>
+ <section class="section">
   <div class="section-head"><div><h2>Backtest cronologico</h2><p>Valutazione sulle partite storiche usando solo i risultati precedenti a ciascun incontro.</p></div></div>
   <div id="forecastBacktest" class="panel panel-pad"><div class="loading-state">In attesa dei dati storici…</div></div>
  </section>
  <section class="section">
   <div class="section-head"><div><h2>Metodo e limiti</h2></div></div>
   <div class="panel panel-pad">
-   <p>Il motore attuale usa una baseline Poisson costruita sui risultati storici. Non è un modello proprietario di SofaScore né un sistema di intelligenza artificiale addestrato.</p>
+   <p>Il motore base usa Poisson. MatchMind Adaptive AI apprende una calibrazione della probabilità 1X2 dai pronostici storici generati in modalità walk-forward. Non è un modello linguistico né un sistema che garantisce profitti.</p>
    <p>Le probabilità sono stime statistiche, non garanzie. Il campione minimo è un controllo di disponibilità dei dati, non dimostra calibrazione o capacità predittiva.</p>
    <a href="data.html" class="text-link">Fonti, copertura e aggiornamento dati ↗</a>
   </div>
