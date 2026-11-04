@@ -37,7 +37,8 @@ assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
 assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
-assert 'href="bets.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert "bets.html" in core and "Schedina" in core
 assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
