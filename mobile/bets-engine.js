@@ -239,7 +239,7 @@
       eligibleFixtures: candidates.length,
       upcomingFixtures: uniqueFixtures.length,
       assumption: "Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.",
-      warning: "Il modello non è una garanzia e non dimostra redditività. La combinazione va confrontata con quote aggiornate."
+      warning: "Il modello non è una garanzia e non dimostra redditività. Non misura la convenienza economica della giocata."
     };
   }
 
