@@ -14,7 +14,7 @@ const outcome=(i)=>{
   const predicted=Math.floor(i/5)%3;
   const slot=i%5;
   const actual=slot<3?predicted:(slot===3?(predicted+1)%3:(predicted+2)%3);
-  const scores={home:[2,0],draw:[1,1],away:[0,2]};
+  const scores=[[2,0],[1,1],[0,2]];
   return scores[actual];
 };
 
