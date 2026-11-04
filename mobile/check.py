@@ -48,6 +48,8 @@ assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
 assert "window.MatchMindAI.train" in core
+assert "trainAvailableModels(data.history)" not in core, "AI calibration must not run on the mobile UI thread"
+assert "AbortSignal.timeout(25000)" in core
 assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'id="adaptiveAIStatus"' in (ROOT/"analysis-lab.html").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
