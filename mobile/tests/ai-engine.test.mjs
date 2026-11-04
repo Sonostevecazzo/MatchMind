@@ -78,3 +78,11 @@ test("daily training reuses an unchanged model signature",()=>{
   api.train(history,forecast,"serie-a");
   assert.equal(calls,first);
 });
+
+test("legacy Poisson calibration is never reused after switching the production 1X2 model to Elo",()=>{
+ const store=new Map([["matchmind-ai-model-v1",JSON.stringify({"serie-a":{approved:true,temperature:2,version:"temperature-calibration-v1"}})]]);
+ const window={};
+ const localStorage={getItem:key=>store.get(key)||null,setItem:(key,value)=>store.set(key,value)};
+ vm.runInNewContext(source,{window,localStorage,Date,Math,Number,String,Object,Array,JSON});
+ assert.equal(window.MatchMindAI.modelFor("serie-a"),null);
+});
