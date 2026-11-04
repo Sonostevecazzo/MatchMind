@@ -47,6 +47,29 @@ export function normalizeEvents(rows) {
   })).sort((a, b) => a.minute - b.minute || (a.extra || 0) - (b.extra || 0));
 }
 
+export function normalizeLineups(rows) {
+  return (Array.isArray(rows) ? rows : []).map(team => ({
+    team: team?.team?.name || null,
+    teamId: team?.team?.id ?? null,
+    formation: team?.formation || null,
+    coach: team?.coach?.name || null,
+    startXI: (Array.isArray(team?.startXI) ? team.startXI : []).map((entry, index) => {
+      const player = entry?.player || {};
+      const gridParts = String(player.grid || "").split(":").map(Number);
+      const grid = gridParts.length === 2 && gridParts.every(value => Number.isInteger(value) && value > 0)
+        ? { row: gridParts[0], column: gridParts[1] }
+        : null;
+      return {
+        id: player.id ?? null,
+        name: player.name || "Giocatore " + (index + 1),
+        number: Number.isFinite(Number(player.number)) ? Number(player.number) : index + 1,
+        position: player.pos || null,
+        grid
+      };
+    })
+  }));
+}
+
 export function normalizeStatistics(rows) {
   return (Array.isArray(rows) ? rows : []).map(team => ({
     team: team?.team?.name || null,
@@ -121,11 +144,9 @@ export async function onRequestGet(context) {
   try {
     if (fixtureId) {
       if (!/^\d{1,12}$/.test(fixtureId)) return json({ configured: true, error: "Identificativo partita non valido." }, 400);
-      const [fixturePayload, eventPayload, statsPayload] = await Promise.all([
-        providerGet("fixtures", { id: fixtureId, timezone: "Europe/Rome" }, context, 60),
-        providerGet("fixtures/events", { fixture: fixtureId }, context, 300),
-        providerGet("fixtures/statistics", { fixture: fixtureId }, context, 300)
-      ]);
+      // API-Football returns the fixture, events, lineups, statistics and player stats
+      // together from /fixtures?id=..., avoiding three separate quota-consuming calls.
+      const fixturePayload = await providerGet("fixtures", { id: fixtureId, timezone: "Europe/Rome" }, context, 90);
       const rawFixture = Array.isArray(fixturePayload.response) ? fixturePayload.response[0] : null;
       if (!rawFixture) return json({ configured: true, fixture: null, error: "Partita non trovata nel provider live." }, 404);
       return json({
@@ -133,11 +154,13 @@ export async function onRequestGet(context) {
         source: "API-Football",
         updatedAt: new Date().toISOString(),
         fixture: normalizeFixture(rawFixture),
-        events: normalizeEvents(eventPayload.response),
-        statistics: normalizeStatistics(statsPayload.response),
+        events: normalizeEvents(rawFixture.events),
+        statistics: normalizeStatistics(rawFixture.statistics),
+        lineups: normalizeLineups(rawFixture.lineups),
         notes: {
           events: "Cronologia degli eventi restituiti dal provider.",
-          field: "Il campo è una simulazione tattica illustrativa basata su possesso e tiri; non mostra coordinate GPS o tracking reale dei calciatori."
+          lineups: "Formazione iniziale e griglia tattica quando coperte dal provider.",
+          field: "Le coordinate di formazione sono posizioni iniziali schematiche; non sono tracking GPS o posizioni live dei calciatori."
         }
       });
     }
