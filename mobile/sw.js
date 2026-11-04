@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v52-20261104-football-only';
+const CACHE='matchmind-pwa-v53-20261104-bootstrap-fix';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
