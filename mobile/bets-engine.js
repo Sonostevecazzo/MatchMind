@@ -198,11 +198,20 @@
         const probability = marketProbability(forecast, preferred[0]);
         if (probability !== null) best = { match, market: preferred[1], marketKey: preferred[0], probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: true };
       }
+      // The slider also sets a per-leg risk profile: selective markets near 50%
+      // at low settings, progressively safer markets as the target rises.
+      const desiredMarketProbability = 0.50 + target * 0.25;
+      let bestDistance = Infinity;
       for (const [key, label] of BET_MARKETS) {
         if (best && best.preferredByUser) break;
         const probability = marketProbability(forecast, key);
         if (probability === null) continue;
-        if (!best || probability > best.probability) best = { match, market: label, marketKey: key, probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: false };
+        const distance = Math.abs(probability - desiredMarketProbability);
+        if (!best || distance < bestDistance - 1e-12 ||
+            (Math.abs(distance - bestDistance) <= 1e-12 && probability > best.probability)) {
+          bestDistance = distance;
+          best = { match, market: label, marketKey: key, probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: false, marketFit: distance };
+        }
       }
       if (best) candidates.push(best);
     }
@@ -238,6 +247,8 @@
       available: true, selections: chosen, probability: joint, threshold: target, thresholdReached,
       eligibleFixtures: candidates.length,
       upcomingFixtures: uniqueFixtures.length,
+      desiredMarketProbability: 0.50 + target * 0.25,
+      marketProfile: target < 0.34 ? "Selettivo" : target < 0.67 ? "Intermedio" : "Prudente",
       assumption: "Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.",
       warning: "Il modello non è una garanzia e non dimostra redditività. Non misura la convenienza economica della giocata."
     };

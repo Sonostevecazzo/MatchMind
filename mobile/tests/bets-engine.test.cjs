@@ -122,3 +122,24 @@ test("uses a user-selected market as the preferred outcome for a fixture", () =>
   assert.equal(result.selections[0].marketKey, "home");
   assert.equal(result.selections[0].preferredByUser, true);
 });
+
+
+test("adapts market selection to the requested risk profile", () => {
+  const selective = bets.buildTicket([fixtures[0]], forecastFn, 0.2, { maxLegs: 1 });
+  const prudent = bets.buildTicket([fixtures[0]], forecastFn, 0.95, { maxLegs: 1 });
+  assert.equal(selective.available, true);
+  assert.equal(prudent.available, true);
+  assert.equal(selective.selections[0].marketKey, "over25");
+  assert.equal(prudent.selections[0].marketKey, "over15");
+  assert.ok(selective.desiredMarketProbability < prudent.desiredMarketProbability);
+});
+
+test("team strength changes the selected market when the forecast favors a side", () => {
+  const strongHomeForecast = {
+    sampleEnough: true, minTeamSample: 12,
+    probabilities: { home: 0.74, draw: 0.15, away: 0.11, btts: 0.48, o15: 0.79, o25: 0.59, o35: 0.34 }
+  };
+  const result = bets.buildTicket([fixtures[0]], () => strongHomeForecast, 0.7, { maxLegs: 1 });
+  assert.equal(result.available, true);
+  assert.equal(result.selections[0].marketKey, "home");
+});
