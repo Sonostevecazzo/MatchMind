@@ -1,7 +1,7 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v4-public-dataset';
-  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:null,fallback:'A'} };
+  const CACHE_KEY='matchmind-multipage-cache-v5-open-matchday';
+  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:null,fallback:'A'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:null,fallback:'CL'} };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
     if(COMPETITIONS[requested]){try{localStorage.setItem('matchmind-competition-v1',requested);}catch{}return requested;}
@@ -118,7 +118,7 @@
   function teamColor(name){let n=0;for(const c of String(name||''))n=(n*31+c.charCodeAt(0))|0;return 'hsl('+Math.abs(n)%360+' 35% 28%)';}
   const TEAM_LOGOS={atalanta:499,bologna:500,cagliari:490,como:895,cremonese:520,frosinone:512,fiorentina:502,genoa:495,inter:505,internazionale:505,juventus:496,lazio:487,lecce:867,milan:489,monza:1579,napoli:492,parma:523,pisa:4177,roma:497,sassuolo:488,torino:503,udinese:494,venezia:517,verona:504,hellasverona:504,aek:575,aekathens:575,aekathensfc:575,arsenal:42,astonvilla:66,atleti:530,atleticodemadrid:530,barcelona:529,fcbarcelona:529,bayernmuenchen:157,bayernmunchen:157,bayernmunich:157,fcbayernmunchen:157,bdortmund:165,borussiadortmund:165,dortmund:165,bodglimt:327,bodoglimt:327,fkbodoglimt:327,clubbrugge:569,clubbruggekv:569,fenerbahce:611,fenerbahcesk:611,feyenoord:209,feyenoordrotterdam:209,galatasaray:645,galatasaraysk:645,lask:1026,lasklinz:1026,linzerask:1026,leipzig:173,rbleipzig:173,lens:116,rclens:116,lille:79,lilleosc:79,losclille:79,liverpool:40,liverpoolfc:40,mancity:50,mancityfc:50,manchestercity:50,manutd:33,manutdfc:33,manchesterunited:33,paris:85,psg:85,parissaintgermain:85,parissaintgermainfc:85,porto:212,fcporto:212,realbetis:543,betis:543,realbetisbalompie:543,realmadrid:541,realmadridcf:541,sbratislava:656,slovanbratislava:656,skslovanbratislava:656,sslovanbratislava:656,shakhtar:550,shakhtardonetsk:550,fcshakhtardonetsk:550,slaviapraha:560,slaviaprague:560,skslaviapraha:560,sportingcp:228,sportingclubedeportugal:228,sportinglisbon:228,stuttgart:172,vfbstuttgart:172,viking:759,vikingfk:759,villarreal:533,villarrealcf:533,psv:197,psveindhoven:197,sabah:"https://a.espncdn.com/i/teamlogos/soccer/500/21922.png"};
   function logoId(name){const k=norm(name);if(TEAM_LOGOS[k])return TEAM_LOGOS[k];for(const [alias,id] of Object.entries(TEAM_LOGOS)){if(k===alias||k.includes(alias)||alias.includes(k))return id;}return null;}
-  function badge(name){const id=logoId(name),src=typeof id==='number'?'https://media.api-sports.io/football/teams/'+id+'.png':id,fallback=esc(teamInitials(name));return '<span class="team-crest">'+(src?'<img class="team-logo" src="'+esc(src)+'" alt="" loading="lazy" decoding="async" onload="this.nextElementSibling.hidden=true" onerror="this.remove()">':'')+'<span class="team-crest-fallback">'+fallback+'</span></span>';}
+  function badge(name){const fallback=esc(teamInitials(name));return '<span class="team-crest team-crest-text" aria-label="'+esc(name)+'"><span class="team-crest-fallback">'+fallback+'</span></span>';}
   function getTeams(rows){return [...new Set(rows.flatMap(m=>[m.home,m.away]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));}
   function groupByDate(rows){const map=new Map();rows.forEach(m=>{const k=m.date||'unknown';if(!map.has(k))map.set(k,[]);map.get(k).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
   function standings(rows){
