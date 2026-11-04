@@ -146,7 +146,7 @@ export async function onRequestGet(context) {
       if (!/^\d{1,12}$/.test(fixtureId)) return json({ configured: true, error: "Identificativo partita non valido." }, 400);
       // API-Football returns the fixture, events, lineups, statistics and player stats
       // together from /fixtures?id=..., avoiding three separate quota-consuming calls.
-      const fixturePayload = await providerGet("fixtures", { id: fixtureId, timezone: "Europe/Rome" }, context, 90);
+      const fixturePayload = await providerGet("fixtures", { id: fixtureId, timezone: "Europe/Rome" }, context, 300);
       const rawFixture = Array.isArray(fixturePayload.response) ? fixturePayload.response[0] : null;
       if (!rawFixture) return json({ configured: true, fixture: null, error: "Partita non trovata nel provider live." }, 404);
       return json({
@@ -165,7 +165,7 @@ export async function onRequestGet(context) {
       });
     }
 
-    const payload = await providerGet("fixtures", { live: String(LEAGUES[competition]), timezone: "Europe/Rome" }, context, 90);
+    const payload = await providerGet("fixtures", { live: String(LEAGUES[competition]), timezone: "Europe/Rome" }, context, 300);
     const matches = (Array.isArray(payload.response) ? payload.response : []).map(normalizeFixture)
       .filter(item => Number.isFinite(item.id))
       .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
