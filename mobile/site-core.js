@@ -224,10 +224,13 @@
     const dates=hist.map(m=>m.date).filter(Boolean).sort(),scoreMatrix=[];let matrixMass=0;
     for(let homeGoals=0;homeGoals<=5;homeGoals++)for(let awayGoals=0;awayGoals<=5;awayGoals++){const probability=poisson(homeXg,homeGoals)*poisson(awayXg,awayGoals);matrixMass+=probability;scoreMatrix.push({homeGoals,awayGoals,probability});}
     const minTeamSample=Math.min(h.played,a.played),confidence=minTeamSample>=10?"alta":minTeamSample>=6?"media":minTeamSample>=3?"limitata":"molto bassa";
-    const rawProbabilities=probs(homeXg,awayXg);
+    const poissonProbabilities=probs(homeXg,awayXg);
+    const eloProbabilities=options.__forcePoisson?null:(window.MatchMindElo&&window.MatchMindElo.eloProbabilities(match,hist));
+    const rawProbabilities=eloProbabilities?{...poissonProbabilities,home:eloProbabilities.home,draw:eloProbabilities.draw,away:eloProbabilities.away}:poissonProbabilities;
+    const predictionMethod=eloProbabilities?'elo-1x2-poisson-goals':'poisson';
     const aiModel=options.__skipAI?null:(window.MatchMindAI&&window.MatchMindAI.modelFor(competition));
     const probabilities=aiModel&&aiModel.approved?{...rawProbabilities,...window.MatchMindAI.applyTemperature(rawProbabilities,aiModel.temperature)}:rawProbabilities;
-    return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates[dates.length-1]||null,home:h,away:a,homeVenue:hv,awayVenue:av,homeXg,awayXg,probabilities,rawProbabilities,aiCalibration:{applied:Boolean(aiModel&&aiModel.approved),temperature:aiModel?.temperature??1,status:aiModel?.status||"not_trained"},scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:minTeamSample>=10,minTeamSample,confidence,standings,modelFactors:{weightedRecentForm:true,homeAwaySplits:true,standingsPressure:true,manualAbsenceAdjustment:{attackingHome:attAbsH,defensiveHome:defAbsH,attackingAway:attAbsA,defensiveAway:defAbsA},manualMotivation:{home:motivationHome,away:motivationAway}},method:"Poisson con forma recente ponderata, rendimento casa/trasferta, classifica cronologica e correzioni manuali; calibrazione AI 1X2 solo se validata",limitations:"La calibrazione adattiva modifica solo 1X2 e viene attivata solo se migliora log loss e Brier in un test cronologico separato. Assenze e motivazione specifica non sono fornite da un feed affidabile."};
+    return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates[dates.length-1]||null,home:h,away:a,homeVenue:hv,awayVenue:av,homeXg,awayXg,probabilities,rawProbabilities,poissonProbabilities,eloProbabilities,predictionMethod,aiCalibration:{applied:Boolean(aiModel&&aiModel.approved),temperature:aiModel?.temperature??1,status:aiModel?.status||"not_trained"},scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:minTeamSample>=10,minTeamSample,confidence,standings,modelFactors:{weightedRecentForm:true,homeAwaySplits:true,standingsPressure:true,manualAbsenceAdjustment:{attackingHome:attAbsH,defensiveHome:defAbsH,attackingAway:attAbsA,defensiveAway:defAbsA},manualMotivation:{home:motivationHome,away:motivationAway}},method:"Poisson con forma recente ponderata, rendimento casa/trasferta, classifica cronologica e correzioni manuali; calibrazione AI 1X2 solo se validata",limitations:"La calibrazione adattiva modifica solo 1X2 e viene attivata solo se migliora log loss e Brier in un test cronologico separato. Assenze e motivazione specifica non sono fornite da un feed affidabile."};
   }
 function eventForecast(match,history){
     const before=String(match&&match.date||''),competition=match&&match.competition||'serie-a';
@@ -256,7 +259,7 @@ function eventForecast(match,history){
     for(let i=0;i<played.length;i++){
       const target=played[i],prior=played.slice(0,i).filter(m=>m.date<target.date);
       if(prior.length<30)continue;
-      const f=forecast(target,prior,{__skipAI:true});
+      const f=forecast(target,prior,{__skipAI:true,__forcePoisson:true});
       if(!f.sampleEnough)continue;
       const actual=Number(target.hg)>Number(target.ag)?'home':Number(target.hg)<Number(target.ag)?'away':'draw';
       const counts={home:0,draw:0,away:0};
