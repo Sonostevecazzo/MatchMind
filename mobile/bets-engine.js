@@ -262,10 +262,10 @@
       let best = null;
       const fixtureKey = [normalize(match.home), normalize(match.away)].sort().join("|") + "|" + match.date;
       const preferredKey = options && options.marketOverrides && options.marketOverrides[fixtureKey];
-      const preferred = BET_MARKETS.find(item => item[0] === preferredKey);
+      const preferred = marketCandidates("auto").find(item => item.key === preferredKey);
       if (preferred) {
-        const probability = marketProbability(forecast, preferred[0]);
-        if (probability !== null) best = { match, market: preferred[1], marketKey: preferred[0], probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: true };
+        const probability = marketProbability(forecast, preferred.key);
+        if (probability !== null) best = { match, market: preferred.label, marketKey: preferred.key, probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: true };
       }
       // The slider also sets a per-leg risk profile: selective markets near 50%
       // at low settings, progressively safer markets as the target rises.
