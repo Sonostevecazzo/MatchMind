@@ -3,7 +3,7 @@
 "use strict";
 const $=id=>document.getElementById(id),ENGINE=()=>window.MatchMindBets;
 const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2";
-let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false;
+let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -88,6 +88,7 @@ function saveCurrentSlip(){
  archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();$("archiveStatus").textContent="Schedina salvata su questo dispositivo.";setBetTab("live");
 }
 function buildProposal(){
+ proposalGenerated=true;
  const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
  const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
  const first=upcoming[0],candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
@@ -175,7 +176,8 @@ function initEvents(){
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
   if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderFixtures();renderSlip();}
  });
- $("targetProbability").addEventListener("input",()=>$("targetProbabilityLabel").textContent=$("targetProbability").value+"%");
+ $("targetProbability").addEventListener("input",()=>{$("targetProbabilityLabel").textContent=$("targetProbability").value+"%";if(proposalGenerated)buildProposal();});
+ $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
  $("buildTicket").addEventListener("click",buildProposal);
  $("ticketResults").addEventListener("click",event=>{if(event.target.closest("#addProposal"))applyProposal();});
  $("refreshArchive").addEventListener("click",updateArchive);
