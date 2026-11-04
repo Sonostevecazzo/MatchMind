@@ -159,9 +159,60 @@
   }
   function poisson(l,g){if(l<=0)return g===0?1:0;let p=Math.exp(-l);for(let i=1;i<=g;i++)p*=l/i;return p;}
   function probs(lh,la){let h=0,d=0,a=0,btts=0,o15=0,o25=0,o35=0,total=0;for(let x=0;x<=30;x++)for(let y=0;y<=30;y++){const p=poisson(lh,x)*poisson(la,y);total+=p;if(x>y)h+=p;else if(x===y)d+=p;else a+=p;if(x>0&&y>0)btts+=p;if(x+y>=2)o15+=p;if(x+y>=3)o25+=p;if(x+y>=4)o35+=p;}return{home:h/total,draw:d/total,away:a/total,btts:btts/total,o15:o15/total,o25:o25/total,o35:o35/total};}
-  function teamStats(team,rows){const list=(rows||[]).filter(m=>hasScore(m)&&(sameTeam(m.home,team)||sameTeam(m.away,team))).sort((a,b)=>a.date.localeCompare(b.date)).slice(-10);if(!list.length)return{played:0,for:1.25,against:1.25,form:[]};let gf=0,ga=0;const isHome=m=>sameTeam(m.home,team);for(const m of list){const home=isHome(m);gf+=home?Number(m.hg):Number(m.ag);ga+=home?Number(m.ag):Number(m.hg);}return{played:list.length,for:gf/list.length,against:ga/list.length,form:list.slice(-5).map(m=>{const x=Number(m.hg),y=Number(m.ag),home=isHome(m);return(home?x>y:y>x)?'W':x===y?'D':'L';})};}
-  function forecast(match,history){const competition=match&&match.competition||'serie-a';const hist=(history||[]).filter(x=>hasScore(x)&&x.date<match.date&&(x.competition||'serie-a')===competition);const league=hist.length?hist.reduce((s,x)=>s+Number(x.hg),0)/hist.length:1.35;const awayLeague=hist.length?hist.reduce((s,x)=>s+Number(x.ag),0)/hist.length:1.1;const h=teamStats(match.home,hist),a=teamStats(match.away,hist);const homeXg=Math.max(.15,Math.min(4.5,league*((h.for+.7)/(league+.7))*((a.against+.7)/(awayLeague+.7))*1.06));const awayXg=Math.max(.15,Math.min(4.5,awayLeague*((a.for+.7)/(awayLeague+.7))*((h.against+.7)/(league+.7))));const dates=hist.map(m=>m.date).filter(Boolean).sort();const scoreMatrix=[];let matrixMass=0;for(let homeGoals=0;homeGoals<=5;homeGoals++)for(let awayGoals=0;awayGoals<=5;awayGoals++){const probability=poisson(homeXg,homeGoals)*poisson(awayXg,awayGoals);matrixMass+=probability;scoreMatrix.push({homeGoals,awayGoals,probability});}return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates.at(-1)||null,home:h,away:a,homeXg,awayXg,probabilities:probs(homeXg,awayXg),scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:h.played>=10&&a.played>=10};}
-  function eventForecast(match,history){
+  function teamStats(team,rows,venue){
+    const all=(rows||[]).filter(m=>hasScore(m)&&(sameTeam(m.home,team)||sameTeam(m.away,team))).sort((a,b)=>a.date.localeCompare(b.date));
+    const list=(venue?all.filter(m=>sameTeam(m[venue],team)):all).slice(-10);
+    if(!list.length)return{played:0,for:1.25,against:1.25,pointsPerGame:1,form:[],venue:venue||"all"};
+    const reference=Date.parse(list[list.length-1].date+"T12:00:00");
+    let weightTotal=0,gf=0,ga=0,points=0;
+    for(const m of list){const days=Math.max(0,(reference-Date.parse(m.date+"T12:00:00"))/86400000),w=Math.pow(0.5,days/120),home=sameTeam(m.home,team),scored=home?Number(m.hg):Number(m.ag),conceded=home?Number(m.ag):Number(m.hg);gf+=scored*w;ga+=conceded*w;points+=(scored>conceded?3:scored===conceded?1:0)*w;weightTotal+=w;}
+    const form=all.slice(-5).map(m=>{const x=Number(m.hg),y=Number(m.ag),home=sameTeam(m.home,team);return(home?x>y:y>x)?"W":x===y?"D":"L";});
+    return{played:list.length,for:gf/weightTotal,against:ga/weightTotal,pointsPerGame:points/weightTotal,form,venue:venue||"all",recentMatches:list.length};
+  }
+  function matchStandingsContext(match,history){
+    const date=String(match&&match.date||""),year=Number(date.slice(0,4)),month=Number(date.slice(5,7)),seasonStart=(month>=7?year:year-1)+"-07-01";
+    const rows=(history||[]).filter(m=>hasScore(m)&&m.date>=seasonStart&&m.date<date&&(m.competition||"serie-a")===(match.competition||"serie-a"));
+    const map=new Map(),get=name=>{const k=norm(name);if(!map.has(k))map.set(k,{name,played:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});return map.get(k);};
+    rows.forEach(m=>{const h=get(m.home),a=get(m.away),hg=Number(m.hg),ag=Number(m.ag);h.played++;a.played++;h.gf+=hg;h.ga+=ag;a.gf+=ag;a.ga+=hg;if(hg>ag){h.w++;a.l++;h.pts+=3;}else if(hg<ag){a.w++;h.l++;a.pts+=3;}else{h.d++;a.d++;h.pts++;a.pts++;}});
+    const table=[...map.values()].map(t=>({...t,gd:t.gf-t.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.name.localeCompare(b.name,"it")).map((t,i)=>({...t,rank:i+1}));
+    const total=table.length;
+    const context=team=>{
+      const t=table.find(x=>sameTeam(x.name,team));
+      if(!t)return{team,available:false,rank:null,points:null,objective:"Classifica non disponibile",pressure:0};
+      const top=table[Math.min(3,total-1)],sixth=table[Math.min(5,total-1)],safe=table[Math.max(0,total-4)];
+      let objective="Zona centrale",pressure=0.15;
+      if(t.rank===1){objective="Lotta al vertice";pressure=0.7;}
+      else if(t.rank<=4){objective="Zona alta";pressure=0.55;}
+      else if(top&&top.pts-t.pts<=6){objective="In corsa per la zona alta";pressure=0.7;}
+      else if(t.rank>=Math.max(1,total-2)){objective="Zona bassa";pressure=0.8;}
+      else if(safe&&t.pts-safe.pts<=6){objective="Lotta per la salvezza";pressure=0.75;}
+      else if(sixth&&sixth.pts-t.pts<=6){objective="In corsa per le posizioni europee";pressure=0.5;}
+      return{team,available:true,rank:t.rank,points:t.pts,played:t.played,goalDifference:t.gd,objective,pressure,pointsToTop4:top?Math.max(0,top.pts-t.pts):null,pointsAboveSafety:safe?t.pts-safe.pts:null};
+    };
+    return{available:table.length>0,asOf:date,played:rows.length,teams:total,home:context(match.home),away:context(match.away),table};
+  }
+  function forecast(match,history,options){
+    options=options||{};
+    const competition=match&&match.competition||"serie-a";
+    const hist=(history||[]).filter(x=>hasScore(x)&&x.date<match.date&&(x.competition||"serie-a")===competition);
+    const allHome=hist.length?hist.reduce((s,x)=>s+Number(x.hg),0)/hist.length:1.35;
+    const allAway=hist.length?hist.reduce((s,x)=>s+Number(x.ag),0)/hist.length:1.1;
+    const h=teamStats(match.home,hist),a=teamStats(match.away,hist),hv=teamStats(match.home,hist,"home"),av=teamStats(match.away,hist,"away");
+    const blend=(overall,venue,key)=>venue.played>=3?overall[key]*0.4+venue[key]*0.6:overall[key];
+    const hAttack=blend(h,hv,"for"),hDefence=blend(h,hv,"against"),aAttack=blend(a,av,"for"),aDefence=blend(a,av,"against");
+    const formHome=clamp((h.pointsPerGame-1.25)*0.025,-0.035,0.035),formAway=clamp((a.pointsPerGame-1.25)*0.025,-0.035,0.035);
+    const standings=matchStandingsContext(match,hist),pressureHome=standings.home.available?standings.home.pressure:0,pressureAway=standings.away.available?standings.away.pressure:0;
+    const motivationHome=clamp(Number(options.motivationHome)||0,-1,1),motivationAway=clamp(Number(options.motivationAway)||0,-1,1);
+    const attAbsH=clamp(Number(options.attackingAbsencesHome)||0,0,3),defAbsH=clamp(Number(options.defensiveAbsencesHome)||0,0,3);
+    const attAbsA=clamp(Number(options.attackingAbsencesAway)||0,0,3),defAbsA=clamp(Number(options.defensiveAbsencesAway)||0,0,3);
+    let homeXg=Math.max(0.15,Math.min(4.5,allHome*((hAttack+0.65)/(allHome+0.65))*((aDefence+0.65)/(allHome+0.65))*1.055*(1+formHome)*(1+pressureHome*0.012)*(1+motivationHome*0.02)*(1-0.035*attAbsH)*(1+0.035*defAbsA)));
+    let awayXg=Math.max(0.15,Math.min(4.5,allAway*((aAttack+0.65)/(allAway+0.65))*((hDefence+0.65)/(allAway+0.65))*(1+formAway)*(1+pressureAway*0.012)*(1+motivationAway*0.02)*(1-0.035*attAbsA)*(1+0.035*defAbsH)));
+    const dates=hist.map(m=>m.date).filter(Boolean).sort(),scoreMatrix=[];let matrixMass=0;
+    for(let homeGoals=0;homeGoals<=5;homeGoals++)for(let awayGoals=0;awayGoals<=5;awayGoals++){const probability=poisson(homeXg,homeGoals)*poisson(awayXg,awayGoals);matrixMass+=probability;scoreMatrix.push({homeGoals,awayGoals,probability});}
+    const minTeamSample=Math.min(h.played,a.played),confidence=minTeamSample>=10?"alta":minTeamSample>=6?"media":minTeamSample>=3?"limitata":"molto bassa";
+    return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates[dates.length-1]||null,home:h,away:a,homeVenue:hv,awayVenue:av,homeXg,awayXg,probabilities:probs(homeXg,awayXg),scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:minTeamSample>=10,minTeamSample,confidence,standings,modelFactors:{weightedRecentForm:true,homeAwaySplits:true,standingsPressure:true,manualAbsenceAdjustment:{attackingHome:attAbsH,defensiveHome:defAbsH,attackingAway:attAbsA,defensiveAway:defAbsA},manualMotivation:{home:motivationHome,away:motivationAway}},method:"Poisson con forma recente ponderata, rendimento casa/trasferta, classifica cronologica e correzioni manuali",limitations:"Assenze e motivazione specifica non sono fornite da un feed affidabile: le assenze vanno inserite manualmente; la pressione di classifica è un indicatore inferito, non una conferma delle intenzioni della squadra."};
+  }
+function eventForecast(match,history){
     const before=String(match&&match.date||''),competition=match&&match.competition||'serie-a';
     const samples=(team,venue,field,max=8)=>{
       const values=(history||[]).filter(m=>(m.competition||'serie-a')===competition&&hasScore(m)&&m.date&&m.date<before&&sameTeam(m[venue],team)&&Number.isFinite(m[field])&&m[field]>=0&&m[field]<=40)
