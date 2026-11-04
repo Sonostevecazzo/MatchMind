@@ -42,6 +42,6 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:h.played>=10&&a.played>=10" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v53-20261104-bootstrap-fix" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v54-20261104-team-crests" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "home_corners_1h" in calendar and "home_yellow" in calendar
 print("MatchMind football-only PWA, no-key data source, syntax and model checks passed.")
