@@ -176,19 +176,30 @@
     const map=new Map(),get=name=>{const k=norm(name);if(!map.has(k))map.set(k,{name,played:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});return map.get(k);};
     rows.forEach(m=>{const h=get(m.home),a=get(m.away),hg=Number(m.hg),ag=Number(m.ag);h.played++;a.played++;h.gf+=hg;h.ga+=ag;a.gf+=ag;a.ga+=hg;if(hg>ag){h.w++;a.l++;h.pts+=3;}else if(hg<ag){a.w++;h.l++;a.pts+=3;}else{h.d++;a.d++;h.pts++;a.pts++;}});
     const table=[...map.values()].map(t=>({...t,gd:t.gf-t.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.name.localeCompare(b.name,"it")).map((t,i)=>({...t,rank:i+1}));
-    const total=table.length;
+    const total=table.length,champions=(match.competition||"serie-a")==="champions-league";
     const context=team=>{
       const t=table.find(x=>sameTeam(x.name,team));
       if(!t)return{team,available:false,rank:null,points:null,objective:"Classifica non disponibile",pressure:0};
-      const top=table[Math.min(3,total-1)],sixth=table[Math.min(5,total-1)],safe=table[Math.max(0,total-4)];
-      let objective="Zona centrale",pressure=0.15;
-      if(t.rank===1){objective="Lotta al vertice";pressure=0.7;}
-      else if(t.rank<=4){objective="Zona alta";pressure=0.55;}
-      else if(top&&top.pts-t.pts<=6){objective="In corsa per la zona alta";pressure=0.7;}
-      else if(t.rank>=Math.max(1,total-2)){objective="Zona bassa";pressure=0.8;}
-      else if(safe&&t.pts-safe.pts<=6){objective="Lotta per la salvezza";pressure=0.75;}
-      else if(sixth&&sixth.pts-t.pts<=6){objective="In corsa per le posizioni europee";pressure=0.5;}
-      return{team,available:true,rank:t.rank,points:t.pts,played:t.played,goalDifference:t.gd,objective,pressure,pointsToTop4:top?Math.max(0,top.pts-t.pts):null,pointsAboveSafety:safe?t.pts-safe.pts:null};
+      let objective="Zona centrale",pressure=0.15,pointsToTarget=null,pointsToSafety=null;
+      if(champions){
+        const direct=table[7],playoff=table[23],elimination=table[24];
+        if(t.rank<=8){objective="Zona accesso diretto agli ottavi";pressure=direct&&Math.abs(t.pts-direct.pts)<=3?0.75:0.45;}
+        else if(t.rank<=24){objective="Zona spareggi";pressure=playoff&&Math.abs(t.pts-playoff.pts)<=3?0.8:0.35;}
+        else{objective="Zona eliminazione";pressure=elimination&&Math.abs(t.pts-elimination.pts)<=3?0.85:0.6;}
+        pointsToTarget=direct?Math.max(0,direct.pts-t.pts):null;
+        pointsToSafety=elimination?t.pts-elimination.pts:null;
+      }else{
+        const top=table[Math.min(3,total-1)],sixth=table[Math.min(5,total-1)],safe=table[Math.max(0,total-4)];
+        if(t.rank===1){objective="Lotta al vertice";pressure=0.7;}
+        else if(t.rank<=4){objective="Zona alta";pressure=0.55;}
+        else if(top&&top.pts-t.pts<=6){objective="In corsa per la zona alta";pressure=0.7;}
+        else if(t.rank>=Math.max(1,total-2)){objective="Zona bassa";pressure=0.8;}
+        else if(safe&&t.pts-safe.pts<=6){objective="Lotta per la salvezza";pressure=0.75;}
+        else if(sixth&&sixth.pts-t.pts<=6){objective="In corsa per le posizioni europee";pressure=0.5;}
+        pointsToTarget=top?Math.max(0,top.pts-t.pts):null;
+        pointsToSafety=safe?t.pts-safe.pts:null;
+      }
+      return{team,available:true,rank:t.rank,points:t.pts,played:t.played,goalDifference:t.gd,objective,pressure,pointsToTarget,pointsToSafety};
     };
     return{available:table.length>0,asOf:date,played:rows.length,teams:total,home:context(match.home),away:context(match.away),table};
   }
