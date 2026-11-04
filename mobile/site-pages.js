@@ -210,7 +210,7 @@
  }
  async function initSettings(){
   const status=$('globalStatus');
-  if(status)status.textContent='Fonti pubbliche attive: nessuna chiave API o secret richiesto.';
+  if(status)status.textContent='Calendario pubblico senza chiavi; Centro Live opzionale con API_FOOTBALL_KEY protetta su Cloudflare.';
 }
 function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
  async function initData(){
