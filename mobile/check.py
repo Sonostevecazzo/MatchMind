@@ -50,8 +50,10 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v58-20261104-live-matchsim" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v59-20261104-live-matchsim" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "./functions/api/live-match.js" not in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "300000" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "./analysis.css" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
