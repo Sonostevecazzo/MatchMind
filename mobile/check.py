@@ -53,7 +53,7 @@ assert 'id="adaptiveAIStatus"' in (ROOT/"analysis-lab.html").read_text(encoding=
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v63-20261104-fallback-live-nav" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v64-20261104-adaptive-ai" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
