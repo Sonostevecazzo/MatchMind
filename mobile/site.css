@@ -1049,3 +1049,28 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 @media(max-width:560px){.odds-board-card{padding:11px}.odds-board-heading{flex-direction:column;gap:4px}}
 
 .nba-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.nba-game-card{padding:12px;border:1px solid var(--line);border-radius:12px}.nba-game-team{display:flex;justify-content:space-between;padding:6px}.nba-standings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.nba-table{width:100%;border-collapse:collapse}.nba-table td,.nba-table th{padding:8px;border-bottom:1px solid var(--line)}.nba-leader-row{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid var(--line)}.nba-player{display:flex;flex-direction:column;flex:1}.nba-leader-tabs{display:flex;gap:6px;overflow:auto}.nba-leader-tabs button{white-space:nowrap}.nba-hero{display:flex;justify-content:space-between;gap:12px;padding:18px}.nba-game-status.live{color:#e66}@media(max-width:650px){.nba-games,.nba-standings-grid{grid-template-columns:1fr}.nba-hero{display:block}}
+
+/* Statistical bet builder and expanding match slip. */
+#targetProbability{width:100%;accent-color:#55aaff}
+.range-scale{display:flex;justify-content:space-between;color:var(--muted,#93a1b0);font-size:.82rem}
+.match-slip-dock{position:sticky;bottom:72px;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.28);flex-wrap:wrap}
+.match-slip-preview{flex-basis:100%;width:100%;max-height:42vh;overflow:auto;padding-top:8px;border-top:1px solid var(--line,#263342)}
+.match-slip-preview[hidden]{display:none}
+.match-slip-preview-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(125,145,165,.18)}
+.match-slip-preview-row small{display:block;color:var(--muted,#93a1b0)}
+.fixture-forecast-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:9px 0;padding:9px;border-radius:10px;background:rgba(12,20,29,.8);font-size:.78rem}
+.fixture-forecast-strip span{display:flex;flex-direction:column;color:var(--muted,#93a1b0)}
+.fixture-forecast-strip b{color:var(--text,#edf3f8);font-size:.92rem}
+.fixture-form-context{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin:8px 0;color:var(--muted,#93a1b0);font-size:.78rem}
+.fixture-market-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:9px}
+.fixture-market-button{display:flex;min-width:0;min-height:44px;align-items:center;justify-content:space-between;gap:5px;padding:7px;border:1px solid var(--line,#344253);border-radius:9px;background:#111923;color:var(--text,#edf3f8);text-align:left}
+.fixture-market-button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;font-weight:650}
+.fixture-market-button b{font-size:.78rem;color:#a9d7ff;white-space:nowrap}
+.fixture-market-button.is-selected{border-color:#4aa3ff;background:rgba(35,112,184,.25)}
+.context-controls{padding:10px 0}
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.context-field{display:flex;flex-direction:column;gap:5px;font-size:.82rem;color:var(--muted,#c3cdd4)}
+.context-field select{min-height:40px;padding:7px;background:#111923;color:var(--text,#edf3f8);border:1px solid var(--line,#344253);border-radius:9px}
+.context-motivation{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.context-controls>small{display:block;margin-top:9px;color:var(--muted,#93a1b0);font-size:.78rem;line-height:1.5}
+@media(max-width:560px){.fixture-forecast-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.fixture-market-options{grid-template-columns:repeat(2,minmax(0,1fr))}.context-grid,.context-motivation{grid-template-columns:1fr}.match-slip-dock{align-items:flex-start;flex-direction:column}.match-slip-dock>a,.match-slip-dock>button{width:100%;text-align:center}}
