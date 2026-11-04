@@ -332,7 +332,7 @@ function backtestHTML(r,e){
    '<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Baseline: frequenze 1X2 delle sole partite antecedenti, con smoothing Laplace. Esclusi i casi con meno di 10 gare storiche per una delle squadre. Non è un test di redditività: non include quote, margini, stake o commissioni.</small>';
  }
  async function initMind(d){
-  const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+  const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
   $('mindFixtures').innerHTML=rows.length?rows.map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile per l’analisi.</div>';
   const assistantButton=$('assistantGenerate');
   if(assistantButton){
