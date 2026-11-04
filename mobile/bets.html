@@ -15,7 +15,7 @@
 <script defer src="./site-core.js"></script>
 <script defer src="./bets.js"></script>
 </head>
-<body data-page="bets" data-title="Le mie scommesse" data-subtitle="Costruisci una schedina, archivia le tue selezioni e confronta le quote.">
+<body data-page="bets" data-title="Le mie scommesse" data-subtitle="Costruisci una schedina, archivia le selezioni e inserisci manualmente le quote.">
 <div id="siteHeader"></div>
 <main class="page-wrap">
  <div class="page-intro">
@@ -23,34 +23,7 @@
   <h1 id="pageTitle">Le mie scommesse</h1>
   <p id="pageSubtitle">Costruisci una schedina, archivia le tue selezioni e confronta le quote.</p>
  </div>
- <section class="section panel panel-pad odds-board" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Quote Serie A</h2><p>Quote bookmaker disponibili online, aggiornate dalla fonte collegata. Non sono benchmark statistici.</p></div><button id="refreshOddsBoard" type="button" class="secondary">Aggiorna quote</button></div>
-  <p id="oddsBoardStatus" class="helper-text" aria-live="polite">Caricamento delle quote disponibili…</p>
-  <div id="oddsBoard" aria-live="polite"><div class="empty-state">Attendo il listino quote…</div></div>
- </section>
- <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Costruttore probabilistico</h2><p>Le selezioni aggiunte dal calendario della Home appariranno qui; puoi anche generare una proposta automatica.</p></div></div>
-  <div class="field"><label for="targetProbability">Probabilità minima dell'intera combinazione</label><select id="targetProbability"><option value="0.50">50%</option><option value="0.55" selected>55%</option><option value="0.60">60%</option><option value="0.65">65%</option><option value="0.70">70%</option></select></div>
-  <div class="field"><label for="maxLegs">Numero massimo di eventi (da 1 a 15)</label><input id="maxLegs" type="number" min="1" max="15" step="1" value="10" inputmode="numeric"></div>
-  <div id="manualBuilder" class="manual-builder">
-   <div class="section-head"><div><h3>Selezioni manuali</h3><p>Scegli gli esiti nel calendario della Home: qui puoi rivedere e gestire la schedina.</p></div></div>
-   <div id="manualSlipSummary" aria-live="polite"><div class="empty-state">Le selezioni fatte nel calendario della Home compariranno qui.</div></div>
-   <p id="manualBuilderStatus" class="helper-text" aria-live="polite"></p>
-   <div id="manualOdds" class="manual-odds-results" aria-live="polite"><div class="empty-state">Dopo aver scelto gli eventi, conferma la schedina per controllare le quote disponibili.</div></div>
-  </div>
-  <button id="buildTicket" type="button">Genera proposta automatica</button>
-  <div id="ticketResults" style="margin-top:12px"><div class="empty-state">La proposta sarà generata solo con dati storici sufficienti.</div></div>
- </section>
- <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Archivio schedine</h2><p>Conservate su questo dispositivo, con risultati aggiornabili.</p></div><button id="refreshArchive" type="button" class="secondary">Aggiorna risultati</button></div>
-  <p id="archiveStatus" class="helper-text" aria-live="polite"></p>
-  <div id="slipArchive" aria-live="polite"><div class="empty-state">Nessuna schedina archiviata.</div></div>
- </section>
- <section class="section panel panel-pad" style="margin-bottom:14px">
-  <div class="section-head"><div><h2>Confronto quote e benchmark</h2><p>Confronta le selezioni correnti con le quote e i benchmark disponibili.</p></div></div>
-  <button id="refreshSisal" type="button" class="secondary">Confronta quote selezionate</button>
-  <div id="sisalResults" style="margin-top:12px"><div class="empty-state">Scegli gli eventi nel Costruttore per confrontare le quote disponibili.</div></div>
- </section>
+ <section class="section panel panel-pad"><h2>Quote</h2><p>Inserisci manualmente le quote del bookmaker nella schedina. Non è attivo alcun collegamento automatico con Sisal o altri operatori.</p></section>
  <div class="notice warning">Le percentuali sono stime del modello statistico locale, non probabilità certificate né garanzie di vincita. La probabilità multipla usa il prodotto delle probabilità delle singole partite e assume indipendenza tra eventi. Quote e disponibilità possono cambiare; verifica sempre su Sisal. MatchMind non accede al conto Sisal e non piazza scommesse.</div>
  <div class="status-line" id="globalStatus" aria-live="polite"></div>
  <footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
