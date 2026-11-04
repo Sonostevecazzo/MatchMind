@@ -42,6 +42,15 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:h.played>=10&&a.played>=10" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v54-20261104-team-crests" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v55-20261104-statistical-bets" in (ROOT/"sw.js").read_text(encoding="utf-8")
+bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
+assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
+assert 'min="0"' in bets_html and 'max="100"' in bets_html
+assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
+assert 'id="matchSlipPreview"' in (ROOT/"index.html").read_text(encoding="utf-8")
+bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
+assert "Sisal" not in bets_js and "playerApi" not in bets_js
+assert "matchStandingsContext" in core and "pointsPerGame" in core
+
 assert "home_corners_1h" in calendar and "home_yellow" in calendar
 print("MatchMind football-only PWA, no-key data source, syntax and model checks passed.")
