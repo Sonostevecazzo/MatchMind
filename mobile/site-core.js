@@ -305,14 +305,19 @@ function eventForecast(match,history){
     if(document.body.dataset.page==='match'){const back=document.createElement('button');back.className='detail-back';back.type='button';back.innerHTML='‹ <span>Torna alle partite</span>';back.addEventListener('click',()=>{if(history.length>1)history.back();else location.href='matches.html';});const main=document.querySelector('.page-wrap');if(main)main.prepend(back);}
     const titleEl=$('pageTitle');if(titleEl)titleEl.textContent=title||'MatchMind';
     const subEl=$('pageSubtitle');if(subEl)subEl.textContent=subtitle||'';
+    const page=document.body.dataset.page||'home';
     const intro=document.querySelector('.page-intro');
-    if(intro&&!$('competitionSelect')){
-      const field=document.createElement('div');field.className='field competition-picker';
+    const homeCopy=page==='home'?document.querySelector('.home-hero-copy'):null;
+    const pickerHost=intro||homeCopy;
+    if(pickerHost&&!$('competitionSelect')){
+      const field=document.createElement('div');field.className='field competition-picker'+(page==='home'?' home-competition-picker':'');
       const label=document.createElement('label');label.htmlFor='competitionSelect';label.textContent='Competizione';
-      const select=document.createElement('select');select.id='competitionSelect';
+      const select=document.createElement('select');select.id='competitionSelect';select.setAttribute('aria-label','Seleziona competizione');
       Object.values(COMPETITIONS).forEach(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;select.appendChild(option);});
-      select.value=getSelectedCompetition();field.append(label,select);intro.appendChild(field);
-      select.addEventListener('change',()=>{try{localStorage.setItem('matchmind-competition-v1',select.value);}catch{};const page=document.body.dataset.page;if(page==='match'||page==='team'){const target=page==='match'?'index.html':'explore.html';location.href=target+'?competition='+encodeURIComponent(select.value)+(page==='match'?'#matchesSection':'');}else{const url=new URL(location.href);url.searchParams.delete('import');url.searchParams.set('competition',select.value);location.href=url.toString();}});
+      select.value=getSelectedCompetition();field.append(label,select);
+      const homeStatus=page==='home'&&$('homeStatus');
+      if(homeStatus&&homeStatus.parentNode===pickerHost)pickerHost.insertBefore(field,homeStatus);else pickerHost.appendChild(field);
+      select.addEventListener('change',()=>{try{localStorage.setItem('matchmind-competition-v1',select.value);}catch{};const currentPage=document.body.dataset.page;if(currentPage==='match'||currentPage==='team'){const target=currentPage==='match'?'index.html':'explore.html';location.href=target+'?competition='+encodeURIComponent(select.value)+(currentPage==='match'?'#matchesSection':'');}else{const url=new URL(location.href);url.searchParams.delete('import');url.searchParams.set('competition',select.value);location.href=url.toString();}});
     }
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);location.reload();}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
   }
