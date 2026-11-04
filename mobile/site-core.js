@@ -142,7 +142,11 @@
     feyenoord:'netherlands/Feyenoord.svg',psv:'netherlands/PSV_Eindhoven.svg',
     galatasaray:'turkey/Galatasaray.svg',fenerbahce:'turkey/Fenerbahçe.svg',
     lask:'austria/LASK.svg',bodoglimt:'norway/BodøGlimt.svg',viking:'norway/Viking_FK.svg',
-    slovanbratislava:'slovakia/Slovan_Bratislava.svg',sbratislava:'slovakia/Slovan_Bratislava.svg'
+    slovanbratislava:'slovakia/Slovan_Bratislava.svg',sbratislava:'slovakia/Slovan_Bratislava.svg',
+    aek:'greece/AEK_Athens.svg',aekathens:'greece/AEK_Athens.svg',
+    clubbrugge:'belgium/Club_Brugge.svg',shakhtar:'ukraine/Shakhtar.svg',shakhtardonetsk:'ukraine/Shakhtar.svg',
+    slaviapraha:'czech-republic/SK_Slavia_Praha.svg',slaviaprague:'czech-republic/SK_Slavia_Praha.svg',
+    sabah:'azerbaijan/Sabah.svg'
   };
   function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
   function badge(name){const fallback=esc(teamInitials(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(name)+'">'+(src?'<img class="team-logo" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove()">':'')+'<span class="team-crest-fallback">'+fallback+'</span></span>';}
