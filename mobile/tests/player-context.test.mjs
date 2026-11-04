@@ -462,3 +462,37 @@ test("provider API-key errors do not leak provider response details", async (t) 
   assert.match(body.error, /chiave API-Football non è valida/);
   assert.equal(JSON.stringify(body).includes("test-secret"), false);
 });
+
+
+test("canonical calendar returns normalized Serie A and Champions League fixtures", async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async (url, init) => {
+    const parsed = new URL(String(url));
+    assert.equal(parsed.pathname, "/fixtures");
+    assert.equal(init.headers["x-apisports-key"], "calendar-test-secret");
+    const league = parsed.searchParams.get("league");
+    const season = Number(parsed.searchParams.get("season"));
+    assert.ok(["135", "2"].includes(league));
+    assert.ok(season >= 2022 && season <= 2026);
+    return apiResponse({ errors: [], response: [{
+      fixture: { id: 12345, date: "2026-11-10T19:45:00+00:00", status: { short: "NS", long: "Not Started" } },
+      league: { round: "Regular Season - 12" },
+      teams: { home: { name: "Inter" }, away: { name: "Milan" } },
+      goals: { home: null, away: null },
+      score: { halftime: { home: null, away: null } }
+    }] });
+  };
+  const response = await onRequestGet(makeContext(
+    "https://matchmind.test/api/player-context?type=calendar",
+    { API_FOOTBALL_KEY: "calendar-test-secret" }
+  ));
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.source, "API-Football");
+  assert.equal(body.matches.length, 2);
+  assert.deepEqual([...new Set(body.matches.map(item => item.competition))].sort(), ["champions-league", "serie-a"]);
+  assert.equal(body.matches[0].home, "Inter");
+  assert.equal(body.matches[0].away, "Milan");
+  assert.equal(body.matches[0].round, 12);
+});
