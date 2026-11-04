@@ -52,7 +52,7 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  function buildPlayers(home, away, pressureHome = 50, elapsed = 0) {
+  function buildPlayers(home, away, pressureHome = 50, elapsed = 0, lineups = []) {
     const homeBase = [[82,280],[228,110],[228,225],[228,335],[228,450],[420,155],[420,280],[420,405],[650,155],[650,280],[650,405]];
     const homeAdvance = (pressureHome - 50) * 0.42;
     const awayAdvance = (50 - pressureHome) * 0.42;
@@ -65,10 +65,16 @@
       900 - x - (x < 550 ? awayAdvance : awayAdvance * 0.28) - drift(index + 11, elapsed) * 0.35,
       y + drift(index + 11, elapsed)
     ]);
-    const circles = (coords, color) => coords.map(([x,y], index) =>
-      '<g><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="17" fill="' + color + '" stroke="#f7fbf8" stroke-width="2"/><text x="' + x.toFixed(1) + '" y="' + (y + 5).toFixed(1) + '" text-anchor="middle" font-size="13" font-weight="900" fill="#07110d">' + (index + 1) + '</text></g>'
-    ).join("");
-    $("pitchPlayers").innerHTML = circles(homePositions, "#d3f18b") + circles(awayPositions, "#f59b9b");
+    const homeLineup = lineups.find(item => item.teamId === home.id || item.team === home.name);
+    const awayLineup = lineups.find(item => item.teamId === away.id || item.team === away.name);
+    const circles = (coords, color, lineup) => coords.map(([x,y], index) => {
+      const player = lineup?.startXI?.[index];
+      const number = player?.number ?? index + 1;
+      const name = player?.name || "Posizione schematica";
+      return '<g><title>' + esc(String(number) + " · " + name) + '</title><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="17" fill="' + color + '" stroke="#f7fbf8" stroke-width="2"/><text x="' + x.toFixed(1) + '" y="' + (y + 5).toFixed(1) + '" text-anchor="middle" font-size="13" font-weight="900" fill="#07110d">' + esc(number) + '</text></g>';
+    }).join("");
+    $("pitchPlayers").innerHTML = circles(homePositions, "#d3f18b", homeLineup) + circles(awayPositions, "#f59b9b", awayLineup);
+    return { homeFormation: homeLineup?.formation || null, awayFormation: awayLineup?.formation || null };
   }
 
   function renderSimulation(match) {
@@ -79,7 +85,7 @@
     const shotsAway = asNumber(statValue(away, "Total Shots"));
     const pressureHome = (possessionHome == null ? 50 : possessionHome) * .55 + (shotsHome == null || shotsAway == null || shotsHome + shotsAway === 0 ? 50 : shotsHome / (shotsHome + shotsAway) * 100) * .45;
     const elapsed = number(match.elapsed) || 0;
-    buildPlayers(home, away, pressureHome, elapsed);
+    const formationInfo = buildPlayers(home, away, pressureHome, elapsed, lastDetail?.lineups || []);
     const homeAttacking = pressureHome >= 50;
     const pressure = Math.round(homeAttacking ? pressureHome : 100 - pressureHome);
     const ballX = homeAttacking ? 520 + pressure * 2.4 : 380 - pressure * 2.4;
@@ -88,9 +94,10 @@
     $("liveBall").setAttribute("cy", String(Math.max(75, Math.min(485, ballY))));
     const team = homeAttacking ? home.name : away.name;
     $("livePressure").innerHTML = '<div><span>Pressione stimata</span><b>' + esc(team) + ' · ' + pressure + '/100</b></div><div class="pressure-track"><i style="width:' + pressure + '%"></i></div>';
-    $("simulationCaption").textContent = possessionHome == null && shotsHome == null
+    const formationLabel = formationInfo.homeFormation && formationInfo.awayFormation ? "Moduli dal provider: " + formationInfo.homeFormation + " vs " + formationInfo.awayFormation + ". " : "";
+    $("simulationCaption").textContent = formationLabel + (possessionHome == null && shotsHome == null
       ? "Statistiche di pressione non disponibili: il pallone resta in posizione neutra. I giocatori mostrati sono sagome illustrative."
-      : "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Le posizioni dei 22 giocatori sono schematiche, non coordinate reali.";
+      : "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Le posizioni dei 22 giocatori sono schematiche, non coordinate reali.");
   }
 
   function renderStats(match) {
