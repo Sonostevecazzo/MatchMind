@@ -5,7 +5,7 @@ export async function onRequest(context) {
   // Public football data is identical for every visitor. Let Cloudflare cache
   // the API response at the edge instead of forcing every phone to rebuild it.
   if (pathname.endsWith("/api/public-calendar")) {
-    headers.set("Cache-Control", "public, max-age=60, s-maxage=900, stale-while-revalidate=3600");
+    headers.set("Cache-Control", "public, max-age=900, s-maxage=900, stale-while-revalidate=3600");
   } else {
     headers.set("Cache-Control", "private, no-store");
   }
