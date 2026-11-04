@@ -78,11 +78,11 @@
     const shotsHome = asNumber(statValue(home, "Total Shots"));
     const shotsAway = asNumber(statValue(away, "Total Shots"));
     const pressureHome = (possessionHome == null ? 50 : possessionHome) * .55 + (shotsHome == null || shotsAway == null || shotsHome + shotsAway === 0 ? 50 : shotsHome / (shotsHome + shotsAway) * 100) * .45;
+    const elapsed = number(match.elapsed) || 0;
     buildPlayers(home, away, pressureHome, elapsed);
     const homeAttacking = pressureHome >= 50;
     const pressure = Math.round(homeAttacking ? pressureHome : 100 - pressureHome);
     const ballX = homeAttacking ? 520 + pressure * 2.4 : 380 - pressure * 2.4;
-    const elapsed = number(match.elapsed) || 0;
     const ballY = 280 + Math.sin(elapsed / 3.4) * 78 + (pressure - 50) * 0.28;
     $("liveBall").setAttribute("cx", String(Math.max(70, Math.min(830, ballX))));
     $("liveBall").setAttribute("cy", String(Math.max(75, Math.min(485, ballY))));
