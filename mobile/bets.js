@@ -3,7 +3,7 @@
 "use strict";
 const $=id=>document.getElementById(id),ENGINE=()=>window.MatchMindBets;
 const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2";
-let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12;
+let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -52,9 +52,10 @@ function selectedRows(){
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
- if(!rows.length){target.innerHTML='<div class="empty-state">Non hai ancora selezionato esiti dal calendario o da questa pagina.</div>';return;}
+ if(!rows.length){target.innerHTML="";slipExpanded=false;return;}
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
- target.innerHTML='<div class="manual-summary-card"><div class="manual-summary-top"><div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div><div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">'+pct(probability)+'</b></div></div><small>Prodotto delle probabilità marginali; indipendenza tra partite assunta. Non è una probabilità certificata.</small><div class="manual-selected-list">'+rows.map(row=>'<div class="manual-selected-row"><span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b><small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · '+pct(row.probability)+'</small></span><button type="button" class="manual-remove-button" data-remove="'+esc(fixtureKey(row.match))+'" aria-label="Rimuovi selezione">×</button></div>').join("")+'</div><div class="manual-summary-actions"><button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button><button type="button" id="clearCurrentSlip" class="secondary">Svuota</button></div></div>';
+ target.innerHTML='<details class="manual-slip-dropdown" '+(slipExpanded?'open':'')+'><summary><span>Anteprima schedina · '+rows.length+' pronostici</span><b>'+pct(probability)+'</b></summary><div class="manual-summary-card"><div class="manual-summary-top"><div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div><div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">'+pct(probability)+'</b></div></div><div class="manual-selected-list">'+rows.map(row=>'<div class="manual-selected-row"><span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b><small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · '+pct(row.probability)+'</small></span><button type="button" class="manual-remove-button" data-remove="'+esc(fixtureKey(row.match))+'" aria-label="Rimuovi selezione">×</button></div>').join("")+'</div><div class="manual-summary-actions"><button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button><button type="button" id="clearCurrentSlip" class="secondary">Svuota</button></div></div></details>';
+ const details=target.querySelector("details");if(details)details.addEventListener("toggle",()=>{slipExpanded=details.open;});
 }
 function terminalStatus(status){return ["Vinta","Persa","Conclusa"].includes(status);}
 function renderOpenTickets(){
@@ -101,7 +102,7 @@ function buildProposal(){
 }
 function applyProposal(){
  proposal.forEach(x=>{const m=x.match,p={competition:m.competition||window.MM.getSelectedCompetition(),date:m.date,home:m.home,away:m.away,marketKey:x.marketKey};const index=picks.findIndex(y=>fixtureKey(y)===fixtureKey(p));if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);});
- writePicks();renderFixtures();renderSlip();$("manualBuilderStatus").textContent="Proposta aggiunta alla schedina. Puoi modificare o rimuovere ogni esito.";
+ writePicks();slipExpanded=true;renderFixtures();renderSlip();$("manualBuilderStatus").textContent="Proposta aggiunta alla schedina. Puoi modificare o rimuovere ogni esito.";
 }
 function evaluateMarket(key,homeGoals,awayGoals){
  const total=homeGoals+awayGoals;
@@ -163,7 +164,7 @@ function initEvents(){
   const index=picks.findIndex(p=>fixtureKey(p)===fixtureKey(fixture));
   if(index>=0&&picks[index].marketKey===market[0])picks.splice(index,1);
   else{const p={competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market[0]};if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);else{$("manualBuilderStatus").textContent="Limite di 15 partite raggiunto.";return;}}
-  writePicks();renderFixtures();renderSlip();
+  writePicks();slipExpanded=true;renderFixtures();renderSlip();
  });
  $("manualFixtures").addEventListener("change",event=>{
   const el=event.target.closest("[data-context-field]");if(!el)return;
@@ -172,7 +173,7 @@ function initEvents(){
  $("manualSlipSummary").addEventListener("click",event=>{
   const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
-  if(event.target.closest("#clearCurrentSlip")){picks=[];writePicks();renderFixtures();renderSlip();}
+  if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderFixtures();renderSlip();}
  });
  $("targetProbability").addEventListener("input",()=>$("targetProbabilityLabel").textContent=$("targetProbability").value+"%");
  $("buildTicket").addEventListener("click",buildProposal);
