@@ -138,6 +138,7 @@ async function updateArchive(){
    }
    const live=liveMatches.find(item=>normDate(item.date)===normDate(selection.date)&&norm(item.home?.name)===norm(selection.home)&&norm(item.away?.name)===norm(selection.away));
    if(live)return {...selection,status:"In corso",result:(live.goals.home??"—")+"–"+(live.goals.away??"—")+(live.elapsed!==null?" · "+live.elapsed+"′":"")};
+   if(selection.status==="In corso")return {...selection,status:"Risultato da confermare"};
    return terminalStatus(selection.status)?selection:{...selection,status:"Da giocare",result:null};
   })}));
   save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
