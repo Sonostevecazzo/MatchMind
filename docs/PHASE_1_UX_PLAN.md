@@ -82,3 +82,11 @@ Phase 1 starts with navigation and the Home dashboard. Match, analysis and bet s
 - Schedina usa tre viste: Crea, In corso e Archivio. Gli esiti standard supportati vengono liquidati dai risultati conclusi; i punteggi live sono mostrati se il provider opzionale è configurato.
 - Il Live separa elenco, tabellone, eventi, statistiche e campo tattico 2D esplicitamente illustrativo. Non vengono inferite coordinate reali dei calciatori.
 - I dati live sono opzionali e lato server; una chiave mancante non deve disabilitare il calendario pubblico.
+
+
+## Live request budget
+
+- UI polling: 5 minuti while the Live page is visible; manual refresh remains available.
+- Cloudflare server cache: 5 minutes for fixture lists and single-fixture detail payloads. The detail query uses one `/fixtures?id=` request for score, events, stats and lineups.
+- The ticket monitor shares the live fixture-list cache and updates only while its tab is active, reducing duplicate provider requests.
+- Actual request usage depends on the number of live competitions, viewed match details and cache locality; the free 100/day allowance is not unlimited.
