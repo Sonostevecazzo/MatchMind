@@ -9,6 +9,8 @@
   let busy = false;
   let lastDetail = null;
   let pollHandle = null;
+  let listMatchCount = 0;
+  let requestFailed = false;
 
   async function requestLive(query = "") {
     const response = await fetch("./api/live-match" + query, { headers: { Accept: "application/json" }, cache: "no-store" });
@@ -30,7 +32,8 @@
 
   function renderList(payload) {
     $("liveStatus").textContent = payload.matches.length ? "Provider collegato · " + payload.matches.length + " partite in corso" : "Provider collegato · nessuna partita in corso in questa competizione.";
-    $("liveListUpdated").textContent = "Ultimo controllo " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + " · refresh automatico ogni 2 minuti.";
+    listMatchCount = payload.matches.length;
+    $("liveListUpdated").textContent = "Ultimo controllo " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + " · refresh adattivo: 5 min live, 30 min senza eventi.";
     $("liveMatches").innerHTML = payload.matches.length ? payload.matches.map(match => (
       '<a class="live-match-card" href="./live.html?fixture=' + encodeURIComponent(match.id) + '&competition=' + encodeURIComponent(competition) + '">' +
         '<div class="live-match-meta"><span class="live-indicator"><i></i> LIVE</span><span>' + esc(match.league || "Calcio") + '</span><b>' + esc(minute(match)) + '</b></div>' +
@@ -186,6 +189,27 @@
     renderEvents(payload.events, match);
   }
 
+  function scheduleNextPoll() {
+    if (pollHandle) clearTimeout(pollHandle);
+    pollHandle = null;
+    if (document.hidden) return;
+    let delay = 1800000;
+    if (requestFailed) delay = 1800000;
+    else if (fixtureId) {
+      const status = String(lastDetail?.fixture?.status || "").toUpperCase();
+      const inPlay = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"].includes(status);
+      const finished = ["FT", "AET", "PEN", "CANC", "ABD", "AWD", "WO"].includes(status);
+      if (finished) return;
+      delay = inPlay ? 300000 : 900000;
+    } else {
+      delay = listMatchCount > 0 ? 300000 : 1800000;
+    }
+    pollHandle = window.setTimeout(() => {
+      pollHandle = null;
+      refresh();
+    }, delay);
+  }
+
   async function refresh() {
     if (busy || document.hidden) return;
     busy = true;
@@ -197,11 +221,14 @@
         $("liveStatus").textContent = "Aggiornamento dati partita…";
         const payload = await requestLive("?fixture=" + encodeURIComponent(fixtureId) + "&competition=" + encodeURIComponent(competition));
         renderDetail(payload);
+        requestFailed = false;
       } else {
         const payload = await requestLive("?competition=" + encodeURIComponent(competition));
         renderList(payload);
+        requestFailed = false;
       }
     } catch (error) {
+      requestFailed = true;
       $("liveStatus").textContent = error.message;
       $("liveMatches").innerHTML = '<div class="live-empty"><b>Live non disponibile</b><p>' + esc(error.message) + '</p><a href="./data.html">Controlla configurazione e copertura dati →</a></div>';
       if (fixtureId) {
@@ -212,6 +239,7 @@
     } finally {
       busy = false;
       [$("refreshLive"), $("refreshLiveDetail")].filter(Boolean).forEach(button => { button.disabled = false; button.textContent = button.id === "refreshLiveDetail" ? "Aggiorna ora" : "Aggiorna"; });
+      scheduleNextPoll();
     }
   }
 
@@ -226,10 +254,10 @@
     $("refreshLive")?.addEventListener("click", refresh);
     $("refreshLiveDetail")?.addEventListener("click", refresh);
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) refresh();
+      if (document.hidden) { if (pollHandle) clearTimeout(pollHandle); pollHandle = null; }
+      else refresh();
     });
     refresh();
-    pollHandle = window.setInterval(refresh, 300000);
   });
-  window.addEventListener("pagehide", () => { if (pollHandle) clearInterval(pollHandle); });
+  window.addEventListener("pagehide", () => { if (pollHandle) clearTimeout(pollHandle); });
 })();
