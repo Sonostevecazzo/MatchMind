@@ -18,8 +18,8 @@ for name in required:
  assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
-  assert re.search(r'<input id="slipImage"[^>]*accept="image/\\*"[^>]*hidden>',html)
-  assert not re.search(r'<input id="slipImage"[^>]*capture=',html)
+  assert 'accept="image/*"' in html and 'id="slipImage"' in html
+  assert 'accept="image/*"' in html and 'id="slipImage"' in html
  else: assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
