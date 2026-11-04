@@ -24,9 +24,9 @@
     if(dataPromise&&!force)return dataPromise;
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
-      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;trainAvailableModels(data.history);return data;}
+      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       const headers={Accept:'application/json'};
-      const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(10000)});
+      let response;try{response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(25000)});}catch(error){if(cached&&cached.matches?.length){data={...cached,source:'cache',stale:true,error:error.message};return data;}throw new Error('La fonte del calendario non risponde. Controlla la connessione e riprova.');}
       let payload={};try{payload=await response.json();}catch{}
       if(!response.ok||payload.error||payload.configured===false){
         const message=payload.error||'Fonte pubblica openfootball non disponibile.';
@@ -36,7 +36,9 @@
       if(!Array.isArray(payload.matches)||!payload.matches.length)throw new Error('Il dataset pubblico non ha restituito partite per questa stagione.');
       data={matches:payload.matches,history:Array.isArray(payload.history)?payload.history:[],season:payload.season||y,source:'openfootball',updatedAt:Date.now(),sourceMode:'public-dataset'};
       try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
-      trainAvailableModels(data.history);
+      // Do not train the walk-forward AI calibration on the UI thread. The
+      // historical replay is O(n²) and can freeze mobile navigation. Keep the
+      // last validated calibration if present; training belongs in a Worker.
       return data;
     })().catch(error=>{dataPromise=null;throw error;});
     return dataPromise;
