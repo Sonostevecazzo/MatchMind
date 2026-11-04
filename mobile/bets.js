@@ -56,16 +56,35 @@ function renderSlip(){
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
  target.innerHTML='<div class="manual-summary-card"><div class="manual-summary-top"><div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div><div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">'+pct(probability)+'</b></div></div><small>Prodotto delle probabilità marginali; indipendenza tra partite assunta. Non è una probabilità certificata.</small><div class="manual-selected-list">'+rows.map(row=>'<div class="manual-selected-row"><span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b><small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · '+pct(row.probability)+'</small></span><button type="button" class="manual-remove-button" data-remove="'+esc(fixtureKey(row.match))+'" aria-label="Rimuovi selezione">×</button></div>').join("")+'</div><div class="manual-summary-actions"><button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button><button type="button" id="clearCurrentSlip" class="secondary">Svuota</button></div></div>';
 }
+function terminalStatus(status){return ["Vinta","Persa","Conclusa"].includes(status);}
+function renderOpenTickets(){
+ const target=$("openTickets");if(!target)return;
+ const open=archive.filter(ticket=>(ticket.selections||[]).some(selection=>!terminalStatus(selection.status||"Da giocare")));
+ if(!open.length){target.innerHTML='<div class="empty-state">Nessuna schedina aperta. Le schedine salvate e non ancora concluse appariranno qui.</div>';return;}
+ target.innerHTML=open.map(ticket=>{
+  const selections=ticket.selections||[],live=selections.filter(item=>item.status==="In corso").length,done=selections.filter(item=>terminalStatus(item.status)).length;
+  const state=live?"In corso":"Da giocare";
+  return '<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(ticket.createdAt?new Date(ticket.createdAt).toLocaleString("it-IT"):"—")+'</b><span class="ticket-state '+(live?"live":"scheduled")+'">'+state+'</span></div><small>'+done+'/'+selections.length+' eventi conclusi · probabilità al salvataggio '+pct(ticket.probability)+'</small>'+
+   selections.map(selection=>'<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>').join("")+
+   '<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button></div></article>';
+ }).join("");
+}
 function renderArchive(){
- const target=$("slipArchive");
- if(!archive.length){target.innerHTML='<div class="empty-state">Nessuna schedina archiviata.</div>';return;}
- target.innerHTML=archive.map(t=>'<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(t.createdAt?new Date(t.createdAt).toLocaleString("it-IT"):"—")+'</b><span>'+t.selections.length+' eventi</span></div><small>Probabilità stimata al salvataggio: '+pct(t.probability)+'</small>'+t.selections.map(s=>'<div class="data-row"><span><b>'+esc(s.home)+' – '+esc(s.away)+'</b><small>'+esc(s.market)+' · '+esc(s.date)+'</small></span><b>'+esc(s.result||s.status||"Da giocare")+'</b></div>').join("")+'<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(t.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(t.id)+'">Elimina</button></div></article>').join("");
+ const target=$("slipArchive");if(!target)return;
+ const closed=archive.filter(ticket=>(ticket.selections||[]).length&&(ticket.selections||[]).every(selection=>terminalStatus(selection.status||"Da giocare")));
+ if(!closed.length){target.innerHTML='<div class="empty-state">Le schedine concluse appariranno qui dopo l’aggiornamento dei risultati.</div>';return;}
+ target.innerHTML=closed.map(ticket=>'<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(ticket.createdAt?new Date(ticket.createdAt).toLocaleString("it-IT"):"—")+'</b><span>Conclusa</span></div><small>Probabilità stimata al salvataggio: '+pct(ticket.probability)+'</small>'+ticket.selections.map(selection=>'<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>').join("")+'<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button></div></article>').join("");
+}
+function setBetTab(tab){
+ const selected=["create","live","archive"].includes(tab)?tab:"create";
+ document.querySelectorAll("[data-bets-tab]").forEach(button=>{const active=button.dataset.betsTab===selected;button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active));});
+ ["create","live","archive"].forEach(name=>{const panel=$("betsTab"+name[0].toUpperCase()+name.slice(1));if(panel)panel.hidden=name!==selected;});
 }
 function saveCurrentSlip(){
  const rows=selectedRows();if(!rows.length){$("archiveStatus").textContent="Non ci sono selezioni da salvare.";return;}
  const probability=rows.reduce((v,x)=>v*x.probability,1);
  const item={id:"slip-"+Date.now(),createdAt:new Date().toISOString(),probability,selections:rows.map(x=>({home:x.match.home,away:x.match.away,date:x.match.date,market:x.marketLabel,marketKey:x.marketKey,probability:x.probability,competition:x.match.competition||window.MM.getSelectedCompetition(),status:"Da giocare"}))};
- archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);renderArchive();$("archiveStatus").textContent="Schedina salvata su questo dispositivo.";
+ archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();$("archiveStatus").textContent="Schedina salvata su questo dispositivo.";setBetTab("live");
 }
 function buildProposal(){
  const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
@@ -84,20 +103,54 @@ function applyProposal(){
  proposal.forEach(x=>{const m=x.match,p={competition:m.competition||window.MM.getSelectedCompetition(),date:m.date,home:m.home,away:m.away,marketKey:x.marketKey};const index=picks.findIndex(y=>fixtureKey(y)===fixtureKey(p));if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);});
  writePicks();renderFixtures();renderSlip();$("manualBuilderStatus").textContent="Proposta aggiunta alla schedina. Puoi modificare o rimuovere ogni esito.";
 }
+function evaluateMarket(key,homeGoals,awayGoals){
+ const total=homeGoals+awayGoals;
+ switch(key){
+  case "home":return homeGoals>awayGoals;
+  case "draw":return homeGoals===awayGoals;
+  case "away":return homeGoals<awayGoals;
+  case "bttsYes":return homeGoals>0&&awayGoals>0;
+  case "bttsNo":return homeGoals===0||awayGoals===0;
+  case "over15":return total>=2;
+  case "under15":return total<=1;
+  case "over25":return total>=3;
+  case "under25":return total<=2;
+  case "over35":return total>=4;
+  case "under35":return total<=3;
+  default:return null;
+ }
+}
 async function updateArchive(){
- const button=$("refreshArchive");button.disabled=true;button.textContent="Aggiornamento…";
+ const button=$("refreshArchive");button.disabled=true;button.textContent="Aggiorno…";
  try{
   const fresh=await window.MM.loadData(true),all=[...(fresh.matches||[]),...(fresh.history||[])];
-  archive=archive.map(t=>({...t,selections:t.selections.map(s=>{const m=all.find(x=>(x.competition||"serie-a")===(s.competition||"serie-a")&&x.date===s.date&&norm(x.home)===norm(s.home)&&norm(x.away)===norm(s.away));return m&&window.MM.hasScore(m)?{...s,result:Number(m.hg)+"–"+Number(m.ag),status:"Conclusa"}:{...s,status:"In programma"};})}));
-  save(ARCHIVE_KEY,archive);renderArchive();$("archiveStatus").textContent="Risultati aggiornati dal calendario disponibile.";
+  let liveMatches=[];
+  try{
+   const response=await fetch("./api/live-match?competition="+encodeURIComponent(window.MM.getSelectedCompetition()),{headers:{Accept:"application/json"},cache:"no-store"});
+   if(response.ok){const payload=await response.json();if(Array.isArray(payload.matches))liveMatches=payload.matches;}
+  }catch(_){/* Public results still update if the optional live provider is unavailable. */}
+  const normDate=value=>String(value||"").slice(0,10);
+  archive=archive.map(ticket=>({...ticket,selections:(ticket.selections||[]).map(selection=>{
+   const match=all.find(item=>(item.competition||"serie-a")===(selection.competition||"serie-a")&&item.date===selection.date&&norm(item.home)===norm(selection.home)&&norm(item.away)===norm(selection.away));
+   if(match&&window.MM.hasScore(match)){
+    const homeGoals=Number(match.hg),awayGoals=Number(match.ag),won=evaluateMarket(selection.marketKey,homeGoals,awayGoals);
+    return {...selection,result:homeGoals+"–"+awayGoals,status:won===null?"Conclusa":won?"Vinta":"Persa",settledAt:new Date().toISOString()};
+   }
+   const live=liveMatches.find(item=>normDate(item.date)===normDate(selection.date)&&norm(item.home?.name)===norm(selection.home)&&norm(item.away?.name)===norm(selection.away));
+   if(live)return {...selection,status:"In corso",result:(live.goals.home??"—")+"–"+(live.goals.away??"—")+(live.elapsed!==null?" · "+live.elapsed+"′":"")};
+   return terminalStatus(selection.status)?selection:{...selection,status:"Da giocare",result:null};
+  })}));
+  save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
+  $("archiveStatus").textContent="Schedine aggiornate: risultati conclusi dal calendario pubblico; punteggi live quando API-Football è configurata.";
  }catch(e){$("archiveStatus").textContent="Aggiornamento non riuscito: "+e.message;}
- finally{button.disabled=false;button.textContent="Aggiorna risultati";}
+ finally{button.disabled=false;button.textContent="Aggiorna";}
 }
 async function shareTicket(ticket){
  const body=["MatchMind · Schedina",...ticket.selections.map(x=>x.home+" – "+x.away+" | "+x.market+" | "+pct(x.probability)),"Probabilità combinata stimata: "+pct(ticket.probability)].join("\n");
  try{if(navigator.share)await navigator.share({title:"Schedina MatchMind",text:body});else{await navigator.clipboard.writeText(body);$("archiveStatus").textContent="Schedina copiata negli appunti.";}}catch(e){if(e.name!=="AbortError")$("archiveStatus").textContent="Condivisione non disponibile in questo browser.";}
 }
 function initEvents(){
+ document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>setBetTab(button.dataset.betsTab)));
  $("matchSearch").addEventListener("input",()=>{visibleFixtureLimit=12;renderFixtures();});
  ["betsDate","betsTeam","betsRound"].forEach(id=>$(id)?.addEventListener("change",()=>{visibleFixtureLimit=12;renderFixtures();}));
  $("clearBetsFilters")?.addEventListener("click",()=>{$("matchSearch").value="";$("betsDate").value="";$("betsTeam").value="";$("betsRound").value="";visibleFixtureLimit=12;renderFixtures();});
@@ -124,10 +177,10 @@ function initEvents(){
  $("buildTicket").addEventListener("click",buildProposal);
  $("ticketResults").addEventListener("click",event=>{if(event.target.closest("#addProposal"))applyProposal();});
  $("refreshArchive").addEventListener("click",updateArchive);
- $("slipArchive").addEventListener("click",event=>{
-  const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderArchive();return;}
+ ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
+  const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();return;}
   const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);}
- });
+ }));
 }
 document.addEventListener("DOMContentLoaded",async()=>{
  initEvents();$("globalStatus").textContent="Carico calendario e risultati storici…";
@@ -148,7 +201,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   const teamSelect=$("betsTeam"),roundSelect=$("betsRound");
   if(teamSelect)teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+window.MM.getTeams(fixtures).map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");
   if(roundSelect){const rounds=[...new Set(fixtures.map(m=>String(m.round||"")).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));roundSelect.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+esc(n)+'">Giornata '+esc(n)+'</option>').join("");}
-  renderFixtures();renderSlip();renderArchive();
+  renderFixtures();renderSlip();renderOpenTickets();renderArchive();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
  }catch(e){$("globalStatus").textContent="Dati non disponibili: "+(e.message||"errore sconosciuto");$("manualFixtures").innerHTML='<div class="notice warning">Calendario non disponibile. Riprova quando la fonte dati sarà raggiungibile.</div>';}
