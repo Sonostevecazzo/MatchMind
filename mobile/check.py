@@ -31,7 +31,7 @@ with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
 for filename in ["site-core.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
 for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js"]:
- subprocess.run(["node","--check",str(path)],check=True)
+ subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
 for test in ["public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
