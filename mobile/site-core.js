@@ -1,13 +1,9 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const BASE='https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/ITA_1_serie-a/';
-  const HIST='https://raw.githubusercontent.com/qhtexas/football-dataset/main/datasets/serie-a/';
-  const UCL_BASE='https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/UEFA_1_champions-league/';
-  const UCL_HIST='https://raw.githubusercontent.com/openfootball/champions-league/master/';
-  const CACHE_KEY='matchmind-multipage-cache-v2-competitions';
+  const CACHE_KEY='matchmind-multipage-cache-v3-apifootball';
   const COMPETITIONS={
-    'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:135,fallback:'A'},
-    'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:2,fallback:'CL'}
+    'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:135,apiLeague:135,fallback:'A'},
+    'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:2,apiLeague:2,fallback:'CL'}
   };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
@@ -23,163 +19,28 @@
   const seasonCode=y=>String(y).slice(-2)+String(y+1).slice(-2);
   function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
-  function parseCSV(text){
-    const out=[];let row=[],cell='',quoted=false;
-    for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=false;else cell+=c;}
-      else if(c==='"')quoted=true;else if(c===','){row.push(cell);cell='';}
-      else if(c==='\n'){row.push(cell.replace(/\r$/,''));if(row.some(v=>v.trim()!==''))out.push(row);row=[];cell='';}else cell+=c;}
-    if(cell.length||row.length){row.push(cell.replace(/\r$/,''));out.push(row);}
-    if(!out.length)return [];
-    const heads=out.shift().map(x=>x.trim().replace(/^\uFEFF/,'' ));
-    return out.map(vals=>Object.fromEntries(heads.map((h,i)=>[h,(vals[i]??'').trim()])));
-  }
   const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
-  function toISO(v){if(!v)return '';if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;const m=String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(m){let y=Number(m[3]);if(y<100)y+=y<70?2000:1900;return y+'-'+String(Number(m[2])).padStart(2,'0')+'-'+String(Number(m[1])).padStart(2,'0');}return '';}
-  function parseOpen(rows){return rows.filter(r=>r.home&&r.away&&r.date).map(r=>({date:r.date,time:r.time||'',round:num(r.gw??r.GW??r.round??r.Round??r.matchday??r.Matchday),home:r.home,away:r.away,hg:num(r.ft_home),ag:num(r.ft_away),competition:'serie-a',hs:num(r.home_shots),as:num(r.away_shots),hst:num(r.home_target),ast:num(r.away_target),ht:num(r.ht_home),at:num(r.ht_away),hf:num(r.home_fouls),af:num(r.away_fouls),hc:num(r.home_corners),ac:num(r.away_corners),hc1h:num(r.home_corners_1h),ac1h:num(r.away_corners_1h),hc2h:num(r.home_corners_2h),ac2h:num(r.away_corners_2h),hy:num(r.home_yellow),ay:num(r.away_yellow),hr:num(r.home_red),ar:num(r.away_red),goalMinutes:r.goal_minutes||null,statSource:r.source||null,source:'open-matchday',oddsH:null,oddsD:null,oddsA:null}));}
-  function parseOpenFootball(payload){
-    const rows=Array.isArray(payload?.matches)?payload.matches:[];
-    return rows.map(r=>{
-      const score=r.score?.ft??r.score?.fullTime??null;
-      const scoreArray=Array.isArray(score)?score:null;
-      const home=r.team1?.name||r.team1||r.homeTeam?.name||r.homeTeam||r.home||'';
-      const away=r.team2?.name||r.team2||r.awayTeam?.name||r.awayTeam||r.away||'';
-      const hg=scoreArray?num(scoreArray[0]):num(score?.home??r.goals?.home??r.ft_home);
-      const ag=scoreArray?num(scoreArray[1]):num(score?.away??r.goals?.away??r.ft_away);
-      const roundText=String(r.round||r.matchday||'');
-      const roundMatch=roundText.match(/(\d+)/);
-      return {date:toISO(r.date||r.utcDate||''),time:r.time||'',round:roundMatch?num(roundMatch[1]):num(r.round),home,away,hg,ag,competition:'serie-a',hs:null,as:null,ht:null,at:null,source:'openfootball',oddsH:null,oddsD:null,oddsA:null};
-    }).filter(m=>m.date&&m.home&&m.away);
-  }
-  function parseHist(rows){return rows.filter(r=>(r.HomeTeam||r.home)&&(r.AwayTeam||r.away)&&(r.Date||r.date)).map(r=>({date:toISO(r.Date||r.date),time:r.Time||'',round:num(r.gw??r.GW??r.round??r.Round??r.Matchday??r.matchday),home:r.HomeTeam||r.home,away:r.AwayTeam||r.away,hg:num(r.FTHG??r.ft_home),ag:num(r.FTAG??r.ft_away),hs:num(r.HS),as:num(r.AS),hst:num(r.HST),ast:num(r.AST),ht:num(r.HTHG),at:num(r.HTAG),hf:num(r.HF),af:num(r.AF),hc:num(r.HC),ac:num(r.AC),hy:num(r.HY),ay:num(r.AY),hr:num(r.HR),ar:num(r.AR),source:'football-data',statSource:'football-data.co.uk',oddsH:num(r.B365H??r.AvgH),oddsD:num(r.B365D??r.AvgD),oddsA:num(r.B365A??r.AvgA)})).filter(m=>m.date);}
-  async function fetchText(url){
-    const controller=typeof AbortController!=='undefined'?new AbortController():null;
-    const timeout=controller?setTimeout(()=>controller.abort(),12000):null;
-    try{const res=await fetch(url,{cache:'no-store',signal:controller?.signal});if(!res.ok)throw new Error('HTTP '+res.status);return await res.text();}
-    finally{if(timeout)clearTimeout(timeout);}
-  }
-  async function fetchJson(url){
-    const controller=typeof AbortController!=='undefined'?new AbortController():null;
-    const timeout=controller?setTimeout(()=>controller.abort(),12000):null;
-    try{const res=await fetch(url,{cache:'no-store',signal:controller?.signal});if(!res.ok)throw new Error('HTTP '+res.status);return await res.json();}
-    finally{if(timeout)clearTimeout(timeout);}
-  }
-  const footballJsonUrl=y=>'https://raw.githubusercontent.com/openfootball/football.json/master/'+y+'-'+String(y+1).slice(-2)+'/it.1.json';
-  async function fetchOpenFootball(y){return parseOpenFootball(await fetchJson(footballJsonUrl(y)));}
-  function readCache(){try{const own=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');if(own)return own;const old=JSON.parse(localStorage.getItem('matchmind-cache')||'null');return old&&Array.isArray(old.matches)?{...old,updatedAt:old.savedAt||0,source:'cache'}:null;}catch{return null;}}
-  let dataPromise=null, data={matches:[],history:[],season:seasonStart(),source:'fonti pubbliche',updatedAt:null};
-  function parseChampionsText(text,year){
-    const rows=[],lines=String(text||'').replace(/\r/g,'').split('\n');
-    const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    let date='',round=null,stage='League',currentYear=Number(year),lastMonth=null,currentTime='';
-    const cleanTeam=name=>String(name||'').replace(/\s+\([A-Z]{3}\)\s*$/,'').trim();
-    for(const raw of lines){
-      const line=raw.trim();if(!line)continue;
-      const section=line.match(/^▪\s*([^,]+)(?:,\s*(.*))?$/);
-      if(section){stage=section[1].trim();const matchday=String(section[2]||'').match(/Matchday\s+(\d+)/i);round=matchday?Number(matchday[1]):null;continue;}
-      const dateMatch=line.match(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})(?:\s+(\d{4}))?$/);
-      if(dateMatch){
-        const month=months[dateMatch[1]];
-        if(dateMatch[3])currentYear=Number(dateMatch[3]);
-        else if(lastMonth!==null&&month<lastMonth-6)currentYear++;
-        lastMonth=month;currentTime='';
-        date=new Date(Date.UTC(currentYear,month,Number(dateMatch[2]))).toISOString().slice(0,10);continue;
-      }
-      if(!date)continue;
-      const timed=line.match(/^(\d{1,2}:\d{2})\s+(.+)$/);
-      const matchText=timed?timed[2]:line;
-      if(timed)currentTime=timed[1];
-      const versus=matchText.indexOf(' v ');if(versus<0)continue;
-      const home=cleanTeam(matchText.slice(0,versus));
-      const tail=matchText.slice(versus+3).trim();
-      const score=tail.match(/^(.+?)\s+(\d+)\s*[-–]\s*(\d+)(?:\s+.*)?$/);
-      const away=cleanTeam(score?score[1]:tail);
-      if(!home||!away)continue;
-      rows.push({date,time:currentTime,round,stage,home,away,hg:score?Number(score[2]):null,ag:score?Number(score[3]):null,hs:null,as:null,hst:null,ast:null,ht:null,at:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,source:'openfootball-champions-league',competition:'champions-league',season:year,oddsH:null,oddsD:null,oddsA:null});
-    }
-    return rows;
-  }
-  async function fetchChampionsText(year){const code=String(year)+'-'+String(year+1).slice(-2);return parseChampionsText(await fetchText(UCL_HIST+code+'/cl.txt'),year);}
-  async function fetchChampionsHistory(year){
-    const seasons=await Promise.all(Array.from({length:5},(_,i)=>fetchChampionsText(year-i-1).catch(()=>[])));
-    return seasons.flat().filter(m=>m.hg!==null&&m.ag!==null);
-  }
+  function readCache(){try{const own=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');return own&&Array.isArray(own.matches)?own:null;}catch{return null;}}
+  let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'API-Football',updatedAt:null};
   async function loadData(force=false){
     if(dataPromise&&!force)return dataPromise;
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
-      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length)data={...cached};
-      let openRows=[],fixtureRows=[],jsonRows=[],uclResults=[],uclFixtures=[],used=[];
-      const [serieFeeds,uclFeeds]=await Promise.all([
-        Promise.all([fetchText(BASE+'results_'+seasonCode(y)+'.csv'),fetchText(BASE+'fixtures_'+seasonCode(y)+'.csv').catch(()=> '')]).catch(()=>null),
-        Promise.all([fetchText(UCL_BASE+'results_'+seasonCode(y)+'.csv').catch(()=> ''),fetchText(UCL_BASE+'fixtures_'+seasonCode(y)+'.csv').catch(()=> '')])
-      ]);
-      if(serieFeeds){
-        openRows=parseOpen(parseCSV(serieFeeds[0])).map(m=>({...m,competition:'serie-a'}));
-        if(serieFeeds[1])fixtureRows=parseOpen(parseCSV(serieFeeds[1])).filter(m=>m.hg===null||m.ag===null).map(m=>({...m,competition:'serie-a'}));
-        if(openRows.length||fixtureRows.length)used.push('open-matchday Serie A');
+      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
+      const headers={Accept:'application/json'};
+      try{const key=sessionStorage.getItem('matchmind-api-football-session-key');if(key)headers['X-MatchMind-API-Key']=key;}catch{}
+      const response=await fetch('./api/player-context?type=calendar',{headers,cache:'no-store'});
+      let payload={};try{payload=await response.json();}catch{}
+      if(!response.ok||payload.error||payload.configured===false){
+        const message=payload.error||'API-Football non disponibile. Configura la chiave API nelle Impostazioni.';
+        if(cached&&cached.matches?.length){data={...cached,source:'cache · API-Football',stale:true,error:message};return data;}
+        throw new Error(message);
       }
-      if(uclFeeds){
-        uclResults=parseOpen(parseCSV(uclFeeds[0])).filter(m=>m.hg!==null&&m.ag!==null).map(m=>({...m,competition:'champions-league',stage:'League'}));
-        uclFixtures=parseOpen(parseCSV(uclFeeds[1])).filter(m=>m.hg===null||m.ag===null).map(m=>({...m,competition:'champions-league',stage:'League'}));
-        if(uclResults.length||uclFixtures.length)used.push('open-matchday Champions League');
-      }
-      const hasFuture=fixtureRows.some(m=>m.date>=new Date().toISOString().slice(0,10));
-      if(!openRows.length||!hasFuture){
-        try{jsonRows=(await fetchOpenFootball(y)).map(m=>({...m,competition:'serie-a'}));if(jsonRows.length)used.push('openfootball Serie A');}catch{}
-      }
-      if(!uclFixtures.some(m=>m.date>=new Date().toISOString().slice(0,10))){
-        try{const currentUcl=await fetchChampionsText(y);uclResults=currentUcl.filter(m=>m.hg!==null&&m.ag!==null);uclFixtures=currentUcl.filter(m=>m.hg===null||m.ag===null);if(currentUcl.length)used.push('openfootball Champions League');}catch{}
-      }
-      const fresh=[...openRows,...fixtureRows,...jsonRows,...uclResults,...uclFixtures];
-      if(jsonRows.length){
-        const primaryKeys=new Set(fresh.filter(m=>m.competition==='serie-a').map(m=>m.date+'|'+norm(m.home)+'|'+norm(m.away)));
-        jsonRows.forEach(m=>{const key=m.date+'|'+norm(m.home)+'|'+norm(m.away);if(!primaryKeys.has(key))fresh.push(m);});
-      }
-      if(fresh.length){
-        const deduped=[];
-        fresh.forEach(m=>{
-          const idx=deduped.findIndex(x=>x.competition===m.competition&&x.date===m.date&&sameTeam(x.home,m.home)&&sameTeam(x.away,m.away));
-          if(idx<0)deduped.push(m);
-          else{
-            const prev=deduped[idx],merged={...m,...prev};
-            ['hs','as','hst','ast','ht','at','hf','af','hc','ac','hc1h','ac1h','hc2h','ac2h','hy','ay','hr','ar','goalMinutes','statSource'].forEach(field=>{merged[field]=prev[field]??m[field]??null;});
-            merged.round=prev.round??m.round;merged.time=prev.time||m.time;merged.hg=prev.hg??m.hg;merged.ag=prev.ag??m.ag;merged.stage=prev.stage||m.stage;
-            deduped[idx]=merged;
-          }
-        });
-        const current=deduped;
-        let seriesOlder=[],championsOlder=[];
-        const historyFresh=cached&&cached.season===y&&Array.isArray(cached.history)&&Date.now()-Number(cached.historySavedAt||cached.updatedAt||0)<7*24*60*60*1000;
-        const oldHistory=Array.isArray(cached&&cached.history)?cached.history:[];
-        if(historyFresh)seriesOlder=oldHistory.filter(m=>(m.competition||'serie-a')==='serie-a'&&m.source!=='open-matchday'&&m.source!=='openfootball');
-        else{
-          seriesOlder=(await Promise.all([y-1,y-2,y-3,y-4,y-5].map(async yy=>{
-            try{const csv=parseHist(parseCSV(await fetchText(HIST+'season-'+seasonCode(yy)+'.csv')));if(csv.length)return csv.map(m=>({...m,competition:'serie-a'}));}catch{}
-            try{return (await fetchOpenFootball(yy)).map(m=>({...m,competition:'serie-a'}));}catch{return [];}
-          }))).flat();
-          if(!seriesOlder.length)seriesOlder=oldHistory.filter(m=>(m.competition||'serie-a')==='serie-a'&&m.source!=='open-matchday'&&m.source!=='openfootball');
-        }
-        if(historyFresh&&oldHistory.some(m=>m.competition==='champions-league'&&m.source==='openfootball-champions-league'))championsOlder=oldHistory.filter(m=>m.competition==='champions-league'&&m.source==='openfootball-champions-league');
-        else{
-          championsOlder=await fetchChampionsHistory(y);
-          if(!championsOlder.length)championsOlder=oldHistory.filter(m=>m.competition==='champions-league');
-        }
-        const histMap=new Map();
-        [...seriesOlder,...championsOlder,...current.filter(m=>hasScore(m))].forEach(m=>{
-          const competition=m.competition||'serie-a';
-          histMap.set(competition+'|'+m.date+'|'+norm(m.home)+'|'+norm(m.away),{...m,competition});
-        });
-        data={matches:current,history:[...histMap.values()],season:y,source:used.join(' + ')||'fonti pubbliche',updatedAt:Date.now(),historySavedAt:historyFresh?cached.historySavedAt:Date.now(),sourceMode:'keyless-public'};
-        try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
-      }else if(data.matches.length)data={...data,source:'cache'};
-      else throw new Error('Nessuna fonte pubblica ha restituito partite. Controlla la connessione e riprova.');
+      if(!Array.isArray(payload.matches)||!payload.matches.length)throw new Error('API-Football non ha restituito il calendario richiesto.');
+      data={matches:payload.matches,history:Array.isArray(payload.history)?payload.history:[],season:payload.season||y,source:'API-Football',updatedAt:Date.now(),sourceMode:'single-provider'};
+      try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
       return data;
-    })().catch(error=>{
-      dataPromise=null;
-      const cached=readCache();
-      if(cached&&Array.isArray(cached.matches)&&cached.matches.length){data={...cached,source:'cache'};return data;}
-      throw error;
-    });
+    })().catch(error=>{dataPromise=null;throw error;});
     return dataPromise;
   }
   const TEAM_ALIASES=[
