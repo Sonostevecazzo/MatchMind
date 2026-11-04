@@ -1,10 +1,7 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
   const CACHE_KEY='matchmind-multipage-cache-v4-public-dataset';
-  const COMPETITIONS={
-    'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:135,apiLeague:135,fallback:'A'},
-    'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:2,apiLeague:2,fallback:'CL'}
-  };
+  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:null,fallback:'A'} };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
     if(COMPETITIONS[requested]){try{localStorage.setItem('matchmind-competition-v1',requested);}catch{}return requested;}
