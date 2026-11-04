@@ -73,3 +73,12 @@ Build a mobile-first football analytics PWA that combines the navigation clarity
 ## Implementation notes
 
 Phase 1 starts with navigation and the Home dashboard. Match, analysis and bet screens are restyled incrementally after the first slice is validated. No statistical model or data-provider behavior is changed in this phase.
+
+
+## Phase 2 — Live centre and bet manager
+
+- Navigazione primaria: Home, Partite, Live, Analisi, Schedina. Le destinazioni secondarie sono raccolte in Altro.
+- Analisi è dedicata alla copertura del modello, al backtest cronologico e alla trasparenza; creazione e monitoraggio delle schedine restano in un solo posto.
+- Schedina usa tre viste: Crea, In corso e Archivio. Gli esiti standard supportati vengono liquidati dai risultati conclusi; i punteggi live sono mostrati se il provider opzionale è configurato.
+- Il Live separa elenco, tabellone, eventi, statistiche e campo tattico 2D esplicitamente illustrativo. Non vengono inferite coordinate reali dei calciatori.
+- I dati live sono opzionali e lato server; una chiave mancante non deve disabilitare il calendario pubblico.
