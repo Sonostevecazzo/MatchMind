@@ -419,3 +419,15 @@ body[data-page="bets"] .metric > small {
 @media (min-width: 701px) {
   .header-more-link { display: inline-flex; align-items: center; min-height: 34px; padding: 0 11px; border: 1px solid #ffffff20; border-radius: 9px; color: #c8d3d7; text-decoration: none; font-size: 12px; font-weight: 800; }
 }
+
+/* MatchMind bet manager: short workflow tabs, clear open/settled states. */
+.bets-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:5px;margin:0 0 16px;border:1px solid #26363c;border-radius:13px;background:#0e151a;position:sticky;top:68px;z-index:20}
+.bets-tab{min-height:44px;border:0;border-radius:9px;background:transparent;color:#9baab1;font-size:14px;font-weight:850}
+.bets-tab.active{background:#c4f36a;color:#17210a}
+.bets-tab-panel[hidden]{display:none!important}
+.ticket-state{border-radius:20px;padding:5px 9px;background:#26351d;color:#d9f79c;font-size:11px;font-weight:850}
+.ticket-state.live{background:#49272c;color:#ffb4b4}
+.ticket-state.scheduled{background:#26351d;color:#d9f79c}
+.ticket-monitor-state{font-size:12px!important;max-width:55%;text-align:right;line-height:1.4;overflow-wrap:anywhere}
+.ticket-monitor-state.won{color:#b9ef91}.ticket-monitor-state.lost{color:#ff9da7}
+@media(max-width:700px){.bets-tabs{top:58px}.bets-tab{min-height:48px;font-size:13px}.ticket-monitor-state{font-size:12px!important}}
