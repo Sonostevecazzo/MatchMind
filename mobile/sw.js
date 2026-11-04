@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v59-20261104-live-matchsim';
+const CACHE='matchmind-pwa-v60-20261104-live-lineups';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
