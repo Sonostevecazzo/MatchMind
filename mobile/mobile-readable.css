@@ -406,3 +406,16 @@ body[data-page="bets"] .metric > small {
     padding: 4px 0 12px;
   }
 }
+
+
+/* Five fixed primary destinations: no overflow or tiny six-column labels. */
+@media (max-width: 700px) {
+  body[data-page] .mobile-nav { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 3px !important; }
+  body[data-page] .mobile-nav .nav-item { min-width: 0; font-size: 10px !important; }
+  body[data-page] .mobile-nav .nav-icon,
+  body[data-page] .mobile-nav .nav-icon svg { width: 22px !important; height: 22px !important; }
+  body[data-page] .header-more-link { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 9px; border: 1px solid #ffffff20; border-radius: 9px; color: #c8d3d7; text-decoration: none; font-size: 12px; font-weight: 800; }
+}
+@media (min-width: 701px) {
+  .header-more-link { display: inline-flex; align-items: center; min-height: 34px; padding: 0 11px; border: 1px solid #ffffff20; border-radius: 9px; color: #c8d3d7; text-decoration: none; font-size: 12px; font-weight: 800; }
+}
