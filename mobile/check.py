@@ -26,6 +26,9 @@ for name in required_pages:
         continue
     assert "site-core.js" in html, f"{name} must use shared navigation"
     assert "mobile-readable.css" in html, f"{name} must load the dedicated mobile typography layer"
+    if name == "nba.html":
+        assert "nba.js" in html, "NBA page must load its dedicated controller"
+        continue
     if name == "bets.html":
         assert "bets-engine.js" in html and "bets.js" in html, "Bet checker must load its engine and controller"
         assert re.search(r'<input id="slipImage"[^>]*accept="image/\*"[^>]*hidden>', html), "Screenshot picker must accept gallery images"
