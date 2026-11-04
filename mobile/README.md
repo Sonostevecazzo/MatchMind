@@ -17,34 +17,17 @@ After the first deploy, Cloudflare assigns a `*.pages.dev` address; no purchased
 
 The deployed app is public: anyone who has its Pages URL can open and use it. Do not enter or store sensitive personal data in the app. Match forecasts are calculated locally in the browser.
 
-### Enable additional data sources with free tiers
+### Free-first data setup
 
-The `functions/api/player-context.js` endpoint calls providers from Cloudflare Pages Functions. The preferred setup stores provider keys as encrypted Cloudflare secrets. The Settings screen also supports an optional API-Football key for the current browser session: it is held in `sessionStorage` and sent to the same-origin Pages Function in a request header, never in the URL or response. This is browser-accessible session storage, not encrypted server-side storage; use it only on a trusted personal device. For persistent multi-device use, configure the Cloudflare secret.
+The base PWA works without paid services, API keys, or a separate MatchMind server. Calendar data, historical results and forecasts are loaded or calculated in the browser.
 
-Optional sources:
+The only optional API integration currently implemented is the Live Match Centre:
+- **ESPN public scoreboard** is the no-key fallback for Serie A and UEFA Champions League. It is an unofficial public feed with no service-level guarantee; scores may be delayed and detailed events, statistics or lineups may be missing.
+- **API-Football** can provide richer live match details when coverage is available. The optional free plan has a limited daily request quota (advertised as 100 requests/day; check the provider's current terms and coverage). Add `API_FOOTBALL_KEY` only as an encrypted Cloudflare Pages secret. The Live endpoint consolidates match details into one fixture request and uses edge caching to reduce calls.
 
-- **The Odds API** as an optional 1X2 feed from available European bookmakers: get a key at https://the-odds-api.com/. Coverage and quota depend on the current plan; the feed is not a substitute for Sisal-specific prices.
-- **OddsPapi** for Sisal IT quotes only: create a key at https://oddspapi.io/sportsbooks/sisal-it. MatchMind requests only `sisal.it` and supported 1X2, BTTS and Over/Under 2.5 markets. Fixture data are cached for 30 minutes, market metadata for 24 hours, and match quotes for 15 minutes; the browser reuses match context for 5 minutes.
-- **PulseScore Sisal API** as the primary direct Sisal feed: obtain a key at https://pulsescore.net/dashboard. MatchMind authenticates server-side with the `x-secret` header, reads the Italian Serie A fixture list, then requests the selected event's full board. It maps full-time 1X2, BTTS and Over/Under 2.5 into the quote comparison. Fixture and event responses are cached for 60 seconds.
-- **football-data.org** as a Serie A calendar/results fallback: register at https://www.football-data.org/client/register. Its free tier includes Serie A fixtures and delayed scores, with 10 requests/minute. MatchMind calls it only when the primary public CSV is unavailable and caches the season response for six hours.
-- **API-Football** as the primary Live Match Centre feed and optional source for reported injuries, player-season stats and recent player appearances: create an account at https://dashboard.api-football.com/register. The Live endpoint uses one fixture-detail request for events, statistics and lineups when coverage is available.
-- **ESPN public scoreboard** as the no-key Live fallback for Serie A and UEFA Champions League: https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard and https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard. MatchMind uses it when API_FOOTBALL_KEY is missing or API-Football fails. These endpoints are undocumented/unofficial and have no service-level guarantee; scores may be delayed and detailed events, statistics or lineups may be missing.
+No API key is required for the calendar, historical analysis, predictions or local bet-slip builder. Do not configure paid odds providers to use the current app: bookmaker odds, direct Sisal account access, ticket import/OCR, injuries and player statistics are **not currently integrated**. The legacy `functions/api/player-context.js` endpoint is intentionally disabled and returns HTTP 410.
 
-In Cloudflare **Settings → Variables and Secrets**, add each available key as an **encrypted secret**:
-
-| Secret name | Enables |
-| --- | --- |
-| `THE_ODDS_API_KEY` | Alternative 1X2 quotes from available EU bookmakers |
-| `PULSESCORE_API_KEY` | Primary direct Sisal IT feed: Serie A fixtures and full match boards |
-| `ODDSPAPI_API_KEY` | Optional fallback for Sisal IT pre-match quotes and the odds comparison |
-| `FOOTBALL_DATA_API_KEY` | Backup Serie A fixtures/results when the primary CSV source is down |
-| `API_FOOTBALL_KEY` | Injuries, player statistics and recent appearances |
-
-After saving secrets, trigger a new deployment. PulseScore is the preferred Sisal source when `PULSESCORE_API_KEY` is present; OddsPapi is used as a fallback only when configured. You can add only the providers you want; the base app and existing public CSV source continue to work without them. Open **Impostazioni** to enter and test an API-Football key for the current browser session, or configure encrypted secrets in Cloudflare for persistent use. The **Fonti e copertura** page shows which connections are active.
-
-API-Football injury data is cached at the edge for up to four hours and player searches/form for up to six hours. A recent-form lookup can use multiple provider calls; avoid repeatedly forcing the same search. Provider quotas, coverage and update timing can change.
-
-The service worker caches the app-shell pages, CSS and JavaScript for previously visited routes, but deliberately does not cache API responses. Match data and historical results are stored separately in the browser cache; offline views therefore depend on the last successful data refresh. Newly published fixtures, scores and news require a network connection.
+The service worker caches the app shell (pages, CSS and JavaScript) for previously visited routes, but deliberately does not cache API responses. Match data and historical results are stored separately in the browser cache; offline views therefore depend on the last successful data refresh. Newly published fixtures and scores require a network connection.
 
 ## Data and limitations
 
@@ -53,10 +36,10 @@ The service worker caches the app-shell pages, CSS and JavaScript for previously
 - Recent team-related articles: keyless Google News RSS search on each match detail page (up to six links from the previous 21 days). Headlines are editorial context only, not verified injury/lineup reports and not model inputs.
 - Forecasts: Elo is used for 1X2 probabilities when the competition has at least 30 prior results and each team has at least 10 prior matches; Poisson continues to drive expected goals, score matrix, BTTS and Over/Under. The Elo rating starts at 1500, uses K=20, a 40-point home advantage and a smoothed historical draw prior. The chronological Elo backtest is independent of the production model and is displayed beside a Poisson-only baseline; MatchMind Adaptive AI runs a daily walk-forward calibration on the available historical results on each device. It trains a temperature parameter for 1X2 probabilities, reserves the latest 30% of out-of-sample forecasts for validation, and activates calibration only with at least 120 eligible forecasts, at least 40 validation cases, and improvement in both log loss and Brier score. If any gate fails, the Elo 1X2 probabilities remain unchanged. The model is stored in that browser's localStorage and is retrained when the data signature changes or a new day begins; there is no shared server-side model across devices. The adaptive layer learns only a temperature calibration; Elo team ratings are reconstructed from historical results. The app trains each configured competition separately from the full unfiltered history array; however, the current public archive contains five prior seasons for Serie A only. Champions League currently has current-season results but no multi-season historical archive in this feed, so its calibration correctly remains inactive until enough historical data is supplied. 1X2, BTTS and Over/Under 1.5/2.5/3.5. The match centre reports the historical date range and each team's actual sample size; a sample is labelled adequate only when at least 10 prior matches per team are available. The Intelligence page also runs a chronological walk-forward backtest: each tested fixture is forecast only with earlier-dated results, and fixtures are excluded unless both teams have at least 10 prior matches and the historical baseline has at least 30 prior matches. It reports 1X2 accuracy, log loss, multiclass Brier score, calibration bands and comparison with a Laplace-smoothed historical 1X2-frequency baseline.
 - A local browser cache keeps the last loaded match data available if the data provider is temporarily unavailable after the app is open.
-- Optional API-Football module: upcoming reported injuries/questionable players and a search for Serie A player season statistics plus up to five recent appearances (minutes, goals, assists, rating and other fields where the provider supplies them).
-- Optional OddsPapi module: Sisal IT prices for supported 1X2, BTTS and Over/Under 2.5 markets; the app compares them to MatchMind's estimate. Quotes are available only when Sisal offers the market for that fixture.
-- Optional football-data.org fallback: current season fixtures and delayed results when the primary public CSV source cannot be reached.
-- Potential value is flagged at estimated EV of at least +3% only when the historical sample is sufficient. If injury data is missing or incomplete, the comparison uses the base historical estimate, labels it as such and asks the user to verify lineups; no partial injury adjustment is applied.
+- Live Match Centre: API-Football is optional and may return events, statistics and lineups only when the provider's plan and competition coverage support them; ESPN is the no-key fallback.
+- Bookmaker odds and Sisal: not integrated in this version. The app does not calculate odds-based expected value or bookmaker payouts.
+- Player injuries and player-season statistics: not integrated in this version.
+- Bet slips: selections and monitoring are managed locally in the browser using statistical probabilities and available final scores. The app does not connect to a Sisal account or import tickets automatically.
 - Missing keys, provider quota exhaustion and absent coverage are shown rather than filled with invented data. Secrets remain server-side.
 - The no-key calendar sources do not provide dependable player-level form, injuries, lineups or current pre-match odds. ESPN is only a fallback for live scores; it does not guarantee detailed event or team-stat coverage.
 - Data providers can change URLs, coverage or availability; the app handles missing historical seasons gracefully.
