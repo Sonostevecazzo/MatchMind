@@ -93,10 +93,11 @@ function buildProposal(){
  const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
  const first=upcoming[0],candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
  const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
- const result=ENGINE().buildTicket(candidateFixtures,m=>getForecast(m),target,{maxLegs,marketOverrides:overrides});
+ const marketMode=$("marketMode")?.value||"auto";
+ const result=ENGINE().buildTicket(candidateFixtures,m=>getForecast(m),target,{maxLegs,marketOverrides:overrides,marketMode});
  if(!result.available){$("ticketResults").innerHTML='<div class="notice warning">'+esc(result.reason)+'</div><small>Partite analizzate: '+(result.upcomingFixtures||0)+' · campioni utilizzabili: '+(result.eligibleFixtures||0)+'. Per le squadre con meno di tre risultati precedenti il modello non genera una proposta.</small>';proposal=[];return;}
  proposal=result.selections.map(x=>({match:x.match,marketKey:x.marketKey,marketLabel:x.market,probability:x.probability,confidence:x.confidence,preferredByUser:x.preferredByUser}));
- $("ticketResults").innerHTML='<div class="metric"><span>PROBABILITÀ STIMATA DELLA COMBINAZIONE</span><b class="bet-percent bet-percent-total">'+pct(result.probability)+'</b><small>Obiettivo combinazione: '+pct(result.threshold)+' · profilo '+esc(result.marketProfile)+' · mercato singolo orientato a '+pct(result.desiredMarketProbability)+' · '+proposal.length+' eventi · '+(result.thresholdReached?'obiettivo raggiunto':'obiettivo non raggiungibile con i dati e il limite selezionato')+'</small></div>'+
+ $("ticketResults").innerHTML='<div class="metric"><span>PROBABILITÀ STIMATA DELLA COMBINAZIONE</span><b class="bet-percent bet-percent-total">'+pct(result.probability)+'</b><small>Obiettivo combinazione: '+pct(result.threshold)+' · profilo '+esc(result.marketProfile)+' · profilo '+esc(marketMode==='combo-goals'?'1X2 + Over/Under':marketMode==='combo-btts'?'1X2 + Gol/No Gol':marketMode==='single'?'Mercati singoli':'Automatico')+' · probabilità obiettivo per selezione '+pct(result.desiredMarketProbability)+' · '+proposal.length+' eventi · '+(result.thresholdReached?'obiettivo raggiunto':'obiettivo non raggiungibile con i dati e il limite selezionato')+'</small></div>'+
  proposal.map(x=>'<div class="data-row"><span><b>'+esc(x.match.home)+' – '+esc(x.match.away)+'</b><small>'+esc(x.match.date)+' · '+esc(x.marketLabel)+' · confidenza '+esc(x.confidence)+(x.preferredByUser?' · tua preferenza':'')+'</small></span><b class="bet-percent">'+pct(x.probability)+'</b></div>').join("")+
  '<button id="addProposal" type="button" class="primary" style="width:100%;margin-top:12px">Aggiungi proposta alla schedina</button>'+
  '<div class="notice warning">'+(result.thresholdReached?'Obiettivo probabilistico raggiunto secondo il modello. ':'Obiettivo non raggiunto: mostro comunque la combinazione più vicina disponibile, senza dichiararla conforme alla soglia. ')+esc(result.assumption)+' '+esc(result.warning||"")+'</div>';
@@ -178,6 +179,7 @@ function initEvents(){
  });
  $("targetProbability").addEventListener("input",()=>{$("targetProbabilityLabel").textContent=$("targetProbability").value+"%";if(proposalGenerated)buildProposal();});
  $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
+ $("marketMode").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
  $("buildTicket").addEventListener("click",buildProposal);
  $("ticketResults").addEventListener("click",event=>{if(event.target.closest("#addProposal"))applyProposal();});
  $("refreshArchive").addEventListener("click",updateArchive);

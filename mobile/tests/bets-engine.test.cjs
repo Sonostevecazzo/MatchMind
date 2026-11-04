@@ -143,3 +143,34 @@ test("team strength changes the selected market when the forecast favors a side"
   assert.equal(result.available, true);
   assert.equal(result.selections[0].marketKey, "home");
 });
+
+
+test("calculates 1X2 plus goal markets from the joint score distribution, not marginal multiplication", () => {
+  const f = {
+    sampleEnough: true, minTeamSample: 12, homeXg: 1.9, awayXg: 0.85,
+    probabilities: { home: 0.56, draw: 0.25, away: 0.19, btts: 0.49, o15: 0.76, o25: 0.52, o35: 0.29 }
+  };
+  const joint = bets.marketProbability(f, "combo:home:over25");
+  assert.ok(Number.isFinite(joint) && joint > 0 && joint < f.probabilities.home);
+  assert.notEqual(joint, f.probabilities.home * f.probabilities.o25);
+});
+
+test("supports selectable 1X2 plus Over/Under and 1X2 plus Gol/No Gol formats", () => {
+  const goals = bets.marketCandidates("combo-goals");
+  const btts = bets.marketCandidates("combo-btts");
+  assert.equal(goals.length, 18);
+  assert.equal(btts.length, 6);
+  assert.ok(goals.some(item => item.key === "combo:home:over15" && item.label === "1 + Over 1,5"));
+  assert.ok(btts.some(item => item.key === "combo:away:bttsNo" && item.label === "2 + No Gol"));
+});
+
+test("builds a ticket using the selected combined-market format", () => {
+  const f = {
+    sampleEnough: true, minTeamSample: 12, homeXg: 1.9, awayXg: 0.85,
+    probabilities: { home: 0.56, draw: 0.25, away: 0.19, btts: 0.49, o15: 0.76, o25: 0.52, o35: 0.29 }
+  };
+  const result = bets.buildTicket([fixtures[0]], () => f, 0, { maxLegs: 1, marketMode: "combo-goals" });
+  assert.equal(result.available, true);
+  assert.match(result.selections[0].marketKey, /^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35)$/);
+  assert.ok(Number.isFinite(result.selections[0].probability));
+});

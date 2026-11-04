@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v69-20261105-adaptive-markets';
+const CACHE='matchmind-pwa-v70-20261105-combined-markets';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
