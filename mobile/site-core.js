@@ -19,11 +19,12 @@
   const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
   function readCache(){try{const own=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');return own&&Array.isArray(own.matches)?own:null;}catch{return null;}}
   let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'openfootball',updatedAt:null};
+  function trainAvailableModels(history){if(!window.MatchMindAI)return;for(const competition of Object.keys(COMPETITIONS))window.MatchMindAI.train(history,(match,prior)=>forecast(match,prior,{__skipAI:true}),competition);}
   async function loadData(force=false){
     if(dataPromise&&!force)return dataPromise;
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
-      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;if(window.MatchMindAI)window.MatchMindAI.train(data.history,(m,h)=>forecast(m,h,{__skipAI:true}),getSelectedCompetition());return data;}
+      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;trainAvailableModels(data.history);return data;}
       const headers={Accept:'application/json'};
       const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(10000)});
       let payload={};try{payload=await response.json();}catch{}
@@ -35,7 +36,7 @@
       if(!Array.isArray(payload.matches)||!payload.matches.length)throw new Error('Il dataset pubblico non ha restituito partite per questa stagione.');
       data={matches:payload.matches,history:Array.isArray(payload.history)?payload.history:[],season:payload.season||y,source:'openfootball',updatedAt:Date.now(),sourceMode:'public-dataset'};
       try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
-      if(window.MatchMindAI)window.MatchMindAI.train(data.history,(m,h)=>forecast(m,h,{__skipAI:true}),getSelectedCompetition());
+      trainAvailableModels(data.history);
       return data;
     })().catch(error=>{dataPromise=null;throw error;});
     return dataPromise;
@@ -255,7 +256,7 @@ function eventForecast(match,history){
     for(let i=0;i<played.length;i++){
       const target=played[i],prior=played.slice(0,i).filter(m=>m.date<target.date);
       if(prior.length<30)continue;
-      const f=forecast(target,prior);
+      const f=forecast(target,prior,{__skipAI:true});
       if(!f.sampleEnough)continue;
       const actual=Number(target.hg)>Number(target.ag)?'home':Number(target.hg)<Number(target.ag)?'away':'draw';
       const counts={home:0,draw:0,away:0};
