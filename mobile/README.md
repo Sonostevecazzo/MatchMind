@@ -27,7 +27,8 @@ Optional sources:
 - **OddsPapi** for Sisal IT quotes only: create a key at https://oddspapi.io/sportsbooks/sisal-it. MatchMind requests only `sisal.it` and supported 1X2, BTTS and Over/Under 2.5 markets. Fixture data are cached for 30 minutes, market metadata for 24 hours, and match quotes for 15 minutes; the browser reuses match context for 5 minutes.
 - **PulseScore Sisal API** as the primary direct Sisal feed: obtain a key at https://pulsescore.net/dashboard. MatchMind authenticates server-side with the `x-secret` header, reads the Italian Serie A fixture list, then requests the selected event's full board. It maps full-time 1X2, BTTS and Over/Under 2.5 into the quote comparison. Fixture and event responses are cached for 60 seconds.
 - **football-data.org** as a Serie A calendar/results fallback: register at https://www.football-data.org/client/register. Its free tier includes Serie A fixtures and delayed scores, with 10 requests/minute. MatchMind calls it only when the primary public CSV is unavailable and caches the season response for six hours.
-- **API-Football** for reported injuries, player-season stats and recent player appearances: create a free account at https://dashboard.api-football.com/register. Its free tier currently lists 100 requests/day. This source is still needed for Serie A injury and player data; the two alternatives above do not replace it.
+- **API-Football** as the primary Live Match Centre feed and optional source for reported injuries, player-season stats and recent player appearances: create an account at https://dashboard.api-football.com/register. The Live endpoint uses one fixture-detail request for events, statistics and lineups when coverage is available.
+- **ESPN public scoreboard** as the no-key Live fallback for Serie A and UEFA Champions League: https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard and https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard. MatchMind uses it when API_FOOTBALL_KEY is missing or API-Football fails. These endpoints are undocumented/unofficial and have no service-level guarantee; scores may be delayed and detailed events, statistics or lineups may be missing.
 
 In Cloudflare **Settings → Variables and Secrets**, add each available key as an **encrypted secret**:
 
@@ -57,7 +58,7 @@ The service worker caches the app-shell pages, CSS and JavaScript for previously
 - Optional football-data.org fallback: current season fixtures and delayed results when the primary public CSV source cannot be reached.
 - Potential value is flagged at estimated EV of at least +3% only when the historical sample is sufficient. If injury data is missing or incomplete, the comparison uses the base historical estimate, labels it as such and asks the user to verify lineups; no partial injury adjustment is applied.
 - Missing keys, provider quota exhaustion and absent coverage are shown rather than filled with invented data. Secrets remain server-side.
-- The no-key public CSV source does not provide dependable player-level form, injuries, lineups or current pre-match odds.
+- The no-key calendar sources do not provide dependable player-level form, injuries, lineups or current pre-match odds. ESPN is only a fallback for live scores; it does not guarantee detailed event or team-stat coverage.
 - Data providers can change URLs, coverage or availability; the app handles missing historical seasons gracefully.
 - This is a research aid, not a trained AI model or a validated profitable betting system. Source attribution is shown in the app.
 
