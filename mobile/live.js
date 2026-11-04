@@ -53,30 +53,47 @@
   }
 
   function buildPlayers(home, away, pressureHome = 50, elapsed = 0, lineups = []) {
-    const homeBase = [[82,280],[228,110],[228,225],[228,335],[228,450],[420,155],[420,280],[420,405],[650,155],[650,280],[650,405]];
-    const homeAdvance = (pressureHome - 50) * 0.42;
-    const awayAdvance = (50 - pressureHome) * 0.42;
-    const drift = (index, elapsed) => Math.sin(elapsed / 3.8 + index * 0.73) * 5.5;
-    const homePositions = homeBase.map(([x,y], index) => [
-      x + (x > 350 ? homeAdvance : homeAdvance * 0.28) + drift(index, elapsed) * 0.35,
-      y + drift(index, elapsed)
-    ]);
-    const awayPositions = homeBase.map(([x,y], index) => [
-      900 - x - (x < 550 ? awayAdvance : awayAdvance * 0.28) - drift(index + 11, elapsed) * 0.35,
-      y + drift(index + 11, elapsed)
-    ]);
     const homeLineup = lineups.find(item => item.teamId === home.id || item.team === home.name);
     const awayLineup = lineups.find(item => item.teamId === away.id || item.team === away.name);
-    const circles = (coords, color, lineup) => coords.map(([x,y], index) => {
-      const player = lineup?.startXI?.[index];
-      const number = player?.number ?? index + 1;
-      const name = player?.name || "Posizione schematica";
-      return '<g><title>' + esc(String(number) + " · " + name) + '</title><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="17" fill="' + color + '" stroke="#f7fbf8" stroke-width="2"/><text x="' + x.toFixed(1) + '" y="' + (y + 5).toFixed(1) + '" text-anchor="middle" font-size="13" font-weight="900" fill="#07110d">' + esc(number) + '</text></g>';
-    }).join("");
-    $("pitchPlayers").innerHTML = circles(homePositions, "#d3f18b", homeLineup) + circles(awayPositions, "#f59b9b", awayLineup);
-    return { homeFormation: homeLineup?.formation || null, awayFormation: awayLineup?.formation || null };
+    const drift = index => Math.sin(elapsed / 3.8 + index * 0.73) * 5.5;
+    const positionsFromLineup = (lineup, side) => {
+      const starters = Array.isArray(lineup?.startXI) ? lineup.startXI.filter(player => player.grid && player.grid.row > 0 && player.grid.column > 0) : [];
+      if (starters.length < 7) return null;
+      return starters.map((player, index) => {
+        const row = Number(player.grid.row);
+        const rowPlayers = starters.filter(item => Number(item.grid.row) === row).sort((a,b) => Number(a.grid.column) - Number(b.grid.column));
+        const rowIndex = rowPlayers.indexOf(player);
+        const y = rowPlayers.length < 2 ? 280 : 78 + rowIndex * (404 / (rowPlayers.length - 1));
+        const baseX = side === "home" ? 78 + (row - 1) * 184 : 822 - (row - 1) * 184;
+        const attackShift = (pressureHome - 50) * 0.42 * (side === "home" ? 1 : -1) * (row > 1 ? 1 : 0.25);
+        return {
+          x: Math.max(45, Math.min(855, baseX + attackShift + drift(index) * 0.35)),
+          y: Math.max(45, Math.min(515, y + drift(index))),
+          number: player.number || index + 1,
+          name: player.name || "Giocatore"
+        };
+      });
+    };
+    const homeBase = [[82,280],[228,110],[228,225],[228,335],[228,450],[420,155],[420,280],[420,405],[650,155],[650,280],[650,405]];
+    const schematicPositions = (side) => homeBase.map(([x,y], index) => ({
+      x: side === "home" ? x + (x > 350 ? 1 : 0.28) * (pressureHome - 50) * 0.42 : 900 - x + (x < 550 ? 1 : 0.28) * (pressureHome - 50) * 0.42,
+      y: y + drift(index + (side === "home" ? 0 : 11)),
+      number: index + 1,
+      name: "Posizione schematica"
+    }));
+    const homePositions = positionsFromLineup(homeLineup, "home") || schematicPositions("home");
+    const awayPositions = positionsFromLineup(awayLineup, "away") || schematicPositions("away");
+    const circles = (players, color) => players.map(player =>
+      '<g><title>' + esc(String(player.number) + " · " + player.name) + '</title><circle cx="' + player.x.toFixed(1) + '" cy="' + player.y.toFixed(1) + '" r="17" fill="' + color + '" stroke="#f7fbf8" stroke-width="2"/><text x="' + player.x.toFixed(1) + '" y="' + (player.y + 5).toFixed(1) + '" text-anchor="middle" font-size="13" font-weight="900" fill="#07110d">' + esc(player.number) + '</text></g>'
+    ).join("");
+    $("pitchPlayers").innerHTML = circles(homePositions, "#d3f18b") + circles(awayPositions, "#f59b9b");
+    return {
+      homeFormation: homeLineup?.formation || null,
+      awayFormation: awayLineup?.formation || null,
+      homeGrid: homePositions.length >= 7 && Boolean(homeLineup),
+      awayGrid: awayPositions.length >= 7 && Boolean(awayLineup)
+    };
   }
-
   function renderSimulation(match) {
     const home = match.home, away = match.away;
     const possessionHome = asNumber(statValue(home, "Ball Possession"));
@@ -95,7 +112,8 @@
     const team = homeAttacking ? home.name : away.name;
     $("livePressure").innerHTML = '<div><span>Pressione stimata</span><b>' + esc(team) + ' · ' + pressure + '/100</b></div><div class="pressure-track"><i style="width:' + pressure + '%"></i></div>';
     const formationLabel = formationInfo.homeFormation && formationInfo.awayFormation ? "Moduli dal provider: " + formationInfo.homeFormation + " vs " + formationInfo.awayFormation + ". " : "";
-    $("simulationCaption").textContent = formationLabel + (possessionHome == null && shotsHome == null
+    const gridLabel = formationInfo.homeGrid && formationInfo.awayGrid ? "Schieramenti iniziali basati sulla griglia delle formazioni. " : "Almeno una formazione non è disponibile: uso una disposizione schematica. ";
+    $("simulationCaption").textContent = formationLabel + gridLabel + (possessionHome == null && shotsHome == null
       ? "Statistiche di pressione non disponibili: il pallone resta in posizione neutra. I giocatori mostrati sono sagome illustrative."
       : "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Le posizioni dei 22 giocatori sono schematiche, non coordinate reali.");
   }
