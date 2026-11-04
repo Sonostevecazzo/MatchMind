@@ -1,4 +1,4 @@
-# MatchMind — Private Football Analytics Lab
+# MatchMind — Football Analytics Lab
 
 MatchMind is a local-first football data pipeline and probability workbench. It imports provider data into a source-attributed SQLite database, offers a dark dashboard, and computes transparent statistical estimates for 1X2, Gol/No Gol and Over/Under 1.5, 2.5 and 3.5.
 
