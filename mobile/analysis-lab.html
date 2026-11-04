@@ -1,33 +1,42 @@
 <!doctype html>
 <html lang="it">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090d11"><meta name="description" content="MatchMind AI Insights · Analisi calcistiche">
-<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css">
-<link rel="stylesheet" href="./mobile-readable.css?v=20261103-0737">
-<title>MatchMind · AI Insights</title><script defer src="./site-core.js"></script><script defer src="./elo.js"></script><script defer src="./site-pages.js"></script></head>
-<body data-page="mind" data-title="AI Insights" data-subtitle="Analisi delle singole partite e verifica oggettiva del modello.">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090d11">
+<meta name="description" content="MatchMind · qualità e trasparenza delle stime statistiche">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./site.css">
+<link rel="stylesheet" href="./mobile-readable.css?v=20261104-analysis">
+<link rel="stylesheet" href="./analysis.css">
+<title>MatchMind · Analisi</title>
+<script defer src="./site-core.js"></script>
+<script defer src="./elo.js"></script>
+<script defer src="./site-pages.js"></script>
+</head>
+<body data-page="mind" data-title="Analisi" data-subtitle="Qualità del campione, verifica del modello e trasparenza delle stime.">
 <div id="siteHeader"></div>
-<main class="page-wrap">
- <div class="page-intro"><div class="eyebrow">MATCHMIND / INTELLIGENCE</div><h1 id="pageTitle">AI Insights</h1><p id="pageSubtitle">Previsioni statistiche e strumenti di analisi della competizione.</p></div>
- <section class="hero-card">
-  <div class="eyebrow" id="analysisCompetitionKicker">MATCHMIND · COMPETITION ANALYST</div>
-  <h1>Ogni partita, <span style="color:var(--mint)">più leggibile.</span></h1>
-  <p>Seleziona un incontro per consultare probabilità 1X2, gol attesi, forma, indisponibili e contesto disponibile. Le analisi distinguono sempre stime e dati osservati.</p>
-  <div class="hero-actions"><a href="matches.html">Esplora il calendario ↗</a><a href="data.html">Copertura dati ↗</a></div>
+<main class="page-wrap analysis-page">
+ <div class="page-intro"><div class="eyebrow">MATCHMIND / MODEL AUDIT</div><h1 id="pageTitle">Analisi</h1><p id="pageSubtitle">Controlla copertura, storico e comportamento del modello.</p></div>
+ <section class="section">
+  <div class="section-head"><div><h2>Copertura delle stime</h2><p>Riepilogo delle partite in programma. La copertura non equivale all'accuratezza.</p></div></div>
+  <div id="analysisOverview" class="analysis-overview"><div class="loading-state">Calcolo copertura…</div></div>
  </section>
  <section class="section">
-  <div class="section-head"><div><h2>Partite da analizzare</h2><p>Apri il Match Center per probabilità, forma, gol attesi e contesto disponibile.</p></div><a class="text-link" href="matches.html">Calendario ↗</a></div>
-  <div id="mindFixtures" class="fixture-list"><div class="loading-state">Caricamento…</div></div>
- </section>
- <section class="section">
-  <div class="section-head"><div><h2>Verifica del modello</h2><p>Backtest cronologico fuori campione sui risultati archiviati.</p></div></div>
+  <div class="section-head"><div><h2>Backtest cronologico</h2><p>Valutazione sulle partite storiche usando solo i risultati precedenti a ciascun incontro.</p></div></div>
   <div id="forecastBacktest" class="panel panel-pad"><div class="loading-state">In attesa dei dati storici…</div></div>
  </section>
  <section class="section">
-  <div class="section-head"><div><h2>Metodo e trasparenza</h2></div></div>
-  <div class="panel panel-pad"><p style="margin:0;color:#a1aebb;font-size:10px;line-height:1.65">Il motore attuale usa una baseline Poisson costruita sui risultati storici. Non è un modello proprietario di SofaScore né un sistema di intelligenza artificiale addestrato. Le probabilità sono stime statistiche e non costituiscono garanzia di risultato o profitto.</p><a href="data.html" class="text-link" style="display:inline-block;margin-top:10px">Fonti, copertura e limiti ↗</a></div>
+  <div class="section-head"><div><h2>Metodo e limiti</h2></div></div>
+  <div class="panel panel-pad">
+   <p>Il motore attuale usa una baseline Poisson costruita sui risultati storici. Non è un modello proprietario di SofaScore né un sistema di intelligenza artificiale addestrato.</p>
+   <p>Le probabilità sono stime statistiche, non garanzie. Il campione minimo è un controllo di disponibilità dei dati, non dimostra calibrazione o capacità predittiva.</p>
+   <a href="data.html" class="text-link">Fonti, copertura e aggiornamento dati ↗</a>
+  </div>
  </section>
  <div class="status-line" id="globalStatus" aria-live="polite"></div>
- <footer class="site-footer">MatchMind · Analisi statistiche indipendenti. Gioca responsabilmente.</footer>
+ <footer class="site-footer">MatchMind · Analisi indipendente del modello. Nessuna previsione è certa.</footer>
 </main>
 </body>
 </html>
