@@ -66,6 +66,15 @@ export function normalizeLineups(rows) {
         position: player.pos || null,
         grid
       };
+    }),
+    substitutes: (Array.isArray(team?.substitutes) ? team.substitutes : []).map((entry, index) => {
+      const player = entry?.player || {};
+      return {
+        id: player.id ?? null,
+        name: player.name || "Riserva " + (index + 1),
+        number: Number.isFinite(Number(player.number)) ? Number(player.number) : index + 1,
+        position: player.pos || null
+      };
     })
   }));
 }
