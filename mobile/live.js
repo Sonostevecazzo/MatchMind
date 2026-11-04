@@ -200,7 +200,7 @@
       if (!document.hidden) refresh();
     });
     refresh();
-    pollHandle = window.setInterval(refresh, 120000);
+    pollHandle = window.setInterval(refresh, 300000);
   });
   window.addEventListener("pagehide", () => { if (pollHandle) clearInterval(pollHandle); });
 })();
