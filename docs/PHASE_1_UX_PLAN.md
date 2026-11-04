@@ -90,3 +90,12 @@ Phase 1 starts with navigation and the Home dashboard. Match, analysis and bet s
 - Cloudflare server cache: 5 minutes for fixture lists and single-fixture detail payloads. The detail query uses one `/fixtures?id=` request for score, events, stats and lineups.
 - The ticket monitor shares the live fixture-list cache and updates only while its tab is active, reducing duplicate provider requests.
 - Actual request usage depends on the number of live competitions, viewed match details and cache locality; the free 100/day allowance is not unlimited.
+
+
+## Live data budget
+
+- Live UI refresh: every 5 minutes while visible; manual refresh remains available.
+- Cloudflare server cache: 5 minutes for live fixture lists and single-fixture detail payloads.
+- The single-fixture request uses one `/fixtures?id=` provider call for score, events, statistics and lineups, reducing quota usage versus separate endpoints.
+- Ticket monitoring reuses the live fixture-list endpoint and refreshes every 5 minutes only while the In corso view is active.
+- API-Football Free plan quota is limited; actual daily consumption varies with the number of competitions and match details opened.
