@@ -75,14 +75,16 @@
       });
     };
     const homeBase = [[82,280],[228,110],[228,225],[228,335],[228,450],[420,155],[420,280],[420,405],[650,155],[650,280],[650,405]];
-    const schematicPositions = (side) => homeBase.map(([x,y], index) => ({
+    const schematicPositions = side => homeBase.map(([x,y], index) => ({
       x: side === "home" ? x + (x > 350 ? 1 : 0.28) * (pressureHome - 50) * 0.42 : 900 - x + (x < 550 ? 1 : 0.28) * (pressureHome - 50) * 0.42,
       y: y + drift(index + (side === "home" ? 0 : 11)),
       number: index + 1,
       name: "Posizione schematica"
     }));
-    const homePositions = positionsFromLineup(homeLineup, "home") || schematicPositions("home");
-    const awayPositions = positionsFromLineup(awayLineup, "away") || schematicPositions("away");
+    const homeGridPositions = positionsFromLineup(homeLineup, "home");
+    const awayGridPositions = positionsFromLineup(awayLineup, "away");
+    const homePositions = homeGridPositions || schematicPositions("home");
+    const awayPositions = awayGridPositions || schematicPositions("away");
     const circles = (players, color) => players.map(player =>
       '<g><title>' + esc(String(player.number) + " · " + player.name) + '</title><circle cx="' + player.x.toFixed(1) + '" cy="' + player.y.toFixed(1) + '" r="17" fill="' + color + '" stroke="#f7fbf8" stroke-width="2"/><text x="' + player.x.toFixed(1) + '" y="' + (player.y + 5).toFixed(1) + '" text-anchor="middle" font-size="13" font-weight="900" fill="#07110d">' + esc(player.number) + '</text></g>'
     ).join("");
@@ -90,8 +92,8 @@
     return {
       homeFormation: homeLineup?.formation || null,
       awayFormation: awayLineup?.formation || null,
-      homeGrid: homePositions.length >= 7 && Boolean(homeLineup),
-      awayGrid: awayPositions.length >= 7 && Boolean(awayLineup)
+      homeGrid: Boolean(homeGridPositions),
+      awayGrid: Boolean(awayGridPositions)
     };
   }
   function renderSimulation(match) {
@@ -114,8 +116,8 @@
     const formationLabel = formationInfo.homeFormation && formationInfo.awayFormation ? "Moduli dal provider: " + formationInfo.homeFormation + " vs " + formationInfo.awayFormation + ". " : "";
     const gridLabel = formationInfo.homeGrid && formationInfo.awayGrid ? "Schieramenti iniziali basati sulla griglia delle formazioni. " : "Almeno una formazione non è disponibile: uso una disposizione schematica. ";
     $("simulationCaption").textContent = formationLabel + gridLabel + (possessionHome == null && shotsHome == null
-      ? "Statistiche di pressione non disponibili: il pallone resta in posizione neutra. I giocatori mostrati sono sagome illustrative."
-      : "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Le posizioni dei 22 giocatori sono schematiche, non coordinate reali.");
+      ? "Statistiche di pressione non disponibili: il pallone resta in posizione neutra. Le posizioni sono di formazione, non tracking live."
+      : "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Il movimento è illustrativo e non rappresenta coordinate live dei giocatori.");
   }
 
   function renderStats(match) {
