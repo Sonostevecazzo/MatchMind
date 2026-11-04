@@ -15,7 +15,8 @@ permissions:
 
 jobs:
   javascript:
-    runs-on: ubuntu-latest
+    # Use the lightweight hosted container pool to avoid VM runner allocation failures.
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
         uses: actions/checkout@v4
