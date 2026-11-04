@@ -52,28 +52,38 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  function buildPlayers(home, away) {
-    const homePositions = [[82,280],[228,110],[228,225],[228,335],[228,450],[420,155],[420,280],[420,405],[650,155],[650,280],[650,405]];
-    const awayPositions = homePositions.map(([x,y]) => [900 - x, y]);
-    const circles = (team, coords, color, label) => coords.map(([x,y], index) =>
-      '<g><circle cx="' + x + '" cy="' + y + '" r="17" fill="' + color + '" stroke="#f7fbf8" stroke-width="2"/><text x="' + x + '" y="' + (y + 5) + '" text-anchor="middle" font-size="13" font-weight="900" fill="#07110d">' + (index + 1) + '</text></g>'
+  function buildPlayers(home, away, pressureHome = 50, elapsed = 0) {
+    const homeBase = [[82,280],[228,110],[228,225],[228,335],[228,450],[420,155],[420,280],[420,405],[650,155],[650,280],[650,405]];
+    const homeAdvance = (pressureHome - 50) * 0.42;
+    const awayAdvance = (50 - pressureHome) * 0.42;
+    const drift = (index, elapsed) => Math.sin(elapsed / 3.8 + index * 0.73) * 5.5;
+    const homePositions = homeBase.map(([x,y], index) => [
+      x + (x > 350 ? homeAdvance : homeAdvance * 0.28) + drift(index, elapsed) * 0.35,
+      y + drift(index, elapsed)
+    ]);
+    const awayPositions = homeBase.map(([x,y], index) => [
+      900 - x - (x < 550 ? awayAdvance : awayAdvance * 0.28) - drift(index + 11, elapsed) * 0.35,
+      y + drift(index + 11, elapsed)
+    ]);
+    const circles = (coords, color) => coords.map(([x,y], index) =>
+      '<g><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="17" fill="' + color + '" stroke="#f7fbf8" stroke-width="2"/><text x="' + x.toFixed(1) + '" y="' + (y + 5).toFixed(1) + '" text-anchor="middle" font-size="13" font-weight="900" fill="#07110d">' + (index + 1) + '</text></g>'
     ).join("");
-    $("pitchPlayers").innerHTML = circles(home, homePositions, "#d3f18b", "H") + circles(away, awayPositions, "#f59b9b", "A");
+    $("pitchPlayers").innerHTML = circles(homePositions, "#d3f18b") + circles(awayPositions, "#f59b9b");
   }
 
   function renderSimulation(match) {
     const home = match.home, away = match.away;
-    buildPlayers(home, away);
     const possessionHome = asNumber(statValue(home, "Ball Possession"));
     const possessionAway = asNumber(statValue(away, "Ball Possession"));
     const shotsHome = asNumber(statValue(home, "Total Shots"));
     const shotsAway = asNumber(statValue(away, "Total Shots"));
     const pressureHome = (possessionHome == null ? 50 : possessionHome) * .55 + (shotsHome == null || shotsAway == null || shotsHome + shotsAway === 0 ? 50 : shotsHome / (shotsHome + shotsAway) * 100) * .45;
+    buildPlayers(home, away, pressureHome, elapsed);
     const homeAttacking = pressureHome >= 50;
     const pressure = Math.round(homeAttacking ? pressureHome : 100 - pressureHome);
     const ballX = homeAttacking ? 520 + pressure * 2.4 : 380 - pressure * 2.4;
     const elapsed = number(match.elapsed) || 0;
-    const ballY = 280 + ((elapsed % 5) - 2) * 22;
+    const ballY = 280 + Math.sin(elapsed / 3.4) * 78 + (pressure - 50) * 0.28;
     $("liveBall").setAttribute("cx", String(Math.max(70, Math.min(830, ballX))));
     $("liveBall").setAttribute("cy", String(Math.max(75, Math.min(485, ballY))));
     const team = homeAttacking ? home.name : away.name;
