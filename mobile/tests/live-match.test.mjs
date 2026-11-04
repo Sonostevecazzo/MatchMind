@@ -58,11 +58,13 @@ test("normalizes starting XI formation and player grid", () => {
       startXI: [
         { player: { id: 10, name: "Goalkeeper", number: 1, pos: "G", grid: "1:1" } },
         { player: { id: 11, name: "Defender", number: 4, pos: "D", grid: "2:2" } }
-      ]
+      ],
+      substitutes: [{ player: { id: 12, name: "Reserve", number: 18, pos: "F" } }]
     }
   ]);
   assert.equal(result[0].formation, "4-3-3");
   assert.equal(result[0].startXI[0].number, 1);
   assert.deepEqual(result[0].startXI[0].grid, { row: 1, column: 1 });
   assert.deepEqual(result[0].startXI[1].grid, { row: 2, column: 2 });
+  assert.equal(result[0].substitutes[0].name, "Reserve");
 });
