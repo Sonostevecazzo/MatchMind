@@ -1,6 +1,6 @@
 (function(root){
   "use strict";
-  const STORAGE="matchmind-ai-model-v1", VERSION="temperature-calibration-v1";
+  const STORAGE="matchmind-ai-model-v2-elo", VERSION="elo-temperature-calibration-v1";
   const MIN_SCORED=120, MIN_VALIDATION=40, DAY=86400000;
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const classes=["home","draw","away"];
