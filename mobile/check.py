@@ -1,4 +1,4 @@
-"""Static validation for MatchMind's football-only, no-key PWA."""
+"""Static validation for MatchMind PWA with a public calendar and optional Live provider."""
 from __future__ import annotations
 import json, re, subprocess, tempfile
 from pathlib import Path
@@ -54,6 +54,8 @@ assert "matchmind-pwa-v59-20261104-live-matchsim" in (ROOT/"sw.js").read_text(en
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "./functions/api/live-match.js" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "300000" in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert "300000" in (ROOT/"live.js").read_text(encoding="utf-8")
+assert "context, 300" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./analysis.css" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
@@ -68,4 +70,4 @@ assert "Sisal" not in bets_js and "playerApi" not in bets_js
 assert "matchStandingsContext" in core and "pointsPerGame" in core
 
 assert "home_corners_1h" in calendar and "home_yellow" in calendar
-print("MatchMind football-only PWA, no-key data source, syntax and model checks passed.")
+print("MatchMind PWA, public data source, optional Live provider, syntax and model checks passed.")
