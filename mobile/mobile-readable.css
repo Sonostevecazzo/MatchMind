@@ -431,3 +431,10 @@ body[data-page="bets"] .metric > small {
 .ticket-monitor-state{font-size:12px!important;max-width:55%;text-align:right;line-height:1.4;overflow-wrap:anywhere}
 .ticket-monitor-state.won{color:#b9ef91}.ticket-monitor-state.lost{color:#ff9da7}
 @media(max-width:700px){.bets-tabs{top:58px}.bets-tab{min-height:48px;font-size:13px}.ticket-monitor-state{font-size:12px!important}}
+
+@media (max-width: 700px) {
+ .header-more-link.active { background: #c4f36a; border-color: #c4f36a; color: #17210a !important; }
+}
+@media (min-width: 701px) {
+ .header-more-link.active { background: #c4f36a; border-color: #c4f36a; color: #17210a !important; }
+}
