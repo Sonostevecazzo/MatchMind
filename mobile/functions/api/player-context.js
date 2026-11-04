@@ -1091,6 +1091,55 @@ async function getLiveFixtures(context, season) {
   return responseJson({ configured: true, type: "live", source: "API-Football", updatedAt: new Date().toISOString(), fixtures });
 }
 
+
+function normalizeCanonicalFixture(item, competition) {
+  const fixture=item&&item.fixture||{}, teams=item&&item.teams||{}, goals=item&&item.goals||{}, score=item&&item.score||{};
+  const home=teams.home||{}, away=teams.away||{}, league=item&&item.league||{};
+  const status=fixture.status||{}, date=fixture.date||"";
+  const roundText=String(league.round||"");
+  const roundMatch=roundText.match(/(\\d+)/);
+  const finished=["FT","AET","PEN"].includes(String(status.short||""));
+  return {
+    id:fixture.id==null?null:Number(fixture.id),date:date.slice(0,10),
+    time:date.length>=16?date.slice(11,16):"",round:roundMatch?Number(roundMatch[1]):null,
+    stage:roundText,home:home.name||"",away:away.name||"",
+    hg:finished&&goals.home!=null?Number(goals.home):null,
+    ag:finished&&goals.away!=null?Number(goals.away):null,
+    ht:score.halftime&&score.halftime.home!=null?Number(score.halftime.home):null,
+    at:score.halftime&&score.halftime.away!=null?Number(score.halftime.away):null,
+    hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,
+    status:status.short||"NS",statusLong:status.long||"",competition,source:"API-Football"
+  };
+}
+
+async function getCanonicalCalendar(context, season) {
+  if (!getApiFootballKey(context)) {
+    return responseJson({configured:false,type:"calendar",error:"Per calendario, risultati e storico è necessaria una chiave API-Football. Inseriscila in Impostazioni."},503);
+  }
+  const competitions=[{id:"serie-a",league:SERIE_A_ID},{id:"champions-league",league:2}];
+  const matches=[],history=[],errors=[];
+  for (const competition of competitions) {
+    for (let year=season;year>=season-4;year--) {
+      try {
+        const ttl=year===season?120:24*60*60;
+        const payload=await providerGet("fixtures",{league:competition.league,season:year,timezone:"Europe/Rome"},context,ttl);
+        const rows=(Array.isArray(payload&&payload.response)?payload.response:[])
+          .map(item=>normalizeCanonicalFixture(item,competition.id)).filter(item=>item.date&&item.home&&item.away);
+        if(year===season)matches.push(...rows);
+        history.push(...rows.filter(item=>item.hg!==null&&item.ag!==null));
+      } catch(error) {
+        errors.push(competition.id+" "+year+": "+(error&&error.message||"provider_error"));
+      }
+    }
+  }
+  if(!matches.length) return responseJson({configured:true,type:"calendar",error:"API-Football non ha restituito il calendario corrente. "+(errors[0]||"")},502);
+  return responseJson({
+    configured:true,type:"calendar",source:"API-Football",season,
+    matches,history,errors,updatedAt:new Date().toISOString(),
+    note:"Calendario, risultati e storico provengono esclusivamente da API-Football. Statistiche evento non incluse se non fornite dall'endpoint fixtures."
+  });
+}
+
 export async function onRequestGet(context) {
   const requestUrl = new URL(context.request.url);
   const env = context.env || {};
@@ -1120,6 +1169,7 @@ export async function onRequestGet(context) {
         }
       });
     }
+    if (type === "calendar") return await getCanonicalCalendar(context, season);
     if (type === "news") return await getNewsContext(context, requestUrl);
     if (type === "live") return await getLiveFixtures(context, season);
     if (type === "sisal-board") return await getSisalOddsBoard(context);
