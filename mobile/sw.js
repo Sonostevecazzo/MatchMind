@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v62-20261104-home-competition';
+const CACHE='matchmind-pwa-v63-20261104-fallback-live-nav';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
@@ -32,7 +32,7 @@ self.addEventListener('fetch',event=>{
  if(request.mode==='navigate'||url.pathname.endsWith('.html')||url.pathname.endsWith('/')||/\.(?:css|js|json|webmanifest|svg)$/.test(url.pathname)){
   event.respondWith((async()=>{
    try{
-    const response=await fetch(request,{cache:'no-store'});
+    const response=await fetch(request,{cache:'no-store',signal:AbortSignal.timeout(6000)});
     if(response.ok){
      const copy=response.clone();
      const cache=await caches.open(CACHE);
