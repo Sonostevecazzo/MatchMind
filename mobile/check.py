@@ -87,7 +87,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v67-20261105-edge-cache-render" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v68-20261105-selected-analysis" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
