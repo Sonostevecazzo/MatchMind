@@ -102,3 +102,23 @@ test("does not invent a ticket when no eligible sample exists", () => {
   const result = bets.buildTicket(fixtures, () => ({ sampleEnough: false, probabilities: {} }), 0.5);
   assert.equal(result.available, false);
 });
+
+test("accepts a zero percent target and returns the maximum number of legs", () => {
+  const result = bets.buildTicket(fixtures, forecastFn, 0, { maxLegs: 2 });
+  assert.equal(result.available, true);
+  assert.equal(result.selections.length, 2);
+  assert.equal(result.thresholdReached, true);
+});
+test("returns the best available single selection when a 100 percent target is unreachable", () => {
+  const result = bets.buildTicket(fixtures, forecastFn, 1, { maxLegs: 5 });
+  assert.equal(result.available, true);
+  assert.equal(result.thresholdReached, false);
+  assert.equal(result.selections.length, 1);
+  assert.equal(result.selections[0].probability, 0.78);
+});
+test("uses a user-selected market as the preferred outcome for a fixture", () => {
+  const key = [bets.normalize("Bologna"), bets.normalize("Monza")].sort().join("|") + "|2026-11-01";
+  const result = bets.buildTicket([fixtures[0]], forecastFn, 0, { maxLegs: 1, marketOverrides: { [key]: "home" } });
+  assert.equal(result.selections[0].marketKey, "home");
+  assert.equal(result.selections[0].preferredByUser, true);
+});
