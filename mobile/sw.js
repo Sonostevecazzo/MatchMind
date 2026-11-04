@@ -1,6 +1,6 @@
-const CACHE='matchmind-pwa-v51-20261104-public-data';
+const CACHE='matchmind-pwa-v52-20261104-football-only';
 const APP_SHELL=[
- './','./index.html','./nba.html','./matches.html','./explore.html','./league.html',
+ './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
  './site.css','./mobile-readable.css','./site-core.js','./site-pages.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg','./sisal-quotes.json'
 ];
