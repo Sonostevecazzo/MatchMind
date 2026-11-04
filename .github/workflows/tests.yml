@@ -6,7 +6,7 @@ on:
 jobs:
   python-tests:
     # Standard GitHub-hosted runner; ubuntu-slim is not reliably provisioned for this private repository.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
