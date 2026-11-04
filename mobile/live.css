@@ -66,3 +66,5 @@
 @media(prefers-reduced-motion:reduce){
  #liveBall,.pressure-track i{transition:none}
 }
+
+.live-pitch #pitchPlayers circle,.live-pitch #pitchPlayers text{transition:cx 1.5s ease,cy 1.5s ease}
