@@ -276,7 +276,7 @@ function backtestHTML(r,e){
    const competitions=['serie-a','champions-league'];
    const labels={'serie-a':'Serie A','champions-league':'Champions League'};
    const models=competitions.map(id=>{
-    let saved=null;try{saved=JSON.parse(localStorage.getItem('matchmind-ai-model-v1')||'{}')[id]||null}catch(_){}
+    let saved=null;try{saved=JSON.parse(localStorage.getItem('matchmind-ai-model-v2-elo')||'{}')[id]||null}catch(_){}
     const model=window.MatchMindAI&&window.MatchMindAI.modelFor(id);
     const count=d.history.filter(m=>(m.competition||'serie-a')===id&&MM().hasScore(m)).length;
     return{id,label:labels[id],count,model,saved};
@@ -292,8 +292,8 @@ function backtestHTML(r,e){
    }).join('');
    const v=selected.saved?.validation||{};
    const metrics=selected.saved?'<div class="ai-metrics"><div><small>Log Loss</small><b>'+fmt(v.baselineLogLoss,3)+' → '+fmt(v.calibratedLogLoss,3)+'</b><small>'+((v.improvementLogLoss||0)>0?'migliora':'non migliora')+'</small></div><div><small>Brier Score</small><b>'+fmt(v.baselineBrier,3)+' → '+fmt(v.calibratedBrier,3)+'</b><small>'+((v.improvementBrier||0)>0?'migliora':'non migliora')+'</small></div></div>':'';
-   aiTarget.innerHTML='<div class="ai-status '+(active?'is-active':'')+'"><span class="ai-status-dot"></span><div><b>'+status+'</b><small>'+labels[d.competition]+' · '+(active?'le probabilità 1X2 sono calibrate':'resta attivo il modello Poisson originale')+'</small></div></div>'+
-    '<p class="ai-summary">'+(active?'La calibrazione ha superato il confronto cronologico su dati non usati per stimare il parametro.':'Per ora MatchMind non modifica le probabilità: '+statusText)+'</p>'+
+   aiTarget.innerHTML='<div class="ai-status '+(active?'is-active':'')+'"><span class="ai-status-dot"></span><div><b>'+status+'</b><small>'+labels[d.competition]+' · '+(active?'le probabilità 1X2 sono calibrate':'restano attivi Elo per 1X2 e Poisson per i mercati goal')+'</small></div></div>'+
+    '<p class="ai-summary">'+(active?'La calibrazione ha superato il confronto cronologico su dati non usati per stimare il parametro.':'La calibrazione non modifica le probabilità: '+statusText)+'</p>'+
     '<div class="ai-competition-list">'+rows+'</div>'+
     (selected.saved?'<div class="ai-validation"><b>Verifica storica · '+labels[d.competition]+'</b><div class="ai-data-row"><span>Previsioni ricostruite</span><strong>'+fmt(selected.saved.scoredForecasts)+'</strong></div><div class="ai-data-row"><span>Campione addestramento / verifica</span><strong>'+fmt(selected.saved.trainingCount)+' / '+fmt(selected.saved.validationCount)+'</strong></div>'+metrics+'</div>':'')+
     '<small class="ai-footnote">Il test ricostruisce le previsioni usando solo partite precedenti. La calibrazione riguarda 1X2; non dimostra un vantaggio economico né garantisce vincite.</small>';
