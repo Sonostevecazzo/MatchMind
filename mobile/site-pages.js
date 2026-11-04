@@ -210,14 +210,30 @@
  }
  async function initSettings(){
   const status=$('globalStatus');
-  if(status)status.textContent='Calendario pubblico senza chiavi; Centro Live opzionale con API_FOOTBALL_KEY protetta su Cloudflare.';
+  if(status)status.textContent='Calendario e archivio da fonti pubbliche senza chiavi. Live: API-Football se configurato; fallback ESPN pubblico senza API key.';
 }
 function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
  async function initData(){
   const target=$('providerStatus');
-  if(target)target.innerHTML='<div class="data-row"><span>Calendario e risultati</span><b>openfootball · dataset pubblico</b></div><div class="data-row"><span>Chiavi API</span><b>Non utilizzate</b></div><div class="data-row"><span>Quote, assenze e dati evento</span><b>Disattivati</b></div>';
+  if(target)target.innerHTML='<div class="data-row"><span>Calendario e storico</span><b>open-matchday · openfootball, senza chiavi</b></div><div class="data-row"><span>Live primario</span><b>API-Football · secret facoltativo</b></div><div class="data-row"><span>Live alternativo</span><b>ESPN · senza API key</b></div><div class="data-row"><span>Quote e indisponibili</span><b>Non inclusi nel fallback live</b></div>';
   const button=$('checkProviders');
-  if(button)button.addEventListener('click',()=>{if(target)target.innerHTML='<div class="notice">La fonte pubblica viene verificata quando si aggiorna il calendario.</div>';});
+  if(button)button.addEventListener('click',async()=>{
+    if(!target||!button)return;
+    button.disabled=true;button.textContent='Verifico…';
+    target.innerHTML='<div class="notice">Controllo la fonte live per la competizione selezionata…</div>';
+    try{
+      const competition=MM().getSelectedCompetition();
+      const response=await fetch('./api/live-match?competition='+encodeURIComponent(competition),{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(10000)});
+      let payload={};try{payload=await response.json()}catch{}
+      if(!response.ok||payload.error)throw new Error(payload.error||'Fonte live non raggiungibile.');
+      const count=Array.isArray(payload.matches)?payload.matches.length:null;
+      const detail=count===null?'Fonte raggiungibile':count+' partite in corso';
+      const fallback=payload.fallbackReason?' API-Football: '+esc(payload.fallbackReason):'';
+      target.innerHTML='<div class="notice good">Fonte attiva: <b>'+esc(payload.sourceLabel||payload.source||'Live')+'</b>. '+detail+'.'+esc(fallback)+'</div>';
+    }catch(error){
+      target.innerHTML='<div class="notice warning">Live non raggiungibile in questo momento: '+esc(error.message)+'. Calendario e archivio pubblici restano disponibili.</div>';
+    }finally{button.disabled=false;button.textContent='Verifica'}
+  });
 }
 function backtestHTML(r,e){
   if(!r.count)return '<div class="notice warning">Backtest non disponibile: nei dati caricati non ci sono abbastanza partite precedenti per entrambe le squadre (almeno 10 ciascuna) e almeno 30 partite complessive.</div>';
