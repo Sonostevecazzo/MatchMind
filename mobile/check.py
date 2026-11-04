@@ -18,8 +18,10 @@ for name in required:
  assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
+  assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
+  assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
-  assert "live.js" in html
+  assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html
  else: assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
@@ -42,7 +44,8 @@ assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
-assert "live.html" in core and "Live" in core
+assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
+assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
