@@ -78,9 +78,9 @@ export async function onRequestGet(context){
  const response=await getPublicCalendar();
  if(response.ok){
   const headers=new Headers(response.headers);
-  headers.set("Cache-Control","public, max-age=60, s-maxage="+CACHE_SECONDS+", stale-while-revalidate=3600");
+  headers.set("Cache-Control","public, max-age="+CACHE_SECONDS+", s-maxage="+CACHE_SECONDS+", stale-while-revalidate=3600");
   const cacheable=new Response(response.body,{status:response.status,statusText:response.statusText,headers});
-  try{context.waitUntil(cache.put(cacheKey,cacheable.clone()));}catch(_){/* Cache is an optimization, never a hard dependency. */}
+  try{await cache.put(cacheKey,cacheable.clone());}catch(_){/* Cache is an optimization, never a hard dependency. */}
   return cacheable;
  }
  return response;
