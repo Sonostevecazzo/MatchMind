@@ -291,6 +291,8 @@ function backtestHTML(r,e){
      '<div class="data-row"><span>Previsioni cronologiche valide</span><b>'+fmt(current?.scoredForecasts||0)+'</b></div>'+
      '<small>Il modello non modifica le probabilità finché non supera la validazione fuori campione. Addestramento giornaliero sul dispositivo quando apri MatchMind con connessione.</small>';
    }
+   const explanation=forecasts.length&&window.MatchMindAI?window.MatchMindAI.explain(forecasts[0].match,forecasts[0].forecast):[];
+   if(explanation.length)aiTarget.innerHTML+='<div class="eyebrow" style="margin-top:14px">LETTURA AI · PROSSIMA PARTITA</div><ul>'+explanation.map(reason=>'<li>'+esc(reason)+'</li>').join('')+'</ul><small>Spiegazione basata su indicatori osservabili del modello; non è una certezza sull'esito.</small>';
   }
     const target=$('forecastBacktest');
   if(target){
