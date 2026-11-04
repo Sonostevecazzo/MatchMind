@@ -228,10 +228,11 @@
       chosen.push(candidate);
       joint = next;
     }
-    const thresholdReached = joint + 1e-12 >= target;
+    let thresholdReached = joint + 1e-12 >= target;
     if (!chosen.length) {
       chosen.push(candidates[0]);
       joint = candidates[0].probability;
+      thresholdReached = joint + 1e-12 >= target;
     }
     return {
       available: true, selections: chosen, probability: joint, threshold: target, thresholdReached,
