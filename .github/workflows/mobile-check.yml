@@ -31,8 +31,11 @@ jobs:
           node --check mobile/elo.js
           node --check mobile/bets-engine.js
           node --check mobile/bets.js
+          node --check mobile/live.js
           node --check mobile/sw.js
-      - name: Check Cloudflare Pages Function
-        run: node --input-type=module --check < mobile/functions/api/public-calendar.js
-      - name: Test chronological round analysis
-        run: node --test mobile/tests/rounds.test.mjs
+      - name: Check Cloudflare Pages Functions
+        run: |
+          node --input-type=module --check < mobile/functions/api/public-calendar.js
+          node --input-type=module --check < mobile/functions/api/live-match.js
+      - name: Test chronological round analysis and live data normalization
+        run: node --test mobile/tests/rounds.test.mjs mobile/tests/live-match.test.mjs
