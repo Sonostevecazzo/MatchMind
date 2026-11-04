@@ -1,553 +1,138 @@
-/* MatchMind bet checker page controller. */
-(function () {
-  "use strict";
-  const $ = id => document.getElementById(id);
-  const engine = () => window.MatchMindBets;
-  let data = null;
-  let suggestedSelections = [];
-  let manualFixtures = [];
-  const manualSelections = new Map();
-  const MANUAL_SELECTIONS_KEY = "matchmind-manual-selections-v1";
-
-  const pct = value => Number.isFinite(value) ? (value * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%" : "—";
-  const oddsText = value => Number.isFinite(value) ? value.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 3 }) : "non disponibile";
-  const esc = value => window.MM.esc(String(value == null ? "" : value));
-
-  function marketChoices() {
-    return engine().marketChoices();
-  }
-
-  function matchingQuote(row, context) {
-    const key = row.market.key;
-    const targetName = ({
-      over15: "over 1.5", under15: "under 1.5",
-      over25: "over 2.5", under25: "under 2.5",
-      over35: "over 3.5", under35: "under 3.5",
-      bttsYes: "yes", bttsNo: "no",
-      home: "home", draw: "draw", away: "away"
-    })[key];
-    if (!targetName) return null;
-    const bookmakers = Array.isArray(context.bookmakers) ? context.bookmakers : [];
-    for (const bookmaker of bookmakers) {
-      for (const market of bookmaker.bets || []) {
-        const name = String(market.name || "").toLowerCase();
-        for (const value of market.values || []) {
-          const label = String(value.value || "").toLowerCase().trim();
-          let matches = false;
-          if (key.startsWith("over") || key.startsWith("under")) {
-            const handicap = String(value.handicap || "").replace(",", ".").trim();
-            const normalizedLabel = label.replace(",", ".").replace(/\s+/g, " ").trim();
-            const totalLabel = /\d/.test(normalizedLabel) ? normalizedLabel : (normalizedLabel + " " + handicap).trim();
-            matches = name === "goals over/under" && totalLabel === targetName;
-          } else if (key === "bttsYes" || key === "bttsNo") {
-            matches = name === "both teams to score" && (
-              targetName === "yes" ? ["yes", "gol"].includes(label) : ["no", "no gol"].includes(label)
-            );
-          } else if (name === "match winner") {
-            matches = label === targetName;
-          }
-          const odd = Number(String(value.odd || "").replace(",", "."));
-          if (matches && Number.isFinite(odd) && odd > 1) {
-            return { odd, bookmaker: bookmaker.name || "Sisal" };
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  let sisalSnapshotPromise = null;
-
-  async function sisalSnapshotQuote(row) {
-    if (!sisalSnapshotPromise) {
-      sisalSnapshotPromise = fetch("./sisal-quotes.json", { cache: "no-store" })
-        .then(response => {
-          if (!response.ok) throw new Error("Foglio quote Sisal non disponibile.");
-          return response.json();
-        })
-        .catch(error => {
-          sisalSnapshotPromise = null;
-          throw error;
-        });
-    }
-    const snapshot = await sisalSnapshotPromise;
-    const match = (snapshot.matches || []).find(item =>
-      item.date === row.match.date &&
-      window.MM.norm(item.home) === window.MM.norm(row.match.home) &&
-      window.MM.norm(item.away) === window.MM.norm(row.match.away)
-    );
-    if (!match || !match.odds) return null;
-    const marketKey = row.market.key;
-    const odd = Number(match.odds[marketKey]);
-    if (!Number.isFinite(odd) || odd <= 1) return null;
-    const sourceTime = Date.parse(snapshot.sourceLastModified || snapshot.checkedAt || "");
-    const checkedTime = Date.parse(snapshot.checkedAt || "");
-    return {
-      row,
-      quote: { odd, bookmaker: "Sisal" },
-      source: "Sisal · Foglio quote ufficiale (istantanea)",
-      updated: Number.isFinite(sourceTime) ? new Date(sourceTime).toISOString() : null,
-      checkedAt: Number.isFinite(checkedTime) ? new Date(checkedTime).toISOString() : null,
-      ageMinutes: Number.isFinite(sourceTime) ? Math.max(0, (Date.now() - sourceTime) / 60000) : null,
-      kind: "sisal-snapshot"
-    };
-  }
-
-  async function refreshSisal(rowsToCheck, targetElement, actionButton, forceFresh) {
-    const target = targetElement || $("sisalResults");
-    const button = actionButton || $("refreshSisal");
-    const valid = (rowsToCheck || manualRows()).filter(row => row.ok && row.market && row.match);
-    if (!valid.length) {
-      target.innerHTML = '<div class="notice warning">Non ci sono selezioni riconosciute da verificare.</div>';
-      return;
-    }
-    const idleText = button.dataset.idleText || "Confronta quote disponibili";
-    button.disabled = true;
-    button.textContent = "Verifica in corso…";
-    target.innerHTML = '<div class="loading-state">Controllo delle quote disponibili e del benchmark gratuito, senza API key…</div>';
-    if (forceFresh) sisalSnapshotPromise = null;
-    const reports = [];
-    for (const row of valid) {
-      let report = null;
-      // Try the optional Sisal feed first. It remains an add-on, never a requirement.
-      try {
-        const params = "type=match&date=" + encodeURIComponent(row.match.date) +
-          "&home=" + encodeURIComponent(row.match.home) +
-          "&away=" + encodeURIComponent(row.match.away);
-        const context = await window.MM.playerApi(
-          params,
-          "match:" + row.match.date + ":" + window.MM.norm(row.match.home) + ":" + window.MM.norm(row.match.away),
-          forceFresh ? 0 : 5 * 60 * 1000
-        );
-        const quote = matchingQuote(row, context);
-        if (quote) {
-          const updateTime = context.oddsUpdatedAt && Number.isFinite(Date.parse(context.oddsUpdatedAt))
-            ? Date.parse(context.oddsUpdatedAt) : null;
-          const ageMinutes = updateTime === null ? null : Math.max(0, (Date.now() - updateTime) / 60000);
-          report = {
-            row, quote, source: context.oddsSource || "Sisal · PulseScore",
-            updated: updateTime === null ? null : new Date(updateTime).toISOString(),
-            ageMinutes, kind: "bookmaker"
-          };
-        }
-      } catch (_) {
-        // Fall through to the public, keyless fair-odds feed.
-      }
-      if (!report) {
-        try {
-          report = await sisalSnapshotQuote(row);
-        } catch (_) {
-          // Keep the existing benchmark fallback when the published snapshot is unavailable.
-        }
-      }
-      if (!report && window.MatchMindTipsAudit && ["home", "draw", "away"].includes(row.market.key)) {
-        try {
-          const prediction = await window.MatchMindTipsAudit.findMatch(row.match);
-          const benchmark = prediction && window.MatchMindTipsAudit.quoteFor(row.market.key, prediction);
-          if (benchmark) {
-            report = {
-              row, quote: {
-                odd: benchmark.softOdds || benchmark.fairOdds,
-                bookmaker: benchmark.softOdds ? benchmark.bookmaker : "Benchmark fair (senza margine)",
-                fairOdds: benchmark.fairOdds,
-                fairProbability: benchmark.fairProbability,
-                softOdds: benchmark.softOdds,
-                priceGap: benchmark.priceGap,
-                status: benchmark.status,
-                fairSource: benchmark.fairSource
-              },
-              source: "TipsAudit · quote eque 1X2",
-              updated: prediction.generated_at || prediction.fair_read_at || null,
-              ageMinutes: Number.isFinite(Date.parse(prediction.generated_at || prediction.fair_read_at || ""))
-                ? Math.max(0, (Date.now() - Date.parse(prediction.generated_at || prediction.fair_read_at)) / 60000) : null,
-              kind: benchmark.softOdds ? "best-soft" : "fair-only"
-            };
-          }
-        } catch (_) {
-          // Keep the explicit unavailable state below; never invent a price.
-        }
-      }
-      if (!report && !["over15", "under15", "over25", "under25", "over35", "under35", "bttsYes", "bttsNo", "home", "draw", "away"].includes(row.market.key)) {
-        report = { row, error: "Il foglio ufficiale copre 1X2, Under/Over 1,5, 2,5 e 3,5, Gol e No Gol; il mercato non è presente in questa fotografia." };
-      }
-      if (!report) report = { row, error: "Nessuna quota disponibile per questa partita e questo mercato nelle fonti collegate." };
-      reports.push(report);
-    }
-    target.innerHTML = reports.map(report => {
-      const title = esc(report.row.match.home + " – " + report.row.match.away);
-      if (!report.quote) {
-        return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' + esc(report.error) + '</small></span><b>—</b></div>';
-      }
-      const probability = report.row.probability;
-      const actualSoft = report.kind === "best-soft" || report.kind === "bookmaker";
-      const freshnessLimit = report.kind === "bookmaker" ? 120 : 90;
-      const ev = actualSoft && report.row.sampleEnough && report.ageMinutes !== null &&
-        report.ageMinutes <= freshnessLimit && Number.isFinite(report.quote.odd)
-        ? probability * report.quote.odd - 1 : null;
-      const quoteLabel = report.kind === "sisal-snapshot" ? "Quota Sisal dal foglio pubblicato · non live" :
-        report.kind === "fair-only" ? "Quota equa (margine rimosso)" :
-        report.kind === "best-soft" ? "Migliore quota bookmaker segnalata" : "Quota Sisal corrente";
-      const updatedLabel = report.kind === "sisal-snapshot" ? "PDF aggiornato " : "Aggiornato ";
-      const fairLine = Number.isFinite(report.quote.fairOdds)
-        ? '<br>Benchmark equo: ' + oddsText(report.quote.fairOdds) +
-          (Number.isFinite(report.quote.fairProbability) ? ' (' + pct(report.quote.fairProbability) + ')' : '') : '';
-      const gapLine = Number.isFinite(report.quote.priceGap)
-        ? '<br>Differenza rispetto al fair: ' + (report.quote.priceGap >= 0 ? '+' : '') + pct(report.quote.priceGap) +
-          ' · stato: ' + esc(report.quote.status || "non specificato") : '';
-      return '<div class="data-row"><span><b>' + title + '</b><small style="display:block;color:#8c9aa8">' +
-        esc(report.source) + (report.updated ? ' · ' + updatedLabel + esc(new Date(report.updated).toLocaleString("it-IT")) : '') +
-        (report.checkedAt ? '<br>Estratto il ' + esc(new Date(report.checkedAt).toLocaleString("it-IT")) : '') +
-        '<br>' + quoteLabel + ': ' + oddsText(report.quote.odd) + ' · ' + esc(report.quote.bookmaker || "—") +
-        fairLine + gapLine +
-        (report.row.odds ? '<br>Quota sulla schedina: ' + oddsText(report.row.odds) : '') +
-        (ev === null ? '' : '<br>EV teorico esplorativo vs quota: ' + (ev >= 0 ? '+' : '') + pct(ev)) +
-        '</small></span><b class="bet-percent">' + pct(probability) + '</b></div>';
-    }).join("") + '<div class="notice warning">Il foglio quote Sisal è una fotografia pubblicata: può non corrispondere a una quota ancora disponibile e non è in tempo reale. PulseScore è preferito quando restituisce quote correnti. TipsAudit fornisce benchmark equi senza margine e, quando presente, prezzi soft che non sono necessariamente Sisal. Le quote eque non sono prezzi bookmaker; il PDF Sisal non viene usato per stimare l’EV.</div><small class="helper-text">Fonte Sisal: <a href="https://www.sisal.it/scommesse-matchpoint/foglio-quote" target="_blank" rel="noopener">Foglio quote ufficiale</a> · aggiornato secondo la pubblicazione del PDF. Benchmark: <a href="https://tipsaudit.com/api" target="_blank" rel="noopener">TipsAudit API</a>.</small>';
-    button.disabled = false;
-    button.textContent = idleText;
-  }
-
-  function buildProposal() {
-    suggestedSelections = [];
-    const target = $("ticketResults");
-    if (!data) {
-      target.innerHTML = '<div class="notice warning">Calendario e storico non sono ancora caricati. Riprova tra poco.</div>';
-      return;
-    }
-    const threshold = Number($("targetProbability").value);
-    const maxLegs = Number($("maxLegs").value);
-    const upcoming = data.matches.filter(window.MM.upcoming)
-      .slice().sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-    const first = upcoming[0];
-    const ticketFixtures = !first ? [] : (first.round !== null && first.round !== undefined
-      ? upcoming.filter(match => String(match.round) === String(first.round))
-      : upcoming.filter(match => Math.abs(Date.parse(match.date + "T12:00:00") - Date.parse(first.date + "T12:00:00")) <= 3 * 86400000));
-    const result = engine().buildTicket(
-      ticketFixtures,
-      match => window.MM.forecast(match, data.history),
-      threshold,
-      { maxLegs }
-    );
-    if (!result.available) {
-      const best = result.bestSelection;
-      const bestSummary = best
-        ? '<div class="notice info">Migliore selezione singola: <b>' + esc(best.match.home + " – " + best.match.away) +
-          '</b> · ' + esc(best.market) + ' · ' + pct(best.probability) +
-          '. È sotto la soglia minima di ' + pct(result.threshold || threshold) + '.</div>'
-        : "";
-      const upcomingCount = Number.isFinite(result.upcomingFixtures) ? result.upcomingFixtures : ticketFixtures.length;
-      const eligibleCount = Number.isFinite(result.eligibleFixtures) ? result.eligibleFixtures : 0;
-      target.innerHTML = '<div class="notice warning">' + esc(result.reason) + '</div>' + bestSummary +
-        '<small>Partite future considerate: ' + upcomingCount + ' · con campione adeguato: ' + eligibleCount + '.</small>';
-      return;
-    }
-    suggestedSelections = result.selections.map(item => ({
-      ok: true, match: item.match, market: { key: item.marketKey, label: item.market },
-      probability: item.probability, sampleEnough: true, odds: null
-    }));
-    target.innerHTML = '<div class="metric"><span>PROBABILITÀ STIMATA DELL’INTERA COMBINAZIONE</span><b class="bet-percent bet-percent-total">'+ pct(result.probability) + '</b><small>Obiettivo minimo: ' + pct(result.threshold) + ' · ' + result.selections.length + (result.selections.length === 1 ? ' selezione' : ' selezioni') + '</small></div>' +
-      result.selections.map(item => '<div class="data-row"><span><b>' + esc(item.match.home) + " – " + esc(item.match.away) + '</b><small style="display:block;color:#8c9aa8">' + esc(item.match.date) + ' · ' + esc(item.market) + '</small></span><b class="bet-percent">' + pct(item.probability) + '</b></div>').join("") +
-      '<div class="settings-actions"><button id="refreshSuggestedSisal" type="button" class="secondary" data-idle-text="Verifica quote della proposta">Verifica quote della proposta</button></div><div id="suggestedOdds" style="margin-top:10px"></div>' +
-      '<div class="notice warning">' + esc(result.assumption) + " " + esc(result.warning) + '</div>';
-  }
-
-  function getMaxLegs() {
-    const input = $("maxLegs");
-    const value = Number(input && input.value);
-    return Number.isFinite(value) ? Math.max(1, Math.min(15, Math.floor(value))) : 10;
-  }
-
-  function manualFixtureId(match) {
-    return [window.MM.norm(match.home), window.MM.norm(match.away)].sort().join("|") + "|" + match.date;
-  }
-
-  function manualRows() {
-    return Array.from(manualSelections.values());
-  }
-
-  function clearManualOdds() {
-    const target = $("manualOdds");
-    if (target) target.innerHTML = '<div class="empty-state">Selezioni aggiornate. Conferma la schedina per ricontrollare le quote disponibili.</div>';
-  }
-
-  function manualMarketButton(matchIndex, item, selectedKey) {
-    const available = Number.isFinite(item.probability);
-    const isSelected = selectedKey === item.key;
-    const percent = pct(available ? item.probability : NaN);
-    return '<button type="button" class="manual-market-button' + (isSelected ? ' is-selected' : '') + '" data-manual-match="' + matchIndex +
-      '" data-manual-market="' + esc(item.key) + '" aria-pressed="' + (isSelected ? 'true' : 'false') + '"' +
-      (available ? '' : ' disabled') + ' aria-label="' + esc('Seleziona ' + item.label + ', probabilità ' + percent) + '">' +
-      '<span>' + esc(item.label) + '</span><b>' + percent + '</b></button>';
-  }
-
-  function renderManualSummary() {
-    const target = $("manualSlipSummary");
-    if (!target) return;
-    const rows = manualRows();
-    const maxLegs = getMaxLegs();
-    const overLimit = rows.length > maxLegs;
-    let summary = '<div class="empty-state">Vai al calendario della Home e scegli gli esiti: le selezioni e la probabilità della schedina compariranno qui.</div>';
-    if (rows.length) {
-      const hasAllProbabilities = rows.every(row => Number.isFinite(row.probability) && row.probability >= 0 && row.probability <= 1);
-      const combined = hasAllProbabilities ? rows.reduce((total, row) => total * row.probability, 1) : null;
-      const limitedSample = rows.some(row => !row.sampleEnough);
-      summary = '<div class="manual-summary-card">' +
-        '<div class="manual-summary-top"><div><span class="eyebrow">SCHEDINA MANUALE</span><b>' + rows.length + ' / ' + maxLegs + ' eventi</b></div>' +
-        '<div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">' + pct(combined === null ? NaN : combined) + '</b></div></div>' +
-        '<small>Prodotto delle probabilità selezionate; assume indipendenza tra partite.</small>' +
-        (limitedSample ? '<div class="notice warning manual-sample-warning">Percentuale calcolata, ma almeno una partita ha uno storico insufficiente.</div>' : '') +
-        (overLimit ? '<div class="notice warning">Hai selezionato più eventi del limite. Aumenta il massimo oppure rimuovi qualche selezione.</div>' : '') +
-        '<div class="manual-selected-list">' + rows.map((row, index) =>
-          '<div class="manual-selected-row"><span><b>' + esc(row.match.home + ' – ' + row.match.away) + '</b><small>' +
-          esc(row.match.date + (row.match.time ? ' · ' + row.match.time : '') + ' · ' + row.market.label) +
-          '</small></span><span class="manual-selected-right"><b class="bet-percent">' + pct(row.probability) + '</b>' +
-          '<button type="button" class="manual-remove-button" data-remove-manual="' + index + '" aria-label="Rimuovi selezione">×</button></span></div>'
-        ).join('') + '</div>' +
-        '<div class="manual-summary-actions"><button id="confirmManualSlip" type="button" class="primary manual-confirm-button" data-idle-text="Conferma e controlla quote" ' +
-        (overLimit || !hasAllProbabilities ? ' disabled' : '') + '>Conferma e controlla quote</button>' +
-        '<button id="archiveManualSlip" type="button" class="secondary manual-archive-button"' + (overLimit ? ' disabled' : '') + '>Archivia schedina</button></div>' +
-        '</div>';
-    }
-    target.innerHTML = summary;
-  }
-
-  function renderManualBuilder() {
-    renderManualSummary();
-  }
-
-  function readSavedManualSelections() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(MANUAL_SELECTIONS_KEY) || "[]");
-      return Array.isArray(saved) ? saved.filter(row => row && row.home && row.away && row.date && row.marketKey) : [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function persistManualSelections() {
-    const competition = window.MM.getSelectedCompetition();
-    const otherCompetitions = readSavedManualSelections().filter(row => (row.competition || "serie-a") !== competition);
-    const current = manualRows().map(row => ({
-      competition: row.match.competition || competition,
-      date: row.match.date,
-      home: row.match.home,
-      away: row.match.away,
-      marketKey: row.market.key
-    }));
-    try { localStorage.setItem(MANUAL_SELECTIONS_KEY, JSON.stringify(otherCompetitions.concat(current))); } catch (_) {}
-  }
-
-  function restoreManualSelections() {
-    manualSelections.clear();
-    const competition = window.MM.getSelectedCompetition();
-    const saved = readSavedManualSelections().filter(row => (row.competition || "serie-a") === competition);
-    for (const item of saved) {
-      if (manualSelections.size >= 15) break;
-      const match = manualFixtures.find(row => row.date === item.date &&
-        window.MM.norm(row.home) === window.MM.norm(item.home) &&
-        window.MM.norm(row.away) === window.MM.norm(item.away));
-      const market = marketChoices().find(([key]) => key === item.marketKey);
-      if (!match || !market) continue;
-      const forecast = window.MM.forecast(match, data.history);
-      const probability = engine().marketProbability(forecast, market[0]);
-      if (!Number.isFinite(probability)) continue;
-      manualSelections.set(manualFixtureId(match), {
-        ok: true, match, market: { key: market[0], label: market[1] }, probability,
-        sampleEnough: Boolean(forecast.sampleEnough), historyCount: Number(forecast.historyCount || 0), odds: null
-      });
-    }
-  }
-
-  function loadManualFixtures() {
-    manualFixtures = (data && Array.isArray(data.matches) ? data.matches : [])
-      .filter(window.MM.upcoming)
-      .slice()
-      .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
-    restoreManualSelections();
-    const maxInput = $("maxLegs");
-    if (maxInput && manualSelections.size > getMaxLegs()) maxInput.value = String(manualSelections.size);
-    renderManualBuilder();
-  }
-
-  window.MatchMindBetBuilder = {
-    getRows: () => manualRows(),
-    getCompetition: () => window.MM.getSelectedCompetition()
-  };
-
-  document.addEventListener("DOMContentLoaded", async () => {
-    const buildButton = $("buildTicket");
-    const quoteButton = $("refreshSisal");
-    $("globalStatus").textContent = "Carico calendario e risultati storici…";
-
-    $("manualSlipSummary").addEventListener("click", async event => {
-      const remove = event.target.closest("[data-remove-manual]");
-      if (remove) {
-        if ($("manualOdds").dataset.busy === "true") return;
-        const rows = manualRows();
-        const row = rows[Number(remove.dataset.removeManual)];
-        if (!row) return;
-        manualSelections.delete(manualFixtureId(row.match));
-        persistManualSelections();
-        $("manualBuilderStatus").textContent = "";
-        clearManualOdds();
-        renderManualBuilder();
-        return;
-      }
-      const button = event.target.closest("#confirmManualSlip");
-      if (!button || button.disabled || $("manualOdds").dataset.busy === "true") return;
-      const rows = manualRows();
-      if (!rows.length) return;
-      $("manualOdds").dataset.busy = "true";
-      $("manualBuilder").querySelectorAll("button, input").forEach(control => { control.disabled = true; });
-      try {
-        await refreshSisal(rows, $("manualOdds"), button, true);
-      } finally {
-        delete $("manualOdds").dataset.busy;
-        $("manualBuilder").querySelectorAll("button, input").forEach(control => { control.disabled = false; });
-        renderManualBuilder();
-      }
-    });
-
-    $("maxLegs").addEventListener("change", () => {
-      $("maxLegs").value = String(getMaxLegs());
-      clearManualOdds();
-      renderManualSummary();
-    });
-    quoteButton.dataset.idleText = quoteButton.textContent.trim();
-    quoteButton.addEventListener("click", () => refreshSisal(manualRows(), $("sisalResults"), quoteButton, true));
-    $("ticketResults").addEventListener("click", event => {
-      if (event.target.closest("#refreshSuggestedSisal")) {
-        refreshSisal(suggestedSelections, $("suggestedOdds"), $("refreshSuggestedSisal"), true);
-      }
-    });
-    buildButton.dataset.idleText = buildButton.textContent.trim();
-    buildButton.addEventListener("click", async () => {
-      if (buildButton.dataset.busy === "true") return;
-      buildButton.dataset.busy = "true";
-      buildButton.disabled = true;
-      buildButton.textContent = "Calcolo…";
-      $("ticketResults").innerHTML = '<div class="loading-state">Carico dati e calcolo la proposta…</div>';
-      try {
-        if (!data) data = window.MM.forCompetition(await window.MM.loadData());
-        loadManualFixtures();
-        buildProposal();
-      } catch (error) {
-        $("ticketResults").innerHTML = '<div class="notice warning">' + esc("Calcolo non riuscito: " + (error.message || "errore sconosciuto")) + '</div>';
-      } finally {
-        delete buildButton.dataset.busy;
-        buildButton.disabled = false;
-        buildButton.textContent = buildButton.dataset.idleText || "Genera proposta automatica";
-      }
-    });
-
-    try {
-      data = window.MM.forCompetition(await window.MM.loadData());
-      loadManualFixtures();
-      $("globalStatus").textContent = (data.source === "cache" ? "Dati caricati dalla cache locale" : "Dati aggiornati") +
-        " · " + data.matches.length + " partite nel calendario.";
-      if (manualRows().length) clearManualOdds();
-    } catch (error) {
-      $("globalStatus").textContent = "Dati non disponibili: " + (error.message || "errore sconosciuto");
-      $("manualBuilderStatus").textContent = "Non è stato possibile caricare calendario e storico. Riprova tra poco."; 
-      $("ticketResults").innerHTML = '<div class="notice warning">Non è stato possibile caricare calendario e storico. Premi “Genera proposta automatica” per riprovare.</div>';
-    }
-  });
-document.addEventListener("DOMContentLoaded", () => {
-  const refreshButton = $("refreshOddsBoard");
-  if (refreshButton) refreshButton.addEventListener("click", () => loadOddsBoard(true));
-  loadOddsBoard(false);
-});
-})();
-
-
-/* On-device archive for selections created in the builder. */
+/* MatchMind: local statistical bet builder. No bookmaker or odds dependencies. */
 (function(){
 "use strict";
-const $=id=>document.getElementById(id),KEY="matchmind-slip-archive-v1";
-let archive=[];
-try{archive=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(archive))archive=[];}catch(_){}
-const cash=n=>Number(n)>0?"€ "+Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
-const esc=s=>window.MM.esc(String(s==null?"":s));
-function save(){try{localStorage.setItem(KEY,JSON.stringify(archive));}catch(_){$("archiveStatus").textContent="Archivio pieno: elimina alcune schedine.";}}
-function selectedRows(){return window.MatchMindBetBuilder?window.MatchMindBetBuilder.getRows():[];}
-function ticketRows(){return selectedRows().map(x=>({home:x.match.home,away:x.match.away,date:x.match.date,market:x.market.label,marketKey:x.market.key,odds:Number.isFinite(x.odds)?x.odds:null,probability:Number.isFinite(x.probability)?x.probability:null,competition:x.match.competition||window.MM.getSelectedCompetition(),status:"Da aggiornare"}));}
-function render(){
- const el=$("slipArchive");if(!el)return;
- if(!archive.length){el.innerHTML='<div class="empty-state">Nessuna schedina archiviata. Crea una selezione nel Costruttore e premi “Archivia schedina”.</div>';return;}
- el.innerHTML=archive.map(t=>'<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(t.competitionName||"Serie A")+' · '+new Date(t.createdAt).toLocaleString("it-IT")+'</b><span>'+t.selections.length+' eventi</span></div><div class="archive-ticket-meta"><span>Giocata: '+cash(t.stake)+'</span><span>Vincita potenziale: '+cash(t.payout)+'</span></div>'+t.selections.map(x=>'<div class="data-row"><span><b>'+esc(x.home)+' – '+esc(x.away)+'</b><small>'+esc(x.market)+' · '+esc(x.date)+'</small></span><b>'+esc(x.result||x.status||"Da aggiornare")+'</b></div>').join("")+'<div class="settings-actions"><button data-share-ticket="'+esc(t.id)+'" type="button" class="secondary">Condividi</button><button data-delete-ticket="'+esc(t.id)+'" type="button" class="secondary">Elimina</button></div></article>').join("");
+const $=id=>document.getElementById(id),ENGINE=()=>window.MatchMindBets;
+const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2";
+let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[];
+const esc=value=>window.MM.esc(String(value==null?"":value));
+const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
+const norm=value=>window.MM.norm(value);
+const fixtureKey=m=>[(m.competition||"serie-a"),m.date,norm(m.home),norm(m.away)].join("|");
+const engineKey=m=>[norm(m.home),norm(m.away)].sort().join("|")+"|"+m.date;
+const read=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value;}catch(_){return fallback;}};
+const save=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch(_){$("globalStatus").textContent="Spazio locale insufficiente per salvare i dati."; }};
+const markets=()=>ENGINE().marketChoices();
+function getContext(match){return contexts[fixtureKey(match)]||{};}
+function getForecast(match){return window.MM.forecast(match,data.history,getContext(match));}
+function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
+function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
+function writePicks(){save(PICKS_KEY,picks);}
+function selectedFor(match){return picks.find(p=>fixtureKey(p)===fixtureKey(match));}
+function selectOptions(value){return [0,1,2,3].map(n=>'<option value="'+n+'"'+(Number(value||0)===n?' selected':'')+'>'+n+'</option>').join("");}
+function motivationOptions(value){return [{v:-1,t:"Bassa"},{v:0,t:"Neutra / automatica"},{v:1,t:"Alta"}].map(x=>'<option value="'+x.v+'"'+(Number(value||0)===x.v?' selected':'')+'>'+x.t+'</option>').join("");}
+function renderFixture(match){
+ const f=getForecast(match),selected=selectedFor(match),ctx=getContext(match),p=f.probabilities;
+ const form=x=>x.form&&x.form.length?x.form.join(" · "):"n.d.";
+ const stand=x=>x.available?"#"+x.rank+" · "+x.points+" pt · "+x.objective:"classifica non disponibile";
+ const choices=markets().map(([key,label])=>({key,label,probability:marketProbability(f,key)}));
+ const buttons=choices.map(item=>'<button type="button" class="fixture-market-button'+(selected&&selected.marketKey===item.key?' is-selected':'')+'" data-pick="'+esc(fixtureKey(match))+'" data-market="'+esc(item.key)+'" aria-pressed="'+String(Boolean(selected&&selected.marketKey===item.key))+'"><span>'+esc(item.label)+'</span><b>'+pct(item.probability)+'</b></button>').join("");
+ const fields=[
+  ["attackingAbsencesHome","Attaccanti titolari assenti · "+match.home,ctx.attackingAbsencesHome],
+  ["defensiveAbsencesHome","Difensori titolari assenti · "+match.home,ctx.defensiveAbsencesHome],
+  ["attackingAbsencesAway","Attaccanti titolari assenti · "+match.away,ctx.attackingAbsencesAway],
+  ["defensiveAbsencesAway","Difensori titolari assenti · "+match.away,ctx.defensiveAbsencesAway]
+ ];
+ const absenceHtml=fields.map(([key,label,value])=>'<label class="context-field">'+esc(label)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="'+key+'">'+selectOptions(value)+'</select></label>').join("");
+ const motivationHtml='<div class="context-motivation"><label class="context-field">Motivazione '+esc(match.home)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationHome">'+motivationOptions(ctx.motivationHome)+'</select></label><label class="context-field">Motivazione '+esc(match.away)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationAway">'+motivationOptions(ctx.motivationAway)+'</select></label></div>';
+ return '<article class="manual-fixture-card"><div class="manual-fixture-heading"><div><b>'+esc(match.home)+' – '+esc(match.away)+'</b><small>'+esc(window.MM.shortDate(match))+(match.time?' · '+esc(match.time):'')+' · confidenza '+esc(f.confidence)+'</small></div>'+(selected?'<span class="manual-picked-label">'+esc(selected.marketLabel||selected.marketKey)+'</span>':'')+'</div>'+
+ '<div class="fixture-forecast-strip"><span>1 <b>'+pct(p.home)+'</b></span><span>X <b>'+pct(p.draw)+'</b></span><span>2 <b>'+pct(p.away)+'</b></span><span>xG <b>'+f.homeXg.toFixed(2)+' – '+f.awayXg.toFixed(2)+'</b></span></div>'+
+ '<div class="fixture-form-context"><span>'+esc(match.home)+' forma: <b>'+esc(form(f.home))+'</b></span><span>'+esc(match.away)+' forma: <b>'+esc(form(f.away))+'</b></span><span>'+esc(stand(f.standings.home))+'</span><span>'+esc(stand(f.standings.away))+'</span></div>'+
+ '<div class="fixture-market-options">'+buttons+'</div><details class="manual-other-markets"><summary>Contesto squadra: assenze, infortuni e motivazione</summary><div class="context-controls"><div class="context-grid">'+absenceHtml+'</div>'+motivationHtml+'<small>Inserisci solo titolari realmente indisponibili. Le assenze sono una correzione indicativa, non una valutazione del valore individuale del giocatore. La motivazione automatica deriva dalla classifica; l’impostazione manuale è una tua valutazione.</small></div></details></article>';
 }
-async function saveCurrent(){
- const list=ticketRows();if(!list.length){$("archiveStatus").textContent="Aggiungi prima almeno una selezione al costruttore.";return;}
- const competition=window.MM.getSelectedCompetition(),info=window.MM.competitionInfo(competition);
- archive.unshift({id:"slip-"+Date.now(),createdAt:new Date().toISOString(),competition,competitionName:info.name,stake:null,payout:null,selections:list});
- archive=archive.slice(0,100);save();render();$("archiveStatus").textContent="Schedina archiviata su questo dispositivo.";
+function renderFixtures(){
+ const target=$("manualFixtures"),query=norm($("matchSearch").value);
+ const rows=fixtures.filter(m=>!query||norm(m.home).includes(query)||norm(m.away).includes(query));
+ target.innerHTML=rows.length?rows.slice(0,120).map(renderFixture).join(""):'<div class="empty-state">Nessuna partita futura trovata.</div>';
 }
-async function share(t){
- const message=["MatchMind · Schedina"+(t.competitionName?" · "+t.competitionName:""),"Archiviata: "+new Date(t.createdAt).toLocaleString("it-IT"),"Importo: "+cash(t.stake),"Vincita potenziale: "+cash(t.payout),...(t.selections||[]).map(x=>x.home+" – "+x.away+" | "+x.market+" | "+(x.odds||"quota n.d.")+" | "+(x.result||x.status||"Da aggiornare"))].join("\n");
- const copy=async()=>{if(!navigator.clipboard||!navigator.clipboard.writeText)throw new Error("Condivisione e appunti non disponibili in questo browser.");await navigator.clipboard.writeText(message);$("archiveStatus").textContent="Schedina copiata negli appunti.";};
- if(navigator.share){try{await navigator.share({title:"Schedina MatchMind",text:message});return;}catch(e){if(e.name==="AbortError")return;}}
- try{await copy();}catch(e){$("archiveStatus").textContent=e.message||"Condivisione non riuscita.";}
+function selectedRows(){
+ return picks.map(p=>{const match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(!match)return null;const forecast=getForecast(match),market=markets().find(x=>x[0]===p.marketKey);if(!market)return null;return{match,marketKey:p.marketKey,marketLabel:market[1],probability:marketProbability(forecast,p.marketKey),forecast};}).filter(Boolean);
 }
-async function refresh(){
- const b=$("refreshArchive");b.disabled=true;b.textContent="Aggiornamento…";
+function renderSlip(){
+ const target=$("manualSlipSummary"),rows=selectedRows();
+ if(!rows.length){target.innerHTML='<div class="empty-state">Non hai ancora selezionato esiti dal calendario o da questa pagina.</div>';return;}
+ const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
+ target.innerHTML='<div class="manual-summary-card"><div class="manual-summary-top"><div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div><div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">'+pct(probability)+'</b></div></div><small>Prodotto delle probabilità marginali; indipendenza tra partite assunta. Non è una probabilità certificata.</small><div class="manual-selected-list">'+rows.map(row=>'<div class="manual-selected-row"><span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b><small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · '+pct(row.probability)+'</small></span><button type="button" class="manual-remove-button" data-remove="'+esc(fixtureKey(row.match))+'" aria-label="Rimuovi selezione">×</button></div>').join("")+'</div><div class="manual-summary-actions"><button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button><button type="button" id="clearCurrentSlip" class="secondary">Svuota</button></div></div>';
+}
+function renderArchive(){
+ const target=$("slipArchive");
+ if(!archive.length){target.innerHTML='<div class="empty-state">Nessuna schedina archiviata.</div>';return;}
+ target.innerHTML=archive.map(t=>'<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(t.createdAt?new Date(t.createdAt).toLocaleString("it-IT"):"—")+'</b><span>'+t.selections.length+' eventi</span></div><small>Probabilità stimata al salvataggio: '+pct(t.probability)+'</small>'+t.selections.map(s=>'<div class="data-row"><span><b>'+esc(s.home)+' – '+esc(s.away)+'</b><small>'+esc(s.market)+' · '+esc(s.date)+'</small></span><b>'+esc(s.result||s.status||"Da giocare")+'</b></div>').join("")+'<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(t.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(t.id)+'">Elimina</button></div></article>').join("");
+}
+function saveCurrentSlip(){
+ const rows=selectedRows();if(!rows.length){$("archiveStatus").textContent="Non ci sono selezioni da salvare.";return;}
+ const probability=rows.reduce((v,x)=>v*x.probability,1);
+ const item={id:"slip-"+Date.now(),createdAt:new Date().toISOString(),probability,selections:rows.map(x=>({home:x.match.home,away:x.match.away,date:x.match.date,market:x.marketLabel,marketKey:x.marketKey,probability:x.probability,competition:x.match.competition||window.MM.getSelectedCompetition(),status:"Da giocare"}))};
+ archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);renderArchive();$("archiveStatus").textContent="Schedina salvata su questo dispositivo.";
+}
+function buildProposal(){
+ const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
+ const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+ const first=upcoming[0],candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+ const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
+ const result=ENGINE().buildTicket(candidateFixtures,m=>getForecast(m),target,{maxLegs,marketOverrides:overrides});
+ if(!result.available){$("ticketResults").innerHTML='<div class="notice warning">'+esc(result.reason)+'</div><small>Partite analizzate: '+(result.upcomingFixtures||0)+' · campioni utilizzabili: '+(result.eligibleFixtures||0)+'. Per le squadre con meno di tre risultati precedenti il modello non genera una proposta.</small>';proposal=[];return;}
+ proposal=result.selections.map(x=>({match:x.match,marketKey:x.marketKey,marketLabel:x.market,probability:x.probability,confidence:x.confidence,preferredByUser:x.preferredByUser}));
+ $("ticketResults").innerHTML='<div class="metric"><span>PROBABILITÀ STIMATA DELLA COMBINAZIONE</span><b class="bet-percent bet-percent-total">'+pct(result.probability)+'</b><small>Obiettivo: '+pct(result.threshold)+' · '+proposal.length+' eventi · '+(result.thresholdReached?'obiettivo raggiunto':'obiettivo non raggiungibile con i dati e il limite selezionato')+'</small></div>'+
+ proposal.map(x=>'<div class="data-row"><span><b>'+esc(x.match.home)+' – '+esc(x.match.away)+'</b><small>'+esc(x.match.date)+' · '+esc(x.marketLabel)+' · confidenza '+esc(x.confidence)+(x.preferredByUser?' · tua preferenza':'')+'</small></span><b class="bet-percent">'+pct(x.probability)+'</b></div>').join("")+
+ '<button id="addProposal" type="button" class="primary" style="width:100%;margin-top:12px">Aggiungi proposta alla schedina</button>'+
+ '<div class="notice warning">'+(result.thresholdReached?'Obiettivo probabilistico raggiunto secondo il modello. ':'Obiettivo non raggiunto: mostro comunque la combinazione più vicina disponibile, senza dichiararla conforme alla soglia. ')+esc(result.assumption)+' '+esc(result.warning||"")+'</div>';
+}
+function applyProposal(){
+ proposal.forEach(x=>{const m=x.match,p={competition:m.competition||window.MM.getSelectedCompetition(),date:m.date,home:m.home,away:m.away,marketKey:x.marketKey};const index=picks.findIndex(y=>fixtureKey(y)===fixtureKey(p));if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);});
+ writePicks();renderFixtures();renderSlip();$("manualBuilderStatus").textContent="Proposta aggiunta alla schedina. Puoi modificare o rimuovere ogni esito.";
+}
+async function updateArchive(){
+ const button=$("refreshArchive");button.disabled=true;button.textContent="Aggiornamento…";
  try{
-  const fullData=await window.MM.loadData(true);let live=[];
-  try{const liveData=await window.MM.playerApi("type=live","archive-live",60*1000);live=Array.isArray(liveData.fixtures)?liveData.fixtures:[];}catch(_){}
-  archive=archive.map(t=>({...t,selections:t.selections.map(x=>{
-   const liveMatch=(x.competition||"serie-a")==="serie-a"?live.find(y=>window.MM.norm(y.home)===window.MM.norm(x.home)&&window.MM.norm(y.away)===window.MM.norm(x.away)):null;
-   const m=fullData.matches.find(y=>(y.competition||"serie-a")===(x.competition||"serie-a")&&y.date===x.date&&window.MM.norm(y.home)===window.MM.norm(x.home)&&window.MM.norm(y.away)===window.MM.norm(x.away));
-   return liveMatch?{...x,result:(liveMatch.homeGoals??"—")+"–"+(liveMatch.awayGoals??"—"),status:"LIVE"+(liveMatch.elapsed?" · "+liveMatch.elapsed+"’":"")}:({...x,result:m&&m.hg!=null&&m.ag!=null?m.hg+"–"+m.ag:null,status:m&&m.hg!=null&&m.ag!=null?"Conclusa":m&&window.MM.upcoming(m)?"Da iniziare":"Risultato non disponibile"});
-  })}));
-  save();render();$("archiveStatus").textContent="Risultati aggiornati con l'ultimo calendario disponibile; il feed live dipende dalla fonte collegata.";
+  const fresh=await window.MM.loadData(true),all=[...(fresh.matches||[]),...(fresh.history||[])];
+  archive=archive.map(t=>({...t,selections:t.selections.map(s=>{const m=all.find(x=>(x.competition||"serie-a")===(s.competition||"serie-a")&&x.date===s.date&&norm(x.home)===norm(s.home)&&norm(x.away)===norm(s.away));return m&&window.MM.hasScore(m)?{...s,result:Number(m.hg)+"–"+Number(m.ag),status:"Conclusa"}:{...s,status:"In programma"};})}));
+  save(ARCHIVE_KEY,archive);renderArchive();$("archiveStatus").textContent="Risultati aggiornati dal calendario disponibile.";
  }catch(e){$("archiveStatus").textContent="Aggiornamento non riuscito: "+e.message;}
- finally{b.disabled=false;b.textContent="Aggiorna risultati";}
+ finally{button.disabled=false;button.textContent="Aggiorna risultati";}
 }
-  async function loadOddsBoard(forceFresh) {
-    const target = $("oddsBoard"), status = $("oddsBoardStatus"), button = $("refreshOddsBoard");
-    if (!target || !status || !button) return;
-    button.disabled = true; button.textContent = "Aggiornamento…";
-    status.textContent = "Recupero quote aggiornate da PulseScore…";
-    try {
-      const result = await window.MM.playerApi("type=sisal-board", "sisal-board", forceFresh ? 0 : 90 * 1000);
-      if (!result.configured) {
-        target.innerHTML = '<div class="notice warning">' + esc(result.error || "Feed quote non configurato.") + '</div>';
-        status.textContent = "Feed quote non attivo";
-        return;
-      }
-      if (result.error) throw new Error(result.error);
-      const events = Array.isArray(result.events) ? result.events : [];
-      if (!events.length) {
-        target.innerHTML = '<div class="empty-state">Nessuna quota prematch disponibile per le prossime partite di Serie A.</div>';
-      } else {
-        target.innerHTML = events.map(event => {
-          const markets = (event.bookmakers || []).flatMap(book => (book.bets || []).map(market => ({
-            bookmaker: book.title || book.name || "Sisal", name: market.name, values: market.values || []
-          })));
-          const marketHtml = markets.map(market => {
-            const values = market.values.map(value => '<span class="odds-chip"><small>' + esc(value.value) + '</small><b>' + esc(oddsText(Number(String(value.odd).replace(",", ".")))) + '</b></span>').join("");
-            return '<div class="odds-market"><div class="odds-market-title">' + esc(market.name) + ' · ' + esc(market.bookmaker) + '</div><div class="odds-values">' + values + '</div></div>';
-          }).join("");
-          return '<article class="odds-board-card"><div class="odds-board-heading"><b>' + esc(event.home) + ' – ' + esc(event.away) + '</b><span>' + esc((event.dateTime && event.dateTime.date || "") + " · " + (event.dateTime && event.dateTime.time || "")) + '</span></div>' + (marketHtml || '<p class="helper-text">Mercati non disponibili.</p>') + '<small class="helper-text">Fonte: Sisal · PulseScore' + (event.updatedAt ? ' · aggiornato ' + esc(new Date(event.updatedAt).toLocaleString("it-IT")) : '') + '</small></article>';
-        }).join("");
-      }
-      status.textContent = "Ultimo controllo: " + new Date(result.updatedAt || Date.now()).toLocaleString("it-IT") +
-        (result.unavailableMatches ? " · " + result.unavailableMatches + " partite senza mercati attivi" : "");
-    } catch (error) {
-      target.innerHTML = '<div class="notice warning">' + esc(error.message || "Quote temporaneamente non disponibili.") + '</div>';
-      status.textContent = "Aggiornamento non riuscito";
-    } finally {
-      button.disabled = false; button.textContent = "Aggiorna quote";
-    }
-  }
-
-document.addEventListener("DOMContentLoaded",()=>{
- $("manualSlipSummary").addEventListener("click",async e=>{if(e.target.closest("#archiveManualSlip"))await saveCurrent();});
- $("slipArchive").addEventListener("click",async e=>{
-  const d=e.target.closest("[data-delete-ticket]"),s=e.target.closest("[data-share-ticket]");
-  if(d){archive=archive.filter(x=>x.id!==d.dataset.deleteTicket);save();render();}
-  if(s){const t=archive.find(x=>x.id===s.dataset.shareTicket);if(t)await share(t);}
+async function shareTicket(ticket){
+ const body=["MatchMind · Schedina",...ticket.selections.map(x=>x.home+" – "+x.away+" | "+x.market+" | "+pct(x.probability)),"Probabilità combinata stimata: "+pct(ticket.probability)].join("\n");
+ try{if(navigator.share)await navigator.share({title:"Schedina MatchMind",text:body});else{await navigator.clipboard.writeText(body);$("archiveStatus").textContent="Schedina copiata negli appunti.";}}catch(e){if(e.name!=="AbortError")$("archiveStatus").textContent="Condivisione non disponibile in questo browser.";}
+}
+function initEvents(){
+ $("matchSearch").addEventListener("input",renderFixtures);
+ $("manualFixtures").addEventListener("click",event=>{
+  const b=event.target.closest("[data-pick]");if(!b)return;
+  const fixture=fixtures.find(m=>fixtureKey(m)===b.dataset.pick);if(!fixture)return;
+  const market=markets().find(x=>x[0]===b.dataset.market);if(!market)return;
+  const index=picks.findIndex(p=>fixtureKey(p)===fixtureKey(fixture));
+  if(index>=0&&picks[index].marketKey===market[0])picks.splice(index,1);
+  else{const p={competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market[0]};if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);else{$("manualBuilderStatus").textContent="Limite di 15 partite raggiunto.";return;}}
+  writePicks();renderFixtures();renderSlip();
  });
- $("refreshArchive").addEventListener("click",refresh);
- render();
+ $("manualFixtures").addEventListener("change",event=>{
+  const el=event.target.closest("[data-context-field]");if(!el)return;
+  const key=el.dataset.context,field=el.dataset.contextField;contexts[key]=contexts[key]||{};contexts[key][field]=Number(el.value);save(CONTEXT_KEY,contexts);renderFixtures();renderSlip();
+ });
+ $("manualSlipSummary").addEventListener("click",event=>{
+  const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderFixtures();renderSlip();return;}
+  if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
+  if(event.target.closest("#clearCurrentSlip")){picks=[];writePicks();renderFixtures();renderSlip();}
+ });
+ $("targetProbability").addEventListener("input",()=>$("targetProbabilityLabel").textContent=$("targetProbability").value+"%");
+ $("buildTicket").addEventListener("click",buildProposal);
+ $("ticketResults").addEventListener("click",event=>{if(event.target.closest("#addProposal"))applyProposal();});
+ $("refreshArchive").addEventListener("click",updateArchive);
+ $("slipArchive").addEventListener("click",event=>{
+  const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderArchive();return;}
+  const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);}
+ });
+}
+document.addEventListener("DOMContentLoaded",async()=>{
+ initEvents();$("globalStatus").textContent="Carico calendario e risultati storici…";
+ try{
+  data=window.MM.forCompetition(await window.MM.loadData());
+  fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
+  contexts=read(CONTEXT_KEY,{});archive=read(ARCHIVE_KEY,[]);if(!Array.isArray(archive))archive=[];
+  renderFixtures();renderSlip();renderArchive();
+  $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
+  $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
+ }catch(e){$("globalStatus").textContent="Dati non disponibili: "+(e.message||"errore sconosciuto");$("manualFixtures").innerHTML='<div class="notice warning">Calendario non disponibile. Riprova quando la fonte dati sarà raggiungibile.</div>';}
 });
 })();
