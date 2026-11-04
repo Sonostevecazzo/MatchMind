@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="./site.css">
 <link rel="stylesheet" href="./mobile-readable.css?v=20261103-0737">
 <title>MatchMind · Match Center</title>
+<script defer src="./bets-engine.js"></script>
 <script defer src="./site-core.js"></script>
 <script defer src="./site-pages.js"></script>
 </head>
@@ -59,7 +60,7 @@
         <button class="ghost match-reset" id="clearMatchFilters" type="button">Azzera tutti i filtri</button>
        </details>
       </div>
-      <div id="matchSlipActions" class="match-slip-dock" hidden aria-live="polite"><div><b><span id="matchSlipCount">0</span> selezioni in schedina</b><small>Tocca un esito per aggiungerlo o cambiarlo.</small></div><a class="button-like primary" href="./bets.html">Apri costruttore</a></div><p id="matchPickNotice" class="status-line" aria-live="polite"></p>
+      <div id="matchSlipActions" class="match-slip-dock" hidden aria-live="polite"><div><b><span id="matchSlipCount">0</span> selezioni in schedina</b><small id="matchSlipProbability">Probabilità combinata</small></div><button id="toggleMatchSlip" type="button" class="secondary">Mostra schedina</button><a class="button-like primary" href="./bets.html">Apri schedina</a><div id="matchSlipPreview" class="match-slip-preview" hidden></div></div><p id="matchPickNotice" class="status-line" aria-live="polite"></p>
       <div class="section match-results-section"><div class="section-head"><div><h3 id="matchListTitle">In programma</h3><p id="matchListSummary">Partite disponibili nel calendario.</p></div></div><div id="matchList" class="fixture-list"><div class="loading-state">Caricamento…</div></div><div style="text-align:center;margin-top:12px"><button id="moreMatches" class="ghost" hidden>Carica altre partite</button></div></div>
     </section>
 
