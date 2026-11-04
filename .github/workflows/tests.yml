@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
 jobs:
   python-tests:
-    # Lightweight CI suite: run in hosted containers rather than the affected VM pool.
-    runs-on: ubuntu-slim
+    # Standard GitHub-hosted runner; ubuntu-slim is not reliably provisioned for this private repository.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
