@@ -19,6 +19,7 @@
   const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
   function readCache(){try{const own=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');return own&&Array.isArray(own.matches)?own:null;}catch{return null;}}
   let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'openfootball',updatedAt:null};
+  const forecastMemo=new Map();
   function trainAvailableModels(history){if(!window.MatchMindAI)return;for(const competition of Object.keys(COMPETITIONS))window.MatchMindAI.train(history,(match,prior)=>forecast(match,prior,{__skipAI:true}),competition);}
   async function loadData(force=false){
     if(dataPromise&&!force)return dataPromise;
@@ -210,6 +211,9 @@
   function forecast(match,history,options){
     options=options||{};
     const competition=match&&match.competition||"serie-a";
+    const memoizable=Array.isArray(history)&&Object.keys(options).length===0;
+    const memoKey=memoizable?[competition,match?.date,norm(match?.home),norm(match?.away),history.length,history[0]?.date,history.at(-1)?.date,data.updatedAt||""].join("|"):null;
+    if(memoKey&&forecastMemo.has(memoKey))return forecastMemo.get(memoKey);
     const hist=(history||[]).filter(x=>hasScore(x)&&x.date<match.date&&(x.competition||"serie-a")===competition);
     const allHome=hist.length?hist.reduce((s,x)=>s+Number(x.hg),0)/hist.length:1.35;
     const allAway=hist.length?hist.reduce((s,x)=>s+Number(x.ag),0)/hist.length:1.1;
@@ -232,7 +236,9 @@
     const predictionMethod=eloProbabilities?'elo-1x2-poisson-goals':'poisson';
     const aiModel=options.__skipAI?null:(window.MatchMindAI&&window.MatchMindAI.modelFor(competition));
     const probabilities=aiModel&&aiModel.approved?{...rawProbabilities,...window.MatchMindAI.applyTemperature(rawProbabilities,aiModel.temperature)}:rawProbabilities;
-    return{historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates[dates.length-1]||null,home:h,away:a,homeVenue:hv,awayVenue:av,homeXg,awayXg,probabilities,rawProbabilities,poissonProbabilities,eloProbabilities,predictionMethod,aiCalibration:{applied:Boolean(aiModel&&aiModel.approved),temperature:aiModel?.temperature??1,status:aiModel?.status||"not_trained"},scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:minTeamSample>=10,minTeamSample,confidence,standings,modelFactors:{weightedRecentForm:true,homeAwaySplits:true,standingsPressure:true,manualAbsenceAdjustment:{attackingHome:attAbsH,defensiveHome:defAbsH,attackingAway:attAbsA,defensiveAway:defAbsA},manualMotivation:{home:motivationHome,away:motivationAway}},method:predictionMethod==="elo-1x2-poisson-goals"?"Elo per le probabilità 1X2; Poisson per xG, risultato esatto e mercati goal":"Poisson per 1X2 e mercati goal; Elo non disponibile per campione insufficiente",limitations:"La calibrazione adattiva modifica solo 1X2 e viene attivata solo se migliora log loss e Brier in un test cronologico separato. Assenze e motivazione specifica non sono fornite da un feed affidabile."};
+    const result={historyCount:hist.length,historyStart:dates[0]||null,historyEnd:dates[dates.length-1]||null,home:h,away:a,homeVenue:hv,awayVenue:av,homeXg,awayXg,probabilities,rawProbabilities,poissonProbabilities,eloProbabilities,predictionMethod,aiCalibration:{applied:Boolean(aiModel&&aiModel.approved),temperature:aiModel?.temperature??1,status:aiModel?.status||"not_trained"},scoreMatrix,scoreMatrixTail:Math.max(0,1-matrixMass),sampleEnough:minTeamSample>=10,minTeamSample,confidence,standings,modelFactors:{weightedRecentForm:true,homeAwaySplits:true,standingsPressure:true,manualAbsenceAdjustment:{attackingHome:attAbsH,defensiveHome:defAbsH,attackingAway:attAbsA,defensiveAway:defAbsA},manualMotivation:{home:motivationHome,away:motivationAway}},method:predictionMethod==="elo-1x2-poisson-goals"?"Elo per le probabilità 1X2; Poisson per xG, risultato esatto e mercati goal":"Poisson per 1X2 e mercati goal; Elo non disponibile per campione insufficiente",limitations:"La calibrazione adattiva modifica solo 1X2 e viene attivata solo se migliora log loss e Brier in un test cronologico separato. Assenze e motivazione specifica non sono fornite da un feed affidabile."};
+    if(memoKey){forecastMemo.set(memoKey,result);if(forecastMemo.size>240)forecastMemo.delete(forecastMemo.keys().next().value);}
+    return result;
   }
 function eventForecast(match,history){
     const before=String(match&&match.date||''),competition=match&&match.competition||'serie-a';
