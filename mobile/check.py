@@ -15,6 +15,8 @@ for name in required:
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
   assert 'id="matchSlipPreview"' in html
+ if name=="analysis-lab.html":
+  assert 'id="analysisOverview"' in html and "bets-engine.js" in html
  assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
@@ -51,7 +53,6 @@ assert "window.MatchMindAI.train" in core
 assert "trainAvailableModels(data.history)" not in core, "AI calibration must not run on the mobile UI thread"
 assert "AbortSignal.timeout(25000)" in core
 assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
-assert 'id="adaptiveAIStatus"' in (ROOT/"analysis-lab.html").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
