@@ -153,7 +153,7 @@
     const requestedMaxLegs = Number(options && options.maxLegs);
     const maxLegs = Number.isFinite(requestedMaxLegs) && requestedMaxLegs > 0
       ? Math.max(1, Math.min(15, Math.floor(requestedMaxLegs))) : 5;
-    if (!Number.isFinite(target) || target <= 0 || target > 1) {
+    if (!Number.isFinite(target) || target < 0 || target > 1) {
       return { available: false, reason: "Soglia probabilistica non valida." };
     }
     if (typeof forecastFn !== "function") {
@@ -187,14 +187,20 @@
       } catch (_) {
         continue;
       }
-      if (!forecast || !forecast.sampleEnough) continue;
+      if (!forecast || Number(forecast.minTeamSample ?? Math.min(forecast.home?.played || 0, forecast.away?.played || 0)) < 3) continue;
       let best = null;
+      const fixtureKey = [normalize(match.home), normalize(match.away)].sort().join("|") + "|" + match.date;
+      const preferredKey = options && options.marketOverrides && options.marketOverrides[fixtureKey];
+      const preferred = BET_MARKETS.find(item => item[0] === preferredKey);
+      if (preferred) {
+        const probability = marketProbability(forecast, preferred[0]);
+        if (probability !== null) best = { match, market: preferred[1], marketKey: preferred[0], probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: true };
+      }
       for (const [key, label] of BET_MARKETS) {
+        if (best && best.preferredByUser) break;
         const probability = marketProbability(forecast, key);
         if (probability === null) continue;
-        if (!best || probability > best.probability) {
-          best = { match, market: label, marketKey: key, probability, historyCount: forecast.historyCount || 0 };
-        }
+        if (!best || probability > best.probability) best = { match, market: label, marketKey: key, probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: false };
       }
       if (best) candidates.push(best);
     }
@@ -220,19 +226,13 @@
       chosen.push(candidate);
       joint = next;
     }
+    const thresholdReached = joint + 1e-12 >= target;
     if (!chosen.length) {
-      return {
-        available: false,
-        reason: "La soglia minima richiesta non è raggiungibile con i dati disponibili.",
-        eligibleFixtures: candidates.length,
-        upcomingFixtures: uniqueFixtures.length,
-        bestSelection: candidates[0],
-        bestProbability: candidates[0].probability,
-        threshold: target
-      };
+      chosen.push(candidates[0]);
+      joint = candidates[0].probability;
     }
     return {
-      available: true, selections: chosen, probability: joint, threshold: target,
+      available: true, selections: chosen, probability: joint, threshold: target, thresholdReached,
       eligibleFixtures: candidates.length,
       upcomingFixtures: uniqueFixtures.length,
       assumption: "Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.",
