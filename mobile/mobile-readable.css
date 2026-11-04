@@ -1,0 +1,440 @@
+/* Dedicated Android mobile typography layer.
+   Loaded after site.css to override legacy compact declarations deterministically. */
+@media (max-width: 700px) {
+  html {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+
+  body[data-page] {
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: 0 0 calc(84px + env(safe-area-inset-bottom)) !important;
+    font-size: 17px !important;
+    line-height: 1.55 !important;
+  }
+
+  body[data-page] .page-wrap {
+    width: calc(100% - 24px) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 16px 0 calc(100px + env(safe-area-inset-bottom)) !important;
+    font-size: 17px !important;
+    line-height: 1.55 !important;
+  }
+
+  /* Neutralize the many legacy 7–12px declarations on inline text. */
+  body[data-page] .page-wrap :is(p, span, b, strong, a, label, small, li, td, th, input, select, textarea, button) {
+    font-size: inherit !important;
+    line-height: inherit;
+  }
+
+  body[data-page] .page-wrap .page-intro h1,
+  body[data-page] .page-wrap h1 {
+    font-size: 34px !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.8px !important;
+  }
+
+  body[data-page] .page-wrap .home-hero h1,
+  body[data-page] .page-wrap .hero-card h1 {
+    font-size: 36px !important;
+    line-height: 1.08 !important;
+  }
+
+  body[data-page] .page-wrap h2,
+  body[data-page] .page-wrap .section-head h2,
+  body[data-page] .page-wrap .panel-head h2 {
+    font-size: 22px !important;
+    line-height: 1.25 !important;
+  }
+
+  body[data-page] .page-wrap h3 {
+    font-size: 19px !important;
+    line-height: 1.3 !important;
+  }
+
+  body[data-page] .page-wrap p,
+  body[data-page] .page-wrap .section-head p,
+  body[data-page] .page-wrap .panel-head p,
+  body[data-page] .page-wrap .helper-text {
+    font-size: 16px !important;
+    line-height: 1.55 !important;
+  }
+
+  body[data-page] .page-wrap .eyebrow,
+  body[data-page] .page-wrap .field label {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0.35px !important;
+  }
+
+  body[data-page] .page-wrap .fixture-head,
+  body[data-page] .page-wrap .fixture-foot,
+  body[data-page] .page-wrap .date-divider,
+  body[data-page] .page-wrap .match-detail-meta {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0 !important;
+  }
+
+  body[data-page] .page-wrap .fixture-team b,
+  body[data-page] .page-wrap .fixture-side b,
+  body[data-page] .page-wrap .team-tile b,
+  body[data-page] .page-wrap .shortcut b {
+    font-size: 17px !important;
+    line-height: 1.3 !important;
+  }
+
+  body[data-page] .page-wrap .fixture-score,
+  body[data-page] .page-wrap .metric b,
+  body[data-page] .page-wrap .prob b {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+  }
+
+  body[data-page] .page-wrap .data-row,
+  body[data-page] .page-wrap .archive-ticket-head,
+  body[data-page] .page-wrap .archive-ticket-meta {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+
+  body[data-page] .page-wrap .data-row small,
+  body[data-page] .page-wrap .archive-ticket small,
+  body[data-page] .page-wrap .metric small,
+  body[data-page] .page-wrap .shortcut small,
+  body[data-page] .page-wrap .date-divider small {
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+  }
+
+  body[data-page] .page-wrap .notice,
+  body[data-page] .page-wrap .empty-state,
+  body[data-page] .page-wrap .metric span,
+  body[data-page] .page-wrap .prob,
+  body[data-page] .page-wrap .text-link {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+
+  body[data-page] .page-wrap .league-table th,
+  body[data-page] .page-wrap .league-table td,
+  body[data-page] .page-wrap .league-table td.club a {
+    font-size: 14px !important;
+  }
+
+  body[data-page] .page-wrap .field input,
+  body[data-page] .page-wrap .field select,
+  body[data-page] .page-wrap .field textarea,
+  body[data-page] .page-wrap input,
+  body[data-page] .page-wrap select,
+  body[data-page] .page-wrap textarea,
+  body[data-page] .page-wrap button,
+  body[data-page] .page-wrap .button-like,
+  body[data-page] .page-wrap .pill {
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    min-height: 48px;
+  }
+
+  body[data-page] .page-wrap .team-crest {
+    font-size: 12px !important;
+  }
+
+  body[data-page] .page-wrap .stat-cell b {
+    font-size: 23px !important;
+  }
+
+  body[data-page] .page-wrap .stat-cell span {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+
+  body[data-page] .status-line,
+  body[data-page] .site-footer {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  body[data-page] .mobile-nav .nav-item {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  body[data-page] .mobile-nav .nav-icon,
+  body[data-page] .mobile-nav .nav-icon svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  body[data-page] .fixture-horizontal {
+    gap: 6px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body[data-page] .page-wrap {
+    width: calc(100% - 20px) !important;
+  }
+  body[data-page] .page-wrap .fixture-team b,
+  body[data-page] .page-wrap .fixture-side b {
+    font-size: 15px !important;
+  }
+}
+
+
+/* Header labels are part of the same mobile readability scale. */
+@media (max-width: 700px) {
+  body[data-page] .site-header .brand-copy b {
+    font-size: 16px !important;
+  }
+  body[data-page] .site-header .brand-copy small {
+    font-size: 9px !important;
+    letter-spacing: 0.8px !important;
+  }
+}
+
+
+/* Match cards and betting advice: keep outcome labels distinct from percentages. */
+@media (max-width: 700px) {
+  body[data-page="mind"] #roundTickets .ticket-prob-row {
+    align-items: center;
+    gap: 12px;
+    padding: 14px 2px;
+  }
+  body[data-page="mind"] #roundTickets .ticket-prob-row > span {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  body[data-page="mind"] #roundTickets .ticket-market-label {
+    color: #e8eff2;
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+    font-weight: 800;
+  }
+  body[data-page="mind"] #roundTickets .ticket-prob-row small {
+    color: #9eacb5;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+  }
+  body[data-page="mind"] #roundTickets .ticket-probability {
+    flex: 0 0 auto;
+    max-width: none !important;
+    white-space: nowrap;
+    font-size: 19px !important;
+    line-height: 1.2 !important;
+    font-variant-numeric: tabular-nums;
+    color: #d4f58e;
+  }
+  body[data-page="mind"] #roundTickets .ticket-match-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    padding: 13px 0;
+    font-size: 15px !important;
+  }
+  body[data-page="mind"] #roundTickets .ticket-match-picks {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    max-width: none !important;
+    text-align: left;
+    font-size: 13px !important;
+  }
+  body[data-page="mind"] #roundTickets .ticket-match-picks > span {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 8px 6px;
+    border: 1px solid #ffffff14;
+    border-radius: 9px;
+    background: #17232b;
+    color: #e7eef0;
+    white-space: normal;
+  }
+  body[data-page="mind"] #roundTickets .ticket-match-picks i {
+    color: #aab8bd;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: .3px;
+  }
+  body[data-page="mind"] #roundTickets .ticket-match-picks strong {
+    color: #d4f58e;
+    font-size: 14px !important;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-page="mind"] #roundTickets .eyebrow {
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+  }
+  body[data-page="mind"] #roundTickets .metric b {
+    font-size: 25px !important;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  body[data-page="mind"] #roundTickets .metric span {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+  body[data-page="matches"] .fixture-center-label,
+  body[data-page="mind"] .fixture-center-label {
+    display: none !important;
+  }
+  body[data-page="mind"] .preview-probs > div {
+    grid-template-columns: minmax(82px, auto) minmax(0, 1fr);
+    gap: 5px 10px;
+  }
+  body[data-page="mind"] .preview-probs span {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+  body[data-page="mind"] .preview-probs b {
+    font-size: 16px !important;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+}
+@media (max-width: 380px) {
+  body[data-page="mind"] #roundTickets .ticket-match-picks {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Bet checker: clear separation between labels and probability values. */
+body[data-page="bets"] .ocr-details {
+  margin: 10px 0 14px;
+  border: 1px solid #ffffff18;
+  border-radius: 12px;
+  background: #101820;
+  padding: 11px 13px;
+}
+body[data-page="bets"] .ocr-details summary {
+  color: #c4d2d7;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+}
+body[data-page="bets"] .ocr-details .field { margin: 10px 0 0; }
+body[data-page="bets"] .bet-percent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 76px;
+  color: #d8f59b;
+  font-size: 21px !important;
+  line-height: 1.1 !important;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.45px;
+  white-space: nowrap;
+}
+body[data-page="bets"] .bet-percent-total {
+  min-width: 0;
+  justify-content: flex-start;
+  color: #e2ffad;
+  font-size: clamp(30px, 8vw, 38px) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -1px;
+}
+body[data-page="bets"] .player-item-head {
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+}
+body[data-page="bets"] .player-item-head .bet-percent {
+  flex: 0 0 auto;
+  min-width: 82px;
+}
+body[data-page="bets"] .data-row {
+  gap: 12px;
+  align-items: center;
+}
+body[data-page="bets"] .data-row > span { min-width: 0; }
+body[data-page="bets"] .data-row > .bet-percent {
+  flex: 0 0 auto;
+  padding-left: 8px;
+}
+body[data-page="bets"] .metric {
+  padding: 17px;
+  border: 1px solid #d8f59b35;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #17251f, #111a20);
+}
+body[data-page="bets"] .metric > span {
+  display: block;
+  max-width: 34ch;
+  color: #b6c5bf;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 750;
+  letter-spacing: .45px;
+}
+body[data-page="bets"] .metric > .bet-percent-total {
+  display: block;
+  margin: 8px 0;
+}
+body[data-page="bets"] .metric > small {
+  display: block;
+  color: #aab8bd;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+@media (max-width: 700px) {
+  body[data-page="bets"] .bet-percent {
+    font-size: 22px !important;
+    min-width: 84px;
+  }
+  body[data-page="bets"] .bet-percent-total {
+    font-size: 36px !important;
+  }
+  body[data-page="bets"] .metric {
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  body[data-page="bets"] .player-item-head {
+    padding: 4px 0 12px;
+  }
+}
+
+
+/* Five fixed primary destinations: no overflow or tiny six-column labels. */
+@media (max-width: 700px) {
+  body[data-page] .mobile-nav { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 3px !important; }
+  body[data-page] .mobile-nav .nav-item { min-width: 0; font-size: 10px !important; }
+  body[data-page] .mobile-nav .nav-icon,
+  body[data-page] .mobile-nav .nav-icon svg { width: 22px !important; height: 22px !important; }
+  body[data-page] .header-more-link { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 9px; border: 1px solid #ffffff20; border-radius: 9px; color: #c8d3d7; text-decoration: none; font-size: 12px; font-weight: 800; }
+}
+@media (min-width: 701px) {
+  .header-more-link { display: inline-flex; align-items: center; min-height: 34px; padding: 0 11px; border: 1px solid #ffffff20; border-radius: 9px; color: #c8d3d7; text-decoration: none; font-size: 12px; font-weight: 800; }
+}
+
+/* MatchMind bet manager: short workflow tabs, clear open/settled states. */
+.bets-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:5px;margin:0 0 16px;border:1px solid #26363c;border-radius:13px;background:#0e151a;position:sticky;top:68px;z-index:20}
+.bets-tab{min-height:44px;border:0;border-radius:9px;background:transparent;color:#9baab1;font-size:14px;font-weight:850}
+.bets-tab.active{background:#c4f36a;color:#17210a}
+.bets-tab-panel[hidden]{display:none!important}
+.ticket-state{border-radius:20px;padding:5px 9px;background:#26351d;color:#d9f79c;font-size:11px;font-weight:850}
+.ticket-state.live{background:#49272c;color:#ffb4b4}
+.ticket-state.scheduled{background:#26351d;color:#d9f79c}
+.ticket-monitor-state{font-size:12px!important;max-width:55%;text-align:right;line-height:1.4;overflow-wrap:anywhere}
+.ticket-monitor-state.won{color:#b9ef91}.ticket-monitor-state.lost{color:#ff9da7}
+@media(max-width:700px){.bets-tabs{top:58px}.bets-tab{min-height:48px;font-size:13px}.ticket-monitor-state{font-size:12px!important}}
+
+@media (max-width: 700px) {
+ .header-more-link.active { background: #c4f36a; border-color: #c4f36a; color: #17210a !important; }
+}
+@media (min-width: 701px) {
+ .header-more-link.active { background: #c4f36a; border-color: #c4f36a; color: #17210a !important; }
+}

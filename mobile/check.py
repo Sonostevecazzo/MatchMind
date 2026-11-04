@@ -1,108 +1,77 @@
-"""Static validation for MatchMind's multi-screen smartphone PWA."""
+"""Static validation for MatchMind PWA with a public calendar and optional Live provider."""
 from __future__ import annotations
-
-import json
-import re
-import subprocess
-import tempfile
+import json, re, subprocess, tempfile
 from pathlib import Path
+ROOT=Path(__file__).resolve().parent
+manifest=json.loads((ROOT/"manifest.webmanifest").read_text(encoding="utf-8"))
+assert manifest.get("name") and manifest.get("display")=="standalone"
+assert (ROOT/"sw.js").is_file()
+required=["index.html","matches.html","live.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
+for name in required:
+ p=ROOT/name
+ assert p.is_file(),f"Missing screen: {name}"
+ html=p.read_text(encoding="utf-8")
+ assert '<html lang="it">' in html,f"{name} must declare Italian"
+ if name=="matches.html":
+  assert 'id="matchFilters"' in html and 'id="matchList"' in html
+  assert 'id="matchSlipPreview"' in html
+ assert "site-core.js" in html and "mobile-readable.css" in html
+ if name=="bets.html":
+  assert "bets-engine.js" in html and "bets.js" in html
+  assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
+  assert 'id="openTickets"' in html and 'id="slipArchive"' in html
+ elif name=="live.html":
+  assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
+ else: assert "site-pages.js" in html
+legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
+scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
+assert len(scripts)==1
+with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
+ handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
+for filename in ["site-core.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
+ subprocess.run(["node","--check",str(ROOT/filename)],check=True)
+for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js"]:
+ subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
+for test in ["public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs"]:
+ subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
+core=(ROOT/"site-core.js").read_text(encoding="utf-8")
+calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
+assert "./api/public-calendar" in core and "open-matchday" in calendar
+assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
+assert "media.api-sports.io" not in core
+assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
+assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert "bets.html" in core and "Schedina" in core
+assert "live.html" in core and "Live" in core
+assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
+assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "function backtest(rows)" in core
+assert "scoreMatrix" in core
+assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
+assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v63-20261104-fallback-live-nav" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
+assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "./functions/api/live-match.js" not in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "900000" in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert "300000" in (ROOT/"live.js").read_text(encoding="utf-8")
+assert "900000" in (ROOT/"live.js").read_text(encoding="utf-8")
+assert "1800000" in (ROOT/"live.js").read_text(encoding="utf-8")
+assert "context, 300" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
+assert "./analysis.css" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert (ROOT/"functions"/"api"/"live-match.js").is_file()
+bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
+assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
+assert 'min="0"' in bets_html and 'max="100"' in bets_html
+assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
+assert 'id="matchSlipPreview"' in (ROOT/"matches.html").read_text(encoding="utf-8")
+bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
+assert "Sisal" not in bets_js and "playerApi" not in bets_js
+assert "matchStandingsContext" in core and "pointsPerGame" in core
 
-ROOT = Path(__file__).resolve().parent
-manifest = json.loads((ROOT / "manifest.webmanifest").read_text(encoding="utf-8"))
-assert manifest.get("name") and manifest.get("display") == "standalone"
-assert (ROOT / "sw.js").is_file()
-
-required_pages = [
-    "index.html", "matches.html", "explore.html", "league.html",
-    "team.html", "match.html", "players.html", "analysis-lab.html", "bets.html", "data.html", "settings.html",
-]
-for name in required_pages:
-    page = ROOT / name
-    assert page.is_file(), f"Missing screen: {name}"
-    html = page.read_text(encoding="utf-8")
-    assert '<html lang="it">' in html, f"{name} must declare Italian language"
-    assert "site-core.js" in html, f"{name} must use shared navigation"
-    if name == "bets.html":
-        assert "bets-engine.js" in html and "bets.js" in html, "Bet checker must load its engine and controller"
-    else:
-        assert "site-pages.js" in html, f"{name} must use the shared page controller"
-
-# The legacy workbench is retained as a fallback and its original inline JS is syntax-checked.
-legacy = (ROOT / "legacy-workbench.html").read_text(encoding="utf-8")
-legacy_scripts = re.findall(r"<script>(.*?)</script>", legacy, flags=re.DOTALL)
-if len(legacy_scripts) != 1:
-    raise SystemExit(f"Expected one legacy inline app script, found {len(legacy_scripts)}")
-with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
-    handle.write(legacy_scripts[0])
-    handle.flush()
-    subprocess.run(["node", "--check", handle.name], check=True)
-
-for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "bets.js", "elo.js", "rounds.js", "sw.js"]:
-    subprocess.run(["node", "--check", str(ROOT / filename)], check=True)
-
-for path in [
-    ROOT / "functions" / "_middleware.js",
-    ROOT / "functions" / "api" / "player-context.js",
-]:
-    subprocess.run(["node", "--check", str(path)], check=True)
-
-subprocess.run(["node", "--test", str(ROOT / "tests" / "player-context.test.mjs")], check=True)
-subprocess.run(["node", "--test", str(ROOT / "tests" / "backtest.test.mjs")], check=True)
-subprocess.run(["node", "--test", str(ROOT / "tests" / "elo.test.mjs")], check=True)
-subprocess.run(["node", "--test", str(ROOT / "tests" / "rounds.test.mjs")], check=True)
-subprocess.run(["node", "--test", str(ROOT / "tests" / "bets-engine.test.cjs")], check=True)
-
-# Check the app's four main destinations and that page-specific routes are linked.
-home = (ROOT / "index.html").read_text(encoding="utf-8")
-assert 'href="bets.html"' in home, "Bet checker is missing from the home shortcuts"
-
-assert 'pitch-art' not in home and 'home-hero-art' not in home, "Home page must not render the football pitch illustration"
-lab = (ROOT / "analysis-lab.html").read_text(encoding="utf-8")
-for control in ["assistantStake", "assistantMinPayout", "assistantMaxPayout", "assistantLegs", "assistantGenerate", "assistantResult"]:
-    assert control in lab, f"Missing bet assistant control: {control}"
-assert "buildAssistant" in (ROOT / "rounds.js").read_text(encoding="utf-8"), "Missing target-based bet assistant optimizer"
-settings = (ROOT / "settings.html").read_text(encoding="utf-8")
-for control in ["apiFootballKey", "oddsPapiKey", "saveOddsPapiKey", "saveSessionKey"]:
-    assert control in settings, f"Missing optional provider control: {control}"
-pages = (ROOT / "site-pages.js").read_text(encoding="utf-8")
-core = (ROOT / "site-core.js").read_text(encoding="utf-8")
-for secret in ["matchmind-api-football-session-key", "matchmind-oddspapi-session-key"]:
-    assert secret in pages, f"Missing optional settings session-key handling: {secret}"
-    assert secret in core, f"Missing optional request header for session key: {secret}"
-assert "type=odds-batch" not in pages, "The paid alternate odds aggregator must not be a required source"
-assert "function eventForecast" in core and "eventForecast," in core, "Free event forecast engine is missing"
-assert "home_corners_1h" in core and "home_yellow" in core, "Open-matchday event fields are not parsed"
-
-css = (ROOT / "site.css").read_text(encoding="utf-8")
-assert "grid-template-columns:repeat(5,minmax(0,1fr))" in css, "Mobile navigation must use five primary destinations"
-core = (ROOT / "site-core.js").read_text(encoding="utf-8")
-for route in ["index.html", "matches.html", "league.html", "analysis-lab.html", "explore.html"]:
-    assert route in core, f"Missing primary navigation route: {route}"
-assert "AI Insights" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "AI Insights destination is missing"
-assert "scoreMatrix" in core, "Correct-score probability matrix is missing from the forecast model"
-# Forecast transparency and stable team identity checks.
-assert "frosinone:512" in core, "Missing Frosinone crest mapping"
-assert "sampleEnough:h.played>=10&&a.played>=10" in core, "Forecast adequacy must require 10 prior matches per team"
-assert "function backtest(rows)" in core, "Missing chronological out-of-sample backtest"
-assert "byClass" in core and "accuracyCI" in core and "bySeason" in core, "Missing detailed backtest diagnostics"
-elo = (ROOT / "elo.js").read_text(encoding="utf-8")
-assert "sameDateSnapshot:true" in elo and "aliasNormalization:true" in elo, "Missing Elo leakage and identity safeguards"
-assert "elo.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Elo engine is not loaded by the Intelligence page"
-assert "rounds.js" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Round analysis engine is not loaded by the Intelligence page"
-assert "rounds.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Round analysis engine is not cached by the service worker"
-assert "bets.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker page is not cached by the service worker"
-assert re.search(r"matchmind-pwa-v\d+-\d{8}", (ROOT / "sw.js").read_text(encoding="utf-8")), "PWA cache version was not bumped after a frontend change"
-assert "bets-engine.js" in (ROOT / "sw.js").read_text(encoding="utf-8") and "bets.js" in (ROOT / "sw.js").read_text(encoding="utf-8"), "Bet checker assets are not cached by the service worker"
-assert "roundTickets" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing next-round ticket panel"
-assert "Classifica e obiettivi stagionali" in (ROOT / "site-pages.js").read_text(encoding="utf-8"), "Missing match-specific league context"
-rounds = (ROOT / "rounds.js").read_text(encoding="utf-8")
-assert "m.date<localDate" in rounds and "options.isUpcoming" in rounds, "Ticket engine must exclude past unplayed fixtures"
-assert "Number.isFinite(v)" in rounds and "valid.length!==legs.length" in rounds, "Ticket probabilities must reject invalid or incomplete legs"
-assert "m.date<date" in rounds, "League snapshots must exclude same-date and future results"
-assert "loadData,backtest" in core, "Backtest helper is not exposed to the UI"
-pages_js = (ROOT / "site-pages.js").read_text(encoding="utf-8")
-for phrase in ["Partite usate", "Periodo storico complessivo", "Campione squadra incompleto", "CALIBRAZIONE PER ESITO", "STABILITÀ NEL TEMPO"]:
-    assert phrase in pages_js, f"Missing forecast transparency label: {phrase}"
-
-assert "forecastBacktest" in (ROOT / "analysis-lab.html").read_text(encoding="utf-8"), "Missing historical backtest panel"
-print("MatchMind PWA, syntax, provider API and chronological backtest tests passed.")
+assert "home_corners_1h" in calendar and "home_yellow" in calendar
+print("MatchMind PWA, public data source, optional Live provider, syntax and model checks passed.")

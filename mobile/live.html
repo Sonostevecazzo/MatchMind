@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080c11">
+<meta name="description" content="MatchMind Live · Risultati, eventi e simulazione tattica">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./site.css">
+<link rel="stylesheet" href="./mobile-readable.css?v=20261104-live">
+<link rel="stylesheet" href="./live.css">
+<title>MatchMind · Live</title>
+<script defer src="./site-core.js"></script>
+<script defer src="./live.js"></script>
+</head>
+<body data-page="live" data-title="Live" data-subtitle="Risultati, cronologia eventi e simulazione tattica illustrativa.">
+<div id="siteHeader"></div>
+<main class="page-wrap live-page">
+<div class="page-intro"><div class="eyebrow">MATCHMIND / LIVE CENTRE</div><h1 id="pageTitle">Live</h1><p id="pageSubtitle">Partite in corso e dati aggiornati dal provider.</p></div>
+<div id="liveStatus" class="live-status" role="status" aria-live="polite">Connessione al provider live…</div>
+<section id="liveListSection" class="section">
+ <div class="section-head"><div><h2>In diretta</h2><p id="liveListUpdated">Aggiornamento adattivo: 5 min durante il gioco, 15 min prima, 30 min senza eventi.</p></div><button id="refreshLive" class="secondary" type="button">Aggiorna</button></div>
+ <div id="liveMatches" class="live-match-list"><div class="loading-state">Caricamento partite…</div></div>
+</section>
+<section id="liveDetailSection" class="section" hidden>
+ <div class="live-detail-tools"><a class="live-back-link" href="./live.html">← Tutte le partite live</a><button id="refreshLiveDetail" class="secondary" type="button">Aggiorna ora</button></div>
+ <div id="liveScoreboard" class="live-scoreboard"><div class="loading-state">Caricamento partita…</div></div>
+ <section class="live-panel">
+  <div class="live-section-heading"><div><span class="eyebrow">MATCH SIMULATION</span><h2>Campo 2D</h2></div><span class="simulation-badge">SIMULAZIONE</span></div>
+  <div class="live-pitch-wrap">
+   <svg id="livePitch" class="live-pitch" viewBox="0 0 900 560" role="img" aria-label="Campo tattico simulato con posizioni illustrative delle squadre">
+    <defs><linearGradient id="pitchGrass" x1="0" x2="1"><stop offset="0" stop-color="#153c32"/><stop offset=".5" stop-color="#1a4938"/><stop offset="1" stop-color="#153c32"/></linearGradient></defs>
+    <rect x="8" y="8" width="884" height="544" rx="18" fill="url(#pitchGrass)" stroke="#9cc7a7" stroke-opacity=".65" stroke-width="3"/>
+    <path d="M450 8V552M8 280H892M450 8a112 112 0 0 0 0 224a112 112 0 0 0 0 224M450 168a112 112 0 1 0 0 224a112 112 0 0 0 0-224" fill="none" stroke="#c1ddca" stroke-opacity=".65" stroke-width="2"/>
+    <rect x="8" y="130" width="132" height="300" fill="none" stroke="#c1ddca" stroke-opacity=".7" stroke-width="2"/>
+    <rect x="760" y="130" width="132" height="300" fill="none" stroke="#c1ddca" stroke-opacity=".7" stroke-width="2"/>
+    <rect x="8" y="208" width="48" height="144" fill="none" stroke="#c1ddca" stroke-opacity=".7" stroke-width="2"/>
+    <rect x="844" y="208" width="48" height="144" fill="none" stroke="#c1ddca" stroke-opacity=".7" stroke-width="2"/>
+    <g id="pitchPlayers"></g>
+    <circle id="liveBall" cx="450" cy="280" r="10" fill="#fff" stroke="#17221e" stroke-width="4"/>
+   </svg>
+  </div>
+  <div id="simulationCaption" class="simulation-caption">La simulazione usa possesso e tiri aggregati. Le posizioni dei calciatori non sono coordinate di tracking.</div>
+  <div id="livePressure" class="live-pressure"></div>
+ </section>
+ <section class="live-panel">
+  <div class="live-section-heading"><div><span class="eyebrow">LINEUP</span><h2>Formazioni e giocatori</h2></div></div>
+  <div id="liveLineups" class="live-lineups"><div class="live-empty compact">Formazioni non ancora disponibili dal provider.</div></div>
+ </section>
+ <section class="live-panel">
+  <div class="live-section-heading"><div><span class="eyebrow">LIVE DATA</span><h2>Statistiche della partita</h2></div><small id="liveStatsUpdated">—</small></div>
+  <div id="liveStats" class="live-stats-grid"><div class="loading-state">Caricamento statistiche…</div></div>
+ </section>
+ <section class="live-panel">
+  <div class="live-section-heading"><div><span class="eyebrow">EVENT FEED</span><h2>Cronologia</h2></div></div>
+  <div id="liveEvents" class="live-events"><div class="loading-state">Caricamento eventi…</div></div>
+ </section>
+</section>
+<div class="live-disclaimer">Fonti live: API-Football quando configurato; in alternativa ESPN pubblico senza API key. Copertura, statistiche ed eventi possono variare per competizione e partita. Il campo 2D è una rappresentazione tattica illustrativa, non una ripresa né il tracciamento reale dei giocatori.</div>
+<div id="globalStatus" class="status-line" aria-live="polite"></div>
+<footer class="site-footer">MatchMind · Analisi statistiche, non certezze.</footer>
+</main>
+</body>
+</html>

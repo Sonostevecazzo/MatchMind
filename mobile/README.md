@@ -25,19 +25,22 @@ Optional sources:
 
 - **The Odds API** as an optional 1X2 feed from available European bookmakers: get a key at https://the-odds-api.com/. Coverage and quota depend on the current plan; the feed is not a substitute for Sisal-specific prices.
 - **OddsPapi** for Sisal IT quotes only: create a key at https://oddspapi.io/sportsbooks/sisal-it. MatchMind requests only `sisal.it` and supported 1X2, BTTS and Over/Under 2.5 markets. Fixture data are cached for 30 minutes, market metadata for 24 hours, and match quotes for 15 minutes; the browser reuses match context for 5 minutes.
+- **PulseScore Sisal API** as the primary direct Sisal feed: obtain a key at https://pulsescore.net/dashboard. MatchMind authenticates server-side with the `x-secret` header, reads the Italian Serie A fixture list, then requests the selected event's full board. It maps full-time 1X2, BTTS and Over/Under 2.5 into the quote comparison. Fixture and event responses are cached for 60 seconds.
 - **football-data.org** as a Serie A calendar/results fallback: register at https://www.football-data.org/client/register. Its free tier includes Serie A fixtures and delayed scores, with 10 requests/minute. MatchMind calls it only when the primary public CSV is unavailable and caches the season response for six hours.
-- **API-Football** for reported injuries, player-season stats and recent player appearances: create a free account at https://dashboard.api-football.com/register. Its free tier currently lists 100 requests/day. This source is still needed for Serie A injury and player data; the two alternatives above do not replace it.
+- **API-Football** as the primary Live Match Centre feed and optional source for reported injuries, player-season stats and recent player appearances: create an account at https://dashboard.api-football.com/register. The Live endpoint uses one fixture-detail request for events, statistics and lineups when coverage is available.
+- **ESPN public scoreboard** as the no-key Live fallback for Serie A and UEFA Champions League: https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard and https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard. MatchMind uses it when API_FOOTBALL_KEY is missing or API-Football fails. These endpoints are undocumented/unofficial and have no service-level guarantee; scores may be delayed and detailed events, statistics or lineups may be missing.
 
 In Cloudflare **Settings → Variables and Secrets**, add each available key as an **encrypted secret**:
 
 | Secret name | Enables |
 | --- | --- |
 | `THE_ODDS_API_KEY` | Alternative 1X2 quotes from available EU bookmakers |
-| `ODDSPAPI_API_KEY` | Sisal IT pre-match quotes and the odds comparison |
+| `PULSESCORE_API_KEY` | Primary direct Sisal IT feed: Serie A fixtures and full match boards |
+| `ODDSPAPI_API_KEY` | Optional fallback for Sisal IT pre-match quotes and the odds comparison |
 | `FOOTBALL_DATA_API_KEY` | Backup Serie A fixtures/results when the primary CSV source is down |
 | `API_FOOTBALL_KEY` | Injuries, player statistics and recent appearances |
 
-After saving secrets, trigger a new deployment. You can add only the providers you want; the base app and existing public CSV source continue to work without them. Open **Impostazioni** to enter and test an API-Football key for the current browser session, or configure encrypted secrets in Cloudflare for persistent use. The **Fonti e copertura** page shows which connections are active.
+After saving secrets, trigger a new deployment. PulseScore is the preferred Sisal source when `PULSESCORE_API_KEY` is present; OddsPapi is used as a fallback only when configured. You can add only the providers you want; the base app and existing public CSV source continue to work without them. Open **Impostazioni** to enter and test an API-Football key for the current browser session, or configure encrypted secrets in Cloudflare for persistent use. The **Fonti e copertura** page shows which connections are active.
 
 API-Football injury data is cached at the edge for up to four hours and player searches/form for up to six hours. A recent-form lookup can use multiple provider calls; avoid repeatedly forcing the same search. Provider quotas, coverage and update timing can change.
 
@@ -55,7 +58,7 @@ The service worker caches the app-shell pages, CSS and JavaScript for previously
 - Optional football-data.org fallback: current season fixtures and delayed results when the primary public CSV source cannot be reached.
 - Potential value is flagged at estimated EV of at least +3% only when the historical sample is sufficient. If injury data is missing or incomplete, the comparison uses the base historical estimate, labels it as such and asks the user to verify lineups; no partial injury adjustment is applied.
 - Missing keys, provider quota exhaustion and absent coverage are shown rather than filled with invented data. Secrets remain server-side.
-- The no-key public CSV source does not provide dependable player-level form, injuries, lineups or current pre-match odds.
+- The no-key calendar sources do not provide dependable player-level form, injuries, lineups or current pre-match odds. ESPN is only a fallback for live scores; it does not guarantee detailed event or team-stat coverage.
 - Data providers can change URLs, coverage or availability; the app handles missing historical seasons gracefully.
 - This is a research aid, not a trained AI model or a validated profitable betting system. Source attribution is shown in the app.
 
@@ -145,3 +148,11 @@ La pagina Intelligence genera tre schedine per il turno successivo:
 Per ogni gamba mostra la probabilità marginale. La probabilità complessiva è il prodotto delle probabilità delle singole selezioni, calcolato in log-spazio per evitare underflow numerico. Se anche una sola partita non ha un campione minimo adeguato, la probabilità complessiva viene omessa invece di essere inventata. Il prodotto assume indipendenza tra le partite: è una stima semplificata, non una probabilità congiunta calibrata. Le schedine non sono una raccomandazione di puntata e non dimostrano redditività.
 
 Le probabilità delle schedine riutilizzano il modello Poisson esistente. Il contesto classifica è mostrato separatamente e non modifica ancora le probabilità: prima di introdurre un aggiustamento motivazionale servono un backtest walk-forward multi-stagione, confronto con Poisson senza contesto e calibrazione separata per mercato. Questa scelta evita di attribuire coefficienti arbitrari alla cosiddetta motivazione.
+
+
+## Centro Live e simulazione
+
+- La rotta `/api/live-match` usa un secret server-side Cloudflare per il provider live; la chiave non entra nel bundle del browser.
+- Il piano gratuito API-Football dichiara 100 richieste al giorno. MatchMind aggiorna il punteggio live ogni 5 minuti e mette in cache la lista e il dettaglio partita per 5 minuti. Il dettaglio partita usa una sola richiesta `/fixtures?id=` per punteggio, eventi, statistiche e formazioni. Il monitoraggio schedine si aggiorna ogni 15 minuti solo quando la vista è aperta e ci sono eventi previsti nella data corrente. Il Live è adattivo: 5 minuti durante il gioco, 15 minuti prima del calcio d'inizio, 30 minuti se non ci sono eventi live e nessun polling dopo la fine.
+- Il campo 2D è una rappresentazione tattica illustrativa basata sulle formazioni iniziali (se disponibili) e su statistiche aggregate per pressione/pallone. Sotto il campo sono elencati titolari e riserve forniti dal provider. Non è tracking GPS/optical né una ricostruzione della posizione live dei calciatori.
+- Senza il secret, il Live mostra una condizione non disponibile, mentre calendario e analisi storiche continuano a funzionare.

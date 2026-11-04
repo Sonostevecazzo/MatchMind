@@ -1,47 +1,7 @@
 <!doctype html>
-<html lang="it">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080c11"><meta name="description" content="MatchMind · Impostazioni e provider">
-<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css">
-<title>MatchMind · Impostazioni</title><script defer src="./site-core.js"></script><script defer src="./site-pages.js"></script>
-</head>
-<body data-page="settings" data-title="Impostazioni" data-subtitle="Preferenze, fonti e connessioni dati.">
-<div id="siteHeader"></div>
-<main class="page-wrap settings-page">
- <div class="page-intro"><div class="eyebrow">MATCHMIND / SETTINGS</div><h1 id="pageTitle">Impostazioni</h1><p id="pageSubtitle">Preferenze, fonti e connessioni dati.</p></div>
- <section class="section">
-  <div class="section-head"><div><h2>Fonti facoltative</h2><p>Calendario, risultati, archivio storico e modello funzionano senza chiavi. Queste integrazioni aggiungono solo dati non presenti nei feed gratuiti.</p></div></div>
-  <article class="settings-provider">
-   <div class="settings-provider-head"><span class="provider-mark">AF</span><span><b>API-Football · opzionale</b><small>Giocatori e indisponibili, se il piano copre la Serie A 2026</small></span><span class="provider-live">ADD-ON</span></div>
-   <div class="field"><label for="apiFootballKey">API key</label><input id="apiFootballKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Incolla la tua chiave API-Football"></div>
-   <p class="settings-hint">Non necessaria per calendario, risultati, storico o analisi statistiche base. Conservata solo nella sessione corrente; la validità dipende dal piano e dalla copertura effettiva della competizione.</p>
-   <div class="settings-actions"><button class="primary" id="saveSessionKey">Usa in questa sessione</button><button id="testSessionKey">Verifica</button><button class="ghost" id="clearSessionKey">Rimuovi</button></div>
-   <div id="settingsProviderStatus" class="settings-status" aria-live="polite"></div><div id="settingsApiUsage" class="settings-usage"></div>
-  </article>
-  <article class="settings-provider">
-   <div class="settings-provider-head"><span class="provider-mark odds">OD</span><span><b>OddsPapi · Sisal · opzionale</b><small>Quote bookmaker reali per confronto e controllo schedine</small></span><span class="provider-live">ADD-ON</span></div>
-   <div class="field"><label for="oddsPapiKey">API key</label><input id="oddsPapiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Incolla la chiave OddsPapi"></div>
-   <div class="settings-actions"><button class="primary" id="saveOddsPapiKey">Usa in questa sessione</button><button id="testOddsPapiKey">Verifica</button><button class="ghost" id="clearOddsPapiKey">Rimuovi</button></div>
-   <div id="oddsPapiStatus" class="settings-status" aria-live="polite"></div>
-   <p class="settings-hint">Solo se possiedi già un accesso. Nessuna chiave è necessaria per le probabilità statistiche; senza quote reali non vengono calcolati EV, payout o proposte basate su prezzi bookmaker.</p>
-  </article>
- </section>
- 
- <section class="section">
-  <div class="section-head"><div><h2>Fonti e copertura</h2><p>Controlla gli aggiornamenti e i limiti dei provider.</p></div></div>
-  <a class="shortcut" href="data.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg></span><span><b>Stato fonti e copertura</b><small>Consumo API, disponibilità e metodologia MatchMind</small></span></a>
- </section>
- <section class="section">
-  <div class="section-head"><div><h2>Preferenze applicazione</h2><p>Funzioni di navigazione e dati.</p></div></div>
-  <div class="panel panel-pad">
-   <div class="data-row"><span>Competizione predefinita</span><b>Serie A · Italia</b></div>
-   <div class="data-row"><span>Fuso orario</span><b>Europe/Rome</b></div>
-   <div class="data-row"><span>Cache locale</span><b>Attiva · fallback offline</b></div>
-   <div class="data-row"><span>Modello</span><b>Baseline statistica Poisson</b></div>
-  </div>
- </section>
- <div class="notice warning">Non inserire mai chiavi API in chat, screenshot, URL o repository pubblici. La chiave di sessione è accessibile al browser e va usata solo su un dispositivo personale fidato. Per uso stabile, configura solo i provider aggiuntivi che ti servono.</div>
- <div class="status-line" id="globalStatus" aria-live="polite"></div><footer class="site-footer">MatchMind · Impostazioni e sicurezza provider.</footer>
-</main>
-</body></html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080c11"><meta name="description" content="MatchMind · Impostazioni"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261104-public"><title>MatchMind · Impostazioni</title><script defer src="./site-core.js"></script><script defer src="./site-pages.js"></script></head>
+<body data-page="settings" data-title="Impostazioni" data-subtitle="Preferenze locali e stato delle integrazioni opzionali."><div id="siteHeader"></div><main class="page-wrap settings-page"><div class="page-intro"><div class="eyebrow">MATCHMIND / SETTINGS</div><h1 id="pageTitle">Impostazioni</h1><p id="pageSubtitle">Preferenze locali e stato delle integrazioni opzionali.</p></div>
+<section class="section"><div class="section-head"><div><h2>Connessioni dati</h2><p>Il calendario pubblico funziona senza chiavi. Il Centro Live richiede il secret server-side API_FOOTBALL_KEY su Cloudflare Pages.</p></div></div><div class="panel panel-pad"><div class="data-row"><span>Calendario e risultati Serie A</span><b>Dataset CSV pubblici open-matchday</b></div><div class="data-row"><span>Archivio storico</span><b>Risultati inclusi nel dataset</b></div><div class="data-row"><span>Quote bookmaker</span><b>Non collegate</b></div><div class="data-row"><span>Centro Live</span><b>API-Football · opzionale</b></div><div class="data-row"><span>Infortuni e statistiche giocatori</span><b>Non integrati</b></div><div class="data-row"><span>Modello</span><b>Calcolo locale sui risultati disponibili</b></div></div></section>
+<section class="section"><div class="section-head"><div><h2>Fonti e copertura</h2><p>Origine, aggiornamento e limiti dei dati importati.</p></div></div><a class="shortcut" href="data.html"><span class="shortcut-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg></span><span><b>Stato fonti e metodologia</b><small>Licenza, aggiornamento e copertura</small></span></a></section>
+<section class="section"><div class="section-head"><div><h2>Preferenze applicazione</h2><p>Funzioni di navigazione e dati.</p></div></div><div class="panel panel-pad"><div class="data-row"><span>Competizione</span><b>Serie A</b></div><div class="data-row"><span>Fuso orario</span><b>Europe/Rome</b></div><div class="data-row"><span>Cache locale</span><b>Attiva · 15 minuti</b></div><div class="data-row"><span>Modello</span><b>Poisson statistico</b></div></div></section>
+<div class="notice warning">Il Live funziona solo se API_FOOTBALL_KEY è configurata come secret Cloudflare. La chiave non va inserita nel browser o nel repository. Quote, assenze e statistiche giocatori restano non collegate.</div><div class="status-line" id="globalStatus" aria-live="polite"></div><footer class="site-footer">MatchMind · Il calendario pubblico non richiede chiavi API; il Live usa un secret server-side opzionale.</footer></main></body></html>

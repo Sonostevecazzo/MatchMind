@@ -1,0 +1,10 @@
+.analysis-overview{display:grid;gap:12px}
+.analysis-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.analysis-summary{display:grid;gap:6px;min-width:0;padding:16px;border:1px solid #293840;border-radius:14px;background:linear-gradient(145deg,#131f26,#10171d)}
+.analysis-summary span{font-size:12px;color:#a7b4ba;font-weight:750}
+.analysis-summary b{font-size:29px;line-height:1.1;color:#e5f6c4;font-variant-numeric:tabular-nums}
+.analysis-summary small{font-size:11px;color:#899aa2;line-height:1.4}
+.analysis-page .panel p{font-size:14px;line-height:1.65;color:#b2c0c4}
+.analysis-page .panel .text-link{display:inline-block;margin-top:8px}
+@media(max-width:700px){.analysis-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.analysis-summary{padding:13px}.analysis-summary b{font-size:26px}}
+@media(max-width:360px){.analysis-summary-grid{grid-template-columns:1fr 1fr}.analysis-summary span{font-size:11px}}

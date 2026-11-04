@@ -98,3 +98,20 @@ test("free Serie A event forecast uses only prior data and enforces minimum samp
   const futureOnly = window.MM.eventForecast(target, rows.map(row => ({ ...row, date: "2025-03-01" })));
   assert.equal(futureOnly.corners.available, false);
 });
+
+test("forecast exposes venue form, standings and manual availability adjustments", () => {
+  const rows=[];
+  for(let i=0;i<24;i++){
+    const date=new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10);
+    rows.push({date,home:i%2?"Beta FC":"Alpha FC",away:i%2?"Alpha FC":"Beta FC",hg:i%3?2:0,ag:i%3?0:1,competition:"serie-a"});
+  }
+  const match={date:"2025-02-01",home:"Alpha FC",away:"Beta FC",competition:"serie-a"};
+  const base=window.MM.forecast(match,rows);
+  const adjusted=window.MM.forecast(match,rows,{attackingAbsencesHome:2,defensiveAbsencesAway:1,motivationHome:1});
+  assert.ok(base.home.played>=10);
+  assert.ok(Array.isArray(base.home.form));
+  assert.equal(base.standings.available,true);
+  assert.ok(["alta","media","limitata","molto bassa"].includes(base.confidence));
+  assert.ok(adjusted.homeXg<base.homeXg);
+  assert.ok(adjusted.homeVenue.played>0);
+});

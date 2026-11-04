@@ -31,10 +31,13 @@ jobs:
           node --check mobile/elo.js
           node --check mobile/bets-engine.js
           node --check mobile/bets.js
+          node --check mobile/live.js
           node --check mobile/sw.js
-      - name: Check Cloudflare Pages Function
-        run: node --input-type=module --check < mobile/functions/api/player-context.js
-      - name: Test chronological round analysis
-        run: node --test mobile/tests/rounds.test.mjs
-      - name: Test RSS parser
-        run: node --test mobile/tests/news-rss.test.mjs
+      - name: Check Cloudflare Pages Functions
+        run: |
+          node --input-type=module --check < mobile/functions/api/public-calendar.js
+          node --input-type=module --check < mobile/functions/api/live-match.js
+      - name: Test chronological round analysis and live data normalization
+        run: node --test mobile/tests/rounds.test.mjs mobile/tests/live-match.test.mjs
+      - name: Run complete PWA validation suite
+        run: python mobile/check.py
