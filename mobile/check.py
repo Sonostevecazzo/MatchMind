@@ -13,7 +13,7 @@ assert manifest.get("name") and manifest.get("display") == "standalone"
 assert (ROOT / "sw.js").is_file()
 
 required_pages = [
-    "index.html", "nba.html", "matches.html", "explore.html", "league.html",
+    "index.html", "matches.html", "explore.html", "league.html",
     "team.html", "match.html", "players.html", "analysis-lab.html", "bets.html", "data.html", "settings.html",
 ]
 for name in required_pages:
@@ -26,9 +26,6 @@ for name in required_pages:
         continue
     assert "site-core.js" in html, f"{name} must use shared navigation"
     assert "mobile-readable.css" in html, f"{name} must load the dedicated mobile typography layer"
-    if name == "nba.html":
-        assert "nba.js" in html, "NBA page must load its dedicated controller"
-        continue
     if name == "bets.html":
         assert "bets-engine.js" in html and "bets.js" in html, "Bet checker must load its engine and controller"
         assert re.search(r'<input id="slipImage"[^>]*accept="image/\*"[^>]*hidden>', html), "Screenshot picker must accept gallery images"
@@ -46,7 +43,7 @@ with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as handle:
     handle.flush()
     subprocess.run(["node", "--check", handle.name], check=True)
 
-for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "tipsaudit.js", "bets.js", "nba.js", "elo.js", "rounds.js", "sw.js"]:
+for filename in ["site-core.js", "site-pages.js", "bets-engine.js", "tipsaudit.js", "bets.js", "elo.js", "rounds.js", "sw.js"]:
     subprocess.run(["node", "--check", str(ROOT / filename)], check=True)
 
 for path in [
