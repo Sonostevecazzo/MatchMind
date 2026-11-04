@@ -39,3 +39,5 @@ jobs:
           node --input-type=module --check < mobile/functions/api/live-match.js
       - name: Test chronological round analysis and live data normalization
         run: node --test mobile/tests/rounds.test.mjs mobile/tests/live-match.test.mjs
+      - name: Run complete PWA validation suite
+        run: python mobile/check.py
