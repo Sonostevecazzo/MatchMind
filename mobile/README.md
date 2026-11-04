@@ -152,6 +152,6 @@ Le probabilità delle schedine riutilizzano il modello Poisson esistente. Il con
 ## Centro Live e simulazione
 
 - La rotta `/api/live-match` usa un secret server-side Cloudflare per il provider live; la chiave non entra nel bundle del browser.
-- Il piano gratuito API-Football dichiara 100 richieste al giorno. MatchMind aggiorna il punteggio live ogni 2 minuti e mette in cache eventi e statistiche per 5 minuti. Il monitoraggio schedine si aggiorna ogni 5 minuti solo quando la vista è aperta e ci sono eventi previsti nella data corrente.
+- Il piano gratuito API-Football dichiara 100 richieste al giorno. MatchMind aggiorna il punteggio live ogni 5 minuti e mette in cache il risultato live per 5 minuti. Il monitoraggio schedine si aggiorna ogni 5 minuti solo quando la vista è aperta e ci sono eventi previsti nella data corrente.
 - Il campo 2D è una rappresentazione tattica illustrativa basata su statistiche aggregate. Non è tracking GPS/optical dei calciatori.
 - Senza il secret, il Live mostra una condizione non disponibile, mentre calendario e analisi storiche continuano a funzionare.
