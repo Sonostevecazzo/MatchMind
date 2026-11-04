@@ -47,7 +47,12 @@
   function train(history,forecastFn,competition){
     const key=competition||"serie-a",today=new Date().toISOString().slice(0,10),all=readModels(),previous=all[key];
     const scoredFixtures=(history||[]).filter(m=>m&&m.date&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag))&&(m.competition||"serie-a")===key).slice().sort((a,b)=>a.date.localeCompare(b.date));
-    const signature=[scoredFixtures.length,scoredFixtures[0]?.date,scoredFixtures.at(-1)?.date].join("|");
+    let fingerprint=2166136261;
+    for(const row of scoredFixtures){
+      const value=[row.date,row.home,row.away,row.hg,row.ag].join("|");
+      for(let i=0;i<value.length;i++){fingerprint^=value.charCodeAt(i);fingerprint=Math.imul(fingerprint,16777619)>>>0;}
+    }
+    const signature=[scoredFixtures.length,scoredFixtures[0]?.date,scoredFixtures.at(-1)?.date,fingerprint.toString(16)].join("|");
     if(previous&&previous.version===VERSION&&previous.trainedDay===today&&previous.signature===signature)return previous;
     const scored=[];
     let prior=[];
