@@ -207,8 +207,8 @@
       if (best) candidates.push(best);
     }
 
-    candidates.sort((a, b) => b.probability - a.probability ||
-      String(a.match.date).localeCompare(String(b.match.date)));
+    candidates.sort((a, b) => Number(Boolean(b.preferredByUser)) - Number(Boolean(a.preferredByUser)) ||
+      b.probability - a.probability || String(a.match.date).localeCompare(String(b.match.date)));
     if (!candidates.length) {
       return {
         available: false,
