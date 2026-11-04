@@ -41,3 +41,5 @@ jobs:
         run: node --test mobile/tests/rounds.test.mjs mobile/tests/live-match.test.mjs
       - name: Run complete PWA validation suite
         run: python mobile/check.py
+      - name: Run complete PWA validation suite
+        run: python mobile/check.py
