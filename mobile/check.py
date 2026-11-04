@@ -42,7 +42,7 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v55-20261104-statistical-bets" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v56-20261104-context-sync" in (ROOT/"sw.js").read_text(encoding="utf-8")
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
