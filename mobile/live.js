@@ -31,11 +31,13 @@
   }
 
   function renderList(payload) {
-    $("liveStatus").textContent = payload.matches.length ? "Provider collegato · " + payload.matches.length + " partite in corso" : "Provider collegato · nessuna partita in corso in questa competizione.";
+    const sourceLabel = payload.sourceLabel || payload.source || "Fonte live";
+    const fallbackInfo = payload.fallbackReason ? " · fallback attivo: " + payload.fallbackReason : "";
+    $("liveStatus").textContent = sourceLabel + fallbackInfo + (payload.matches.length ? " · " + payload.matches.length + " partite in corso" : " · nessuna partita in corso in questa competizione.");
     listMatchCount = payload.matches.length;
     $("liveListUpdated").textContent = "Ultimo controllo " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + " · refresh adattivo: 5 min in partita, 15 min prima, 30 min senza eventi.";
     $("liveMatches").innerHTML = payload.matches.length ? payload.matches.map(match => (
-      '<a class="live-match-card" href="./live.html?fixture=' + encodeURIComponent(match.id) + '&competition=' + encodeURIComponent(competition) + '">' +
+      '<a class="live-match-card" href="./live.html?fixture=' + encodeURIComponent(match.id) + '&competition=' + encodeURIComponent(competition) + '&source=' + encodeURIComponent(payload.source === "ESPN" ? "espn" : "api-football") + '&date=' + encodeURIComponent(String(match.date || "").slice(0,10)) + '&home=' + encodeURIComponent(match.home.name) + '&away=' + encodeURIComponent(match.away.name) + '">' +
         '<div class="live-match-meta"><span class="live-indicator"><i></i> LIVE</span><span>' + esc(match.league || "Calcio") + '</span><b>' + esc(minute(match)) + '</b></div>' +
         '<div class="live-match-teams"><div>' + logo(match.home) + '<b>' + esc(match.home.name) + '</b></div><strong>' + esc(match.goals.home ?? "—") + ' – ' + esc(match.goals.away ?? "—") + '</strong><div>' + logo(match.away) + '<b>' + esc(match.away.name) + '</b></div></div>' +
         '<div class="live-match-footer">Apri Match Simulation <span>→</span></div>' +
@@ -181,7 +183,9 @@
     const match = payload.fixture;
     if (!match) throw new Error("Partita non trovata.");
     lastDetail = payload;
-    $("liveStatus").textContent = "Live Match Centre · aggiornamento " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    const sourceLabel = payload.sourceLabel || payload.source || "Fonte live";
+    const fallbackInfo = payload.fallbackReason ? " · fallback: " + payload.fallbackReason : "";
+    $("liveStatus").textContent = sourceLabel + fallbackInfo + " · aggiornamento " + new Date(payload.updatedAt || Date.now()).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     $("liveScoreboard").innerHTML = '<div class="live-match-meta"><span class="live-indicator"><i></i> ' + esc(match.statusLong || "LIVE") + '</span><span>' + esc(match.league || "Calcio") + '</span><b>' + esc(minute(match)) + '</b></div><div class="live-score-teams"><div>' + logo(match.home) + '<b>' + esc(match.home.name) + '</b></div><strong>' + esc(match.goals.home ?? "—") + ' – ' + esc(match.goals.away ?? "—") + '</strong><div>' + logo(match.away) + '<b>' + esc(match.away.name) + '</b></div></div><small>' + esc(match.venue || "Stadio non comunicato") + '</small>';
     renderSimulation(match);
     renderLineups(payload.lineups || []);
@@ -219,7 +223,9 @@
         $("liveDetailSection").hidden = false;
         $("liveListSection").hidden = true;
         $("liveStatus").textContent = "Aggiornamento dati partita…";
-        const payload = await requestLive("?fixture=" + encodeURIComponent(fixtureId) + "&competition=" + encodeURIComponent(competition));
+        const detailParams = new URLSearchParams({ fixture: fixtureId, competition, source: params.get("source") || "api-football" });
+        ["date", "home", "away"].forEach(key => { if (params.get(key)) detailParams.set(key, params.get(key)); });
+        const payload = await requestLive("?" + detailParams.toString());
         renderDetail(payload);
         requestFailed = false;
       } else {
