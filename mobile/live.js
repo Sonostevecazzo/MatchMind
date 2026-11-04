@@ -124,6 +124,29 @@
       : "Statistiche di pressione non disponibili: il pallone resta neutro. Le posizioni sono di formazione, non tracking live.");
   }
 
+  function renderLineups(lineups) {
+    const target = $("liveLineups");
+    if (!target) return;
+    const rows = Array.isArray(lineups) ? lineups : [];
+    const available = rows.filter(team => Array.isArray(team.startXI) && team.startXI.length);
+    if (!available.length) {
+      target.innerHTML = '<div class="live-empty compact">Le formazioni non sono ancora disponibili dal provider.</div>';
+      return;
+    }
+    target.innerHTML = available.map(team => {
+      const starters = team.startXI.map(player =>
+        '<li><b>' + esc(player.number ?? "—") + '</b><span>' + esc(player.name) + '</span><small>' + esc(player.position || "") + '</small></li>'
+      ).join("");
+      const substitutes = (team.substitutes || []).map(player =>
+        '<li><b>' + esc(player.number ?? "—") + '</b><span>' + esc(player.name) + '</span><small>' + esc(player.position || "") + '</small></li>'
+      ).join("");
+      const reserveBlock = substitutes
+        ? '<details><summary>Riserve (' + team.substitutes.length + ')</summary><ol>' + substitutes + '</ol></details>'
+        : '';
+      return '<article class="live-lineup-team"><div class="live-lineup-heading"><b>' + esc(team.team || "Squadra") + '</b><span>' + esc(team.formation || "Modulo non indicato") + '</span></div><h3>Titolari</h3><ol>' + starters + '</ol>' + reserveBlock + '</article>';
+    }).join("");
+  }
+
   function renderStats(match) {
     const specs = [
       ["Possesso", "Ball Possession", true],
@@ -158,6 +181,7 @@
     $("liveStatus").textContent = "Live Match Centre · aggiornamento " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     $("liveScoreboard").innerHTML = '<div class="live-match-meta"><span class="live-indicator"><i></i> ' + esc(match.statusLong || "LIVE") + '</span><span>' + esc(match.league || "Calcio") + '</span><b>' + esc(minute(match)) + '</b></div><div class="live-score-teams"><div>' + logo(match.home) + '<b>' + esc(match.home.name) + '</b></div><strong>' + esc(match.goals.home ?? "—") + ' – ' + esc(match.goals.away ?? "—") + '</strong><div>' + logo(match.away) + '<b>' + esc(match.away.name) + '</b></div></div><small>' + esc(match.venue || "Stadio non comunicato") + '</small>';
     renderSimulation(match);
+    renderLineups(payload.lineups || []);
     renderStats(match);
     renderEvents(payload.events, match);
   }
