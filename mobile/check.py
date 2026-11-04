@@ -13,7 +13,7 @@ assert manifest.get("name") and manifest.get("display") == "standalone"
 assert (ROOT / "sw.js").is_file()
 
 required_pages = [
-    "index.html", "nba.html", "matches.html" "explore.html", "league.html",
+    "index.html", "nba.html", "matches.html", "explore.html", "league.html",
     "team.html", "match.html", "players.html", "analysis-lab.html", "bets.html", "data.html", "settings.html",
 ]
 for name in required_pages:
@@ -151,3 +151,7 @@ assert "loadOddsBoard" in (ROOT / "bets.js").read_text(encoding="utf-8"), "Live 
 
 assert "nba.html" in (ROOT / "sw.js").read_text(encoding="utf-8"), "NBA page missing from PWA shell"
 assert "type === \"boxscore\"" in (ROOT / "functions" / "api" / "nba.js").read_text(encoding="utf-8"), "NBA boxscore endpoint missing"
+
+core_sources = (ROOT / "site-core.js").read_text(encoding="utf-8")
+assert "open-matchday" not in core_sources and "football-dataset" not in core_sources and "openfootball" not in core_sources, "Legacy multi-source football feeds must not be used"
+assert "type=calendar" in core_sources, "Canonical API-Football calendar is not wired to the app"
