@@ -83,3 +83,8 @@
 .live-lineup-team details{margin-top:10px;border-top:1px solid #ffffff13;padding-top:8px}
 .live-lineup-team summary{color:#b3c4c3;font-size:12px;font-weight:800;cursor:pointer}
 @media(max-width:560px){.live-lineups{grid-template-columns:1fr}.live-lineup-team{padding:11px}}
+
+.live-detail-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
+.live-detail-tools .live-back-link{margin:0}
+.live-detail-tools button{min-height:40px;padding:7px 12px;font-size:12px}
+@media(max-width:390px){.live-detail-tools button{min-height:42px;padding:7px 9px;font-size:11px}}
