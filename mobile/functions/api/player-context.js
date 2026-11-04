@@ -1116,6 +1116,7 @@ async function getCanonicalCalendar(context, season) {
   if (!getApiFootballKey(context)) {
     return responseJson({configured:false,type:"calendar",error:"Per calendario, risultati e storico è necessaria una chiave API-Football. Inseriscila in Impostazioni."},503);
   }
+  const matches=[],history=[],errors=[];
   const competitions=[{id:"serie-a",league:SERIE_A_ID},{id:"champions-league",league:2}];
   const jobs=competitions.flatMap(competition=>Array.from({length:5},(_,index)=>({competition,year:season-index})));
   const results=await Promise.allSettled(jobs.map(async job=>{
