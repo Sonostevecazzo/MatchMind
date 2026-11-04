@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v56-20261104-context-sync';
+const CACHE='matchmind-pwa-v57-20261104-navigation-cleanup';
 const APP_SHELL=[
  './','./index.html','./matches.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
