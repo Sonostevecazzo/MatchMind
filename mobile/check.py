@@ -13,8 +13,8 @@ for name in required:
  html=p.read_text(encoding="utf-8")
  assert '<html lang="it">' in html,f"{name} must declare Italian"
  if name=="matches.html":
-  assert "location.replace(target.href)" in html
-  continue
+  assert 'id="matchFilters"' in html and 'id="matchList"' in html
+  assert 'id="matchSlipPreview"' in html
  assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
@@ -42,12 +42,12 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v56-20261104-context-sync" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v57-20261104-navigation-cleanup" in (ROOT/"sw.js").read_text(encoding="utf-8")
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
 assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
-assert 'id="matchSlipPreview"' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert 'id="matchSlipPreview"' in (ROOT/"matches.html").read_text(encoding="utf-8")
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "Sisal" not in bets_js and "playerApi" not in bets_js
 assert "matchStandingsContext" in core and "pointsPerGame" in core
