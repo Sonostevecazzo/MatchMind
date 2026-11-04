@@ -67,4 +67,21 @@ async function getPublicCalendar(){
  const body={configured:true,type:"calendar",source:"open-matchday + openfootball storico",season,matches,history,errors,updatedAt:new Date().toISOString(),note:"Calendari e risultati aggiornati quotidianamente dal dataset open-matchday; statistiche evento solo quando presenti. Archivio Serie A precedente da openfootball. Nessun dato live, quote, xG, formazioni o infortuni."};
  return new Response(JSON.stringify(body),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"public, max-age="+CACHE_SECONDS}});
 }
-export async function onRequestGet(){return getPublicCalendar();}
+export async function onRequestGet(context){
+ const request=context.request;
+ const cache=caches.default;
+ const cacheKey=new Request(new URL(request.url).toString(),{method:"GET"});
+ try{
+  const cached=await cache.match(cacheKey);
+  if(cached)return cached;
+ }catch(_){/* Continue with live sources if the edge cache is unavailable. */}
+ const response=await getPublicCalendar();
+ if(response.ok){
+  const headers=new Headers(response.headers);
+  headers.set("Cache-Control","public, max-age=60, s-maxage="+CACHE_SECONDS+", stale-while-revalidate=3600");
+  const cacheable=new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+  try{context.waitUntil(cache.put(cacheKey,cacheable.clone()));}catch(_){/* Cache is an optimization, never a hard dependency. */}
+  return cacheable;
+ }
+ return response;
+}
