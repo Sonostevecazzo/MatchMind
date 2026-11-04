@@ -3,7 +3,7 @@
 "use strict";
 const $=id=>document.getElementById(id),ENGINE=()=>window.MatchMindBets;
 const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2";
-let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[];
+let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -40,9 +40,12 @@ function renderFixture(match){
  '<div class="fixture-market-options">'+buttons+'</div><details class="manual-other-markets"><summary>Contesto squadra: assenze, infortuni e motivazione</summary><div class="context-controls"><div class="context-grid">'+absenceHtml+'</div>'+motivationHtml+'<small>Inserisci solo titolari realmente indisponibili. Le assenze sono una correzione indicativa, non una valutazione del valore individuale del giocatore. La motivazione automatica deriva dalla classifica; l’impostazione manuale è una tua valutazione.</small></div></details></article>';
 }
 function renderFixtures(){
- const target=$("manualFixtures"),query=norm($("matchSearch").value);
- const rows=fixtures.filter(m=>!query||norm(m.home).includes(query)||norm(m.away).includes(query));
- target.innerHTML=rows.length?rows.slice(0,120).map(renderFixture).join(""):'<div class="empty-state">Nessuna partita futura trovata.</div>';
+ const target=$("manualFixtures"),query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
+ const rows=fixtures.filter(m=>(!query||norm(m.home).includes(query)||norm(m.away).includes(query))&&(!date||m.date===date)&&(!team||norm(m.home)===norm(team)||norm(m.away)===norm(team))&&(!round||String(m.round||"")===round));
+ const visible=rows.slice(0,visibleFixtureLimit);
+ target.innerHTML=visible.length?visible.map(renderFixture).join(""):'<div class="empty-state">Nessuna partita corrisponde ai filtri. Modifica la ricerca.</div>';
+ const count=$("betsFixtureCount");if(count)count.textContent=rows.length+" partite trovate · visualizzate "+visible.length;
+ const more=$("moreBetFixtures");if(more)more.hidden=rows.length<=visibleFixtureLimit;
 }
 function selectedRows(){
  return picks.map(p=>{const match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(!match)return null;const forecast=getForecast(match),market=markets().find(x=>x[0]===p.marketKey);if(!market)return null;return{match,marketKey:p.marketKey,marketLabel:market[1],probability:marketProbability(forecast,p.marketKey),forecast};}).filter(Boolean);
@@ -95,7 +98,10 @@ async function shareTicket(ticket){
  try{if(navigator.share)await navigator.share({title:"Schedina MatchMind",text:body});else{await navigator.clipboard.writeText(body);$("archiveStatus").textContent="Schedina copiata negli appunti.";}}catch(e){if(e.name!=="AbortError")$("archiveStatus").textContent="Condivisione non disponibile in questo browser.";}
 }
 function initEvents(){
- $("matchSearch").addEventListener("input",renderFixtures);
+ $("matchSearch").addEventListener("input",()=>{visibleFixtureLimit=12;renderFixtures();});
+ ["betsDate","betsTeam","betsRound"].forEach(id=>$(id)?.addEventListener("change",()=>{visibleFixtureLimit=12;renderFixtures();}));
+ $("clearBetsFilters")?.addEventListener("click",()=>{$("matchSearch").value="";$("betsDate").value="";$("betsTeam").value="";$("betsRound").value="";visibleFixtureLimit=12;renderFixtures();});
+ $("moreBetFixtures")?.addEventListener("click",()=>{visibleFixtureLimit+=12;renderFixtures();});
  $("manualFixtures").addEventListener("click",event=>{
   const b=event.target.closest("[data-pick]");if(!b)return;
   const fixture=fixtures.find(m=>fixtureKey(m)===b.dataset.pick);if(!fixture)return;
@@ -139,6 +145,9 @@ document.addEventListener("DOMContentLoaded",async()=>{
       save(ARCHIVE_KEY,archive);
     }
   }
+  const teamSelect=$("betsTeam"),roundSelect=$("betsRound");
+  if(teamSelect)teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+window.MM.getTeams(fixtures).map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");
+  if(roundSelect){const rounds=[...new Set(fixtures.map(m=>String(m.round||"")).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));roundSelect.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+esc(n)+'">Giornata '+esc(n)+'</option>').join("");}
   renderFixtures();renderSlip();renderArchive();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
