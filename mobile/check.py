@@ -18,6 +18,8 @@ for name in required:
  assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
+ elif name=="live.html":
+  assert "live.js" in html
  else: assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
@@ -40,11 +42,15 @@ assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
+assert "live.html" in core and "Live" in core
 assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
 assert "matchmind-pwa-v58-20261104-live-matchsim" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "./analysis.css" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert (ROOT/"functions"/"api"/"live-match.js").is_file()
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
