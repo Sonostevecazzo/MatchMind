@@ -1,6 +1,6 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v3-apifootball';
+  const CACHE_KEY='matchmind-multipage-cache-v4-public-dataset';
   const COMPETITIONS={
     'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:135,apiLeague:135,fallback:'A'},
     'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:2,apiLeague:2,fallback:'CL'}
@@ -21,23 +21,22 @@
   function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
   const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
   function readCache(){try{const own=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');return own&&Array.isArray(own.matches)?own:null;}catch{return null;}}
-  let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'API-Football',updatedAt:null};
+  let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'openfootball',updatedAt:null};
   async function loadData(force=false){
     if(dataPromise&&!force)return dataPromise;
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
       if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       const headers={Accept:'application/json'};
-      try{const key=sessionStorage.getItem('matchmind-api-football-session-key');if(key)headers['X-MatchMind-API-Key']=key;}catch{}
-      const response=await fetch('./api/player-context?type=calendar',{headers,cache:'no-store'});
+      const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store'});
       let payload={};try{payload=await response.json();}catch{}
       if(!response.ok||payload.error||payload.configured===false){
-        const message=payload.error||'API-Football non disponibile. Configura la chiave API nelle Impostazioni.';
-        if(cached&&cached.matches?.length){data={...cached,source:'cache · API-Football',stale:true,error:message};return data;}
+        const message=payload.error||'Fonte pubblica openfootball non disponibile.';
+        if(cached&&cached.matches?.length){data={...cached,source:'cache · openfootball',stale:true,error:message};return data;}
         throw new Error(message);
       }
-      if(!Array.isArray(payload.matches)||!payload.matches.length)throw new Error('API-Football non ha restituito il calendario richiesto.');
-      data={matches:payload.matches,history:Array.isArray(payload.history)?payload.history:[],season:payload.season||y,source:'API-Football',updatedAt:Date.now(),sourceMode:'single-provider'};
+      if(!Array.isArray(payload.matches)||!payload.matches.length)throw new Error('Il dataset pubblico non ha restituito partite per questa stagione.');
+      data={matches:payload.matches,history:Array.isArray(payload.history)?payload.history:[],season:payload.season||y,source:'openfootball',updatedAt:Date.now(),sourceMode:'public-dataset'};
       try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
       return data;
     })().catch(error=>{dataPromise=null;throw error;});
