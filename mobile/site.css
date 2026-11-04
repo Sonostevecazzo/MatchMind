@@ -1074,3 +1074,11 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 .context-motivation{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .context-controls>small{display:block;margin-top:9px;color:var(--muted,#93a1b0);font-size:.78rem;line-height:1.5}
 @media(max-width:560px){.fixture-forecast-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.fixture-market-options{grid-template-columns:repeat(2,minmax(0,1fr))}.context-grid,.context-motivation{grid-template-columns:1fr}.match-slip-dock{align-items:flex-start;flex-direction:column}.match-slip-dock>a,.match-slip-dock>button{width:100%;text-align:center}}
+
+
+/* Mobile/tablet scrolling: keep a single natural document scroll area. */
+@media (max-width: 760px){
+ body{height:auto!important;min-height:100dvh!important;overflow-x:hidden!important;overflow-y:auto!important}
+ .page-wrap{height:auto!important;min-height:0!important;overflow:visible!important;max-height:none!important;padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
+ .mobile-nav{touch-action:manipulation}
+}
