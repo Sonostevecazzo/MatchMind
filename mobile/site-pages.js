@@ -37,9 +37,14 @@
  };
  const updateMatchSlipActions=()=>{
   const dock=$('matchSlipActions');if(!dock)return;
-  const competition=MM().getSelectedCompetition(),count=readMatchPicks().filter(x=>(x.competition||"serie-a")===competition).length;
-  dock.hidden=count===0;
-  $('matchSlipCount').textContent=String(count);
+  const competition=MM().getSelectedCompetition(),picks=readMatchPicks().filter(x=>(x.competition||"serie-a")===competition);
+  dock.hidden=picks.length===0;$('matchSlipCount').textContent=String(picks.length);
+  const data=MM().data,labels={home:"1",draw:"X",away:"2",over15:"Over 1,5",under15:"Under 1,5",over25:"Over 2,5",under25:"Under 2,5",over35:"Over 3,5",under35:"Under 3,5",bttsYes:"Gol",bttsNo:"No Gol"};
+  const rows=picks.map(p=>{const m=(data&&data.matches||[]).find(x=>x.date===p.date&&MM().norm(x.home)===MM().norm(p.home)&&MM().norm(x.away)===MM().norm(p.away));if(!m||!data.history||!window.MatchMindBets)return null;const probability=window.MatchMindBets.marketProbability(MM().forecast(m,data.history),p.marketKey);return{match:m,label:labels[p.marketKey]||p.marketKey,probability};}).filter(Boolean);
+  const combined=rows.length===picks.length?rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1):null;
+  $('matchSlipProbability').textContent='Probabilità stimata: '+(combined===null?'—':fmt(combined*100,1)+'%');
+  const preview=$('matchSlipPreview');if(preview)preview.innerHTML=rows.map(x=>'<div class="match-slip-preview-row"><span><b>'+esc(x.match.home)+' – '+esc(x.match.away)+'</b><small>'+esc(x.label)+' · '+esc(MM().shortDate(x.match))+'</small></span><b>'+fmt((x.probability||0)*100,1)+'%</b></div>').join('')+'<small>Quote non utilizzate. Probabilità combinate con ipotesi di indipendenza.</small>';
+  const toggle=$('toggleMatchSlip');if(toggle&&!toggle.dataset.bound){toggle.dataset.bound='1';toggle.addEventListener('click',()=>{preview.hidden=!preview.hidden;toggle.textContent=preview.hidden?'Mostra schedina':'Nascondi schedina';});}
  };
  const matchCard=(m,showMarketPicker=false)=>{
   const done=MM().hasScore(m),state=MM().status(m),score=done?m.hg+' – '+m.ag:(m.time||'VS'),competition=MM().competitionInfo(m);
