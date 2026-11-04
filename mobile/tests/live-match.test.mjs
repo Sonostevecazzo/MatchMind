@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeFixture, normalizeEvents, normalizeStatistics, onRequestGet } from "../functions/api/live-match.js";
+import { normalizeFixture, normalizeEvents, normalizeStatistics, normalizeLineups, onRequestGet } from "../functions/api/live-match.js";
 
 test("normalizes a live fixture without losing score or minute", () => {
   const row = {
@@ -47,4 +47,22 @@ test("fails closed when the server-side provider secret is missing", async () =>
   assert.equal(payload.configured, false);
   assert.equal(payload.code, "missing_api_football_key");
   assert.equal(JSON.stringify(payload).includes("secret"), true);
+});
+
+test("normalizes starting XI formation and player grid", () => {
+  const result = normalizeLineups([
+    {
+      team: { id: 1, name: "Home FC" },
+      formation: "4-3-3",
+      coach: { name: "Coach" },
+      startXI: [
+        { player: { id: 10, name: "Goalkeeper", number: 1, pos: "G", grid: "1:1" } },
+        { player: { id: 11, name: "Defender", number: 4, pos: "D", grid: "2:2" } }
+      ]
+    }
+  ]);
+  assert.equal(result[0].formation, "4-3-3");
+  assert.equal(result[0].startXI[0].number, 1);
+  assert.deepEqual(result[0].startXI[0].grid, { row: 1, column: 1 });
+  assert.deepEqual(result[0].startXI[1].grid, { row: 2, column: 2 });
 });
