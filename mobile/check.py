@@ -15,6 +15,8 @@ for name in required:
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
   assert 'id="matchSlipPreview"' in html
+ if name=="analysis-lab.html":
+  assert 'id="analysisOverview"' in html and "bets-engine.js" in html
  assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
@@ -51,11 +53,10 @@ assert "window.MatchMindAI.train" in core
 assert "trainAvailableModels(data.history)" not in core, "AI calibration must not run on the mobile UI thread"
 assert "AbortSignal.timeout(25000)" in core
 assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
-assert 'id="adaptiveAIStatus"' in (ROOT/"analysis-lab.html").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v67-20261105-edge-cache-render" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v68-20261105-selected-analysis" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
@@ -86,4 +87,8 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v67-20261105-edge-cache-render" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v68-20261105-selected-analysis" in (ROOT/"sw.js").read_text(encoding="utf-8")
+
+assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "manual-slip-dropdown" in (ROOT/"bets.js").read_text(encoding="utf-8")

@@ -12,35 +12,11 @@
 <link rel="stylesheet" href="./analysis.css">
 <title>MatchMind · Analisi</title>
 <script defer src="./site-core.js"></script><script defer src="./ai-engine.js"></script>
-<script defer src="./elo.js"></script>
+<script defer src="./elo.js"></script><script defer src="./bets-engine.js"></script>
 <script defer src="./site-pages.js"></script>
 </head>
 <body data-page="mind" data-title="Analisi" data-subtitle="Qualità del campione, verifica del modello e trasparenza delle stime.">
 <div id="siteHeader"></div>
-<main class="page-wrap analysis-page">
- <div class="page-intro"><div class="eyebrow">MATCHMIND / MODEL AUDIT</div><h1 id="pageTitle">Analisi</h1><p id="pageSubtitle">Controlla copertura, storico e comportamento del modello.</p></div>
- <section class="section">
-  <div class="section-head"><div><h2>Copertura delle stime</h2><p>Riepilogo delle partite in programma. La copertura non equivale all'accuratezza.</p></div></div>
-  <div id="analysisOverview" class="analysis-overview"><div class="loading-state">Calcolo copertura…</div></div>
- </section>
- <section class="section">
-  <div class="section-head"><div><h2>IA MatchMind</h2><p>In parole semplici: verifica se le sue stime migliorano davvero rispetto al modello statistico di partenza.</p></div></div>
-  <div id="adaptiveAIStatus" class="panel panel-pad"><div class="loading-state">Verifica del modello adattivo…</div></div>
- </section>
- <section class="section">
-  <div class="section-head"><div><h2>Backtest cronologico</h2><p>Valutazione sulle partite storiche usando solo i risultati precedenti a ciascun incontro.</p></div></div>
-  <div id="forecastBacktest" class="panel panel-pad"><div class="loading-state">In attesa dei dati storici…</div></div>
- </section>
- <section class="section">
-  <div class="section-head"><div><h2>Metodo e limiti</h2></div></div>
-  <div class="panel panel-pad">
-   <p>Il motore base usa Poisson. MatchMind Adaptive AI apprende una calibrazione della probabilità 1X2 dai pronostici storici generati in modalità walk-forward. Non è un modello linguistico né un sistema che garantisce profitti.</p>
-   <p>Le probabilità sono stime statistiche, non garanzie. Il campione minimo è un controllo di disponibilità dei dati, non dimostra calibrazione o capacità predittiva.</p>
-   <a href="data.html" class="text-link">Fonti, copertura e aggiornamento dati ↗</a>
-  </div>
- </section>
- <div class="status-line" id="globalStatus" aria-live="polite"></div>
- <footer class="site-footer">MatchMind · Analisi indipendente del modello. Nessuna previsione è certa.</footer>
-</main>
+<main class="page-wrap analysis-page"><div class="page-intro"><div class="eyebrow">MATCHMIND</div><h1 id="pageTitle">Analisi</h1><p id="pageSubtitle">Valuta le partite che hai selezionato.</p></div><section class="section"><div class="section-head"><div><h2>Le tue partite</h2><p>Calcolo partita per partita e riepilogo delle tue scelte.</p></div></div><div id="analysisOverview" class="analysis-overview"><div class="loading-state">Caricamento…</div></div></section><div class="status-line" id="globalStatus" aria-live="polite"></div><footer class="site-footer">MatchMind · Analisi delle tue selezioni.</footer></main>
 </body>
 </html>

@@ -257,52 +257,18 @@ function backtestHTML(r,e){
    '<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Baseline: frequenze 1X2 delle sole partite antecedenti, con smoothing Laplace. Esclusi i casi con meno di 10 gare storiche per una delle squadre. Non è un test di redditività: non include quote, margini, stake o commissioni.</small>';
  }
  async function initMind(d){
-  const upcoming=d.matches.filter(MM().upcoming);
-  const forecasts=upcoming.map(match=>({match,forecast:MM().forecast(match,d.history)}));
-  const adequate=forecasts.filter(item=>item.forecast.sampleEnough).length;
-  const limited=forecasts.length-adequate;
-  const meanHistory=forecasts.length?forecasts.reduce((sum,item)=>sum+(item.forecast.historyCount||0),0)/forecasts.length:0;
-  const overview=$('analysisOverview');
-  if(overview){
-   overview.innerHTML='<div class="analysis-summary-grid">'+
-    '<article class="analysis-summary"><span>Partite future</span><b>'+fmt(upcoming.length)+'</b><small>Competizione selezionata</small></article>'+
-    '<article class="analysis-summary"><span>Campione adeguato</span><b>'+fmt(adequate)+'</b><small>Almeno 10 partite per squadra</small></article>'+
-    '<article class="analysis-summary"><span>Campione limitato</span><b>'+fmt(limited)+'</b><small>Stime da leggere con cautela</small></article>'+
-    '<article class="analysis-summary"><span>Storico medio</span><b>'+fmt(meanHistory,1)+'</b><small>Partite precedenti per incontro</small></article></div>'+
-    '<div class="notice">'+(limited?'Sono presenti '+limited+' partite con campione insufficiente.':'Tutte le partite future hanno superato la soglia minima del campione.')+' La soglia è un controllo di copertura, non una misura di accuratezza o calibrazione.</div>';
-  }
-  const aiTarget=$('adaptiveAIStatus');
-  if(aiTarget){
-   const competitions=['serie-a','champions-league'];
-   const labels={'serie-a':'Serie A','champions-league':'Champions League'};
-   const models=competitions.map(id=>{
-    let saved=null;try{saved=JSON.parse(localStorage.getItem('matchmind-ai-model-v2-elo')||'{}')[id]||null}catch(_){}
-    const model=window.MatchMindAI&&window.MatchMindAI.modelFor(id);
-    const count=d.history.filter(m=>(m.competition||'serie-a')===id&&MM().hasScore(m)).length;
-    return{id,label:labels[id],count,model,saved};
-   });
-   const selected=models.find(x=>x.id===d.competition)||models[0];
-   const active=Boolean(selected.model&&selected.model.approved);
-   const status=active?'Calibrazione verificata attiva':'Elo 1X2 attivo · calibrazione non attiva';
-   const statusText=selected.saved?.status==='not_better_than_baseline'?'Il test non ha trovato un miglioramento affidabile.':selected.count<120?'Archivio storico ancora insufficiente per validare la calibrazione.':'La calibrazione non ha superato tutti i controlli.';
-   const rows=models.map(x=>{
-    const m=x.saved,ok=Boolean(m&&m.approved);
-    const state=ok?'Attiva':m?.status==='not_better_than_baseline'?'Non migliora':'Dati insufficienti';
-    return '<div class="ai-competition-row"><span><b>'+x.label+'</b><small>'+fmt(x.count)+' risultati storici disponibili</small></span><strong class="'+(ok?'is-active':'')+'">'+state+'</strong></div>';
-   }).join('');
-   const v=selected.saved?.validation||{};
-   const metrics=selected.saved?'<div class="ai-metrics"><div><small>Log Loss</small><b>'+fmt(v.baselineLogLoss,3)+' → '+fmt(v.calibratedLogLoss,3)+'</b><small>'+((v.improvementLogLoss||0)>0?'migliora':'non migliora')+'</small></div><div><small>Brier Score</small><b>'+fmt(v.baselineBrier,3)+' → '+fmt(v.calibratedBrier,3)+'</b><small>'+((v.improvementBrier||0)>0?'migliora':'non migliora')+'</small></div></div>':'';
-   aiTarget.innerHTML='<div class="ai-status '+(active?'is-active':'')+'"><span class="ai-status-dot"></span><div><b>'+status+'</b><small>'+labels[d.competition]+' · '+(active?'le probabilità 1X2 sono calibrate':'restano attivi Elo per 1X2 e Poisson per i mercati goal')+'</small></div></div>'+
-    '<p class="ai-summary">'+(active?'La calibrazione ha superato il confronto cronologico su dati non usati per stimare il parametro.':'La calibrazione non modifica le probabilità: '+statusText)+'</p>'+
-    '<div class="ai-competition-list">'+rows+'</div>'+
-    (selected.saved?'<div class="ai-validation"><b>Verifica storica · '+labels[d.competition]+'</b><div class="ai-data-row"><span>Previsioni ricostruite</span><strong>'+fmt(selected.saved.scoredForecasts)+'</strong></div><div class="ai-data-row"><span>Campione addestramento / verifica</span><strong>'+fmt(selected.saved.trainingCount)+' / '+fmt(selected.saved.validationCount)+'</strong></div>'+metrics+'</div>':'')+
-    '<small class="ai-footnote">Il test ricostruisce le previsioni usando solo partite precedenti. La calibrazione riguarda 1X2; non dimostra un vantaggio economico né garantisce vincite.</small>';
-  }
-    const target=$('forecastBacktest');
-  if(target){
-   target.innerHTML='<div class="loading-state">Calcolo del backtest cronologico sui risultati storici…</div>';
-   setTimeout(()=>{try{target.innerHTML=backtestHTML(MM().backtest(d.history),MM().eloBacktest?MM().eloBacktest(d.history):null);}catch(e){target.innerHTML='<div class="notice warning">Backtest non completato: '+esc(e.message)+'</div>'; }},20);
-  }
+ const target=$('analysisOverview');if(!target)return;
+ let saved=[];try{saved=JSON.parse(localStorage.getItem('matchmind-manual-selections-v1')||'[]')}catch(_){}
+ const key=m=>[(m.competition||'serie-a'),m.date,MM().norm(m.home),MM().norm(m.away)].join('|');
+ const all=[...(d.matches||[]),...(d.history||[])],selected=saved.map(p=>({p,m:all.find(x=>key(x)===key(p))})).filter(x=>x.m);
+ if(!selected.length){target.innerHTML='<div class="empty-state">Scegli prima i pronostici nella sezione Scommesse. Qui analizzerò soltanto quelli.</div>';return}
+ const names={home:'1',draw:'X',away:'2',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol'},rows=[];let i=0;
+ target.innerHTML='<div class="loading-state">Analisi in corso…</div>';
+ const next=()=>{const x=selected[i];try{const f=MM().forecast(x.m,d.history),v=window.MatchMindBets.marketProbability(f,x.p.marketKey);rows.push({m:x.m,label:names[x.p.marketKey]||x.p.marketKey,v,f})}catch(_){rows.push({m:x.m,label:names[x.p.marketKey]||x.p.marketKey,v:null,f:null})}
+ i++;if(i<selected.length){target.innerHTML='<div class="loading-state">Analisi partita '+i+' di '+selected.length+'…</div>';setTimeout(next,0);return}
+ const ok=rows.filter(x=>Number.isFinite(x.v)),total=ok.length===rows.length?ok.reduce((n,x)=>n*x.v,1):null;
+ target.innerHTML='<div class="analysis-selected-summary"><div><span>Partite</span><b>'+rows.length+'</b></div><div><span>Probabilità combinata</span><b>'+(total===null?'—':fmt(total*100,1)+'%')+'</b></div></div>'+rows.map(x=>'<article class="panel panel-pad"><b>'+esc(x.m.home)+' – '+esc(x.m.away)+'</b><div class="data-row"><span>'+esc(x.label)+'</span><strong>'+(Number.isFinite(x.v)?fmt(x.v*100,1)+'%':'—')+'</strong></div><small>'+esc(MM().shortDate(x.m))+' · '+(x.f&&x.f.sampleEnough?'Campione sufficiente':'Campione limitato')+'</small></article>').join('')+'<p class="notice">La probabilità combinata deriva dalle singole selezioni e assume indipendenza tra partite.</p><a class="text-link" href="bets.html">Modifica selezioni ↗</a>'};
+ setTimeout(next,0);
  }
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
