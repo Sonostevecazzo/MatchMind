@@ -210,7 +210,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   renderFixtures();renderSlip();renderOpenTickets();renderArchive();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
-  monitorTimer=window.setInterval(()=>{const active=document.querySelector("[data-bets-tab=\"live\"]")?.getAttribute("aria-selected")==="true";if(active&&!document.hidden&&hasTodayOpenTicket())updateArchive();},300000);
+  monitorTimer=window.setInterval(()=>{const active=document.querySelector("[data-bets-tab=\"live\"]")?.getAttribute("aria-selected")==="true";if(active&&!document.hidden&&hasTodayOpenTicket())updateArchive();},900000);
  }catch(e){$("globalStatus").textContent="Dati non disponibili: "+(e.message||"errore sconosciuto");$("manualFixtures").innerHTML='<div class="notice warning">Calendario non disponibile. Riprova quando la fonte dati sarà raggiungibile.</div>';}
 });
 window.addEventListener("pagehide",()=>{if(monitorTimer)clearInterval(monitorTimer);});
