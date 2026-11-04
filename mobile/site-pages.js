@@ -204,100 +204,9 @@
   })()+
   '<div class="panel panel-pad match-model-context" style="margin-top:14px"><div class="context-heading"><span>CONTESTO DEL MODELLO</span><small>Stime, non dati osservati</small></div><div class="data-row"><span>Partite usate · '+esc(match.home)+'</span><b>'+f.home.played+'</b></div><div class="data-row"><span>Partite usate · '+esc(match.away)+'</span><b>'+f.away.played+'</b></div><div class="data-row"><span>Periodo storico complessivo</span><b>'+(f.historyStart&&f.historyEnd?esc(f.historyStart)+' – '+esc(f.historyEnd):'Non disponibile')+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.home)+'</span><b>'+fmt(f.homeXg,2)+'</b></div><div class="data-row"><span>Gol attesi stimati · '+esc(match.away)+'</span><b>'+fmt(f.awayXg,2)+'</b></div><div class="data-row"><span>Forma '+esc(match.home)+'</span><div class="form-row">'+(f.home.form.length?f.home.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div><div class="data-row"><span>Forma '+esc(match.away)+'</span><div class="form-row">'+(f.away.form.length?f.away.form.map(x=>'<i class="form-chip '+x+'">'+x+'</i>').join(''):'—')+'</div></div></div></section>'+
   seasonContextHtml+
-  (done?'<div class="notice warning">Replay storico: questa stima viene ricostruita dai dati precedenti alla partita. Non esiste una previsione pre-partita congelata e registrata all’epoca.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">DATI ESTERNI</div><h2>Quote e indisponibili</h2><p>Solo dati restituiti dal provider, quando disponibili.</p></div></div><div id="matchContext" class="panel panel-pad"><div class="loading-state">Verifica copertura e contesto partita…</div></div></section>')+
-  '<section class="section"><div class="section-head"><div><div class="eyebrow">CONTESTO EDITORIALE</div><h2>Notizie recenti</h2><p>Articoli collegati alle due squadre, con fonte e data.</p></div></div><div id="matchNews" class="panel panel-pad"><div class="loading-state">Ricerca delle notizie…</div></div></section>'+
-
-  '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri AI Insights ↗</a></div>';
-  if(!done){
-   try{
-    const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
-    const injuries=(c.injuries||[]).filter(i=>MM().norm(i.team)===MM().norm(match.home)||MM().norm(i.team)===MM().norm(match.away));
-    const markets=(c.bookmakers||[]).flatMap(book=>(book.bets||[]).map(market=>({book:book.name,market:market.name,values:market.values||[]})));
-    const bestByMarket=new Map();
-    markets.forEach(m=>m.values.forEach(v=>{
-      const odd=Number(v.odd);if(!Number.isFinite(odd)||odd<=1)return;
-      let group='',value='',label='',modelProb=null;
-      if(m.market==='Match Winner'){
-        group='1X2';value=v.value;
-        label=value==='Home'?'1 · '+match.home:value==='Away'?'2 · '+match.away:'X · Pareggio';
-        modelProb={Home:p.home,Draw:p.draw,Away:p.away}[value];
-      }else if(m.market==='Both Teams To Score'){
-        const answer=String(v.value||'').trim().toLowerCase();
-        if(!['yes','no','gol','no gol','both teams to score','both teams not to score'].includes(answer))return;
-        group='BTTS';value=['yes','gol','both teams to score'].includes(answer)?'yes':'no';
-        label=value==='yes'?'Gol':'No Gol';modelProb=value==='yes'?p.btts:1-p.btts;
-      }else if(m.market==='Goals Over/Under'){
-        const matchTotal=String(v.value||'').match(/^(Over|Under)\s+(\d+(?:[.,]\d+)?)$/i);
-        if(!matchTotal)return;
-        const side=matchTotal[1].toLowerCase(),line=Number(matchTotal[2].replace(',','.'));
-        const key=line===1.5?'o15':line===2.5?'o25':line===3.5?'o35':null;
-        if(!key)return;
-        group='TOTAL '+line;value=side;label=(side==='over'?'Over ':'Under ')+line.toFixed(1).replace('.',',');
-        const over=p[key];modelProb=side==='over'?over:1-over;
-      }else return;
-      if(!Number.isFinite(modelProb))return;
-      const k=group+'|'+value,old=bestByMarket.get(k);
-      if(!old||odd>old.odd)bestByMarket.set(k,{group,value,label,odd,book:m.book,modelProb});
-    }));
-    const allQuotes=[...bestByMarket.values()];
-    const grouped=new Map();allQuotes.forEach(q=>{if(!grouped.has(q.group))grouped.set(q.group,[]);grouped.get(q.group).push(q);});
-    const candidates=[...grouped.values()].filter(group=>group.length>=2).flatMap(group=>{
-      const margin=group.reduce((sum,q)=>sum+1/q.odd,0);
-      return group.map(q=>({...q,marketProb:(1/q.odd)/margin,edge:q.modelProb-(1/q.odd)/margin,ev:q.modelProb*q.odd-1}));
-    }).sort((a,b)=>b.ev-a.ev);
-    const bestValue=candidates[0]||null;
-    const marketPrices=allQuotes.filter(q=>q.group==='1X2');
-    const outcomeRows=allQuotes;
-    const oddsFresh=c.oddsUpdatedAt&&Number.isFinite(Date.parse(c.oddsUpdatedAt))?Math.max(0,(Date.now()-Date.parse(c.oddsUpdatedAt))/60000):null;
-    const valueHtml=bestValue&&f.sampleEnough&&oddsFresh!==null&&oddsFresh<=120&&bestValue.ev>0.03
-      ?'<div class="notice good"><b>Possibile valore da verificare: '+esc(bestValue.label)+'</b><br>Quota migliore '+fmt(bestValue.odd,2)+' presso '+esc(bestValue.book)+'. Probabilità modello '+fmt(bestValue.modelProb*100,1)+'%, probabilità implicita depurata dal margine '+fmt(bestValue.marketProb*100,1)+'%, vantaggio stimato '+fmt(bestValue.edge*100,1)+' punti. EV teorico '+(bestValue.ev>=0?'+':'')+fmt(bestValue.ev*100,1)+'% per unità puntata.<br><small>Segnale esplorativo: non è una raccomandazione né una garanzia di profitto.</small></div>'
-      :'<div class="notice warning">'+(!bestValue?'Non ci sono mercati con almeno due esiti confrontabili.':!f.sampleEnough?'Nessun suggerimento: campione storico insufficiente.':oddsFresh===null?'Nessun suggerimento: manca l’orario di aggiornamento delle quote.':oddsFresh>120?'Nessun suggerimento: quote troppo vecchie.':'Nessun mercato supera la soglia prudenziale di valore atteso (+3%).')+'</div>';
-    const odds=c.oddsAvailable
-      ?'<div class="data-row"><span>Fonte quote</span><b>'+esc(c.oddsSource||'Provider')+'</b></div><div class="data-row"><span>Ultimo aggiornamento quote</span><b>'+(c.oddsUpdatedAt?new Date(c.oddsUpdatedAt).toLocaleString('it-IT'):'Non comunicato')+'</b></div><div class="data-row"><span>Bookmaker / quote</span><b>'+new Set(outcomeRows.map(v=>v.book)).size+' / '+outcomeRows.length+'</b></div>'+valueHtml+
-       (outcomeRows.length?'<div class="eyebrow" style="margin-top:12px">QUOTE SISAL RILEVATE</div>'+outcomeRows.map(v=>'<div class="data-row"><span>'+(v.group==='1X2'?(v.value==='Home'?'1 · '+esc(match.home):v.value==='Away'?'2 · '+esc(match.away):'X · Pareggio'):esc(v.label))+'</span><b>'+fmt(v.odd,2)+' · '+esc(v.book)+'</b></div>').join(''):'')
-      :'<div class="notice warning">Quote non disponibili: '+esc(c.oddsError||'la fonte non ha restituito mercati per questa partita')+'</div>';
-    const abs=injuries.length?injuries.map(i=>'<div class="data-row"><span>'+esc(i.name)+' · '+esc(i.team)+'</span><b>'+esc(i.status||'Segnalazione')+'</b></div>').join(''):'<div class="notice">Nessuna indisponibilità riportata dalla fonte. Non equivale alla conferma di una formazione completa.</div>';
-    const modelMap={Home:p.home,Draw:p.draw,Away:p.away};
-    const mostLikely=Object.entries(modelMap).sort((a,b)=>b[1]-a[1])[0];
-    const likelyLabel=mostLikely[0]==='Home'?'1 · '+esc(match.home):mostLikely[0]==='Away'?'2 · '+esc(match.away):'X · Pareggio';
-    const suggestion='<div class="section-head" style="margin-top:13px"><div><h2>Come leggere la scommessa</h2><p>Probabilità e convenienza sono due cose diverse.</p></div></div><div class="notice">L’esito più probabile secondo il modello è '+likelyLabel+' ('+fmt(mostLikely[1]*100,1)+'%). Non significa che sia conveniente: per valutare il prezzo confronta probabilità modello e quota. Se non emerge un margine positivo e dati aggiornati, la scelta razionale è non puntare.</div>';
-    $('matchContext').innerHTML='<div class="context-heading"><span>QUOTE E VALORE ATTESO</span><small>Fonte esterna · disponibilità variabile</small></div>'+odds+suggestion+'<div style="margin-top:14px" class="eyebrow">INDISPONIBILI · API-FOOTBALL</div>'+abs+'<div class="notice" style="margin-top:10px">Fonti prematch: '+esc(c.oddsSource||'quote non disponibili')+' per le quote; API-Football per fixture e indisponibili. Le quote possono cambiare rapidamente.</div>';
-   }catch(e){$('matchContext').innerHTML='<div class="notice warning">Dati prematch non disponibili: '+esc(e.message)+'</div>';}
-  }
-  try{
-   const news=await MM().playerApi('type=news&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'news:'+MM().norm(match.home)+':'+MM().norm(match.away),15*60*1000);
-   const target=$('matchNews');
-   if(target){
-    const articles=Array.isArray(news.articles)?news.articles:[];
-    target.innerHTML=articles.length
-     ?articles.map(article=>'<article class="data-row"><span><a href="'+esc(article.url)+'" target="_blank" rel="noopener noreferrer">'+esc(article.title)+'</a><small style="display:block;color:#91a0ae">'+esc(article.source||'Fonte editoriale')+(article.publishedAt?' · '+new Date(article.publishedAt).toLocaleDateString('it-IT'):'')+'</small></span><b>↗</b></article>').join('')+'<small style="display:block;color:#91a0ae;font-size:9px;line-height:1.5;margin-top:10px">'+esc(news.note||'Notizie come contesto editoriale.')+'</small><small style="display:block;color:#91a0ae;font-size:9px;margin-top:6px">Fonte: Google News RSS · verifica sempre il contenuto nell’articolo originale.</small>'
-     :'<div class="notice">Nessun articolo recente trovato per questa partita.</div><small style="display:block;color:#91a0ae;font-size:9px;margin-top:7px">Fonte: Google News RSS.</small>';
-   }
-  }catch(e){
-   const target=$('matchNews');
-   if(target)target.innerHTML='<div class="notice warning">Notizie non disponibili: '+esc(e.message)+'</div>';
-  }
- }
- let playerResults=[];
- function initPlayers(){
-  const status=$('playerApiStatus');
-  const search=async()=>{
-   const q=$('playerSearch').value.trim();if(q.length<4){status.textContent='Inserisci almeno quattro caratteri.';return;}
-   const b=$('playerSearchBtn');b.disabled=true;b.textContent='Cerco…';$('playerResults').innerHTML='<div class="loading-state">Ricerca giocatore…</div>';
-   try{
-    const data=await MM().playerApi('type=search&q='+encodeURIComponent(q),'search:'+MM().norm(q));
-    playerResults=data.players||[];status.textContent='Fonte API-Football · stagione '+(data.season||'non indicata');
-    $('playerResults').innerHTML=playerResults.length?playerResults.map((p,i)=>'<article class="player-item"><div class="player-item-head"><span><b>'+esc(p.name)+'</b><br><small>'+esc(p.team?.name||'Squadra non disponibile')+(p.position?' · '+esc(p.position):'')+'</small></span><button class="primary" data-form="'+i+'" '+(!p.id||!p.team?.id?'disabled':'')+'>Forma recente</button></div><div class="player-metrics"><div><b>'+fmt(p.season?.appearances)+'</b><span>Presenze</span></div><div><b>'+fmt(p.season?.goals)+'</b><span>Gol</span></div><div><b>'+fmt(p.season?.assists)+'</b><span>Assist</span></div></div></article>').join(''):'<div class="empty-state">Nessun risultato trovato dal provider.</div>';
-   }catch(e){status.textContent='Dati non disponibili · '+e.message;$('playerResults').innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}
-   finally{b.disabled=false;b.textContent='Cerca';}
-  };
-  $('playerSearchBtn').addEventListener('click',search);$('playerSearch').addEventListener('keydown',e=>{if(e.key==='Enter')search();});
-  $('playerResults').addEventListener('click',async e=>{
-   const b=e.target.closest('[data-form]');if(!b)return;const p=playerResults[Number(b.dataset.form)];if(!p)return;b.disabled=true;b.textContent='Carico…';$('playerForm').innerHTML='<div class="loading-state">Recupero ultime presenze…</div>';
-   try{const d=await MM().playerApi('type=form&player='+encodeURIComponent(p.id)+'&team='+encodeURIComponent(p.team.id),'form:'+p.id+':'+p.team.id,6*60*60*1000),s=d.summary||{},a=d.appearances||[];
-    $('playerForm').innerHTML='<article class="player-item"><b>'+esc(p.name)+'</b><small> · '+esc(p.team.name)+'</small><div class="player-metrics"><div><b>'+fmt(s.minutes)+'</b><span>Minuti</span></div><div><b>'+fmt(s.goals)+'</b><span>Gol</span></div><div><b>'+fmt(s.assists)+'</b><span>Assist</span></div></div>'+a.map(x=>'<div class="data-row"><span>'+esc(x.date)+' · '+esc(x.opponent)+' ('+esc(x.score)+')</span><b>'+fmt(x.minutes)+' min · '+fmt(x.goals)+' G · '+fmt(x.assists)+' A</b></div>').join('')+'</article>';
-   }catch(e){$('playerForm').innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}finally{b.disabled=false;b.textContent='Forma recente';}
-  });
+  (done?'<div class="notice warning">Replay storico: questa stima viene ricostruita dai dati precedenti alla partita. Non esiste una previsione pre-partita congelata e registrata all’epoca.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">CENTRO LIVE</div><h2>Segui la partita</h2><p>Risultato, eventi e statistiche live, se il provider restituisce dati per questo incontro.</p></div></div><a class="shortcut" href="live.html"><span class="shortcut-icon">◉</span><span><b>Apri MatchMind Live</b><small>Campo 2D, statistiche ed eventi</small></span></a><div class="notice">Il campo 2D è una simulazione tattica illustrativa. Non mostra il tracking reale dei calciatori.</div></section>')+
+  '<section class="section"><div class="section-head"><div><div class="eyebrow">COPERTURA DATI</div><h2>Fonti e limiti</h2></div></div><div class="panel panel-pad"><div class="notice">Calendario e storico provengono da dataset pubblici. Formazioni ufficiali, indisponibili e statistiche giocatore non sono mostrate quando manca una fonte verificabile.</div><a class="text-link" href="data.html">Consulta le fonti e la copertura ↗</a></div></section>'+
+  '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri Analisi del modello ↗</a></div>';
  }
  async function initSettings(){
   const status=$('globalStatus');
@@ -332,104 +241,31 @@ function backtestHTML(r,e){
    '<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Baseline: frequenze 1X2 delle sole partite antecedenti, con smoothing Laplace. Esclusi i casi con meno di 10 gare storiche per una delle squadre. Non è un test di redditività: non include quote, margini, stake o commissioni.</small>';
  }
  async function initMind(d){
-  const rows=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  $('mindFixtures').innerHTML=rows.length?rows.map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile per l’analisi.</div>';
-  const assistantButton=$('assistantGenerate');
-  if(assistantButton){
-   assistantButton.addEventListener('click',async()=>{
-    const result=$('assistantResult'),stake=Number($('assistantStake').value),minPayout=Number($('assistantMinPayout').value),maxPayout=Number($('assistantMaxPayout').value),legRange=String($('assistantLegs').value||'4-6').split('-').map(Number);
-    const minLegs=legRange[0]||4,maxLegs=legRange[1]||6;
-    if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(minPayout)||!Number.isFinite(maxPayout)||minPayout<=0||maxPayout<minPayout){result.innerHTML='<div class="notice warning">Controlla puntata e intervallo della vincita potenziale.</div>';return;}
-    assistantButton.disabled=true;assistantButton.textContent='Analisi in corso…';result.innerHTML='<div class="loading-state">Controllo campioni, quote e mercati prematch…</div>';
-    try{
-     const upcoming=d.matches.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date)),first=upcoming[0],roundKey=first&&first.round!==null&&first.round!==undefined?String(first.round).trim():'',fixtures=(!first?[]:(roundKey?upcoming.filter(m=>String(m.round??'').trim()===roundKey):upcoming.filter(m=>Math.abs(Date.parse(m.date+'T12:00:00')-Date.parse(first.date+'T12:00:00'))<=3*86400000)).slice(0,12)),candidates=[],coverage={fixtures:fixtures.length,eligible:0,missingOdds:0,staleOdds:0,weakSample:0};
-     for(const match of fixtures){
-      const forecast=MM().forecast(match,d.history);
-      if(!forecast.sampleEnough){coverage.weakSample++;continue;}
-      try{
-       const c=await MM().playerApi('type=match&date='+encodeURIComponent(match.date)+'&home='+encodeURIComponent(match.home)+'&away='+encodeURIComponent(match.away),'match:'+match.date+':'+MM().norm(match.home)+':'+MM().norm(match.away),5*60*1000);
-       const bookmakers=Array.isArray(c.bookmakers)?c.bookmakers.map(book=>({...book,source:'PulseScore · Sisal',updatedAt:c.oddsUpdatedAt})):[];
-       if(!bookmakers.length){coverage.missingOdds++;continue;}
-       const freshBookmakers=bookmakers.filter(book=>book.updatedAt&&Number.isFinite(Date.parse(book.updatedAt))&&Math.max(0,(Date.now()-Date.parse(book.updatedAt))/60000)<=120);
-       if(!freshBookmakers.length){coverage.staleOdds++;continue;}
-       const p=forecast.probabilities,matchKey=match.date+'|'+MM().norm(match.home)+'|'+MM().norm(match.away),matchLabel=match.home+' – '+match.away;
-       freshBookmakers.forEach(book=>{
-        (book.bets||[]).forEach(market=>{
-         const marketName=String(market.name||''),mapped=(market.values||[]).map(v=>{
-          const odd=Number(v.odd);if(!Number.isFinite(odd)||odd<=1)return null;
-          let selection='',probability=null,group='';
-          if(marketName==='Match Winner'){
-           selection=v.value==='Home'?'1':v.value==='Draw'?'X':v.value==='Away'?'2':'';
-           probability={Home:p.home,Draw:p.draw,Away:p.away}[v.value];group='1X2';
-          }else if(marketName==='Both Teams To Score'){
-           const answer=String(v.value||'').trim().toLowerCase();
-           if(['yes','gol','both teams to score'].includes(answer)){selection='Gol';probability=p.btts;}
-           else if(['no','no gol','both teams not to score'].includes(answer)){selection='No Gol';probability=1-p.btts;}
-           group='Gol/No Gol';
-          }else if(marketName==='Goals Over/Under'){
-           const parsed=String(v.value||'').match(/^(Over|Under)\s+(1\.5|2\.5|3\.5)$/i);
-           if(parsed){const line=Number(parsed[2]),over=line===1.5?p.o15:line===2.5?p.o25:p.o35;selection=parsed[1].toLowerCase()==='over'?'Over '+line.toFixed(1):'Under '+line.toFixed(1);probability=parsed[1].toLowerCase()==='over'?over:1-over;group='U/O '+line.toFixed(1);}
-          }
-          return selection&&Number.isFinite(probability)?{selection,probability,odd,group}:null;
-         }).filter(Boolean);
-         const byMarket=new Map();
-         mapped.forEach(x=>{if(!byMarket.has(x.group))byMarket.set(x.group,[]);byMarket.get(x.group).push(x);});
-         byMarket.forEach(groupValues=>{
-          if(groupValues.length<2)return;
-          const margin=groupValues.reduce((sum,x)=>sum+1/x.odd,0);
-          groupValues.forEach(x=>{
-           const implied=(1/x.odd)/margin,ev=x.probability*x.odd-1,edge=x.probability-implied;
-           if(ev>0.03&&edge>0)candidates.push({matchKey,matchLabel,market:x.group,selection:x.selection,odd:x.odd,probability:x.probability,book:book.name||'Provider',source:book.source||'Provider',ev,edge,updatedAt:book.updatedAt});
-          });
-         });
-        });
-       });
-       coverage.eligible++;
-      }catch(error){coverage.missingOdds++;}
-     }
-     const proposal=window.MatchMindRounds.buildAssistant(candidates,{stake,minPayout,maxPayout,minLegs,maxLegs});
-     const pct=x=>fmt(x*100,2)+'%';
-     const coverageHtml='<div class="notice">Controlli: '+coverage.fixtures+' partite · '+coverage.eligible+' con quote fresche e campione sufficiente · integrazione quote opzionale: PulseScore · '+coverage.weakSample+' campione insufficiente · '+coverage.missingOdds+' senza quote · '+coverage.staleOdds+' quote non aggiornate.</div>';
-     if(!proposal.available&&!candidates.length){
-      const freeProposal=window.MatchMindRounds.buildProbabilityAssistant(fixtures,m=>MM().forecast(m,d.history),{minLegs,maxLegs});
-      if(freeProposal.available){
-       const freeRows=freeProposal.legs.map((x,i)=>'<div class="data-row"><span><b>'+(i+1)+'. '+esc(x.matchLabel)+'</b><small style="display:block;color:#91a0ae">'+esc(x.market)+' · '+esc(x.selection)+'</small></span><b>'+pct(x.probability)+'</b></div>').join('');
-       result.innerHTML=coverageHtml+'<div class="notice" style="margin-top:9px">Modalità dati pubblici senza chiavi: ho selezionato '+freeProposal.legs.length+' eventi con campione storico sufficiente.</div><div class="metric-grid" style="margin-top:10px"><div class="metric"><span>PROBABILITÀ CONGIUNTA STIMATA</span><b>'+pct(freeProposal.probability)+'</b></div><div class="metric"><span>EVENTI</span><b>'+freeProposal.legs.length+'</b></div><div class="metric"><span>QUOTE REALI</span><b>Non disponibili</b></div><div class="metric"><span>VINCITA € '+fmt(stake,2)+'</span><b>Non calcolabile</b></div></div><div class="eyebrow" style="margin-top:12px">SELEZIONI PROBABILISTICHE · NON SONO QUOTE</div>'+freeRows+'<div class="notice warning" style="margin-top:10px">L’obiettivo di vincita € '+fmt(minPayout,2)+'–€ '+fmt(maxPayout,2)+' non è verificabile senza quote bookmaker. Non ho inventato prezzi, EV o payout. '+esc(freeProposal.assumption)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">'+esc(freeProposal.disclaimer)+'</small>';
-      }else{
-       result.innerHTML=coverageHtml+'<div class="notice warning" style="margin-top:9px">'+esc(freeProposal.reason||proposal.reason)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">Le fonti gratuite non pubblicano quote bookmaker. Non completo una proposta senza campione sufficiente o prezzi reali.</small>';
-      }
-     }else if(!proposal.available){
-      result.innerHTML=coverageHtml+'<div class="notice warning" style="margin-top:9px">'+esc(proposal.reason)+'</div><small style="display:block;color:#91a0ae;margin-top:8px">Nessuna combinazione soddisfa i limiti impostati con quote aggiornate e valore atteso positivo. Nessun prezzo è stato stimato.</small>';
-     }else{
-      const legsHtml=proposal.legs.map((x,i)=>'<div class="data-row"><span><b>'+(i+1)+'. '+esc(x.matchLabel)+'</b><small style="display:block;color:#91a0ae">'+esc(x.market)+' · '+esc(x.selection)+' · '+esc(x.book)+' · '+esc(x.source||'Provider')+'</small></span><b>'+fmt(x.odd,2)+'<small style="display:block;color:#91a0ae">'+pct(x.probability)+' · EV +'+fmt(x.ev*100,1)+'%</small></b></div>').join('');
-      result.innerHTML=coverageHtml+'<div class="metric-grid" style="margin-top:10px"><div class="metric"><span>QUOTA COMPLESSIVA</span><b>'+fmt(proposal.odds,2)+'</b></div><div class="metric"><span>VINCITA POTENZIALE</span><b>€ '+fmt(proposal.payout,2)+'</b></div><div class="metric"><span>PROBABILITÀ CONGIUNTA</span><b>'+pct(proposal.probability)+'</b></div><div class="metric"><span>EVENTI</span><b>'+proposal.legs.length+'</b></div></div><div class="eyebrow" style="margin-top:12px">PROPOSTA · QUOTE DEL PROVIDER</div>'+legsHtml+'<div class="notice warning" style="margin-top:10px">La combinazione massimizza la probabilità stimata tra quelle che rispettano i parametri e superano il filtro EV +3%. Non è una garanzia di vincita. '+esc(proposal.disclaimer)+'</div>';
-     }
-    }catch(error){result.innerHTML='<div class="notice warning">Assistente non disponibile: '+esc(error.message)+'</div>';}
-    finally{assistantButton.disabled=false;assistantButton.textContent='Analizza di nuovo';}
-   });
-  }
-  const ticketTarget=$('roundTickets');
-  if(ticketTarget&&window.MatchMindRounds){
-   try{
-    const ticket=window.MatchMindRounds.buildTicket(d.matches,m=>MM().forecast(m,d.history),{isUpcoming:MM().upcoming});
-    if(!ticket.available){ticketTarget.innerHTML='<div class="notice warning">'+esc(ticket.reason)+'</div>';}
-    else{
-     const pct=x=>x===null||x===undefined?'Non calcolabile':fmt(x*100,2)+'%';
-     const marketRows=[['1X2',ticket.tickets.oneXtwo],['Gol / No Gol',ticket.tickets.btts],['Under / Over 2,5',ticket.tickets.underOver]];
-     const cards=marketRows.map(([name,t])=>'<div class="data-row ticket-prob-row"><span><strong class="ticket-market-label">'+name+'</strong><small>'+t.legs+'/'+t.required+' selezioni valide</small></span><b class="ticket-probability">'+pct(t.probability)+'</b></div>').join('');
-     const rows=ticket.fixtures.map(x=>'<div class="data-row ticket-match-row"><span>'+esc(x.match.home)+' – '+esc(x.match.away)+'<small style="display:block;color:#91a0ae;font-size:13px">'+(x.context?[x.context.home,x.context.away].map(t=>esc(t.team)+' '+(t.rank??'—')+'° · '+(t.points??'—')+' pt · '+esc(t.objective)).join(' / '):esc(x.reason||''))+'</small></span><b class="ticket-match-picks">'+(x.eligible?'<span><i>1X2</i> '+esc(x.oneXtwo.label)+' <strong>'+pct(x.oneXtwo.probability)+'</strong></span><span><i>Gol</i> '+esc(x.btts.label)+' <strong>'+pct(x.btts.probability)+'</strong></span><span><i>U/O</i> '+esc(x.total.label)+' <strong>'+pct(x.total.probability)+'</strong></span>':'Non disponibile')+'</b></div>').join('');
-     ticketTarget.innerHTML='<div class="notice">Turno '+(ticket.round??'prossimo calendario')+' · '+esc(ticket.from)+' – '+esc(ticket.to)+' · '+ticket.fixtures.length+' partite. Selezione automatica: esito con probabilità marginale più alta per ciascun mercato.</div><div class="eyebrow">PROBABILITÀ STIMATA DI CENTRARE TUTTE LE SELEZIONI</div>'+cards+'<div class="eyebrow" style="margin-top:12px">DETTAGLIO PARTITE E CONTESTO</div>'+rows+'<small style="display:block;color:#91a0ae;font-size:9px;line-height:1.5;margin-top:10px">'+esc(ticket.disclaimer)+' '+esc(ticket.tickets.oneXtwo.assumption||'Se una o più partite non hanno campione adeguato, la probabilità complessiva non viene calcolata.')+'</small>';
-    }
-   }catch(e){ticketTarget.innerHTML='<div class="notice warning">Schedine non calcolate: '+esc(e.message)+'</div>';}
+  const upcoming=d.matches.filter(MM().upcoming);
+  const forecasts=upcoming.map(match=>({match,forecast:MM().forecast(match,d.history)}));
+  const adequate=forecasts.filter(item=>item.forecast.sampleEnough).length;
+  const limited=forecasts.length-adequate;
+  const meanHistory=forecasts.length?forecasts.reduce((sum,item)=>sum+(item.forecast.historyCount||0),0)/forecasts.length:0;
+  const overview=$('analysisOverview');
+  if(overview){
+   overview.innerHTML='<div class="analysis-summary-grid">'+
+    '<article class="analysis-summary"><span>Partite future</span><b>'+fmt(upcoming.length)+'</b><small>Competizione selezionata</small></article>'+
+    '<article class="analysis-summary"><span>Campione adeguato</span><b>'+fmt(adequate)+'</b><small>Almeno 10 partite per squadra</small></article>'+
+    '<article class="analysis-summary"><span>Campione limitato</span><b>'+fmt(limited)+'</b><small>Stime da leggere con cautela</small></article>'+
+    '<article class="analysis-summary"><span>Storico medio</span><b>'+fmt(meanHistory,1)+'</b><small>Partite precedenti per incontro</small></article></div>'+
+    '<div class="notice">'+(limited?'Sono presenti '+limited+' partite con campione insufficiente.':'Tutte le partite future hanno superato la soglia minima del campione.')+' La soglia è un controllo di copertura, non una misura di accuratezza o calibrazione.</div>';
   }
   const target=$('forecastBacktest');
-  if(target){target.innerHTML='<div class="loading-state">Calcolo del backtest cronologico sui risultati storici…</div>';setTimeout(()=>{try{target.innerHTML=backtestHTML(MM().backtest(d.history),MM().eloBacktest?MM().eloBacktest(d.history):null);}catch(e){target.innerHTML='<div class="notice warning">Backtest non completato: '+esc(e.message)+'</div>';}},20);}
+  if(target){
+   target.innerHTML='<div class="loading-state">Calcolo del backtest cronologico sui risultati storici…</div>';
+   setTimeout(()=>{try{target.innerHTML=backtestHTML(MM().backtest(d.history),MM().eloBacktest?MM().eloBacktest(d.history):null);}catch(e){target.innerHTML='<div class="notice warning">Backtest non completato: '+esc(e.message)+'</div>'; }},20);
+  }
  }
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
   try{const d=MM().forCompetition(await MM().loadData());const retrieved=d.updatedAt?new Date(d.updatedAt).toLocaleString('it-IT'):'orario non disponibile';setStatus(d.source==='cache'?'Offline · dati salvati localmente.':'Fonti: '+(d.source||'fonti pubbliche')+' · scaricati '+retrieved,d.source==='cache'?'':'ok');
    const mindKicker=$('analysisCompetitionKicker');if(mindKicker)mindKicker.textContent='MATCHMIND · '+MM().competitionInfo(d.competition).name.toUpperCase()+' ANALYST';
-   if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')initPlayers();else if(page==='data')initData();else if(page==='settings')initSettings();else if(page==='mind')initMind(d);
+   if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')setStatus('Statistiche individuali non integrate: non mostro dati giocatore privi di una fonte verificabile.');else if(page==='data')initData();else if(page==='settings')initSettings();else if(page==='mind')initMind(d);
   }catch(e){setStatus('Dati non disponibili: '+e.message,'err');if(page==='settings')initSettings();else if(page==='data')initData();else{const targets={home:'matchList',matches:'matchList',explore:'teamDirectory',league:'standingsBody',team:'teamContent',match:'matchDetail',mind:'mindFixtures'};const id=targets[page];if(id&&$(id))$(id).innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}}
  });
 })();
