@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v61-20261104-adaptive-live';
+const CACHE='matchmind-pwa-v62-20261104-home-competition';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
