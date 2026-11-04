@@ -150,7 +150,7 @@ async function shareTicket(ticket){
  try{if(navigator.share)await navigator.share({title:"Schedina MatchMind",text:body});else{await navigator.clipboard.writeText(body);$("archiveStatus").textContent="Schedina copiata negli appunti.";}}catch(e){if(e.name!=="AbortError")$("archiveStatus").textContent="Condivisione non disponibile in questo browser.";}
 }
 function initEvents(){
- document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>setBetTab(button.dataset.betsTab)));
+ document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  $("matchSearch").addEventListener("input",()=>{visibleFixtureLimit=12;renderFixtures();});
  ["betsDate","betsTeam","betsRound"].forEach(id=>$(id)?.addEventListener("change",()=>{visibleFixtureLimit=12;renderFixtures();}));
  $("clearBetsFilters")?.addEventListener("click",()=>{$("matchSearch").value="";$("betsDate").value="";$("betsTeam").value="";$("betsRound").value="";visibleFixtureLimit=12;renderFixtures();});
@@ -182,6 +182,11 @@ function initEvents(){
   const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);}
  }));
 }
+let monitorTimer=null;
+function hasTodayOpenTicket(){
+ const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+ return archive.some(ticket=>(ticket.selections||[]).some(selection=>selection.date===today&&!terminalStatus(selection.status||"Da giocare")));
+}
 document.addEventListener("DOMContentLoaded",async()=>{
  initEvents();$("globalStatus").textContent="Carico calendario e risultati storici…";
  try{
@@ -204,6 +209,8 @@ document.addEventListener("DOMContentLoaded",async()=>{
   renderFixtures();renderSlip();renderOpenTickets();renderArchive();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
+  monitorTimer=window.setInterval(()=>{const active=document.querySelector("[data-bets-tab=\"live\"]")?.getAttribute("aria-selected")==="true";if(active&&!document.hidden&&hasTodayOpenTicket())updateArchive();},300000);
  }catch(e){$("globalStatus").textContent="Dati non disponibili: "+(e.message||"errore sconosciuto");$("manualFixtures").innerHTML='<div class="notice warning">Calendario non disponibile. Riprova quando la fonte dati sarà raggiungibile.</div>';}
 });
+window.addEventListener("pagehide",()=>{if(monitorTimer)clearInterval(monitorTimer);});
 })();
