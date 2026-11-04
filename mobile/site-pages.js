@@ -73,7 +73,7 @@
    const favs=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]')}catch{return []}})();
    $('homeFavorites').innerHTML=favs.length?favs.map(n=>'<a class="team-tile" href="'+MM().teamUrl(n)+'">'+MM().badge(n)+'<b>'+esc(n)+'</b></a>').join(''):'<div class="empty-state" style="grid-column:1/-1">Non hai ancora salvato squadre. Apri Esplora e tocca la stella accanto a un club.</div>';
  }
- let matchFilter='upcoming',shownLimit=45,activeMatches=[];
+ let matchFilter='upcoming',shownLimit=12,activeMatches=[];
  function initMatches(d){
    const round=$('matchRound'),teamSelect=$('matchTeam');teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+MM().getTeams(d.matches).map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join('');const rounds=[...new Set(d.matches.map(m=>Number(m.round)).filter(n=>Number.isInteger(n)&&n>0))].sort((a,b)=>a-b);
    round.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+n+'">Giornata '+n+'</option>').join('');
@@ -93,7 +93,7 @@
     updateMatchSlipActions();
     $('moreMatches').hidden=activeMatches.length<=shownLimit;
    };
-   ['matchSearch','matchDate','matchTeam','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=45;render()}));
+   ['matchSearch','matchDate','matchTeam','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=12;render()}));
    $('clearMatchFilters').addEventListener('click',()=>{$('matchSearch').value='';$('matchDate').value='';teamSelect.value='';round.value='';$('matchSeason').value='current';shownLimit=45;render()});
     $('matchFilters').querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{matchFilter=b.dataset.filter;$('matchFilters').querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});shownLimit=45;render()}));
    $('matchList').addEventListener('change',event=>{
@@ -120,7 +120,7 @@
     if(picker&&selected)picker.value=marketCategoryForKey(selected.marketKey);
     if(panel&&picker)panel.querySelector('.fixture-market-options').outerHTML=marketButtonsHtml(match,forecast,picker.value,selected&&selected.marketKey);
    });
-   $('moreMatches').addEventListener('click',()=>{shownLimit+=45;render()});
+   $('moreMatches').addEventListener('click',()=>{shownLimit+=12;render()});
    updateMatchSlipActions();
    render();
  }
