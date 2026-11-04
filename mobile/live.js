@@ -33,7 +33,7 @@
   function renderList(payload) {
     $("liveStatus").textContent = payload.matches.length ? "Provider collegato · " + payload.matches.length + " partite in corso" : "Provider collegato · nessuna partita in corso in questa competizione.";
     listMatchCount = payload.matches.length;
-    $("liveListUpdated").textContent = "Ultimo controllo " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + " · refresh adattivo: 5 min live, 30 min senza eventi.";
+    $("liveListUpdated").textContent = "Ultimo controllo " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + " · refresh adattivo: 5 min in partita, 15 min prima, 30 min senza eventi.";
     $("liveMatches").innerHTML = payload.matches.length ? payload.matches.map(match => (
       '<a class="live-match-card" href="./live.html?fixture=' + encodeURIComponent(match.id) + '&competition=' + encodeURIComponent(competition) + '">' +
         '<div class="live-match-meta"><span class="live-indicator"><i></i> LIVE</span><span>' + esc(match.league || "Calcio") + '</span><b>' + esc(minute(match)) + '</b></div>' +
