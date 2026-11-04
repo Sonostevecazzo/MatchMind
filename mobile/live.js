@@ -189,7 +189,7 @@
   async function refresh() {
     if (busy || document.hidden) return;
     busy = true;
-    $("refreshLive").disabled = true;
+    [$("refreshLive"), $("refreshLiveDetail")].filter(Boolean).forEach(button => { button.disabled = true; button.textContent = "Aggiorno…"; });
     try {
       if (fixtureId) {
         $("liveDetailSection").hidden = false;
@@ -211,7 +211,7 @@
       }
     } finally {
       busy = false;
-      $("refreshLive").disabled = false;
+      [$("refreshLive"), $("refreshLiveDetail")].filter(Boolean).forEach(button => { button.disabled = false; button.textContent = button.id === "refreshLiveDetail" ? "Aggiorna ora" : "Aggiorna"; });
     }
   }
 
@@ -224,6 +224,7 @@
       $("liveDetailSection").hidden = true;
     }
     $("refreshLive")?.addEventListener("click", refresh);
+    $("refreshLiveDetail")?.addEventListener("click", refresh);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) refresh();
     });
