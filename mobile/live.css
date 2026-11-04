@@ -68,3 +68,18 @@
 }
 
 .live-pitch #pitchPlayers circle,.live-pitch #pitchPlayers text{transition:cx 1.5s ease,cy 1.5s ease}
+
+.live-lineups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.live-lineup-team{min-width:0;padding:12px;border:1px solid #293a40;border-radius:12px;background:#101a21}
+.live-lineup-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#edf3ed;font-size:13px}
+.live-lineup-heading span{color:#cce994;font-size:11px;font-weight:800}
+.live-lineup-team h3{margin:12px 0 6px;color:#91a3a5;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.live-lineup-team ol{display:grid;gap:5px;margin:0;padding:0;list-style:none}
+.live-lineup-team li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #ffffff0c}
+.live-lineup-team li:last-child{border-bottom:0}
+.live-lineup-team li>b{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#26382b;color:#d9f39d;font-size:11px}
+.live-lineup-team li>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e0e8e5;font-size:12px}
+.live-lineup-team li>small{color:#85979a;font-size:10px}
+.live-lineup-team details{margin-top:10px;border-top:1px solid #ffffff13;padding-top:8px}
+.live-lineup-team summary{color:#b3c4c3;font-size:12px;font-weight:800;cursor:pointer}
+@media(max-width:560px){.live-lineups{grid-template-columns:1fr}.live-lineup-team{padding:11px}}
