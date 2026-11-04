@@ -47,7 +47,7 @@ test("daily training is strictly chronological and gates promotion on out-of-sam
   assert.ok(model.validation.improvementLogLoss>0);
   assert.ok(model.validation.improvementBrier>0);
   assert.equal(api.modelFor("serie-a").approved,true);
-  assert.ok(store.has("matchmind-ai-model-v1"));
+  assert.ok(store.has("matchmind-ai-model-v2-elo"));
 });
 
 test("calibration is not promoted with an insufficient sample",()=>{
