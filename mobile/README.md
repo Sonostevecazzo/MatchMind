@@ -4,7 +4,7 @@ Smartphone-first static web app. Forecast calculations run in the browser; the a
 
 ## Cloudflare Pages deployment
 
-Create a Cloudflare Pages project connected to this private GitHub repository:
+Create a Cloudflare Pages project connected to the public GitHub repository:
 - Production branch: `main`
 - Root directory: `mobile`
 - Framework preset: None
