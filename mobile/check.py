@@ -71,7 +71,7 @@ assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
 assert "matchmind-pwa-v77-20261105-footylogos-crests" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "omonia:' in core and "ac-omonia-nicosia-logo-footylogos.svg" in core
 assert "hapoelbeersheva" in core and "hapoel-beer-sheva-logo-footylogos.svg" in core
-assert "teamLogoUrl" in core and "https:\\/\\/" in core
+assert "teamLogoUrl" in core and "https://www.footylogos.com/downloads/logo/" in core
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
