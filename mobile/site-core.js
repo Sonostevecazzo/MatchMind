@@ -127,7 +127,7 @@
     internazionale:'italy/Inter.svg',inter:'italy/Inter.svg',intermilan:'italy/Inter.svg',
     monza:'italy/AC_Monza.svg',udinese:'italy/Udinese.svg',como:'italy/Como_1907.svg',como1907:'italy/Como_1907.svg',
     genoa:'italy/Genoa.svg',napoli:'italy/Napoli.svg',parma:'italy/Parma.svg',cagliari:'italy/Cagliari.svg',
-    frosinone:'italy/Frosinone_Calcio.svg',juventus:'italy/Juventus.svg',venezia:'italy/Venezia.svg',
+    frosinone:'italy/Frosinone_Calcio.svg',juventus:'italy/Juventus.svg',juve:'italy/Juventus.svg',juventusturin:'italy/Juventus.svg',venezia:'italy/Venezia.svg',
     lecce:'italy/Lecce.svg',atalanta:'italy/Atalanta.svg',sassuolo:'italy/Sassuolo.svg',
     torino:'italy/Torino.svg',milan:'italy/Milan.svg',fiorentina:'italy/Fiorentina.svg',
     bologna:'italy/Bologna.svg',lazio:'italy/Lazio.svg',roma:'italy/Roma.svg',hellasverona:'italy/Hellas_Verona.svg',
@@ -167,17 +167,29 @@
     lechpoznan:'poland/Lech_Poznań.svg',jagiellonia:'poland/Jagiellonia_Białystok.svg',
     viktoriaplzen:'czech-republic/FC_Viktoria_Plzeň.svg',spartapraha:'czech-republic/AC_Sparta_Praha.svg',
     omonia:'cyprus/Omonia.svg',
-    necnijmegen:'netherlands/NEC_Nijmegen.svg',
-    unionsaintgilloise:'belgium/Union_Saint-Gilloise.svg',
+    necnijmegen:'netherlands/NEC_Nijmegen.svg',nec nijmegen:'netherlands/NEC_Nijmegen.svg',
+    unionsaintgilloise:'belgium/Union_Saint-Gilloise.svg',unionstgilloise:'belgium/Union_Saint-Gilloise.svg',
     hapoelbeersheva:'israel/Hapoel_Beer_Sheva.svg',hbeersheva:'israel/Hapoel_Beer_Sheva.svg',
     araratarmenia:'armenia/Ararat-Armenia.svg',
     levskisofia:'bulgaria/Levski_Sofia.svg',
-    torreense:'portugal/Torreense.svg',celje:'slovenia/NK_Celje.svg',
+    torreense:'portugal/Torreense.svg',sctorreense:'portugal/Torreense.svg',celje:'slovenia/NK_Celje.svg',nkcelje:'slovenia/NK_Celje.svg',
     lillestrom:'norway/Lillestrøm_SK.svg',lillestrm:'norway/Lillestrøm_SK.svg',
-    sabah:'azerbaijan/Sabah.svg'
+    sabah:'azerbaijan/Sabah.svg',
+    omonianicosia:'cyprus/Omonia.svg',acomonianicosia:'cyprus/Omonia.svg',
+    bayerleverkusen:'germany/Bayer_04_Leverkusen.svg',bayer04leverkusen:'germany/Bayer_04_Leverkusen.svg',
+    celticfc:'scotland/Celtic_FC.svg',beiktas:'turkey/Beşiktaş.svg',
+    fcaararatarmenia:'armenia/Ararat-Armenia.svg',ferencvarostc:'hungary/Ferencvárosi_TC.svg',
+    gnkdinamozagreb:'croatia/GNK_Dinamo_Zagreb.svg',hapoelbeershevafc:'israel/Hapoel_Beer_Sheva.svg',
+    jagielloniabialystok:'poland/Jagiellonia_Białystok.svg',lechpoznan:'poland/Lech_Poznań.svg',
+    lillestrmsk:'norway/Lillestrøm_SK.svg',oficretefc:'greece/OFI_Crete.svg',
+    olympiacosfc:'greece/Olympiacos.svg',olympiquedemarseille:'france/Olympique_de_Marseille.svg',
+    olympiquelyonnais:'france/Olympique_Lyonnais.svg',redbullsalzburg:'austria/Red_Bull_Salzburg.svg',
+    rscanderlecht:'belgium/RSC_Anderlecht.svg',acspartapraha:'czech-republic/AC_Sparta_Praha.svg',
+    stadederennais:'france/Stade_Rennais.svg',tsghoffenheim:'germany/TSG_1899_Hoffenheim.svg',
+    viktoriaplzen:'czech-republic/FC_Viktoria_Plzeň.svg'
   };
   function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
-  function badge(name){const fallback=esc(teamInitials(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(name)+'">'+(src?'<img class="team-logo" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove()">':'')+'<span class="team-crest-fallback">'+fallback+'</span></span>';}
+  function badge(name){const fallback=esc(teamInitials(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(name)+'">'+(src?'<img class="team-logo" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove();if(this.nextElementSibling)this.nextElementSibling.style.display=\'inline-flex\'">':'')+'<span class="team-crest-fallback"'+(src?' style="display:none"':'')+'>'+fallback+'</span></span>';}
   function getTeams(rows){return [...new Set(rows.flatMap(m=>[m.home,m.away]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));}
   function groupByDate(rows){const map=new Map();rows.forEach(m=>{const k=m.date||'unknown';if(!map.has(k))map.set(k,[]);map.get(k).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
   function standings(rows){
