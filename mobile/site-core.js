@@ -1,7 +1,7 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
   const CACHE_KEY='matchmind-multipage-cache-v5-open-matchday';
-  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:null,fallback:'A'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:null,fallback:'CL'} };
+  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:null,fallback:'A'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:null,fallback:'CL'}, 'europa-league':{id:'europa-league',name:'Europa League',country:'UEFA',logo:null,fallback:'EL'} };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
     if(COMPETITIONS[requested]){try{localStorage.setItem('matchmind-competition-v1',requested);}catch{}return requested;}
@@ -151,6 +151,22 @@
     aek:'greece/AEK_Athens.svg',aekathens:'greece/AEK_Athens.svg',
     clubbrugge:'belgium/Club_Brugge.svg',shakhtar:'ukraine/Shakhtar.svg',shakhtardonetsk:'ukraine/Shakhtar.svg',
     slaviapraha:'czech-republic/SK_Slavia_Praha.svg',slaviaprague:'czech-republic/SK_Slavia_Praha.svg',
+    milan:'italy/Milan.svg',juventus:'italy/Juventus.svg',
+    crystalpalace:'england/Crystal_Palace.svg',sunderland:'england/Sunderland.svg',bournemouth:'england/AFC_Bournemouth.svg',
+    lyon:'france/Olympique_Lyonnais.svg',marseille:'france/Olympique_de_Marseille.svg',rennes:'france/Stade_Rennais.svg',
+    leverkusen:'germany/Bayer_04_Leverkusen.svg',hoffenheim:'germany/TSG_1899_Hoffenheim.svg',
+    salzburg:'austria/Red_Bull_Salzburg.svg',sturmgratz:'austria/Sturm_Graz.svg',
+    anderlecht:'belgium/RSC_Anderlecht.svg',unionsg:'belgium/Union_Saint-Gilloise.svg',
+    azalkmaar:'netherlands/AZ_Alkmaar.svg',nec:'netherlands/NEC_Nijmegen.svg',
+    celtic:'scotland/Celtic_FC.svg',
+    besiktas:'turkey/Beşiktaş.svg',
+    olympiacos:'greece/Olympiacos.svg',oficrete:'greece/OFI_Crete.svg',
+    ferencvaros:'hungary/ Ferencvárosi_TC.svg',
+    dynamozagreb:'croatia/GNK_Dinamo_Zagreb.svg',gnkdinamo:'croatia/GNK_Dinamo_Zagreb.svg',
+    real sociedad:'spain/Real_Sociedad.svg',realsociedad:'spain/Real_Sociedad.svg',celta:'spain/Celta_de_Vigo.svg',
+    lechpoznan:'poland/Lech_Poznań.svg',jagiellonia:'poland/Jagiellonia_Białystok.svg',
+    viktoriaplzen:'czech-republic/FC_Viktoria_Plzeň.svg',spartapraha:'czech-republic/AC_Sparta_Praha.svg',
+    omonia:'cyprus/Omonia.svg',
     sabah:'azerbaijan/Sabah.svg'
   };
   function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
@@ -181,7 +197,7 @@
     const map=new Map(),get=name=>{const k=norm(name);if(!map.has(k))map.set(k,{name,played:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});return map.get(k);};
     rows.forEach(m=>{const h=get(m.home),a=get(m.away),hg=Number(m.hg),ag=Number(m.ag);h.played++;a.played++;h.gf+=hg;h.ga+=ag;a.gf+=ag;a.ga+=hg;if(hg>ag){h.w++;a.l++;h.pts+=3;}else if(hg<ag){a.w++;h.l++;a.pts+=3;}else{h.d++;a.d++;h.pts++;a.pts++;}});
     const table=[...map.values()].map(t=>({...t,gd:t.gf-t.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.name.localeCompare(b.name,"it")).map((t,i)=>({...t,rank:i+1}));
-    const total=table.length,champions=(match.competition||"serie-a")==="champions-league";
+    const total=table.length,champions=["champions-league","europa-league"].includes(match.competition||"serie-a");
     const context=team=>{
       const t=table.find(x=>sameTeam(x.name,team));
       if(!t)return{team,available:false,rank:null,points:null,objective:"Classifica non disponibile",pressure:0};
