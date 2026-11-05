@@ -1,8 +1,8 @@
-const CACHE='matchmind-pwa-v84-20261105-geometric-m-brand';
+const CACHE='matchmind-pwa-v85-20261105-predictive-brand';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
- './site.css','./mobile-readable.css','./live.css','./analysis.css','./site-core.js','./notifications.js','./ai-engine.js','./site-pages.js','./live.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
+ './site.css','./mobile-readable.css','./live.css','./analysis.css','./site-core.js','./notifications.js','./ai-engine.js','./site-pages.js','./live.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg','./brand-full.svg'
 ];
 
 self.addEventListener('install',event=>{
