@@ -1135,3 +1135,11 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 .athletic-news-item a:focus-visible,.athletic-news-item a:hover{color:var(--mint,#c4f36a)}
 .athletic-news-item p{margin:7px 0 0;color:var(--muted,#aab7c2);font-size:.86rem;line-height:1.5}
 .athletic-news-note{display:block;margin-top:3px;color:var(--muted,#93a1b0);font-size:.76rem;line-height:1.45}
+
+/* Approved app icon: same standalone mark in every header. */
+.brand-link{display:flex;align-items:center;gap:12px;min-width:max-content}
+.brand-mark{display:block!important;flex:0 0 56px!important;width:56px!important;height:56px!important;border-radius:15px!important;object-fit:contain!important;background:transparent!important;box-shadow:none!important}
+.brand-copy{display:block;min-width:0}
+.brand-copy b{display:block;color:#f1f5f7;font-size:16px;font-weight:900;letter-spacing:-.6px;line-height:1.1}
+.brand-copy small{display:block;margin-top:4px;color:#9ba8b2;font-size:7px;font-weight:800;letter-spacing:1.5px;white-space:nowrap}
+@media(max-width:420px){.brand-mark{flex-basis:50px!important;width:50px!important;height:50px!important}.brand-link{gap:9px}.brand-copy b{font-size:15px}.brand-copy small{font-size:6px;letter-spacing:1.2px}}
