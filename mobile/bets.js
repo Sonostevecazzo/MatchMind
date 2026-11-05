@@ -26,7 +26,8 @@ function renderFixture(match){
  const form=x=>x.form&&x.form.length?x.form.join(" · "):"n.d.";
  const stand=x=>x.available?"#"+x.rank+" · "+x.points+" pt · "+x.objective:"classifica non disponibile";
  const choices=markets().map(([key,label])=>({key,label,probability:marketProbability(f,key)}));
- const buttons=choices.map(item=>'<button type="button" class="fixture-market-button'+(selected&&selected.marketKey===item.key?' is-selected':'')+'" data-pick="'+esc(fixtureKey(match))+'" data-market="'+esc(item.key)+'" aria-pressed="'+String(Boolean(selected&&selected.marketKey===item.key))+'"><span>'+esc(item.label)+'</span><b>'+pct(item.probability)+'</b></button>').join("");
+ const renderMarketGroup=(title,items)=>'<div class="fixture-market-group"><h4>'+title+'</h4><div class="fixture-market-grid">'+items.map(item=>'<button type="button" class="fixture-market-button'+(selected&&selected.marketKey===item.key?' is-selected':'')+'" data-pick="'+esc(fixtureKey(match))+'" data-market="'+esc(item.key)+'" aria-pressed="'+String(Boolean(selected&&selected.marketKey===item.key))+'"><span>'+esc(item.label)+'</span><b>'+pct(item.probability)+'</b></button>').join("")+'</div></div>';
+ const buttons=renderMarketGroup("Mercati singoli",choices.filter(item=>!item.key.startsWith("combo:")))+renderMarketGroup("1X2 + Gol / No Gol",choices.filter(item=>item.key.startsWith("combo:")&&["bttsYes","bttsNo"].includes(item.key.split(":")[2])))+renderMarketGroup("1X2 + Over / Under",choices.filter(item=>item.key.startsWith("combo:")&&!["bttsYes","bttsNo"].includes(item.key.split(":")[2])));
  const fields=[
   ["attackingAbsencesHome","Attaccanti titolari assenti · "+match.home,ctx.attackingAbsencesHome],
   ["defensiveAbsencesHome","Difensori titolari assenti · "+match.home,ctx.defensiveAbsencesHome],
