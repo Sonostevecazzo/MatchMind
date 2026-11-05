@@ -9,7 +9,7 @@
  const matchPickKey=m=>[(m.competition||"serie-a"),m.date,MM().norm(m.home),MM().norm(m.away)].join("|");
  const readMatchPicks=()=>{try{const rows=JSON.parse(localStorage.getItem(MATCH_PICKS_KEY)||"[]");return Array.isArray(rows)?rows.filter(x=>x&&x.date&&x.home&&x.away&&x.marketKey):[]}catch(_){return[]}};
  const writeMatchPicks=rows=>{try{localStorage.setItem(MATCH_PICKS_KEY,JSON.stringify(rows))}catch(_){};window.dispatchEvent(new Event("matchmind:picks-updated"));};
- const marketCategoryForKey=key=>key==="bttsYes"||key==="bttsNo"?"btts":/^(over|under)15$/.test(key)?"goals15":/^(over|under)25$/.test(key)?"goals25":/^(over|under)35$/.test(key)?"goals35":"1x2";
+ const marketCategoryForKey=key=>String(key||"").startsWith("combo:")?(String(key).endsWith(":bttsYes")||String(key).endsWith(":bttsNo")?"combo-btts":"combo-goals"):key==="bttsYes"||key==="bttsNo"?"btts":/^(over|under)15$/.test(key)?"goals15":/^(over|under)25$/.test(key)?"goals25":/^(over|under)35$/.test(key)?"goals35":"1x2";
  const marketOptions=(forecast,category)=>{
   const p=forecast.probabilities;
   const map={
@@ -19,6 +19,9 @@
    goals35:[["over35","Over 3,5",p.o35],["under35","Under 3,5",1-p.o35]],
    btts:[["bttsYes","Gol",p.btts],["bttsNo","No Gol",1-p.btts]]
   };
+  if(category==="combo-goals"||category==="combo-btts"){
+   return window.MatchMindBets.marketCandidates(category).map(item=>[item.key,item.label,window.MatchMindBets.marketProbability(forecast,item.key)]);
+  }
   return map[category]||map["1x2"];
  };
  const marketButtonsHtml=(m,forecast,category,selectedKey)=>{
@@ -30,7 +33,7 @@
  };
  const marketPickerHtml=(m,forecast,selected)=>{
   const key=matchPickKey(m),category=selected?marketCategoryForKey(selected.marketKey):"1x2",id="market-"+MM().norm(key);
-  const options=[["1x2","1X2"],["goals15","Over/Under 1,5"],["goals25","Over/Under 2,5"],["goals35","Over/Under 3,5"],["btts","Gol / No Gol"]];
+  const options=[["1x2","1X2"],["goals15","Over/Under 1,5"],["goals25","Over/Under 2,5"],["goals35","Over/Under 3,5"],["btts","Gol / No Gol"],["combo-goals","1X2 + Over/Under"],["combo-btts","1X2 + Gol / No Gol"]];
   return '<div class="fixture-market-panel" data-market-panel="'+esc(key)+'"><div class="fixture-market-picker"><label for="'+esc(id)+'">Mercato</label><select id="'+esc(id)+'" data-market-picker data-match-key="'+esc(key)+'">'+options.map(([value,label])=>'<option value="'+value+'"'+(value===category?' selected':'')+'>'+label+'</option>').join('')+'</select></div>'+
    marketButtonsHtml(m,forecast,category,selected&&selected.marketKey)+
    '<small class="fixture-market-sample">'+(forecast.sampleEnough?'Storico adeguato':'Campione storico limitato')+'</small></div>';
