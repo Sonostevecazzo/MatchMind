@@ -176,7 +176,7 @@
     bayerleverkusen:'germany/Bayer_Leverkusen.svg',bayer04leverkusen:'germany/Bayer_Leverkusen.svg',
     celticfc:'scotland/Celtic.svg',beiktas:'turkey/Beşiktaş.svg',
     fcaararatarmenia:'armenia/Ararat-Armenia.svg',ferencvarostc:'hungary/Ferencváros.svg',
-    gnkdinamozagreb:'croatia/GNK_Dinamo_Zagreb.svg',hapoelbeershevafc:'israel/Hapoel_Beer_Sheva.svg',
+    gnkdinamozagreb:'croatia/GNK_Dinamo_Zagreb.svg',
     jagielloniabialystok:'poland/Jagiellonia_Białystok.svg',lechpoznan:'poland/Lech_Poznań.svg',
     lillestrmsk:'norway/Lillestrøm.svg',oficretefc:'greece/OFI.svg',
     olympiacosfc:'greece/Olympiacos.svg',olympiquedemarseille:'france/Marseille.svg',
