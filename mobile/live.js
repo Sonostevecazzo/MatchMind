@@ -30,21 +30,22 @@
     return match.statusLong || match.status;
   }
 
-  function renderList(payload) {
-    const sourceLabel = payload.sourceLabel || payload.source || "Fonte live";
-    const fallbackInfo = payload.fallbackReason ? " · fallback attivo: " + payload.fallbackReason : "";
-    $("liveStatus").textContent = sourceLabel + fallbackInfo + (payload.matches.length ? " · " + payload.matches.length + " partite in corso" : " · nessuna partita in corso in questa competizione.");
-    listMatchCount = payload.matches.length;
-    $("liveListUpdated").textContent = "Ultimo controllo " + new Date(payload.updatedAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + " · refresh adattivo: 5 min in partita, 15 min prima, 30 min senza eventi.";
-    $("liveMatches").innerHTML = payload.matches.length ? payload.matches.map(match => (
-      '<a class="live-match-card" href="./live.html?fixture=' + encodeURIComponent(match.id) + '&competition=' + encodeURIComponent(competition) + '&source=' + encodeURIComponent(payload.source === "ESPN" ? "espn" : "api-football") + '&date=' + encodeURIComponent(String(match.date || "").slice(0,10)) + '&home=' + encodeURIComponent(match.home.name) + '&away=' + encodeURIComponent(match.away.name) + '">' +
-        '<div class="live-match-meta"><span class="live-indicator"><i></i> LIVE</span><span>' + esc(match.league || "Calcio") + '</span><b>' + esc(minute(match)) + '</b></div>' +
-        '<div class="live-match-teams"><div>' + logo(match.home) + '<b>' + esc(match.home.name) + '</b></div><strong>' + esc(match.goals.home ?? "—") + ' – ' + esc(match.goals.away ?? "—") + '</strong><div>' + logo(match.away) + '<b>' + esc(match.away.name) + '</b></div></div>' +
-        '<div class="live-match-footer">Apri Match Simulation <span>→</span></div>' +
-      '</a>'
-    )).join("") : '<div class="live-empty"><b>Nessuna partita live al momento</b><p>La schermata si aggiorna automaticamente. Le partite future e i risultati conclusi restano nel Calendario.</p><a href="./matches.html">Apri calendario partite →</a></div>';
+  function teamKey(match){const clean=v=>String(v||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");return [String(match.date||"").slice(0,10),clean(match.home?.name||match.home),clean(match.away?.name||match.away)].join("|");}
+  function localDate(value){if(!value)return "Data da definire";const d=new Date(String(value).length===10?value+"T12:00:00":value);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString("it-IT",{weekday:"short",day:"2-digit",month:"short"});}
+  function localTime(value){if(!value)return "";const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});}
+  function notifySnapshot(payload){const api=window.MMNotifications;if(!api)return;let prev={};try{prev=JSON.parse(localStorage.getItem("matchmind-live-snapshots-v1")||"{}")||{};}catch{}const next={...prev};(payload.matches||[]).forEach(m=>{const k=teamKey(m),old=prev[k],s=String(m.status||"").toUpperCase();if(old&&["NS","TBD"].includes(old.status)&&["1H","2H","ET","LIVE"].includes(s))api.notifyOnce("kickoff:"+k,"kickoff","Calcio d'inizio",m.home.name+" – "+m.away.name+" è iniziata.","live-"+k);if(old&&old.status!=="HT"&&s==="HT")api.notifyOnce("half:"+k,"halftime","Intervallo",m.home.name+" "+(m.goals.home??"—")+" – "+(m.goals.away??"—")+" "+m.away.name,"live-"+k);if(old&&!["FT","AET","PEN"].includes(old.status)&&["FT","AET","PEN"].includes(s))api.notifyOnce("end:"+k,"fulltime","Fine partita",m.home.name+" "+(m.goals.home??"—")+" – "+(m.goals.away??"—")+" "+m.away.name,"live-"+k);next[k]={status:s,updatedAt:Date.now()};});try{localStorage.setItem("matchmind-live-snapshots-v1",JSON.stringify(Object.fromEntries(Object.entries(next).slice(-160))));}catch{}}
+  function renderList(payload,calendar){
+    const liveMatches=Array.isArray(payload?.matches)?payload.matches:[];
+    notifySnapshot(payload||{});
+    $("liveStatus").textContent=(payload?.sourceLabel||payload?.source||"Fonte live")+(payload?.fallbackReason?" · fallback: "+payload.fallbackReason:"")+" · "+liveMatches.length+" partite in diretta";
+    listMatchCount=liveMatches.length;
+    $("liveListUpdated").textContent="Ultimo controllo "+new Date(payload?.updatedAt||Date.now()).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})+" · aggiornamento automatico";
+    $("liveMatches").innerHTML=liveMatches.length?liveMatches.map(m=>'<a class="live-match-card" href="./live.html?fixture='+encodeURIComponent(m.id)+'&competition='+encodeURIComponent(competition)+'&source='+encodeURIComponent(payload.source==="ESPN"?"espn":"api-football")+'&date='+encodeURIComponent(String(m.date||"").slice(0,10))+'&home='+encodeURIComponent(m.home.name)+'&away='+encodeURIComponent(m.away.name)+'"><div class="live-match-meta"><span class="live-indicator"><i></i> LIVE</span><span>'+esc(m.league||"Calcio")+'</span><b>'+esc(minute(m))+'</b></div><div class="live-match-teams"><div>'+logo(m.home)+'<b>'+esc(m.home.name)+'</b></div><strong>'+esc(m.goals.home??"—")+' – '+esc(m.goals.away??"—")+'</strong><div>'+logo(m.away)+'<b>'+esc(m.away.name)+'</b></div></div><div class="live-match-footer">Apri centro partita <span>→</span></div></a>').join(""):'<div class="live-empty"><b>Nessuna partita in diretta</b><p>Le prossime partite sono riportate qui sotto. Punteggio e minutaggio appariranno al calcio d’inizio.</p></div>';
+    const now=Date.now(),end=now+7*86400000;
+    const upcoming=(calendar?.matches||[]).filter(m=>((m.competition||"serie-a")===competition)&&m.status==="NS"&&m.date).filter(m=>{const d=Date.parse(m.date+(m.time?"T"+m.time+":00":"T20:00:00"));return Number.isFinite(d)&&d>=now-3600000&&d<=end;}).sort((x,y)=>(x.date+(x.time||"")).localeCompare(y.date+(y.time||""))).slice(0,12);
+    let prev={};try{prev=JSON.parse(localStorage.getItem("matchmind-live-snapshots-v1")||"{}")||{};}catch{}upcoming.forEach(m=>{const k=teamKey(m);if(!prev[k])prev[k]={status:"NS",updatedAt:Date.now()};});try{localStorage.setItem("matchmind-live-snapshots-v1",JSON.stringify(Object.fromEntries(Object.entries(prev).slice(-160))));}catch{}
+    $("upcomingMatches").innerHTML=upcoming.length?upcoming.map(m=>{const league=m.competition==="europa-league"?"Europa League":m.competition==="champions-league"?"Champions League":"Serie A";return '<article class="live-match-card scheduled-match"><div class="live-match-meta"><span class="scheduled-indicator">IN PROGRAMMA</span><span>'+league+'</span><b>'+esc(localDate(m.date))+'</b></div><div class="live-match-teams"><div><b>'+esc(m.home)+'</b></div><strong class="scheduled-time">'+esc(m.time||localTime(m.date)||"Orario da definire")+'</strong><div><b>'+esc(m.away)+'</b></div></div><div class="live-match-footer"><span>Calcio d’inizio</span><span>◷</span></div></article>';}).join(""):'<div class="live-empty"><b>Nessuna partita in programma nei prossimi 7 giorni</b><p>Non risultano altri incontri imminenti nel calendario della competizione selezionata.</p><a href="./matches.html">Apri calendario completo →</a></div>';
   }
-
   function statValue(team, label) {
     const list = lastDetail?.statistics || [];
     const row = list.find(item => item.teamId === team.id || item.team === team.name);
@@ -119,9 +120,8 @@
     $("liveBall").setAttribute("cx", String(Math.max(70, Math.min(830, ballX))));
     $("liveBall").setAttribute("cy", String(Math.max(75, Math.min(485, ballY))));
     const team = homeAttacking ? home.name : away.name;
-    $("livePressure").innerHTML = pressureAvailable
-      ? '<div><span>Pressione stimata</span><b>' + esc(team) + ' · ' + pressure + '/100</b></div><div class="pressure-track"><i style="width:' + pressure + '%"></i></div>'
-      : '<div><span>Pressione stimata</span><b>Non disponibile</b></div>';
+    const possessionAway=possessionHome===null?null:100-possessionHome,shotsTotal=(shotsHome||0)+(shotsAway||0);
+    $("livePressure").innerHTML='<div class="live-sim-metrics"><div class="live-sim-metric"><span>Possesso</span><div class="live-sim-split"><b>'+esc(home.name)+' '+(possessionHome===null?"—":Math.round(possessionHome)+"%")+'</b><b>'+esc(away.name)+' '+(possessionAway===null?"—":Math.round(possessionAway)+"%")+'</b></div><div class="live-sim-track"><i style="width:'+(possessionHome===null?50:possessionHome)+'%"></i></div></div><div class="live-sim-metric"><span>Tiri totali</span><div class="live-sim-split"><b>'+esc(home.name)+' '+(shotsHome===null?"—":shotsHome)+'</b><b>'+esc(away.name)+' '+(shotsAway===null?"—":shotsAway)+'</b></div><div class="live-sim-track shots"><i style="width:'+(shotsTotal?shotsHome/shotsTotal*100:50)+'%"></i></div></div><div class="live-sim-pressure"><span>Pressione statistica stimata</span><b>'+(pressureAvailable?esc(team)+" · "+pressure+"/100":"Dati non disponibili")+'</b></div></div>';
     const formationLabel = formationInfo.homeFormation && formationInfo.awayFormation ? "Moduli dal provider: " + formationInfo.homeFormation + " vs " + formationInfo.awayFormation + ". " : "";
     const gridLabel = formationInfo.homeGrid && formationInfo.awayGrid ? "Schieramenti iniziali basati sulla griglia delle formazioni. " : "Almeno una formazione non è disponibile: uso una disposizione schematica. ";
     $("simulationCaption").textContent = formationLabel + gridLabel + (pressureAvailable
@@ -191,6 +191,18 @@
     renderLineups(payload.lineups || []);
     renderStats(match);
     renderEvents(payload.events, match);
+    notifyDetailChanges(payload,match);
+  }
+  function notifyDetailChanges(payload,match){
+    const api=window.MMNotifications;if(!api)return;const key=teamKey(match),events=Array.isArray(payload.events)?payload.events:[];
+    let seen={};try{seen=JSON.parse(localStorage.getItem("matchmind-live-events-v1")||"{}")||{};}catch{}
+    const ids=events.map(e=>[e.minute,e.extra,e.type,e.teamId,e.player,e.detail].join("|")),old=seen[key];
+    if(old)events.forEach((e,i)=>{const id=ids[i];if(old.includes(id))return;const type=String(e.type||"").toLowerCase(),detail=String(e.detail||"").toLowerCase();if(type.includes("goal")||detail.includes("goal"))api.notifyOnce("goal:"+key+":"+id,"goals","Gol · "+match.home.name+" – "+match.away.name,(e.minute||"")+"′ · "+(e.player||e.detail||"Rete")+". Risultato "+(match.goals.home??"—")+"–"+(match.goals.away??"—"),"goal-"+key);else if(type.includes("card")||detail.includes("card"))api.notifyOnce("card:"+key+":"+id,"cards","Cartellino · "+match.home.name+" – "+match.away.name,(e.minute||"")+"′ · "+(e.player||e.detail||"Evento"),"card-"+key);});
+    seen[key]=ids;try{localStorage.setItem("matchmind-live-events-v1",JSON.stringify(Object.fromEntries(Object.entries(seen).slice(-60))));}catch{}
+    let states={};try{states=JSON.parse(localStorage.getItem("matchmind-live-status-v1")||"{}")||{};}catch{}const state=String(match.status||"").toUpperCase(),oldState=states[key];
+    if(oldState&&oldState!=="HT"&&state==="HT")api.notifyOnce("half:"+key,"halftime","Intervallo",match.home.name+" "+(match.goals.home??"—")+" – "+(match.goals.away??"—")+" "+match.away.name,"half-"+key);
+    if(oldState&&!["FT","AET","PEN"].includes(oldState)&&["FT","AET","PEN"].includes(state))api.notifyOnce("end:"+key,"fulltime","Fine partita",match.home.name+" "+(match.goals.home??"—")+" – "+(match.goals.away??"—")+" "+match.away.name,"end-"+key);
+    states[key]=state;try{localStorage.setItem("matchmind-live-status-v1",JSON.stringify(states));}catch{}
   }
 
   function scheduleNextPoll() {
@@ -206,7 +218,7 @@
       if (finished) return;
       delay = inPlay ? 300000 : 900000;
     } else {
-      delay = listMatchCount > 0 ? 300000 : 1800000;
+      delay = listMatchCount > 0 ? 300000 : 900000;
     }
     pollHandle = window.setTimeout(() => {
       pollHandle = null;
@@ -229,9 +241,12 @@
         renderDetail(payload);
         requestFailed = false;
       } else {
-        const payload = await requestLive("?competition=" + encodeURIComponent(competition));
-        renderList(payload);
-        requestFailed = false;
+        const results=await Promise.allSettled([requestLive("?competition="+encodeURIComponent(competition)),window.MM.loadData()]);
+        const lr=results[0],cr=results[1];if(lr.status==="rejected"&&cr.status==="rejected")throw lr.reason;
+        const payload=lr.status==="fulfilled"?lr.value:{matches:[],sourceLabel:"Provider live non disponibile"};
+        const calendar=cr.status==="fulfilled"?cr.value:{matches:[]};renderList(payload,calendar);
+        if(lr.status==="rejected")$("liveStatus").textContent="Live non disponibile: "+lr.reason.message+" · calendario disponibile";
+        requestFailed=lr.status==="rejected";
       }
     } catch (error) {
       requestFailed = true;
