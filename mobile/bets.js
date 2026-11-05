@@ -17,7 +17,7 @@ function getForecast(match){return window.MM.forecast(match,data.history,getCont
 function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
 function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
 function writePicks(){save(PICKS_KEY,picks);}
-window.addEventListener("matchmind:picks-updated",()=>{picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());if(data){renderFixtures();renderSlip();}});
+window.addEventListener("matchmind:picks-updated",()=>{picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());if(data){renderSlip();}});
 function selectedFor(match){return picks.find(p=>fixtureKey(p)===fixtureKey(match));}
 function selectOptions(value){return [0,1,2,3].map(n=>'<option value="'+n+'"'+(Number(value||0)===n?' selected':'')+'>'+n+'</option>').join("");}
 function motivationOptions(value){return [{v:-1,t:"Bassa"},{v:0,t:"Neutra / automatica"},{v:1,t:"Alta"}].map(x=>'<option value="'+x.v+'"'+(Number(value||0)===x.v?' selected':'')+'>'+x.t+'</option>').join("");}
@@ -42,7 +42,8 @@ function renderFixture(match){
  '<div class="fixture-market-options">'+buttons+'</div><details class="manual-other-markets"><summary>Contesto squadra: assenze, infortuni e motivazione</summary><div class="context-controls"><div class="context-grid">'+absenceHtml+'</div>'+motivationHtml+'<small>Inserisci solo titolari realmente indisponibili. Le assenze sono una correzione indicativa, non una valutazione del valore individuale del giocatore. La motivazione automatica deriva dalla classifica; l’impostazione manuale è una tua valutazione.</small></div></details></article>';
 }
 function renderFixtures(){
- const target=$("manualFixtures"),query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
+ const target=$("manualFixtures");if(!target)return;
+ const query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
  const rows=fixtures.filter(m=>(!query||norm(m.home).includes(query)||norm(m.away).includes(query))&&(!date||m.date===date)&&(!team||norm(m.home)===norm(team)||norm(m.away)===norm(team))&&(!round||String(m.round||"")===round));
  const visible=rows.slice(0,visibleFixtureLimit);
  target.innerHTML=visible.length?visible.map(renderFixture).join(""):'<div class="empty-state">Nessuna partita corrisponde ai filtri. Modifica la ricerca.</div>';
@@ -58,7 +59,7 @@ function selectedRows(){
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
- if(!rows.length){target.innerHTML="";slipExpanded=false;return;}
+ if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
  target.innerHTML='<details class="manual-slip-dropdown" '+(slipExpanded?'open':'')+'><summary><span>Anteprima schedina · '+rows.length+' pronostici</span><b>'+pct(probability)+'</b></summary><div class="manual-summary-card"><div class="manual-summary-top"><div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div><div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">'+pct(probability)+'</b></div></div><div class="manual-selected-list">'+rows.map(row=>'<div class="manual-selected-row"><span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b><small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · '+pct(row.probability)+'</small></span><button type="button" class="manual-remove-button" data-remove="'+esc(fixtureKey(row.match))+'" aria-label="Rimuovi selezione">×</button></div>').join("")+'</div><div class="manual-summary-actions"><button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button><button type="button" id="clearCurrentSlip" class="secondary">Svuota</button></div></div></details>';
  const details=target.querySelector("details");if(details)details.addEventListener("toggle",()=>{slipExpanded=details.open;});
@@ -88,10 +89,10 @@ function setBetTab(tab){
  ["create","live","archive"].forEach(name=>{const panel=$("betsTab"+name[0].toUpperCase()+name.slice(1));if(panel)panel.hidden=name!==selected;});
 }
 function saveCurrentSlip(){
- const rows=selectedRows();if(!rows.length){$("archiveStatus").textContent="Non ci sono selezioni da salvare.";return;}
+ const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
  const probability=rows.reduce((v,x)=>v*x.probability,1);
  const item={id:"slip-"+Date.now(),createdAt:new Date().toISOString(),probability,selections:rows.map(x=>({home:x.match.home,away:x.match.away,date:x.match.date,market:x.marketLabel,marketKey:x.marketKey,probability:x.probability,competition:x.match.competition||window.MM.getSelectedCompetition(),status:"Da giocare"}))};
- archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();$("archiveStatus").textContent="Schedina salvata su questo dispositivo.";setBetTab("live");
+ archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];writePicks();renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata su questo dispositivo.";setBetTab("live");
 }
 function buildProposal(){
  proposalGenerated=true;
@@ -113,7 +114,7 @@ function buildProposal(){
 }
 function applyProposal(){
  proposal.forEach(x=>{const m=x.match,p={competition:m.competition||window.MM.getSelectedCompetition(),date:m.date,home:m.home,away:m.away,marketKey:x.marketKey};const index=picks.findIndex(y=>fixtureKey(y)===fixtureKey(p));if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);});
- writePicks();slipExpanded=true;renderFixtures();renderSlip();$("manualBuilderStatus").textContent="Proposta aggiunta alla schedina. Puoi modificare o rimuovere ogni esito.";
+ writePicks();slipExpanded=true;renderSlip();$("manualBuilderStatus").textContent="Proposta aggiunta alla schedina. Puoi modificare o rimuovere ogni esito.";
 }
 function evaluateMarket(key,homeGoals,awayGoals){
  const total=homeGoals+awayGoals;
@@ -177,28 +178,17 @@ async function shareTicket(ticket){
 }
 function initEvents(){
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
- $("matchSearch").addEventListener("input",()=>{visibleFixtureLimit=12;renderFixtures();});
- ["betsDate","betsTeam","betsRound"].forEach(id=>$(id)?.addEventListener("change",()=>{visibleFixtureLimit=12;renderFixtures();}));
- $("clearBetsFilters")?.addEventListener("click",()=>{$("matchSearch").value="";$("betsDate").value="";$("betsTeam").value="";$("betsRound").value="";visibleFixtureLimit=12;renderFixtures();});
- $("moreBetFixtures")?.addEventListener("click",()=>{visibleFixtureLimit+=12;renderFixtures();});
- $("manualFixtures").addEventListener("click",event=>{
-  const b=event.target.closest("[data-pick]");if(!b)return;
-  const fixture=fixtures.find(m=>fixtureKey(m)===b.dataset.pick);if(!fixture)return;
-  const market=markets().find(x=>x[0]===b.dataset.market);if(!market)return;
-  const index=picks.findIndex(p=>fixtureKey(p)===fixtureKey(fixture));
-  if(index>=0&&picks[index].marketKey===market[0])picks.splice(index,1);
-  else{const p={competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market[0]};if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);else{$("manualBuilderStatus").textContent="Limite di 15 partite raggiunto.";return;}}
-  writePicks();slipExpanded=true;renderFixtures();renderSlip();
- });
- $("manualFixtures").addEventListener("change",event=>{
-  const el=event.target.closest("[data-context-field]");if(!el)return;
-  const key=el.dataset.context,field=el.dataset.contextField;contexts[key]=contexts[key]||{};contexts[key][field]=Number(el.value);save(CONTEXT_KEY,contexts);renderFixtures();renderSlip();
- });
+
+
+
+
+);
+);
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
  $("manualSlipSummary").addEventListener("click",event=>{
-  const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderFixtures();renderSlip();return;}
+  const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
-  if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderFixtures();renderSlip();}
+  if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderSlip();}
  });
  $("targetProbability").addEventListener("input",()=>{$("targetProbabilityLabel").textContent=$("targetProbability").value+"%";if(proposalGenerated)buildProposal();});
  $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
@@ -239,7 +229,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
   monitorTimer=window.setInterval(()=>{const active=document.querySelector("[data-bets-tab=\"live\"]")?.getAttribute("aria-selected")==="true";if(active&&!document.hidden&&hasTodayOpenTicket())updateArchive();},900000);
- }catch(e){$("globalStatus").textContent="Dati non disponibili: "+(e.message||"errore sconosciuto");$("manualFixtures").innerHTML='<div class="notice warning">Calendario non disponibile. Riprova quando la fonte dati sarà raggiungibile.</div>';}
+ }catch(e){$("globalStatus").textContent="Dati non disponibili: "+(e.message||"errore sconosciuto");$("manualBuilderStatus").textContent="Calendario non disponibile: impossibile calcolare le probabilità delle selezioni.";}
 });
 window.addEventListener("pagehide",()=>{if(monitorTimer)clearInterval(monitorTimer);});
 })();
