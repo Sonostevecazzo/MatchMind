@@ -1124,3 +1124,14 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 .global-slip-remove svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .global-slip-remove:active{background:#26353d;border-color:#849b79;color:#d9f39a}
 @media(hover:hover){.global-slip-remove:hover{background:#26353d;border-color:#849b79;color:#d9f39a}}
+
+
+/* The Athletic editorial feed */
+.athletic-news-list{display:grid;gap:10px}
+.athletic-news-item{padding:13px 14px;border:1px solid var(--line,#263342);border-radius:13px;background:rgba(15,23,31,.72)}
+.athletic-news-item small{display:block;margin-bottom:6px;color:var(--muted,#93a1b0);font-size:.72rem;font-weight:750;letter-spacing:.06em}
+.athletic-news-item b{display:block;font-size:.98rem;line-height:1.35}
+.athletic-news-item a{color:var(--text,#edf3f8);text-decoration:none}
+.athletic-news-item a:focus-visible,.athletic-news-item a:hover{color:var(--mint,#c4f36a)}
+.athletic-news-item p{margin:7px 0 0;color:var(--muted,#aab7c2);font-size:.86rem;line-height:1.5}
+.athletic-news-note{display:block;margin-top:3px;color:var(--muted,#93a1b0);font-size:.76rem;line-height:1.45}
