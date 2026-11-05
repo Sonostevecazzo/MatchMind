@@ -121,6 +121,7 @@
     if(panel&&picker)panel.querySelector('.fixture-market-options').outerHTML=marketButtonsHtml(match,forecast,picker.value,selected&&selected.marketKey);
    });
    $('moreMatches').addEventListener('click',()=>{shownLimit+=12;render()});
+   window.addEventListener('matchmind:picks-updated',()=>{render();updateMatchSlipActions();});
    updateMatchSlipActions();
    render();
  }
