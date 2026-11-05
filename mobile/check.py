@@ -30,7 +30,7 @@ scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
 with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
-for filename in ["site-core.js","ai-engine.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
+for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
 for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js"]:
  subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
@@ -113,6 +113,7 @@ assert "upcomingMatches" in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "live-sim-metrics" in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "notifyDetailChanges" in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "notificationclick" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "live-sim-track" in (ROOT/"live.css").read_text(encoding="utf-8")
 assert "data-notification-category" in (ROOT/"live.html").read_text(encoding="utf-8")
 assert "proposal-summary" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "proposal-leg-match" in (ROOT/"bets.js").read_text(encoding="utf-8")
