@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="./mobile-readable.css?v=20261104-live">
 <link rel="stylesheet" href="./live.css">
 <title>MatchMind · Live</title>
-<script defer src="./site-core.js"></script><script defer src="./elo.js"></script>
+<script defer src="./site-core.js"></script><script defer src="./notifications.js"></script><script defer src="./elo.js"></script>
 <script defer src="./live.js"></script>
 </head>
 <body data-page="live" data-title="Live" data-subtitle="Risultati, cronologia eventi e simulazione tattica illustrativa.">
@@ -19,9 +19,10 @@
 <main class="page-wrap live-page">
 <div class="page-intro"><div class="eyebrow">MATCHMIND / LIVE CENTRE</div><h1 id="pageTitle">Live</h1><p id="pageSubtitle">Partite in corso e dati aggiornati dal provider.</p></div>
 <div id="liveStatus" class="live-status" role="status" aria-live="polite">Connessione al provider live…</div>
+<section class="live-notification-panel" aria-label="Notifiche MatchMind"><div class="live-notification-head"><div><b>Avvisi MatchMind</b><small id="notificationPermissionStatus">Notifiche disattivate.</small></div><button id="enableAppNotifications" type="button" class="secondary">Attiva notifiche</button></div><details><summary>Personalizza gli avvisi</summary><div class="live-notification-options"><label><input type="checkbox" data-notification-category="kickoff"> Inizio partita</label><label><input type="checkbox" data-notification-category="goals"> Gol</label><label><input type="checkbox" data-notification-category="cards"> Cartellini</label><label><input type="checkbox" data-notification-category="halftime"> Intervallo</label><label><input type="checkbox" data-notification-category="fulltime"> Fine partita</label><label><input type="checkbox" data-notification-category="tickets"> Aggiornamenti schedine</label></div></details></section>
 <section id="liveListSection" class="section">
  <div class="section-head"><div><h2>In diretta</h2><p id="liveListUpdated">Aggiornamento adattivo: 5 min durante il gioco, 15 min prima, 30 min senza eventi.</p></div><button id="refreshLive" class="secondary" type="button">Aggiorna</button></div>
- <div id="liveMatches" class="live-match-list"><div class="loading-state">Caricamento partite…</div></div>
+ <div id="liveMatches" class="live-match-list"><div class="loading-state">Caricamento partite…</div></div><div class="upcoming-section"><div class="live-section-heading"><div><span class="eyebrow">PROSSIMI INCONTRI</span><h2>In programma</h2><p>Calendario dei prossimi 7 giorni</p></div></div><div id="upcomingMatches" class="live-match-list"><div class="loading-state">Caricamento calendario…</div></div></div>
 </section>
 <section id="liveDetailSection" class="section" hidden>
  <div class="live-detail-tools"><a class="live-back-link" href="./live.html">← Tutte le partite live</a><button id="refreshLiveDetail" class="secondary" type="button">Aggiorna ora</button></div>
