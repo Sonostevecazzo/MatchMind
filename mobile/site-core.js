@@ -104,7 +104,9 @@
     ['sportingcp','sportingclubedeportugal','sportinglisbon'],
     ['stuttgart','vfbstuttgart'],
     ['viking','vikingfk'],
-    ['villarreal','villarrealcf']
+    ['villarreal','villarrealcf'],
+    ['omonia','omonianicosia','acomonianicosia','omoniafc','acomonianicosiafc'],
+    ['hapoelbeersheva','hapoelbeershevafc','hapoelbeershevafootballclub']
   ];
   const sameTeam=(a,b)=>{
     const x=norm(a),y=norm(b);
@@ -173,6 +175,12 @@
     torreense:'portugal/S.C.U._Torreense.svg',sctorreense:'portugal/S.C.U._Torreense.svg',celje:'slovenia/Celje.svg',nkcelje:'slovenia/Celje.svg',
     lillestrom:'norway/Lillestrøm.svg',lillestrm:'norway/Lillestrøm.svg',
     sabah:'azerbaijan/Sabah.svg',
+    omonia:'https://www.footylogos.com/downloads/logo/ac-omonia-nicosia-logo-footylogos.svg',
+    omonianicosia:'https://www.footylogos.com/downloads/logo/ac-omonia-nicosia-logo-footylogos.svg',
+    aconomonianicosia:'https://www.footylogos.com/downloads/logo/ac-omonia-nicosia-logo-footylogos.svg',
+    hapoelbeersheva:'https://www.footylogos.com/downloads/logo/hapoel-beer-sheva-logo-footylogos.svg',
+    hapoelbeershevafc:'https://www.footylogos.com/downloads/logo/hapoel-beer-sheva-logo-footylogos.svg',
+    hapoelbeershevafootballclub:'https://www.footylogos.com/downloads/logo/hapoel-beer-sheva-logo-footylogos.svg',
     bayerleverkusen:'germany/Bayer_Leverkusen.svg',bayer04leverkusen:'germany/Bayer_Leverkusen.svg',
     celticfc:'scotland/Celtic.svg',beiktas:'turkey/Beşiktaş.svg',
     fcaararatarmenia:'armenia/Ararat-Armenia.svg',ferencvarostc:'hungary/Ferencváros.svg',
@@ -185,7 +193,7 @@
     stadederennais:'france/Rennes.svg',tsghoffenheim:'germany/Hoffenheim.svg',
     viktoriaplzen:'czech-republic/Viktoria_Plzeň.svg'
   };
-  function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
+  function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];if(!path)return '';return /^https:\/\//i.test(path)?path:LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/');}
   function badge(name){const fallback=esc(teamInitials(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(name)+'">'+(src?'<img class="team-logo" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove();if(this.nextElementSibling)this.nextElementSibling.style.display=\'inline-flex\'">':'')+'<span class="team-crest-fallback"'+(src?' style="display:none"':'')+'>'+fallback+'</span></span>';}
   function getTeams(rows){return [...new Set(rows.flatMap(m=>[m.home,m.away]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));}
   function groupByDate(rows){const map=new Map();rows.forEach(m=>{const k=m.date||'unknown';if(!map.has(k))map.set(k,[]);map.get(k).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
