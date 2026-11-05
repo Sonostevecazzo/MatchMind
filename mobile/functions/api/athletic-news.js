@@ -23,7 +23,7 @@ function parseFeed(xml) {
     const date = tag(item, "pubDate");
     const image = item.match(/<(?:media:content|media:thumbnail|enclosure)[^>]+url=["']([^"']+)["']/i)?.[1] || null;
     return { title, summary, url: link, publishedAt: date, image };
-  }).filter(item => item.title && /^https:\/\/(?:www\.)?theathletic\.com\//i.test(item.url));
+  }).filter(item => item.title && /^https:\/\/(?:www\.)?(?:theathletic\.com|nytimes\.com\/athletic)\//i.test(item.url));
 }
 export async function onRequestGet() {
   try {
