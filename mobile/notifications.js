@@ -46,7 +46,7 @@
     });
     const update=()=>{
       const current=status();
-      if(statusNode)statusNode.textContent=current.permission==="granted"&&current.preferences.enabled?"Notifiche attive su questo dispositivo. Gli avvisi vengono generati mentre MatchMind è aperta.":current.permission==="denied"?"Permesso negato: abilitalo dalle impostazioni del browser.":"Notifiche disattivate.";
+      if(statusNode)statusNode.textContent=current.permission==="granted"&&current.preferences.enabled?"Notifiche attive su questo dispositivo. Gli avvisi vengono generati mentre la pagina Live o Schedina è aperta e attiva.":current.permission==="denied"?"Permesso negato: abilitalo dalle impostazioni del browser.":"Notifiche disattivate.";
       if(button)button.textContent=current.preferences.enabled?"Notifiche attive":"Attiva notifiche";
     };
     button?.addEventListener("click",async()=>{
