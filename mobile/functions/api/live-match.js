@@ -333,7 +333,7 @@ function normalizeEspnDetail(summary, scoreboardEvent, leagueName) {
 }
 
 async function fetchEspnEvent(competition, fixtureId, date, home, away, source) {
-  const leagueName = competition === "champions-league" ? "UEFA Champions League" : "Italian Serie A";
+  const leagueName = competition === "champions-league" ? "UEFA Champions League" : competition === "europa-league" ? "UEFA Europa League" : "Italian Serie A";
   if (source === "espn" && fixtureId) {
     try {
       const url = ESPN_BASE + ESPN_LEAGUES[competition] + "/summary?event=" + encodeURIComponent(fixtureId);
