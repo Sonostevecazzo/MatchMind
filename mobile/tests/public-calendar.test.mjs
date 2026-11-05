@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { onRequestGet } from "../functions/api/public-calendar.js";
 
-test("public calendar merges Serie A and Champions League CSV without API credentials", async (t) => {
+test("public calendar merges Serie A, Champions League and Europa League CSV without API credentials", async (t) => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
   const csv = "gw,date,time,home,away,ft_home,ft_away,ft_result,ht_home,ht_away,ht_result,home_shots,away_shots,home_target,away_target,home_fouls,away_fouls,home_corners,away_corners,home_corners_1h,away_corners_1h,home_corners_2h,away_corners_2h,home_yellow,away_yellow,home_red,away_red,goal_minutes,source\n";
@@ -26,7 +26,7 @@ test("public calendar merges Serie A and Champions League CSV without API creden
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.source, "open-matchday + openfootball storico");
-  assert.deepEqual([...new Set(body.matches.map(x => x.competition))].sort(), ["champions-league", "serie-a"]);
+  assert.deepEqual([...new Set(body.matches.map(x => x.competition))].sort(), ["champions-league", "europa-league", "serie-a"]);
   const serieResult = body.matches.find(x => x.competition === "serie-a" && x.hg === 2);
   assert.equal(serieResult.hc, 6);
   assert.equal(serieResult.hs, 12);
