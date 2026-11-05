@@ -155,7 +155,7 @@
     crystalpalace:'england/Crystal_Palace.svg',sunderland:'england/Sunderland.svg',bournemouth:'england/AFC_Bournemouth.svg',
     lyon:'france/Olympique_Lyonnais.svg',marseille:'france/Olympique_de_Marseille.svg',rennes:'france/Stade_Rennais.svg',
     leverkusen:'germany/Bayer_04_Leverkusen.svg',hoffenheim:'germany/TSG_1899_Hoffenheim.svg',
-    salzburg:'austria/Red_Bull_Salzburg.svg',sturmgratz:'austria/Sturm_Graz.svg',
+    salzburg:'austria/Red_Bull_Salzburg.svg',sturmgraz:'austria/Sturm_Graz.svg',
     anderlecht:'belgium/RSC_Anderlecht.svg',unionsg:'belgium/Union_Saint-Gilloise.svg',
     azalkmaar:'netherlands/AZ_Alkmaar.svg',nec:'netherlands/NEC_Nijmegen.svg',
     celtic:'scotland/Celtic_FC.svg',
