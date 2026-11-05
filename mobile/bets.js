@@ -178,12 +178,6 @@ async function shareTicket(ticket){
 }
 function initEvents(){
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
-
-
-
-
-);
-);
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
  $("manualSlipSummary").addEventListener("click",event=>{
   const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderSlip();return;}
