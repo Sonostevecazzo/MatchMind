@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v83-20261105-bets-manager-only';
+const CACHE='matchmind-pwa-v84-20261105-geometric-m-brand';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
