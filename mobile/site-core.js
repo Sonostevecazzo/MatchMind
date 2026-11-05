@@ -177,7 +177,7 @@
     sabah:'azerbaijan/Sabah.svg',
     omonia:'https://www.footylogos.com/downloads/logo/ac-omonia-nicosia-logo-footylogos.svg',
     omonianicosia:'https://www.footylogos.com/downloads/logo/ac-omonia-nicosia-logo-footylogos.svg',
-    aconomonianicosia:'https://www.footylogos.com/downloads/logo/ac-omonia-nicosia-logo-footylogos.svg',
+    acomonianicosia:'https://www.footylogos.com/downloads/logo/ac-omonia-nicosia-logo-footylogos.svg',
     hapoelbeersheva:'https://www.footylogos.com/downloads/logo/hapoel-beer-sheva-logo-footylogos.svg',
     hapoelbeershevafc:'https://www.footylogos.com/downloads/logo/hapoel-beer-sheva-logo-footylogos.svg',
     hapoelbeershevafootballclub:'https://www.footylogos.com/downloads/logo/hapoel-beer-sheva-logo-footylogos.svg',
