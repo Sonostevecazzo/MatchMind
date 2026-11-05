@@ -194,6 +194,7 @@ function initEvents(){
   const el=event.target.closest("[data-context-field]");if(!el)return;
   const key=el.dataset.context,field=el.dataset.contextField;contexts[key]=contexts[key]||{};contexts[key][field]=Number(el.value);save(CONTEXT_KEY,contexts);renderFixtures();renderSlip();
  });
+ $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
  $("manualSlipSummary").addEventListener("click",event=>{
   const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
