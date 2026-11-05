@@ -306,7 +306,6 @@ function eventForecast(match,history){
       install:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>'
     };
     const links=[
-      ['index.html','home','Home'],
       ['matches.html','matches','Partite'],
       ['live.html','live','Live'],
       ['analysis-lab.html','mind','Analisi'],
@@ -314,10 +313,61 @@ function eventForecast(match,history){
     ];
     const mobile=links.map(([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>').join('');
     const desktop=links.map(([href,key,label])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'>'+label+'</a>').join('');
-    return '<header class="site-header"><a class="brand-link" href="index.html" aria-label="MatchMind Home"><span class="brand-mark"><span>M</span></span><span class="brand-copy"><b>MatchMind</b><small>FOOTBALL INTELLIGENCE</small></span></a><nav class="desktop-nav" aria-label="Navigazione principale">'+desktop+'</nav><div class="header-actions"><a class="header-more-link '+(active==='more'?'active':'')+'" href="explore.html" aria-label="Altro e strumenti">Altro</a><button class="refresh-data install-action" id="installApp" type="button" aria-label="Installa MatchMind" title="Installa MatchMind" hidden><span class="action-symbol">'+icons.install+'</span><span>Installa</span></button><button class="refresh-data refresh-action" id="globalRefresh" type="button" aria-label="Aggiorna dati" title="Aggiorna dati"><span class="action-symbol">'+icons.refresh+'</span><span>Aggiorna</span></button></div></header><nav class="mobile-nav" aria-label="Navigazione principale">'+mobile+'</nav>';
+    return '<header class="site-header"><a class="brand-link" href="matches.html" aria-label="MatchMind Partite"><span class="brand-mark"><span>M</span></span><span class="brand-copy"><b>MatchMind</b><small>FOOTBALL INTELLIGENCE</small></span></a><nav class="desktop-nav" aria-label="Navigazione principale">'+desktop+'</nav><div class="header-actions"><a class="header-more-link '+(active==='more'?'active':'')+'" href="explore.html" aria-label="Altro e strumenti">Altro</a><button class="refresh-data install-action" id="installApp" type="button" aria-label="Installa MatchMind" title="Installa MatchMind" hidden><span class="action-symbol">'+icons.install+'</span><span>Installa</span></button><button class="refresh-data refresh-action" id="globalRefresh" type="button" aria-label="Aggiorna dati" title="Aggiorna dati"><span class="action-symbol">'+icons.refresh+'</span><span>Aggiorna</span></button></div></header><nav class="mobile-nav" aria-label="Navigazione principale">'+mobile+'</nav>';
+  }
+
+  function mountSlipDock(){
+    if($('globalSlipDock'))return;
+    const dock=document.createElement('section');
+    dock.id='globalSlipDock';dock.className='global-slip-dock';dock.hidden=true;
+    dock.setAttribute('aria-label','Schedina corrente');
+    dock.innerHTML='<div class="global-slip-head"><button type="button" class="global-slip-toggle" data-slip-toggle aria-expanded="false"><span><b data-slip-title>Schedina</b><small data-slip-subtitle>Selezioni salvate</small></span><span class="global-slip-chevron" aria-hidden="true">⌃</span></button><a class="global-slip-open" href="./bets.html">Apri</a></div><div class="global-slip-body" data-slip-body hidden></div>';
+    document.body.appendChild(dock);
+    const key='matchmind-manual-selections-v1';
+    const read=()=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return[];}};
+    const marketLabel=value=>{
+      const labels={home:'1',draw:'X',away:'2',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol'};
+      if(labels[value])return labels[value];
+      const match=String(value||'').match(/^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35|bttsYes|bttsNo)$/);
+      return match?marketLabel(match[1])+' + '+marketLabel(match[2]):String(value||'Mercato');
+    };
+    const render=()=>{
+      const competition=getSelectedCompetition(),rows=read().filter(x=>(x.competition||'serie-a')===competition);
+      dock.hidden=rows.length===0;
+      if(!rows.length)return;
+      dock.querySelector('[data-slip-title]').textContent='Schedina · '+rows.length+' '+(rows.length===1?'selezione':'selezioni');
+      dock.querySelector('[data-slip-subtitle]').textContent='Le tue selezioni restano disponibili mentre navighi';
+      const body=dock.querySelector('[data-slip-body]'),expanded=!body.hidden;
+      body.innerHTML='<div class="global-slip-list">'+rows.map((item,index)=>'<div class="global-slip-row"><span><b>'+esc(item.home)+' – '+esc(item.away)+'</b><small>'+esc(marketLabel(item.marketKey))+' · '+esc(item.date||'Data da definire')+'</small></span><button type="button" data-slip-remove="'+index+'" aria-label="Rimuovi '+esc(item.home)+' – '+esc(item.away)+'">×</button></div>').join('')+'</div><div class="global-slip-actions"><button type="button" class="secondary" data-slip-clear>Svuota</button><a class="button-like primary" href="./bets.html">Apri costruttore</a></div><small class="global-slip-note">Le probabilità sono stime statistiche; la combinazione tra partite assume indipendenza.</small>';
+      body.hidden=!expanded;
+      const toggle=dock.querySelector('[data-slip-toggle]');
+      toggle.setAttribute('aria-expanded',String(expanded));
+      dock.querySelector('.global-slip-chevron').textContent=expanded?'⌄':'⌃';
+    };
+    dock.addEventListener('click',event=>{
+      if(event.target.closest('[data-slip-toggle]')){
+        const body=dock.querySelector('[data-slip-body]');body.hidden=!body.hidden;
+        dock.querySelector('[data-slip-toggle]').setAttribute('aria-expanded',String(!body.hidden));
+        dock.querySelector('.global-slip-chevron').textContent=body.hidden?'⌃':'⌄';return;
+      }
+      const remove=event.target.closest('[data-slip-remove]');
+      if(remove){
+        const rows=read().filter(x=>(x.competition||'serie-a')===getSelectedCompetition()),index=Number(remove.dataset.slipRemove),target=rows[index];
+        if(target){const all=read();const at=all.findIndex(x=>(x.competition||'serie-a')===(target.competition||'serie-a')&&x.date===target.date&&norm(x.home)===norm(target.home)&&norm(x.away)===norm(target.away));if(at>=0)all.splice(at,1);try{localStorage.setItem(key,JSON.stringify(all));}catch{}}
+        render();window.dispatchEvent(new Event('matchmind:picks-updated'));return;
+      }
+      if(event.target.closest('[data-slip-clear]')){
+        const all=read().filter(x=>(x.competition||'serie-a')!==getSelectedCompetition());try{localStorage.setItem(key,JSON.stringify(all));}catch{}
+        render();window.dispatchEvent(new Event('matchmind:picks-updated'));
+      }
+    });
+    window.addEventListener('matchmind:picks-updated',render);
+    window.addEventListener('storage',event=>{if(event.key===key||event.key==='matchmind-competition-v1')render();});
+    render();
   }
   function mountShell(active,title,subtitle){
     const header=$('siteHeader');if(header)header.innerHTML=nav(active);
+    mountSlipDock();
     if(document.body.dataset.page==='match'){const back=document.createElement('button');back.className='detail-back';back.type='button';back.innerHTML='‹ <span>Torna alle partite</span>';back.addEventListener('click',()=>{if(history.length>1)history.back();else location.href='matches.html';});const main=document.querySelector('.page-wrap');if(main)main.prepend(back);}
     const titleEl=$('pageTitle');if(titleEl)titleEl.textContent=title||'MatchMind';
     const subEl=$('pageSubtitle');if(subEl)subEl.textContent=subtitle||'';
@@ -333,10 +383,10 @@ function eventForecast(match,history){
       select.value=getSelectedCompetition();field.append(label,select);
       const homeStatus=page==='home'&&$('homeStatus');
       if(homeStatus&&homeStatus.parentNode===pickerHost)pickerHost.insertBefore(field,homeStatus);else pickerHost.appendChild(field);
-      select.addEventListener('change',()=>{try{localStorage.setItem('matchmind-competition-v1',select.value);}catch{};const currentPage=document.body.dataset.page;if(currentPage==='match'||currentPage==='team'){const target=currentPage==='match'?'index.html':'explore.html';location.href=target+'?competition='+encodeURIComponent(select.value)+(currentPage==='match'?'#matchesSection':'');}else{const url=new URL(location.href);url.searchParams.delete('import');url.searchParams.set('competition',select.value);location.href=url.toString();}});
+      select.addEventListener('change',()=>{try{localStorage.setItem('matchmind-competition-v1',select.value);}catch{};const currentPage=document.body.dataset.page;if(currentPage==='match'||currentPage==='team'){const target=currentPage==='match'?'matches.html':'explore.html';location.href=target+'?competition='+encodeURIComponent(select.value)+(currentPage==='match'?'#matchesSection':'');}else{const url=new URL(location.href);url.searchParams.delete('import');url.searchParams.set('competition',select.value);location.href=url.toString();}});
     }
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);location.reload();}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
   }
-  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=page==='home'?'home':(page==='matches'||page==='match'||page==='league')?'matches':page==='live'?'live':page==='mind'?'mind':page==='bets'?'bets':(['explore','players','data','settings','team'].includes(page)?'more':'home');mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});/* Forced periodic reload disabled: it interrupted scrolling and mobile navigation. Use the explicit refresh control. */});
+  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=(page==='home'||page==='matches'||page==='match'||page==='league')?'matches':page==='live'?'live':page==='mind'?'mind':page==='bets'?'bets':(['explore','players','data','settings','team'].includes(page)?'more':'home');mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});/* Forced periodic reload disabled: it interrupted scrolling and mobile navigation. Use the explicit refresh control. */});
   window.MM={$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
 })();

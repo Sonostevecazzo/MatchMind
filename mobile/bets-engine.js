@@ -51,9 +51,59 @@
     return null;
   }
 
+  function poisson(lambda, goals) {
+    if (!Number.isFinite(lambda) || lambda < 0) return 0;
+    let value = Math.exp(-lambda);
+    for (let i = 1; i <= goals; i++) value *= lambda / i;
+    return value;
+  }
+
+  function combinedMarketProbability(forecast, resultKey, secondaryKey) {
+    const p = forecast && forecast.probabilities;
+    const homeXg = Number(forecast && forecast.homeXg), awayXg = Number(forecast && forecast.awayXg);
+    if (!p || !Number.isFinite(homeXg) || !Number.isFinite(awayXg) || homeXg < 0 || awayXg < 0) return null;
+    const resultTargets = { home: p.home, draw: p.draw, away: p.away };
+    if (!Number.isFinite(resultTargets[resultKey])) return null;
+    const base = { home: 0, draw: 0, away: 0 };
+    const cells = [];
+    let mass = 0;
+    for (let hg = 0; hg <= 30; hg++) for (let ag = 0; ag <= 30; ag++) {
+      const probability = poisson(homeXg, hg) * poisson(awayXg, ag);
+      const outcome = hg > ag ? "home" : hg === ag ? "draw" : "away";
+      base[outcome] += probability;
+      mass += probability;
+      cells.push({ hg, ag, outcome, probability });
+    }
+    if (!(mass > 0) || !(base[resultKey] > 0)) return null;
+    const resultScale = resultTargets[resultKey] / base[resultKey];
+    let joint = 0;
+    for (const cell of cells) {
+      if (cell.outcome !== resultKey) continue;
+      const total = cell.hg + cell.ag;
+      let secondary = false;
+      switch (secondaryKey) {
+        case "over15": secondary = total >= 2; break;
+        case "under15": secondary = total <= 1; break;
+        case "over25": secondary = total >= 3; break;
+        case "under25": secondary = total <= 2; break;
+        case "over35": secondary = total >= 4; break;
+        case "under35": secondary = total <= 3; break;
+        case "bttsYes": secondary = cell.hg > 0 && cell.ag > 0; break;
+        case "bttsNo": secondary = cell.hg === 0 || cell.ag === 0; break;
+        default: return null;
+      }
+      if (secondary) joint += cell.probability * resultScale;
+    }
+    return Number.isFinite(joint) ? Math.max(0, Math.min(resultTargets[resultKey], joint)) : null;
+  }
+
   function marketProbability(forecast, key) {
     const p = forecast && forecast.probabilities;
     if (!p) return null;
+    if (String(key).startsWith("combo:")) {
+      const parts = String(key).split(":");
+      return parts.length === 3 ? combinedMarketProbability(forecast, parts[1], parts[2]) : null;
+    }
     const map = {
       over15: p.o15, under15: 1 - p.o15,
       over25: p.o25, under25: 1 - p.o25,
@@ -63,6 +113,25 @@
     };
     const result = map[key];
     return Number.isFinite(result) && result >= 0 && result <= 1 ? result : null;
+  }
+
+  function comboMarketChoices(mode) {
+    const outcomes = [["home", "1"], ["draw", "X"], ["away", "2"]];
+    const goals = [["over15", "Over 1,5"], ["under15", "Under 1,5"], ["over25", "Over 2,5"], ["under25", "Under 2,5"], ["over35", "Over 3,5"], ["under35", "Under 3,5"]];
+    const btts = [["bttsYes", "Gol"], ["bttsNo", "No Gol"]];
+    const secondary = mode === "combo-goals" ? goals : mode === "combo-btts" ? btts : goals.concat(btts);
+    return outcomes.flatMap(([resultKey, resultLabel]) => secondary.map(([marketKey, marketLabel]) => ({
+      key: "combo:" + resultKey + ":" + marketKey,
+      label: resultLabel + " + " + marketLabel
+    })));
+  }
+
+  function marketCandidates(mode) {
+    const singles = BET_MARKETS.map(([key, label]) => ({ key, label }));
+    if (mode === "single") return singles;
+    if (mode === "combo-goals" || mode === "combo-btts") return comboMarketChoices(mode);
+    if (mode === "auto") return singles.concat(comboMarketChoices("combo-auto"));
+    return singles;
   }
 
   function readOdds(text) {
@@ -193,16 +262,25 @@
       let best = null;
       const fixtureKey = [normalize(match.home), normalize(match.away)].sort().join("|") + "|" + match.date;
       const preferredKey = options && options.marketOverrides && options.marketOverrides[fixtureKey];
-      const preferred = BET_MARKETS.find(item => item[0] === preferredKey);
+      const preferred = marketCandidates("auto").find(item => item.key === preferredKey);
       if (preferred) {
-        const probability = marketProbability(forecast, preferred[0]);
-        if (probability !== null) best = { match, market: preferred[1], marketKey: preferred[0], probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: true };
+        const probability = marketProbability(forecast, preferred.key);
+        if (probability !== null) best = { match, market: preferred.label, marketKey: preferred.key, probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: true };
       }
-      for (const [key, label] of BET_MARKETS) {
+      // The slider also sets a per-leg risk profile: selective markets near 50%
+      // at low settings, progressively safer markets as the target rises.
+      const desiredMarketProbability = 0.50 + target * 0.25;
+      let bestDistance = Infinity;
+      for (const market of marketCandidates(options && options.marketMode || "auto")) {
         if (best && best.preferredByUser) break;
-        const probability = marketProbability(forecast, key);
+        const probability = marketProbability(forecast, market.key);
         if (probability === null) continue;
-        if (!best || probability > best.probability) best = { match, market: label, marketKey: key, probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: false };
+        const distance = Math.abs(probability - desiredMarketProbability);
+        if (!best || distance < bestDistance - 1e-12 ||
+            (Math.abs(distance - bestDistance) <= 1e-12 && probability > best.probability)) {
+          bestDistance = distance;
+          best = { match, market: market.label, marketKey: market.key, probability, historyCount: forecast.historyCount || 0, confidence: forecast.confidence || "non valutata", sampleEnough: Boolean(forecast.sampleEnough), preferredByUser: false, marketFit: distance };
+        }
       }
       if (best) candidates.push(best);
     }
@@ -238,10 +316,12 @@
       available: true, selections: chosen, probability: joint, threshold: target, thresholdReached,
       eligibleFixtures: candidates.length,
       upcomingFixtures: uniqueFixtures.length,
+      desiredMarketProbability: 0.50 + target * 0.25,
+      marketProfile: target < 0.34 ? "Selettivo" : target < 0.67 ? "Intermedio" : "Prudente",
       assumption: "Prodotto delle probabilità marginali; indipendenza tra partite assunta, non verificata.",
       warning: "Il modello non è una garanzia e non dimostra redditività. Non misura la convenienza economica della giocata."
     };
   }
 
-  return { normalize, matchFixture, parseMarket, marketProbability, readOdds, parseSlip, combineSelections, buildTicket, marketChoices };
+  return { normalize, matchFixture, parseMarket, marketProbability, combinedMarketProbability, readOdds, parseSlip, combineSelections, buildTicket, marketChoices, marketCandidates };
 });

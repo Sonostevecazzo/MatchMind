@@ -14,17 +14,17 @@ for name in required:
  assert '<html lang="it">' in html,f"{name} must declare Italian"
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
-  assert 'id="matchSlipPreview"' in html
+  assert 'id="matchSlipPreview"' not in html
  if name=="analysis-lab.html":
   assert 'id="analysisOverview"' in html and "bets-engine.js" in html
- assert "site-core.js" in html and "mobile-readable.css" in html
+ if name!="index.html": assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
   assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
   assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
- else: assert "site-pages.js" in html
+ elif name!="index.html": assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
@@ -44,6 +44,8 @@ assert "media.api-sports.io" not in core
 assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
@@ -56,7 +58,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v68-20261105-selected-analysis" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v71-20261105-persistent-slip" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
@@ -74,7 +76,7 @@ bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
 assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
-assert 'id="matchSlipPreview"' in (ROOT/"matches.html").read_text(encoding="utf-8")
+assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "Sisal" not in bets_js and "playerApi" not in bets_js
 assert "matchStandingsContext" in core and "pointsPerGame" in core
@@ -87,7 +89,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v68-20261105-selected-analysis" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v71-20261105-persistent-slip" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")

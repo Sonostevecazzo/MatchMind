@@ -3,7 +3,7 @@
 "use strict";
 const $=id=>document.getElementById(id),ENGINE=()=>window.MatchMindBets;
 const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2";
-let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false;
+let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -17,6 +17,7 @@ function getForecast(match){return window.MM.forecast(match,data.history,getCont
 function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
 function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
 function writePicks(){save(PICKS_KEY,picks);}
+window.addEventListener("matchmind:picks-updated",()=>{picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());if(data){renderFixtures();renderSlip();}});
 function selectedFor(match){return picks.find(p=>fixtureKey(p)===fixtureKey(match));}
 function selectOptions(value){return [0,1,2,3].map(n=>'<option value="'+n+'"'+(Number(value||0)===n?' selected':'')+'>'+n+'</option>').join("");}
 function motivationOptions(value){return [{v:-1,t:"Bassa"},{v:0,t:"Neutra / automatica"},{v:1,t:"Alta"}].map(x=>'<option value="'+x.v+'"'+(Number(value||0)===x.v?' selected':'')+'>'+x.t+'</option>').join("");}
@@ -34,7 +35,7 @@ function renderFixture(match){
  ];
  const absenceHtml=fields.map(([key,label,value])=>'<label class="context-field">'+esc(label)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="'+key+'">'+selectOptions(value)+'</select></label>').join("");
  const motivationHtml='<div class="context-motivation"><label class="context-field">Motivazione '+esc(match.home)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationHome">'+motivationOptions(ctx.motivationHome)+'</select></label><label class="context-field">Motivazione '+esc(match.away)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationAway">'+motivationOptions(ctx.motivationAway)+'</select></label></div>';
- return '<article class="manual-fixture-card"><div class="manual-fixture-heading"><div><b>'+esc(match.home)+' – '+esc(match.away)+'</b><small>'+esc(window.MM.shortDate(match))+(match.time?' · '+esc(match.time):'')+' · confidenza '+esc(f.confidence)+'</small></div>'+(selected?'<span class="manual-picked-label">'+esc(selected.marketLabel||selected.marketKey)+'</span>':'')+'</div>'+
+ return '<article class="manual-fixture-card"><div class="manual-fixture-heading"><div><b>'+esc(match.home)+' – '+esc(match.away)+'</b><small>'+esc(window.MM.shortDate(match))+(match.time?' · '+esc(match.time):'')+' · confidenza '+esc(f.confidence)+'</small></div>'+(selected?'<span class="manual-picked-label">'+esc(marketLabel(selected.marketKey))+'</span>':'')+'</div>'+
  '<div class="fixture-forecast-strip"><span>1 <b>'+pct(p.home)+'</b></span><span>X <b>'+pct(p.draw)+'</b></span><span>2 <b>'+pct(p.away)+'</b></span><span>xG <b>'+f.homeXg.toFixed(2)+' – '+f.awayXg.toFixed(2)+'</b></span></div>'+
  '<div class="fixture-form-context"><span>'+esc(match.home)+' forma: <b>'+esc(form(f.home))+'</b></span><span>'+esc(match.away)+' forma: <b>'+esc(form(f.away))+'</b></span><span>'+esc(stand(f.standings.home))+'</span><span>'+esc(stand(f.standings.away))+'</span></div>'+
  '<div class="fixture-market-options">'+buttons+'</div><details class="manual-other-markets"><summary>Contesto squadra: assenze, infortuni e motivazione</summary><div class="context-controls"><div class="context-grid">'+absenceHtml+'</div>'+motivationHtml+'<small>Inserisci solo titolari realmente indisponibili. Le assenze sono una correzione indicativa, non una valutazione del valore individuale del giocatore. La motivazione automatica deriva dalla classifica; l’impostazione manuale è una tua valutazione.</small></div></details></article>';
@@ -47,8 +48,12 @@ function renderFixtures(){
  const count=$("betsFixtureCount");if(count)count.textContent=rows.length+" partite trovate · visualizzate "+visible.length;
  const more=$("moreBetFixtures");if(more)more.hidden=rows.length<=visibleFixtureLimit;
 }
+function marketLabel(key){
+ const item=ENGINE().marketCandidates("auto").find(x=>x.key===key);
+ return item?item.label:String(key||"Mercato");
+}
 function selectedRows(){
- return picks.map(p=>{const match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(!match)return null;const forecast=getForecast(match),market=markets().find(x=>x[0]===p.marketKey);if(!market)return null;return{match,marketKey:p.marketKey,marketLabel:market[1],probability:marketProbability(forecast,p.marketKey),forecast};}).filter(Boolean);
+ return picks.map(p=>{const match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(!match)return null;const forecast=getForecast(match);return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:marketProbability(forecast,p.marketKey),forecast};}).filter(Boolean);
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
@@ -88,14 +93,16 @@ function saveCurrentSlip(){
  archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();$("archiveStatus").textContent="Schedina salvata su questo dispositivo.";setBetTab("live");
 }
 function buildProposal(){
+ proposalGenerated=true;
  const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
  const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
  const first=upcoming[0],candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
  const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
- const result=ENGINE().buildTicket(candidateFixtures,m=>getForecast(m),target,{maxLegs,marketOverrides:overrides});
+ const marketMode=$("marketMode")?.value||"auto";
+ const result=ENGINE().buildTicket(candidateFixtures,m=>getForecast(m),target,{maxLegs,marketOverrides:overrides,marketMode});
  if(!result.available){$("ticketResults").innerHTML='<div class="notice warning">'+esc(result.reason)+'</div><small>Partite analizzate: '+(result.upcomingFixtures||0)+' · campioni utilizzabili: '+(result.eligibleFixtures||0)+'. Per le squadre con meno di tre risultati precedenti il modello non genera una proposta.</small>';proposal=[];return;}
  proposal=result.selections.map(x=>({match:x.match,marketKey:x.marketKey,marketLabel:x.market,probability:x.probability,confidence:x.confidence,preferredByUser:x.preferredByUser}));
- $("ticketResults").innerHTML='<div class="metric"><span>PROBABILITÀ STIMATA DELLA COMBINAZIONE</span><b class="bet-percent bet-percent-total">'+pct(result.probability)+'</b><small>Obiettivo: '+pct(result.threshold)+' · '+proposal.length+' eventi · '+(result.thresholdReached?'obiettivo raggiunto':'obiettivo non raggiungibile con i dati e il limite selezionato')+'</small></div>'+
+ $("ticketResults").innerHTML='<div class="metric"><span>PROBABILITÀ STIMATA DELLA COMBINAZIONE</span><b class="bet-percent bet-percent-total">'+pct(result.probability)+'</b><small>Obiettivo combinazione: '+pct(result.threshold)+' · profilo '+esc(marketMode==='combo-goals'?'1X2 + Over/Under':marketMode==='combo-btts'?'1X2 + Gol/No Gol':marketMode==='single'?'Mercati singoli':'Automatico')+' · probabilità obiettivo per selezione '+pct(result.desiredMarketProbability)+' · '+proposal.length+' eventi · '+(result.thresholdReached?'obiettivo raggiunto':'obiettivo non raggiungibile con i dati e il limite selezionato')+'</small></div>'+
  proposal.map(x=>'<div class="data-row"><span><b>'+esc(x.match.home)+' – '+esc(x.match.away)+'</b><small>'+esc(x.match.date)+' · '+esc(x.marketLabel)+' · confidenza '+esc(x.confidence)+(x.preferredByUser?' · tua preferenza':'')+'</small></span><b class="bet-percent">'+pct(x.probability)+'</b></div>').join("")+
  '<button id="addProposal" type="button" class="primary" style="width:100%;margin-top:12px">Aggiungi proposta alla schedina</button>'+
  '<div class="notice warning">'+(result.thresholdReached?'Obiettivo probabilistico raggiunto secondo il modello. ':'Obiettivo non raggiunto: mostro comunque la combinazione più vicina disponibile, senza dichiararla conforme alla soglia. ')+esc(result.assumption)+' '+esc(result.warning||"")+'</div>';
@@ -106,6 +113,12 @@ function applyProposal(){
 }
 function evaluateMarket(key,homeGoals,awayGoals){
  const total=homeGoals+awayGoals;
+ if(String(key).startsWith("combo:")){
+  const parts=String(key).split(":");
+  if(parts.length!==3)return null;
+  const result=evaluateMarket(parts[1],homeGoals,awayGoals),secondary=evaluateMarket(parts[2],homeGoals,awayGoals);
+  return result===null||secondary===null?null:result&&secondary;
+ }
  switch(key){
   case "home":return homeGoals>awayGoals;
   case "draw":return homeGoals===awayGoals;
@@ -175,7 +188,9 @@ function initEvents(){
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
   if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderFixtures();renderSlip();}
  });
- $("targetProbability").addEventListener("input",()=>$("targetProbabilityLabel").textContent=$("targetProbability").value+"%");
+ $("targetProbability").addEventListener("input",()=>{$("targetProbabilityLabel").textContent=$("targetProbability").value+"%";if(proposalGenerated)buildProposal();});
+ $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
+ $("marketMode").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
  $("buildTicket").addEventListener("click",buildProposal);
  $("ticketResults").addEventListener("click",event=>{if(event.target.closest("#addProposal"))applyProposal();});
  $("refreshArchive").addEventListener("click",updateArchive);

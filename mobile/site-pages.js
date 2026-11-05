@@ -8,7 +8,7 @@
  const MATCH_PICKS_KEY="matchmind-manual-selections-v1";
  const matchPickKey=m=>[(m.competition||"serie-a"),m.date,MM().norm(m.home),MM().norm(m.away)].join("|");
  const readMatchPicks=()=>{try{const rows=JSON.parse(localStorage.getItem(MATCH_PICKS_KEY)||"[]");return Array.isArray(rows)?rows.filter(x=>x&&x.date&&x.home&&x.away&&x.marketKey):[]}catch(_){return[]}};
- const writeMatchPicks=rows=>{try{localStorage.setItem(MATCH_PICKS_KEY,JSON.stringify(rows))}catch(_){}};
+ const writeMatchPicks=rows=>{try{localStorage.setItem(MATCH_PICKS_KEY,JSON.stringify(rows))}catch(_){};window.dispatchEvent(new Event("matchmind:picks-updated"));};
  const marketCategoryForKey=key=>key==="bttsYes"||key==="bttsNo"?"btts":/^(over|under)15$/.test(key)?"goals15":/^(over|under)25$/.test(key)?"goals25":/^(over|under)35$/.test(key)?"goals35":"1x2";
  const marketOptions=(forecast,category)=>{
   const p=forecast.probabilities;
@@ -121,6 +121,7 @@
     if(panel&&picker)panel.querySelector('.fixture-market-options').outerHTML=marketButtonsHtml(match,forecast,picker.value,selected&&selected.marketKey);
    });
    $('moreMatches').addEventListener('click',()=>{shownLimit+=12;render()});
+   window.addEventListener('matchmind:picks-updated',()=>{render();updateMatchSlipActions();});
    updateMatchSlipActions();
    render();
  }
