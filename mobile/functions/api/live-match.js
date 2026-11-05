@@ -1,7 +1,7 @@
 const API_BASE = "https://v3.football.api-sports.io";
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
-const LEAGUES = { "serie-a": 135, "champions-league": 2 };
-const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions" };
+const LEAGUES = { "serie-a": 135, "champions-league": 2, "europa-league": 3 };
+const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa" };
 
 const json = (body, status = 200, cacheSeconds = 0) => new Response(JSON.stringify(body), {
   status,
