@@ -157,9 +157,9 @@
    rows.map((t,i)=>'<tr><td>'+(i+1)+'</td><td class="club"><a href="'+MM().teamUrl(t.name)+'">'+MM().badge(t.name)+esc(t.name)+'</a></td><td>'+t.played+'</td><td>'+t.w+'</td><td>'+t.d+'</td><td>'+t.l+'</td><td>'+t.gd+'</td><td class="points">'+t.pts+'</td></tr>').join('')+'</tbody></table></div>';
  }
  function initLeague(d){
-  const competition=MM().competitionInfo(d.competition),phaseRows=competition.id==='champions-league'?d.matches.filter(m=>m.stage==='League'||m.stage==='Group'):d.matches;
+  const competition=MM().competitionInfo(d.competition),phaseRows=d.matches;
   document.body.dataset.title=competition.name;document.title='MatchMind · '+competition.name;if($('pageTitle'))$('pageTitle').textContent=competition.name;
-  if($('pageSubtitle'))$('pageSubtitle').textContent=competition.id==='champions-league'?'Fase campionato, calendario e numeri del torneo.':'Classifica, calendario e numeri del campionato.';
+  if($('pageSubtitle'))$('pageSubtitle').textContent=['champions-league','europa-league'].includes(competition.id)?'Fase campionato, calendario e numeri del torneo.':'Classifica, calendario e numeri del campionato.';
   if($('leagueCompetitionName'))$('leagueCompetitionName').textContent=competition.name+' · '+competition.country;
   const logo=$('leagueCompetitionLogo');if(logo){logo.src='https://media.api-sports.io/football/leagues/'+competition.logo+'.png';logo.alt='Logo '+competition.name;}
   const badge=document.querySelector('.competition-fallback');if(badge)badge.textContent=competition.fallback;
