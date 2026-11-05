@@ -1082,3 +1082,36 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .page-wrap{height:auto!important;min-height:0!important;overflow:visible!important;max-height:none!important;padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
  .mobile-nav{touch-action:manipulation}
 }
+
+
+/* Persistent bet slip: available across every MatchMind screen. */
+.global-slip-dock{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:120;width:min(560px,calc(100% - 28px));border:1px solid #526d3b;border-radius:16px;background:rgba(15,24,29,.97);box-shadow:0 12px 38px #0009;backdrop-filter:blur(18px);color:var(--text,#f2f5f8);overflow:hidden}
+.global-slip-dock[hidden]{display:none!important}
+.global-slip-head{display:flex;align-items:center;gap:9px;padding:8px}
+.global-slip-toggle{display:flex;flex:1;min-width:0;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.global-slip-toggle>span:first-child{display:grid;gap:2px;min-width:0}
+.global-slip-toggle b{font-size:14px;font-weight:850;color:#d8f59b}
+.global-slip-toggle small{font-size:11px;color:#aab8bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.global-slip-chevron{font-size:20px;color:#d8f59b}
+.global-slip-open,.global-slip-actions .button-like{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border-radius:10px;background:#c4f36a;color:#17210a;text-decoration:none;font-weight:850;white-space:nowrap}
+.global-slip-body{padding:0 13px 12px;border-top:1px solid #ffffff17}
+.global-slip-list{max-height:34vh;overflow:auto;overscroll-behavior:contain}
+.global-slip-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid #ffffff12}
+.global-slip-row>span{display:grid;gap:3px;min-width:0}
+.global-slip-row b{font-size:13px;overflow-wrap:anywhere}
+.global-slip-row small{font-size:11px;color:#aab8bd}
+.global-slip-row button{flex:0 0 36px;width:36px;height:36px;border:1px solid #ffffff20;border-radius:9px;background:#1b272e;color:#ffb4b4;font-size:22px}
+.global-slip-actions{display:flex;gap:8px;margin-top:10px}
+.global-slip-actions button{min-height:40px;padding:0 13px}
+.global-slip-actions .button-like{flex:1}
+.global-slip-note{display:block;margin-top:8px;color:#9baab1;font-size:10px;line-height:1.4}
+@media(max-width:700px){
+ .global-slip-dock{bottom:calc(78px + env(safe-area-inset-bottom));width:calc(100% - 18px);border-radius:14px}
+ .global-slip-head{padding:6px}
+ .global-slip-toggle{padding:7px 8px}
+ .global-slip-toggle b{font-size:14px}
+ .global-slip-toggle small{font-size:11px}
+ .global-slip-open{min-height:42px;padding:0 13px}
+ .global-slip-list{max-height:34vh}
+ .global-slip-actions{display:grid;grid-template-columns:1fr 1.4fr}
+}
