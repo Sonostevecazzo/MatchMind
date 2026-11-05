@@ -22,6 +22,7 @@ self.addEventListener('activate',event=>{
 });
 
 self.addEventListener('notificationclick',event=>{event.notification.close();const target=new URL(event.notification.data?.url||'./live.html',self.registration.scope).href;event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{const existing=list.find(client=>client.url.startsWith(self.registration.scope));return existing?existing.navigate(target).then(()=>existing.focus()):clients.openWindow(target);}));});
+self.addEventListener('notificationclick',event=>{event.notification.close();const target=new URL(event.notification.data?.url||'./live.html',self.registration.scope).href;event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{const existing=list.find(client=>client.url.startsWith(self.registration.scope));return existing?existing.navigate(target).then(()=>existing.focus()):clients.openWindow(target);}));});
 self.addEventListener('fetch',event=>{
  const request=event.request;
  const url=new URL(request.url);
