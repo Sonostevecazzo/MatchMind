@@ -2,7 +2,8 @@ const DATA_ROOT="https://raw.githubusercontent.com/oladeeayo/open-matchday/maste
 const HISTORY_ROOT="https://raw.githubusercontent.com/openfootball/football.json/master/";
 const LEAGUES=[
  {id:"serie-a",folder:"ITA_1_serie-a",file:"it.1.json",history:true},
- {id:"champions-league",folder:"UEFA_1_champions-league",file:null,history:false}
+ {id:"champions-league",folder:"UEFA_1_champions-league",file:null,history:false},
+ {id:"europa-league",folder:"UEFA_1_europa-league",file:null,history:false}
 ];
 const CACHE_SECONDS=900;
 function csvRows(input){
