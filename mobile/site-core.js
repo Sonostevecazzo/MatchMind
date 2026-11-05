@@ -361,7 +361,8 @@ function eventForecast(match,history){
     const dock=document.createElement('section');
     dock.id='globalSlipDock';dock.className='global-slip-dock';dock.hidden=true;
     dock.setAttribute('aria-label','Schedina corrente');
-    dock.innerHTML='<div class="global-slip-head"><button type="button" class="global-slip-toggle" data-slip-toggle aria-expanded="false"><span><b data-slip-title>Schedina</b><small data-slip-subtitle>Selezioni salvate</small></span><span class="global-slip-hint" data-slip-hint>Mostra dettagli</span></button><a class="global-slip-open" href="./bets.html">Apri</a></div><div class="global-slip-body" data-slip-body hidden></div>';
+    const confirmHref=document.body.dataset.page==="bets"?"#saveManualSlip":"./bets.html#saveManualSlip";
+    dock.innerHTML='<div class="global-slip-head"><button type="button" class="global-slip-toggle" data-slip-toggle aria-expanded="false"><span><b data-slip-title>Schedina</b><small data-slip-subtitle>Selezioni salvate</small></span><span class="global-slip-hint" data-slip-hint>Mostra dettagli</span></button><a class="global-slip-open" href="'+confirmHref+'">Conferma</a></div><div class="global-slip-body" data-slip-body hidden></div>';
     document.body.appendChild(dock);
     const key='matchmind-manual-selections-v1';
     const read=()=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return[];}};
@@ -378,7 +379,7 @@ function eventForecast(match,history){
       dock.querySelector('[data-slip-title]').textContent='Schedina · '+rows.length+' '+(rows.length===1?'selezione':'selezioni');
       dock.querySelector('[data-slip-subtitle]').textContent='Le tue selezioni restano disponibili mentre navighi';
       const body=dock.querySelector('[data-slip-body]'),expanded=!body.hidden;
-      body.innerHTML='<div class="global-slip-list">'+rows.map((item,index)=>'<div class="global-slip-row"><span><b>'+esc(item.home)+' – '+esc(item.away)+'</b><small>'+esc(marketLabel(item.marketKey))+' · '+esc(item.date||'Data da definire')+'</small></span><button type="button" class="global-slip-remove" data-slip-remove="'+index+'" aria-label="Rimuovi '+esc(item.home)+' – '+esc(item.away)+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-.8 13H6.8L6 7m4 3v6m4-6v6"/></svg></button></div>').join('')+'</div><div class="global-slip-actions"><button type="button" class="secondary" data-slip-clear>Svuota</button><a class="button-like primary" href="./bets.html">Apri costruttore</a></div><small class="global-slip-note">Le probabilità sono stime statistiche; la combinazione tra partite assume indipendenza.</small>';
+      body.innerHTML='<div class="global-slip-list">'+rows.map((item,index)=>'<div class="global-slip-row"><span><b>'+esc(item.home)+' – '+esc(item.away)+'</b><small>'+esc(marketLabel(item.marketKey))+' · '+esc(item.date||'Data da definire')+'</small></span><button type="button" class="global-slip-remove" data-slip-remove="'+index+'" aria-label="Rimuovi '+esc(item.home)+' – '+esc(item.away)+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-.8 13H6.8L6 7m4 3v6m4-6v6"/></svg></button></div>').join('')+'</div><div class="global-slip-actions"><button type="button" class="secondary" data-slip-clear>Svuota</button><a class="button-like primary" href="'+confirmHref+'">Conferma schedina</a></div><small class="global-slip-note">Le probabilità sono stime statistiche; la combinazione tra partite assume indipendenza.</small>';
       body.hidden=!expanded;
       const toggle=dock.querySelector('[data-slip-toggle]');
       toggle.setAttribute('aria-expanded',String(expanded));
