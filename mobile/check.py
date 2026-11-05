@@ -74,7 +74,7 @@ bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
 assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
-assert 'id="matchSlipPreview"' in (ROOT/"matches.html").read_text(encoding="utf-8")
+assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "Sisal" not in bets_js and "playerApi" not in bets_js
 assert "matchStandingsContext" in core and "pointsPerGame" in core
@@ -87,7 +87,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v70-20261105-combined-markets" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v71-20261105-persistent-slip" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
