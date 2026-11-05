@@ -11,7 +11,7 @@ button.ghost{background:transparent}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
 .site-header{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:18px;height:60px;padding:0 max(16px,calc((100vw - 1120px)/2));background:rgba(9,12,17,.96);border-bottom:1px solid #232d38;backdrop-filter:blur(18px)}
 .brand-link{display:flex;align-items:center;gap:9px;min-width:max-content}
-.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#baf4df,#53c49e);color:#071a12;font-weight:950;font-size:19px}
+.brand-mark{display:block;flex:0 0 36px;width:36px;height:36px;border-radius:11px;object-fit:cover;box-shadow:0 0 0 1px #c4f36a24}
 .brand-link b{display:block;font-size:15px;letter-spacing:-.5px;line-height:1.1}
 .brand-link small{display:block;margin-top:3px;color:#7e8c9b;font-size:7px;font-weight:850;letter-spacing:1.1px}
 .desktop-nav{display:flex;align-items:center;gap:5px;flex:1}
