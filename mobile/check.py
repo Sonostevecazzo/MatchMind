@@ -14,7 +14,7 @@ for name in required:
  assert '<html lang="it">' in html,f"{name} must declare Italian"
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
-  assert 'id="matchSlipPreview"' in html
+  assert 'id="matchSlipPreview"' not in html
  if name=="analysis-lab.html":
   assert 'id="analysisOverview"' in html and "bets-engine.js" in html
  assert "site-core.js" in html and "mobile-readable.css" in html
@@ -43,7 +43,7 @@ assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
 assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
-assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")\nassert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")\nassert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
@@ -56,7 +56,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v70-20261105-combined-markets" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v71-20261105-persistent-slip" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
