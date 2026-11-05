@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v86-20261105-minimal-m-brand';
+const CACHE='matchmind-pwa-v87-20261105-approved-header-icon';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
