@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090c11"><meta name="description" content="MatchMind · Fonti aperte e copertura"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261104-open-data"><title>MatchMind · Fonti e copertura</title><script defer src="./site-core.js"></script><script defer src="./elo.js"></script><script defer src="./site-pages.js"></script></head>
 <body data-page="data" data-title="Fonti e copertura" data-subtitle="Fonti pubbliche per il calendario; provider live opzionale con chiave server-side."><div id="siteHeader"></div><main class="page-wrap"><div class="page-intro"><div class="eyebrow">MATCHMIND / DATA</div><h1 id="pageTitle">Fonti e copertura</h1><p id="pageSubtitle">Fonti pubbliche senza chiavi API, con limiti dichiarati.</p></div>
-<section class="panel"><div class="panel-head"><div><h2>Fonte calendario e statistiche</h2><p>CSV pubblici per lo storico; API-Football opzionale per il Live.</p></div><button id="checkProviders" type="button">Verifica</button></div><div class="panel-body" id="providerStatus"><div class="notice">Open-matchday: Serie A e Champions League. Archivio storico Serie A da openfootball.</div></div></section>
+<section class="panel"><div class="panel-head"><div><h2>Fonte calendario e statistiche</h2><p>CSV pubblici per lo storico; API-Football opzionale per il Live.</p></div><button id="checkProviders" type="button">Verifica</button></div><div class="panel-body" id="providerStatus"><div class="notice">Open-matchday: Serie A, Champions League ed Europa League. Archivio storico Serie A da openfootball.</div></div></section>
 <section class="section" style="margin-top:14px"><div class="section-head"><div><h2>Dati disponibili</h2><p>Copertura verificata sul dataset 2026/27 al 4 novembre 2026.</p></div></div><div class="panel panel-pad">
 <div class="data-row"><span>Serie A · calendario</span><b>280 incontri</b></div>
 <div class="data-row"><span>Serie A · risultati</span><b>100 partite</b></div>
@@ -9,12 +9,15 @@
 <div class="data-row"><span>Serie A · minuti dei gol</span><b>96/100 righe</b></div>
 <div class="data-row"><span>Champions League · calendario</span><b>81 incontri</b></div>
 <div class="data-row"><span>Champions League · risultati</span><b>63 partite</b></div>
-<div class="data-row"><span>Champions League · statistiche evento</span><b>Copertura non presente nel dataset pubblico</b></div>
+<div class="data-row"><span>Champions League · statistiche evento</span><b>Copertura variabile nel dataset pubblico</b></div>
+<div class="data-row"><span>Europa League · calendario e risultati</span><b>CSV open-matchday 2026/27</b></div>
+<div class="data-row"><span>Europa League · statistiche evento</span><b>Copertura variabile; non garantita</b></div>
 <div class="data-row"><span>Live · punteggi</span><b>API-Football primario · ESPN pubblico di fallback</b></div>
  <div class="data-row"><span>Live · cronologia, statistiche e formazioni</span><b>Variabili: copertura API-Football/ESPN</b></div>
 <div class="data-row"><span>Archivio storico Serie A</span><b>5 stagioni aggiuntive</b></div>
 </div></section>
 <section class="section"><div class="section-head"><div><h2>Fonti utilizzate</h2></div></div><div class="panel panel-pad">
+<p><b><a href="https://www.nytimes.com/athletic/rss/football/" target="_blank" rel="noopener">The Athletic · RSS calcio ↗</a></b> — MatchMind mostra titoli, brevi descrizioni e link agli articoli dal feed RSS. I testi integrali restano sul sito dell’editore e possono richiedere un abbonamento; il feed è soggetto a disponibilità e condizioni dell’editore.</p>
 <p><b><a href="https://github.com/oladeeayo/open-matchday" target="_blank" rel="noopener">open-matchday ↗</a></b> — CSV normalizzati per 75 competizioni, aggiornamento dichiarato giornaliero. La copertura delle statistiche varia per campionato. Il dataset aggrega più sorgenti pubbliche; non è live e può contenere errori o ritardi.</p>
 <p><b><a href="https://github.com/openfootball/football.json" target="_blank" rel="noopener">openfootball / football.json ↗</a></b> — risultati e calendari storici Serie A in JSON, licenza CC0; usato per ampliare lo storico.</p>
 <p><b><a href="https://www.football-data.co.uk/italym.php" target="_blank" rel="noopener">football-data.co.uk · Italia ↗</a></b> — CSV storici di risultati, statistiche e quote bookmaker, anche per Serie A. Il titolare limita l'uso gratuito a finalità personali/accademiche, con download automatizzati leggeri al massimo due volte a settimana. Non è quindi una fonte da interrogare continuamente.</p>
@@ -32,4 +35,4 @@
 <p>Le fonti gratuite individuate per questi dati sono parziali, soggette a restrizioni o prive di una copertura stabile per l'intera competizione.</p>
 </div></section>
 <section class="section"><div class="section-head"><div><h2>Licenza e utilizzo</h2></div></div><div class="notice warning">Attenzione: open-matchday dichiara uso informativo non commerciale; i dati upstream mantengono i propri termini. football-data.co.uk limita l'uso gratuito a quello personale/accademico. Questa integrazione è adatta a un prototipo personale, non a una pubblicazione commerciale o monetizzata senza autorizzazioni specifiche.</div></section>
-<footer class="site-footer">MatchMind · Calendario da dataset pubblici; Live da API-Football oppure da ESPN senza chiave quando la fonte primaria non risponde.</footer></main></body></html>
+<footer class="site-footer">MatchMind · Calendari da open-matchday; Live da API-Football o ESPN; notizie editoriali da The Athletic RSS.</footer></main></body></html>
