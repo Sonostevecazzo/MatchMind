@@ -46,6 +46,9 @@ assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
+assert 'global-slip-remove' in core and '<svg viewBox="0 0 24 24"' in core
+assert 'global-slip-chevron' not in core
+assert 'appearance:none!important' in (ROOT/"site.css").read_text(encoding="utf-8")
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
