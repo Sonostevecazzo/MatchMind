@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v72-20261105-clean-controls';
+const CACHE='matchmind-pwa-v73-20261105-live-first';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
