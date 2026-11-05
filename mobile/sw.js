@@ -1,8 +1,8 @@
-const CACHE='matchmind-pwa-v79-20261105-clear-ticket-builder';
+const CACHE='matchmind-pwa-v80-20261105-live-centre-notifications';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
- './site.css','./mobile-readable.css','./live.css','./analysis.css','./site-core.js','./ai-engine.js','./site-pages.js','./live.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
+ './site.css','./mobile-readable.css','./live.css','./analysis.css','./site-core.js','./notifications.js','./ai-engine.js','./site-pages.js','./live.js','./bets-engine.js','./tipsaudit.js','./bets.js','./elo.js','./rounds.js','./manifest.webmanifest','./icon.svg'
 ];
 
 self.addEventListener('install',event=>{
@@ -21,6 +21,7 @@ self.addEventListener('activate',event=>{
  );
 });
 
+self.addEventListener('notificationclick',event=>{event.notification.close();const target=new URL(event.notification.data?.url||'./live.html',self.registration.scope).href;event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{const existing=list.find(client=>client.url.startsWith(self.registration.scope));return existing?existing.navigate(target).then(()=>existing.focus()):clients.openWindow(target);}));});
 self.addEventListener('fetch',event=>{
  const request=event.request;
  const url=new URL(request.url);
