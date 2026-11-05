@@ -68,7 +68,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v80-20261105-live-centre-notifications" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v81-20261105-live-centre-notifications" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -115,6 +115,9 @@ assert "notifyDetailChanges" in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "statusCode" in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "kickoffTimestamp" in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "notificationclick" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert (ROOT/"sw.js").read_text(encoding="utf-8").count("notificationclick") == 1
+assert "MMNotifications" in (ROOT/"notifications.js").read_text(encoding="utf-8")
+assert "remote Web Push needs a server sender" in (ROOT/"notifications.js").read_text(encoding="utf-8")
 assert "live-sim-track" in (ROOT/"live.css").read_text(encoding="utf-8")
 assert "data-notification-category" in (ROOT/"live.html").read_text(encoding="utf-8")
 assert "proposal-summary" in (ROOT/"bets.js").read_text(encoding="utf-8")
