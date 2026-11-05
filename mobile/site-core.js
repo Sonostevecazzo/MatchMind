@@ -167,6 +167,13 @@
     lechpoznan:'poland/Lech_Poznań.svg',jagiellonia:'poland/Jagiellonia_Białystok.svg',
     viktoriaplzen:'czech-republic/FC_Viktoria_Plzeň.svg',spartapraha:'czech-republic/AC_Sparta_Praha.svg',
     omonia:'cyprus/Omonia.svg',
+    necnijmegen:'netherlands/NEC_Nijmegen.svg',
+    unionsaintgilloise:'belgium/Union_Saint-Gilloise.svg',
+    hapoelbeersheva:'israel/Hapoel_Be'er_Sheva.svg',
+    araratarmenia:'armenia/Ararat-Armenia.svg',
+    levskisofia:'bulgaria/Levski_Sofia.svg',
+    torreense:'portugal/Torreense.svg',celje:'slovenia/NK_Celje.svg',
+    lillestrom:'norway/Lillestrøm_SK.svg'
     sabah:'azerbaijan/Sabah.svg'
   };
   function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
