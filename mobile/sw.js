@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v78-20261105-direct-crest-assets';
+const CACHE='matchmind-pwa-v79-20261105-clear-ticket-builder';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
