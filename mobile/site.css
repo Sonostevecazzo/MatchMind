@@ -1115,3 +1115,21 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .global-slip-list{max-height:34vh}
  .global-slip-actions{display:grid;grid-template-columns:1fr 1.4fr}
 }
+
+
+/* Refined controls: quiet selects and a clear remove action. */
+.page-wrap select,
+.field select,
+.fixture-market-picker select,
+.context-field select{
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  background-image:none!important;
+  padding-right:14px!important;
+}
+.global-slip-toggle{gap:12px}
+.global-slip-hint{flex:0 0 auto;color:#b6c58e;font-size:11px;font-weight:750;letter-spacing:.01em}
+.global-slip-remove{display:flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;min-height:42px;padding:0;border:1px solid #34434b;border-radius:12px;background:#17232a;color:#aab7bd;transition:background .15s,border-color .15s,color .15s}
+.global-slip-remove svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.global-slip-remove:active{background:#26353d;border-color:#849b79;color:#d9f39a}
+@media(hover:hover){.global-slip-remove:hover{background:#26353d;border-color:#849b79;color:#d9f39a}}
