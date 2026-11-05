@@ -138,6 +138,7 @@ function evaluateMarket(key,homeGoals,awayGoals){
  }
 }
 async function updateArchive(){
+ const previousStatuses=new Map();archive.forEach(ticket=>(ticket.selections||[]).forEach(selection=>previousStatuses.set([ticket.id,selection.date,norm(selection.home),norm(selection.away)].join("|"),selection.status||"Da giocare")));
  const button=$("refreshArchive");button.disabled=true;button.textContent="Aggiorno…";
  try{
   const fresh=await window.MM.loadData(true),all=[...(fresh.matches||[]),...(fresh.history||[])];
@@ -158,6 +159,12 @@ async function updateArchive(){
    if(selection.status==="In corso")return {...selection,status:"Risultato da confermare"};
    return terminalStatus(selection.status)?selection:{...selection,status:"Da giocare",result:null};
   })}));
+  archive.forEach(ticket=>(ticket.selections||[]).forEach(selection=>{
+   const key=[ticket.id,selection.date,norm(selection.home),norm(selection.away)].join("|"),old=previousStatuses.get(key),api=window.MMNotifications;
+   if(!api||!old||old===selection.status)return;
+   if(old==="Da giocare"&&selection.status==="In corso")api.notifyOnce("ticket-start:"+key,"tickets","Schedina · partita iniziata",selection.home+" – "+selection.away+" è iniziata. "+(selection.result||"Risultato in aggiornamento"),"ticket-"+ticket.id,"./bets.html");
+   if(old==="In corso"&&["Vinta","Persa","Conclusa"].includes(selection.status))api.notifyOnce("ticket-end:"+key,"tickets","Schedina · esito aggiornato",selection.home+" – "+selection.away+": "+selection.status+" ("+(selection.result||"risultato finale")+")","ticket-"+ticket.id,"./bets.html");
+  }));
   save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
   $("archiveStatus").textContent="Schedine aggiornate: risultati conclusi dal calendario pubblico; punteggi live quando API-Football è configurata.";
  }catch(e){$("archiveStatus").textContent="Aggiornamento non riuscito: "+e.message;}
