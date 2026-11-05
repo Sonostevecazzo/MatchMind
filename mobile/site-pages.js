@@ -136,6 +136,20 @@
    search.addEventListener('input',render);
    target.addEventListener('click',e=>{const b=e.target.closest('[data-fav]');if(!b)return;const active=MM().toggleFavorite(b.dataset.fav);b.innerHTML=active?favoriteIcon(true):favoriteIcon(false);});
    render();
+   const newsTarget=$('athleticNews');
+   if(newsTarget){
+    fetch('./api/athletic-news',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000)})
+     .then(response=>response.json().then(payload=>({ok:response.ok,payload})))
+     .then(({ok,payload})=>{
+      if(!ok||!Array.isArray(payload.articles)||!payload.articles.length)throw new Error(payload.error||'Notizie non disponibili.');
+      newsTarget.innerHTML=payload.articles.slice(0,8).map(article=>{
+       const date=article.publishedAt?new Date(article.publishedAt):null;
+       const dateLabel=date&&!Number.isNaN(date.getTime())?date.toLocaleDateString('it-IT',{day:'2-digit',month:'short'}):'';
+       return '<article class="athletic-news-item"><div><small>'+esc(dateLabel)+' · THE ATHLETIC</small><b><a href="'+esc(article.url)+'" target="_blank" rel="noopener noreferrer">'+esc(article.title)+'</a></b>'+(article.summary?'<p>'+esc(article.summary)+'</p>':'')+'</div></article>';
+      }).join('')+'<small class="athletic-news-note">'+esc(payload.note||'Titoli e sintesi dal feed RSS ufficiale.')+'</small>';
+     })
+     .catch(error=>{newsTarget.innerHTML='<div class="empty-state">Notizie The Athletic non disponibili: '+esc(error.message||'errore feed')+'. <a href="https://www.nytimes.com/athletic/rss/football/" target="_blank" rel="noopener">Apri il feed ↗</a></div>';});
+   }
  }
  function tableHTML(rows){
   if(!rows.length)return '<div class="empty-state">Classifica non disponibile: servono risultati conclusi nel feed.</div>';
