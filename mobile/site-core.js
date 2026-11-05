@@ -173,7 +173,7 @@
     araratarmenia:'armenia/Ararat-Armenia.svg',
     levskisofia:'bulgaria/Levski_Sofia.svg',
     torreense:'portugal/Torreense.svg',celje:'slovenia/NK_Celje.svg',
-    lillestrom:'norway/Lillestrøm_SK.svg'
+    lillestrom:'norway/Lillestrøm_SK.svg',
     sabah:'azerbaijan/Sabah.svg'
   };
   function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
