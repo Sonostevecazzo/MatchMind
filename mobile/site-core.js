@@ -169,7 +169,7 @@
     omonia:'cyprus/Omonia.svg',
     necnijmegen:'netherlands/NEC_Nijmegen.svg',
     unionsaintgilloise:'belgium/Union_Saint-Gilloise.svg',
-    hapoelbeersheva:'israel/Hapoel_Be'er_Sheva.svg',
+    hapoelbeersheva:'israel/Hapoel_Beer_Sheva.svg',
     araratarmenia:'armenia/Ararat-Armenia.svg',
     levskisofia:'bulgaria/Levski_Sofia.svg',
     torreense:'portugal/Torreense.svg',celje:'slovenia/NK_Celje.svg',
