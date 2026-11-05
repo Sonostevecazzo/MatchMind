@@ -29,7 +29,9 @@
   ];
 
   function marketChoices() {
-    return BET_MARKETS.map(([key, label]) => [key, label]);
+    const singles = BET_MARKETS.map(([key, label]) => [key, label]);
+    const combinations = comboMarketChoices("combo-auto").map(item => [item.key, item.label]);
+    return singles.concat(combinations);
   }
 
   function matchFixture(text, fixtures, isUpcoming) {
