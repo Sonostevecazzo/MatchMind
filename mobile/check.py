@@ -68,7 +68,10 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v76-20261105-verified-crests" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v77-20261105-footylogos-crests" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "omonia:' in core and "ac-omonia-nicosia-logo-footylogos.svg" in core
+assert "hapoelbeersheva" in core and "hapoel-beer-sheva-logo-footylogos.svg" in core
+assert "teamLogoUrl" in core and "https:\\/\\/" in core
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
@@ -99,7 +102,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v76-20261105-verified-crests" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v77-20261105-footylogos-crests" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
