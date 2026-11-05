@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v73-20261105-live-first';
+const CACHE='matchmind-pwa-v74-20261105-europa-athletic';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
