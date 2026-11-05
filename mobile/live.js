@@ -11,6 +11,7 @@
   let pollHandle = null;
   let listMatchCount = 0;
   let requestFailed = false;
+  let nextScheduledKickoff = null;
 
   async function requestLive(query = "") {
     const response = await fetch("./api/live-match" + query, { headers: { Accept: "application/json" }, cache: "no-store" });
@@ -43,6 +44,7 @@
     $("liveMatches").innerHTML=liveMatches.length?liveMatches.map(m=>'<a class="live-match-card" href="./live.html?fixture='+encodeURIComponent(m.id)+'&competition='+encodeURIComponent(competition)+'&source='+encodeURIComponent(payload.source==="ESPN"?"espn":"api-football")+'&date='+encodeURIComponent(String(m.date||"").slice(0,10))+'&home='+encodeURIComponent(m.home.name)+'&away='+encodeURIComponent(m.away.name)+'"><div class="live-match-meta"><span class="live-indicator"><i></i> LIVE</span><span>'+esc(m.league||"Calcio")+'</span><b>'+esc(minute(m))+'</b></div><div class="live-match-teams"><div>'+logo(m.home)+'<b>'+esc(m.home.name)+'</b></div><strong>'+esc(m.goals.home??"—")+' – '+esc(m.goals.away??"—")+'</strong><div>'+logo(m.away)+'<b>'+esc(m.away.name)+'</b></div></div><div class="live-match-footer">Apri centro partita <span>→</span></div></a>').join(""):'<div class="live-empty"><b>Nessuna partita in diretta</b><p>Le prossime partite sono riportate qui sotto. Punteggio e minutaggio appariranno al calcio d’inizio.</p></div>';
     const now=Date.now(),end=now+7*86400000;
     const upcoming=(calendar?.matches||[]).filter(m=>((m.competition||"serie-a")===competition)&&m.status==="NS"&&m.date).filter(m=>{const d=Date.parse(m.date+(m.time?"T"+m.time+":00":"T20:00:00"));return Number.isFinite(d)&&d>=now-3600000&&d<=end;}).sort((x,y)=>(x.date+(x.time||"")).localeCompare(y.date+(y.time||""))).slice(0,12);
+    nextScheduledKickoff=upcoming.length?Date.parse(upcoming[0].date+(upcoming[0].time?"T"+upcoming[0].time+":00":"T20:00:00")):null;
     let prev={};try{prev=JSON.parse(localStorage.getItem("matchmind-live-snapshots-v1")||"{}")||{};}catch{}upcoming.forEach(m=>{const k=teamKey(m);if(!prev[k])prev[k]={status:"NS",updatedAt:Date.now()};});try{localStorage.setItem("matchmind-live-snapshots-v1",JSON.stringify(Object.fromEntries(Object.entries(prev).slice(-160))));}catch{}
     $("upcomingMatches").innerHTML=upcoming.length?upcoming.map(m=>{const league=m.competition==="europa-league"?"Europa League":m.competition==="champions-league"?"Champions League":"Serie A";return '<article class="live-match-card scheduled-match"><div class="live-match-meta"><span class="scheduled-indicator">IN PROGRAMMA</span><span>'+league+'</span><b>'+esc(localDate(m.date))+'</b></div><div class="live-match-teams"><div><b>'+esc(m.home)+'</b></div><strong class="scheduled-time">'+esc(m.time||localTime(m.date)||"Orario da definire")+'</strong><div><b>'+esc(m.away)+'</b></div></div><div class="live-match-footer"><span>Calcio d’inizio</span><span>◷</span></div></article>';}).join(""):'<div class="live-empty"><b>Nessuna partita in programma nei prossimi 7 giorni</b><p>Non risultano altri incontri imminenti nel calendario della competizione selezionata.</p><a href="./matches.html">Apri calendario completo →</a></div>';
   }
@@ -186,7 +188,9 @@
     const sourceLabel = payload.sourceLabel || payload.source || "Fonte live";
     const fallbackInfo = payload.fallbackReason ? " · fallback: " + payload.fallbackReason : "";
     $("liveStatus").textContent = sourceLabel + fallbackInfo + " · aggiornamento " + new Date(payload.updatedAt || Date.now()).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-    $("liveScoreboard").innerHTML = '<div class="live-match-meta"><span class="live-indicator"><i></i> ' + esc(match.statusLong || "LIVE") + '</span><span>' + esc(match.league || "Calcio") + '</span><b>' + esc(minute(match)) + '</b></div><div class="live-score-teams"><div>' + logo(match.home) + '<b>' + esc(match.home.name) + '</b></div><strong>' + esc(match.goals.home ?? "—") + ' – ' + esc(match.goals.away ?? "—") + '</strong><div>' + logo(match.away) + '<b>' + esc(match.away.name) + '</b></div></div><small>' + esc(match.venue || "Stadio non comunicato") + '</small>';
+    const statusCode=String(match.status||"").toUpperCase();
+    const statusLabel=["FT","AET","PEN"].includes(statusCode)?"PARTITA TERMINATA":statusCode==="HT"?"INTERVALLO":["1H","2H","ET","BT","P","LIVE"].includes(statusCode)?"IN DIRETTA":(match.statusLong||"STATO PARTITA").toUpperCase();
+    $("liveScoreboard").innerHTML = '<div class="live-match-meta"><span class="live-state-pill '+(["1H","2H","ET","BT","P","LIVE"].includes(statusCode)?"is-live":"")+'">' + (["1H","2H","ET","BT","P","LIVE"].includes(statusCode)?'<i></i> ':"") + esc(statusLabel) + '</span><span>' + esc(match.league || "Calcio") + '</span><b class="live-clock">' + esc(minute(match)) + '</b></div><div class="live-score-teams"><div>' + logo(match.home) + '<b>' + esc(match.home.name) + '</b></div><strong>' + esc(match.goals.home ?? "—") + ' – ' + esc(match.goals.away ?? "—") + '</strong><div>' + logo(match.away) + '<b>' + esc(match.away.name) + '</b></div></div><small>' + esc(match.venue || "Stadio non comunicato") + '</small>';
     renderSimulation(match);
     renderLineups(payload.lineups || []);
     renderStats(match);
@@ -210,7 +214,7 @@
     pollHandle = null;
     if (document.hidden) return;
     let delay = 1800000;
-    if (requestFailed) delay = 1800000;
+    if (requestFailed) delay = fixtureId ? 1800000 : 900000;
     else if (fixtureId) {
       const status = String(lastDetail?.fixture?.status || "").toUpperCase();
       const inPlay = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"].includes(status);
@@ -218,7 +222,7 @@
       if (finished) return;
       delay = inPlay ? 300000 : 900000;
     } else {
-      delay = listMatchCount > 0 ? 300000 : 900000;
+      delay = listMatchCount > 0 ? 300000 : (nextScheduledKickoff && nextScheduledKickoff-Date.now()<2*3600000 ? 180000 : 900000);
     }
     pollHandle = window.setTimeout(() => {
       pollHandle = null;
