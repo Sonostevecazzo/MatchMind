@@ -146,7 +146,7 @@
     benfica:'portugal/Benfica.svg',sportingcp:'portugal/Sporting_CP.svg',
     feyenoord:'netherlands/Feyenoord.svg',psv:'netherlands/PSV_Eindhoven.svg',
     galatasaray:'turkey/Galatasaray.svg',fenerbahce:'turkey/Fenerbahçe.svg',
-    lask:'austria/LASK.svg',bodoglimt:'norway/BodøGlimt.svg',viking:'norway/Viking_FK.svg',
+    lask:'austria/LASK.svg',bodoglimt:'norway/BodøGlimt.svg',bodglimt:'norway/BodøGlimt.svg',viking:'norway/Viking_FK.svg',
     slovanbratislava:'slovakia/Slovan_Bratislava.svg',sbratislava:'slovakia/Slovan_Bratislava.svg',
     aek:'greece/AEK_Athens.svg',aekathens:'greece/AEK_Athens.svg',
     clubbrugge:'belgium/Club_Brugge.svg',shakhtar:'ukraine/Shakhtar.svg',shakhtardonetsk:'ukraine/Shakhtar.svg',
@@ -169,11 +169,11 @@
     omonia:'cyprus/Omonia.svg',
     necnijmegen:'netherlands/NEC_Nijmegen.svg',
     unionsaintgilloise:'belgium/Union_Saint-Gilloise.svg',
-    hapoelbeersheva:'israel/Hapoel_Beer_Sheva.svg',
+    hapoelbeersheva:'israel/Hapoel_Beer_Sheva.svg',hbeersheva:'israel/Hapoel_Beer_Sheva.svg',
     araratarmenia:'armenia/Ararat-Armenia.svg',
     levskisofia:'bulgaria/Levski_Sofia.svg',
     torreense:'portugal/Torreense.svg',celje:'slovenia/NK_Celje.svg',
-    lillestrom:'norway/Lillestrøm_SK.svg',
+    lillestrom:'norway/Lillestrøm_SK.svg',lillestrm:'norway/Lillestrøm_SK.svg',
     sabah:'azerbaijan/Sabah.svg'
   };
   function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];return path?LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/'):'';}
