@@ -17,6 +17,7 @@ function getForecast(match){return window.MM.forecast(match,data.history,getCont
 function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
 function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
 function writePicks(){save(PICKS_KEY,picks);}
+window.addEventListener("matchmind:picks-updated",()=>{picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());if(data){renderFixtures();renderSlip();}});
 function selectedFor(match){return picks.find(p=>fixtureKey(p)===fixtureKey(match));}
 function selectOptions(value){return [0,1,2,3].map(n=>'<option value="'+n+'"'+(Number(value||0)===n?' selected':'')+'>'+n+'</option>').join("");}
 function motivationOptions(value){return [{v:-1,t:"Bassa"},{v:0,t:"Neutra / automatica"},{v:1,t:"Alta"}].map(x=>'<option value="'+x.v+'"'+(Number(value||0)===x.v?' selected':'')+'>'+x.t+'</option>').join("");}
