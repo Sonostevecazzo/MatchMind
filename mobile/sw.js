@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v80-20261105-live-centre-notifications';
+const CACHE='matchmind-pwa-v81-20261105-live-centre-notifications';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
@@ -21,7 +21,6 @@ self.addEventListener('activate',event=>{
  );
 });
 
-self.addEventListener('notificationclick',event=>{event.notification.close();const target=new URL(event.notification.data?.url||'./live.html',self.registration.scope).href;event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{const existing=list.find(client=>client.url.startsWith(self.registration.scope));return existing?existing.navigate(target).then(()=>existing.focus()):clients.openWindow(target);}));});
 self.addEventListener('notificationclick',event=>{event.notification.close();const target=new URL(event.notification.data?.url||'./live.html',self.registration.scope).href;event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{const existing=list.find(client=>client.url.startsWith(self.registration.scope));return existing?existing.navigate(target).then(()=>existing.focus()):clients.openWindow(target);}));});
 self.addEventListener('fetch',event=>{
  const request=event.request;
