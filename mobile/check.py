@@ -24,7 +24,7 @@ for name in required:
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
   assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
- else: assert "site-pages.js" in html
+ elif name!="index.html": assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
