@@ -69,7 +69,7 @@ assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
 assert "matchmind-pwa-v78-20261105-direct-crest-assets" in (ROOT/"sw.js").read_text(encoding="utf-8")
-assert "omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
+assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
