@@ -68,7 +68,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v82-20261105-match-markets-slip-confirm" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v83-20261105-bets-manager-only" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -88,7 +88,8 @@ assert (ROOT/"functions"/"api"/"live-match.js").is_file()
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
-assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
+assert 'id="manualFixtures"' not in bets_html and 'id="manualSlipSummary"' in bets_html
+assert 'href="./matches.html"' in bets_html and "aggiunto dalla pagina Partite" in bets_html
 assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "Sisal" not in bets_js and "playerApi" not in bets_js
@@ -102,7 +103,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v82-20261105-match-markets-slip-confirm" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v83-20261105-bets-manager-only" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
