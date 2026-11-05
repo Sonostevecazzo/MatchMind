@@ -32,13 +32,19 @@ with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
 for filename in ["site-core.js","ai-engine.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
-for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js"]:
+for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js"]:
  subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
 for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
 assert "./api/public-calendar" in core and "open-matchday" in calendar
+assert "europa-league" in core and "UEFA_1_europa-league" in calendar
+assert '"europa-league": 3' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
+assert '"europa-league": "uefa.europa"' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
+assert (ROOT/"functions"/"api"/"athletic-news.js").is_file()
+assert "athleticNews" in (ROOT/"explore.html").read_text(encoding="utf-8")
+assert "api/athletic-news" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
 assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
