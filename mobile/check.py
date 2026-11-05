@@ -43,7 +43,9 @@ assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
 assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
-assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")\nassert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")\nassert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
+assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")
+assert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
