@@ -3,7 +3,7 @@
   "short_name": "MatchMind",
   "description": "Centro Serie A, risultati e analisi statistiche",
   "lang": "it-IT",
-  "start_url": "./",
+  "start_url": "./matches.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090d11",
