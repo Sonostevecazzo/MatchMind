@@ -167,7 +167,7 @@
     lechpoznan:'poland/Lech_Poznań.svg',jagiellonia:'poland/Jagiellonia_Białystok.svg',
     viktoriaplzen:'czech-republic/FC_Viktoria_Plzeň.svg',spartapraha:'czech-republic/AC_Sparta_Praha.svg',
     omonia:'cyprus/Omonia.svg',
-    necnijmegen:'netherlands/NEC_Nijmegen.svg',nec nijmegen:'netherlands/NEC_Nijmegen.svg',
+    necnijmegen:'netherlands/NEC_Nijmegen.svg',
     unionsaintgilloise:'belgium/Union_Saint-Gilloise.svg',unionstgilloise:'belgium/Union_Saint-Gilloise.svg',
     hapoelbeersheva:'israel/Hapoel_Beer_Sheva.svg',hbeersheva:'israel/Hapoel_Beer_Sheva.svg',
     araratarmenia:'armenia/Ararat-Armenia.svg',
