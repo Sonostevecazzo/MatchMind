@@ -47,6 +47,35 @@
  </section>
  <div class="notice warning">Le percentuali sono stime statistiche, non garanzie. Il valore combinato è un prodotto delle probabilità delle singole partite e assume indipendenza tra eventi; la correlazione può cambiare il risultato. MatchMind non conosce automaticamente le formazioni ufficiali, gli infortuni o le squalifiche: inserisci solo indisponibilità verificate.</div>
  <div id="globalStatus" class="status-line" aria-live="polite"></div><footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
-<style>.manual-slip-dropdown{margin-top:10px;border:1px solid #40543a;border-radius:14px;background:#111b24;overflow:hidden}.manual-slip-dropdown>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;cursor:pointer;font-weight:800;list-style:none}.manual-slip-dropdown>summary::-webkit-details-marker{display:none}.manual-slip-dropdown>summary b{color:#c4f36a}.manual-slip-dropdown .manual-summary-card{border:0;border-top:1px solid #2a3842;border-radius:0;box-shadow:none}.fixture-market-options{display:block;margin-top:10px}.fixture-market-group{margin-top:12px}.fixture-market-group h4{margin:0 0 7px;color:var(--muted,#9aa9b8);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}.fixture-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}@media(max-width:560px){.fixture-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></main>
+<style>.manual-slip-dropdown{margin-top:10px;border:1px solid #40543a;border-radius:14px;background:#111b24;overflow:hidden}.manual-slip-dropdown>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;cursor:pointer;font-weight:800;list-style:none}.manual-slip-dropdown>summary::-webkit-details-marker{display:none}.manual-slip-dropdown>summary b{color:#c4f36a}.manual-slip-dropdown .manual-summary-card{border:0;border-top:1px solid #2a3842;border-radius:0;box-shadow:none}.fixture-market-options{display:block;margin-top:10px}.fixture-market-group{margin-top:12px}.fixture-market-group h4{margin:0 0 7px;color:var(--muted,#9aa9b8);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}.fixture-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}@media(max-width:560px){.fixture-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.manual-financial-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:12px 0 16px;padding:12px;background:#0d141b;border-radius:11px;border:1px solid #202d38}
+.financial-metric-card{display:flex;flex-direction:column;gap:4px}
+.financial-label{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:#8f9fae}
+.financial-value{font-size:1.05rem;font-weight:700;color:#f0f4f8}
+.financial-value.highlight-win{color:#c4f36a}
+.slip-stake-input{width:100%;max-width:110px;padding:6px 9px;border-radius:7px;border:1px solid #364756;background:#151f28;color:#f0f4f8;font-size:1rem;font-weight:700}
+.manual-selected-row{display:flex;flex-direction:column;gap:8px;padding:12px;border-bottom:1px solid #202d38}
+.manual-selected-row-main{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.manual-selected-row-financials{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:.82rem}
+.manual-odds-label{display:inline-flex;align-items:center;gap:6px;color:#a8b7c4}
+.manual-odds-input{width:82px;padding:4px 8px;border-radius:6px;border:1px solid #364756;background:#151f28;color:#c4f36a;font-weight:700;font-size:.9rem}
+.financial-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:#18232d;color:#ccd7e2;border:1px solid #263542}
+.financial-pill.ev-pos{background:#172c1c;color:#c4f36a;border-color:#2a502c}
+.financial-pill.ev-neg{background:#2c1918;color:#f87171;border-color:#522827}
+.financial-value.ev-pos{color:#c4f36a}
+.financial-value.ev-neg{color:#f87171}
+.ticket-financial-meta{display:flex;flex-wrap:wrap;gap:12px;padding:8px 10px;margin:8px 0;background:#0d141b;border-radius:8px;font-size:.82rem;color:#a8b7c4}
+.ticket-financial-meta b{color:#f0f4f8}
+.bankroll-dashboard-card{margin-bottom:18px;padding:15px;background:#0f1720;border:1px solid #253545;border-radius:13px}
+.bankroll-dashboard-head h3{margin:4px 0 10px;font-size:1.15rem;color:#f0f4f8}
+.bankroll-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.bankroll-stat-item{display:flex;flex-direction:column;gap:3px;padding:9px;background:#141f2a;border-radius:8px;border:1px solid #1e2c39}
+.bankroll-stat-item span{font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:#8f9fae}
+.bankroll-stat-item b{font-size:1.1rem;color:#f0f4f8}
+.profit-pos{color:#c4f36a!important}
+.profit-neg{color:#f87171!important}
+.ticket-state.ticket-state-won{background:#172c1c;color:#c4f36a;border:1px solid #2a502c}
+.ticket-state.ticket-state-lost{background:#2c1918;color:#f87171;border:1px solid #522827}
+</style></main>
 </body>
 </html>
