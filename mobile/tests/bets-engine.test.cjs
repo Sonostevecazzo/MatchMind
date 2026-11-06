@@ -174,3 +174,12 @@ test("builds a ticket using the selected combined-market format", () => {
   assert.match(result.selections[0].marketKey, /^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35)$/);
   assert.ok(Number.isFinite(result.selections[0].probability));
 });
+
+
+test("fair odds and expected value use decimal odds and reject invalid inputs", () => {
+  assert.equal(bets.fairOdds(0.5), 2);
+  assert.equal(bets.fairOdds(0), null);
+  assert.ok(Math.abs(bets.expectedValue(0.5, 2.2) - 0.1) < 1e-12);
+  assert.equal(bets.expectedValue(0.5, 1), null);
+  assert.equal(bets.expectedValue(null, 2), null);
+});
