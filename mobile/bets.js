@@ -196,8 +196,9 @@ function renderArchive(){
  const closed=archive.filter(ticket=>(ticket.selections||[]).length&&(ticket.selections||[]).every(selection=>terminalStatus(selection.status||"Da giocare")));
  if(!closed.length){target.innerHTML='<div class="empty-state">Le schedine concluse appariranno qui dopo l’aggiornamento dei risultati.</div>';return;}
 
+ const settled=closed.filter(ticket=>(ticket.selections||[]).every(selection=>selection.status==="Vinta"||selection.status==="Persa")&&Number.isFinite(Number(ticket.stake))&&Number(ticket.stake)>0);
  let totalStaked=0,totalWon=0,wonCount=0,lostCount=0;
- closed.forEach(ticket=>{
+ settled.forEach(ticket=>{
   const stake=Number(ticket.stake)||0;totalStaked+=stake;
   const isWon=(ticket.selections||[]).every(s=>s.status==="Vinta");
   const isLost=(ticket.selections||[]).some(s=>s.status==="Persa");
@@ -206,7 +207,7 @@ function renderArchive(){
  });
  const netProfit=totalWon-totalStaked;
  const roi=totalStaked>0?(netProfit/totalStaked):null;
- const winRate=closed.length>0?(wonCount/closed.length):null;
+ const winRate=settled.length>0?(wonCount/settled.length):null;
 
  const bankrollCard=
   '<div class="bankroll-dashboard-card">'+
@@ -365,7 +366,8 @@ async function updateArchive(){
  finally{button.disabled=false;button.textContent="Aggiorna";}
 }
 async function shareTicket(ticket){
- const body=["MatchMind · Schedina",...ticket.selections.map(x=>x.home+" – "+x.away+" | "+x.market+" | "+pct(x.probability)),"Probabilità combinata stimata: "+pct(ticket.probability)].join("\n");
+ const financial=ticket.stake!=null?["Puntata: "+curr(Number(ticket.stake)),"Quota totale: "+fmtOdds(Number(ticket.totalOdds)),"Incasso lordo potenziale: "+curr(Number(ticket.potentialWin)),"EV stimato: "+fmtEv(Number(ticket.expectedValue))]:[];
+ const body=["MatchMind · Schedina",...ticket.selections.map(x=>x.home+" – "+x.away+" | "+x.market+(x.odds?" @ "+fmtOdds(Number(x.odds)):"")+" | "+pct(x.probability)),"Probabilità combinata stimata: "+pct(ticket.probability),...financial].join("\n");
  try{if(navigator.share)await navigator.share({title:"Schedina MatchMind",text:body});else{await navigator.clipboard.writeText(body);$("archiveStatus").textContent="Schedina copiata negli appunti.";}}catch(e){if(e.name!=="AbortError")$("archiveStatus").textContent="Condivisione non disponibile in questo browser.";}
 }
 function initEvents(){
