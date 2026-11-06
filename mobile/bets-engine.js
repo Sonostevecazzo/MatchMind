@@ -326,7 +326,7 @@
   }
 
     function fairOdds(probability) {
-    return Number.isFinite(probability) && probability > 0 ? 1 / probability : null;
+    return Number.isFinite(probability) && probability > 0 && probability <= 1 ? 1 / probability : null;
   }
   function expectedValue(probability, odds) {
     return Number.isFinite(probability) && Number.isFinite(odds) && probability > 0 && odds > 1 ? (probability * odds) - 1 : null;
