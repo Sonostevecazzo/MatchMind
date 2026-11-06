@@ -2,7 +2,12 @@
 (function(){
 "use strict";
 const $=id=>document.getElementById(id),ENGINE=()=>window.MatchMindBets;
-const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2";
+const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2",STAKE_KEY="matchmind-slip-default-stake";
+let currentStake=10;
+try{const storedStake=Number(JSON.parse(localStorage.getItem(STAKE_KEY)||"10"));if(Number.isFinite(storedStake)&&storedStake>=0.5&&storedStake<=100000)currentStake=storedStake;}catch(_){}
+const curr=v=>Number.isFinite(v)?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—";
+const fmtOdds=v=>Number.isFinite(v)&&v>0?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
+const fmtEv=v=>Number.isFinite(v)?(v>=0?"+":"")+(v*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
@@ -55,13 +60,110 @@ function marketLabel(key){
  return item?item.label:String(key||"Mercato");
 }
 function selectedRows(){
- return picks.map(p=>{const match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(!match)return null;const forecast=getForecast(match);return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:marketProbability(forecast,p.marketKey),forecast};}).filter(Boolean);
+ return picks.map(p=>{const match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(!match)return null;const forecast=getForecast(match);const odds=p.odds!=null&&Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:marketProbability(forecast,p.marketKey),forecast,odds};}).filter(Boolean);
 }
+function updateSlipCalculations(){
+ const rows=selectedRows();if(!rows.length)return;
+ const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
+ const fairCombinedOdds=ENGINE().fairOdds(probability);
+ const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
+ const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
+ const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
+ const totalOdds=Number.isFinite(computedOdds)?computedOdds:null;
+ const potentialWin=totalOdds!=null?currentStake*totalOdds:null;
+ const ev=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
+ const evAmount=ev!=null?currentStake*ev:null;
+ const summary= $("manualSlipSummary")?.querySelector("details > summary span");
+ if(summary)summary.textContent="Anteprima schedina · "+rows.length+" pronostici"+(potentialWin!=null?" · vincita "+curr(potentialWin):"");
+
+ const totalOddsEl=$("slipTotalOddsVal");if(totalOddsEl)totalOddsEl.innerHTML=totalOdds!=null?fmtOdds(totalOdds):'<small class="text-muted">'+validOdds.length+'/'+rows.length+' quote</small>';
+ const fairOddsEl=$("slipFairOddsVal");if(fairOddsEl)fairOddsEl.textContent=fmtOdds(fairCombinedOdds);
+ const potWinEl=$("slipPotWinVal");if(potWinEl)potWinEl.textContent=curr(potentialWin);
+ const evEl=$("slipEvVal");if(evEl){evEl.textContent=ev!=null?fmtEv(ev)+" · "+(evAmount>=0?"+":"")+curr(evAmount):"—";evEl.className="financial-value "+(ev!=null?(ev>=0?"ev-pos":"ev-neg"):"");}
+
+ rows.forEach(row=>{
+  const fKey=fixtureKey(row.match);
+  const singleEv=ENGINE().expectedValue(row.probability,row.odds);
+  const pill=document.querySelector('[data-ev-for="'+CSS.escape(fKey)+'"]');
+  if(pill){
+   if(singleEv!=null){pill.className="financial-pill "+(singleEv>=0?"ev-pos":"ev-neg");pill.innerHTML='EV: <b>'+fmtEv(singleEv)+'</b>';}
+   else{pill.className="financial-pill text-muted";pill.innerHTML='EV: <i>inserisci quota</i>';}
+  }
+ });
+}
+
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
  if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
- target.innerHTML='<details class="manual-slip-dropdown" '+(slipExpanded?'open':'')+'><summary><span>Anteprima schedina · '+rows.length+' pronostici</span><b>'+pct(probability)+'</b></summary><div class="manual-summary-card"><div class="manual-summary-top"><div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div><div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">'+pct(probability)+'</b></div></div><div class="manual-selected-list">'+rows.map(row=>'<div class="manual-selected-row"><span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b><small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · '+pct(row.probability)+'</small></span><button type="button" class="manual-remove-button" data-remove="'+esc(fixtureKey(row.match))+'" aria-label="Rimuovi selezione">×</button></div>').join("")+'</div><div class="manual-summary-actions"><button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button><button type="button" id="clearCurrentSlip" class="secondary">Svuota</button></div></div></details>';
+ const fairCombinedOdds=ENGINE().fairOdds(probability);
+ const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
+ const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
+ const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
+ const totalOdds=Number.isFinite(computedOdds)?computedOdds:null;
+ const potentialWin=totalOdds!=null?currentStake*totalOdds:null;
+ const ev=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
+
+ const rowsHtml=rows.map(row=>{
+  const fKey=fixtureKey(row.match);
+  const fairOdds=ENGINE().fairOdds(row.probability);
+  const singleEv=ENGINE().expectedValue(row.probability,row.odds);
+  const evClass=singleEv!=null?(singleEv>=0?"ev-pos":"ev-neg"):"";
+  return '<div class="manual-selected-row" data-fixture="'+esc(fKey)+'">'+
+   '<div class="manual-selected-row-main">'+
+    '<span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b>'+
+    '<small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · prob. '+pct(row.probability)+'</small></span>'+
+    '<button type="button" class="manual-remove-button" data-remove="'+esc(fKey)+'" aria-label="Rimuovi selezione">×</button>'+
+   '</div>'+
+   '<div class="manual-selected-row-financials">'+
+    '<label class="manual-odds-label">Quota: '+
+     '<input type="number" step="0.01" min="1.01" max="1000" placeholder="es. 1.85" class="manual-odds-input" data-odds-for="'+esc(fKey)+'" value="'+(row.odds||'')+'">'+
+    '</label>'+
+    '<span class="financial-pill">Equa: <b>'+fmtOdds(fairOdds)+'</b></span>'+
+    '<span class="financial-pill '+(singleEv!=null?evClass:'text-muted')+'" data-ev-for="'+esc(fKey)+'">'+(singleEv!=null?'EV: <b>'+fmtEv(singleEv)+'</b>':'EV: <i>inserisci quota</i>')+'</span>'+
+   '</div>'+
+  '</div>';
+ }).join("");
+
+ const financialSummaryHtml=
+  '<div class="manual-financial-grid">'+
+   '<div class="financial-metric-card">'+
+    '<span class="financial-label">Puntata (€)</span>'+
+    '<input type="number" id="slipStakeInput" min="0.5" step="0.5" value="'+currentStake+'" class="slip-stake-input">'+
+   '</div>'+
+   '<div class="financial-metric-card">'+
+    '<span class="financial-label">Quota totale</span>'+
+    '<b class="financial-value" id="slipTotalOddsVal">'+(totalOdds!=null?fmtOdds(totalOdds):'<small class="text-muted">'+validOdds.length+'/'+rows.length+' quote</small>')+'</b>'+
+   '</div>'+
+   '<div class="financial-metric-card">'+
+    '<span class="financial-label">Quota equa modello</span>'+
+    '<b class="financial-value" id="slipFairOddsVal">'+fmtOdds(fairCombinedOdds)+'</b>'+
+   '</div>'+
+   '<div class="financial-metric-card">'+
+    '<span class="financial-label">Incasso potenziale lordo</span>'+
+    '<b class="financial-value highlight-win" id="slipPotWinVal">'+curr(potentialWin)+'</b>'+
+   '</div>'+
+   '<div class="financial-metric-card">'+
+    '<span class="financial-label">EV stimato · ROI</span>'+
+    '<b class="financial-value '+(ev!=null?(ev>=0?"ev-pos":"ev-neg"):"")+'" id="slipEvVal">'+fmtEv(ev)+'</b>'+
+   '</div>'+
+  '</div>';
+
+ target.innerHTML='<details class="manual-slip-dropdown" '+(slipExpanded?'open':'')+'>'+
+  '<summary><span>Anteprima schedina · '+rows.length+' pronostici'+(potentialWin!=null?' · vincita '+curr(potentialWin):'')+'</span><b>'+pct(probability)+'</b></summary>'+
+  '<div class="manual-summary-card">'+
+   '<div class="manual-summary-top">'+
+    '<div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div>'+
+    '<div class="manual-combined-probability"><span>Probabilità stimata</span><b class="bet-percent bet-percent-total">'+pct(probability)+'</b></div>'+
+   '</div>'+
+   financialSummaryHtml+
+   '<div class="manual-selected-list">'+rowsHtml+'</div>'+
+   '<div class="manual-summary-actions">'+
+    '<button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button>'+
+    '<button type="button" id="clearCurrentSlip" class="secondary">Svuota</button>'+
+   '</div>'+
+  '</div>'+
+ '</details>';
  const details=target.querySelector("details");if(details)details.addEventListener("toggle",()=>{slipExpanded=details.open;});
 }
 function terminalStatus(status){return ["Vinta","Persa","Conclusa"].includes(status);}
@@ -72,8 +174,20 @@ function renderOpenTickets(){
  target.innerHTML=open.map(ticket=>{
   const selections=ticket.selections||[],live=selections.filter(item=>item.status==="In corso").length,done=selections.filter(item=>terminalStatus(item.status)).length;
   const state=live?"In corso":"Da giocare";
+  const stake=Number(ticket.stake)||null,potWin=Number(ticket.potentialWin)||null,totalOdds=Number(ticket.totalOdds)||null,ev=Number(ticket.expectedValue)||null;
+  const financialMeta=stake!=null?
+   '<div class="ticket-financial-meta">'+
+    '<span>Puntata: <b>'+curr(stake)+'</b></span>'+
+    (totalOdds?'<span>Quota: <b>'+fmtOdds(totalOdds)+'</b></span>':'')+
+    (potWin?'<span>Vincita potenziale: <b>'+curr(potWin)+'</b></span>':'')+
+    (ev!=null?'<span>EV: <b class="'+(ev>=0?'ev-pos':'ev-neg')+'">'+fmtEv(ev)+'</b></span>':'')+
+   '</div>':'';
   return '<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(ticket.createdAt?new Date(ticket.createdAt).toLocaleString("it-IT"):"—")+'</b><span class="ticket-state '+(live?"live":"scheduled")+'">'+state+'</span></div><small>'+done+'/'+selections.length+' eventi conclusi · probabilità al salvataggio '+pct(ticket.probability)+'</small>'+
-   selections.map(selection=>'<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>').join("")+
+   financialMeta+
+   selections.map(selection=>{
+    const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
+    return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
+   }).join("")+
    '<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button></div></article>';
  }).join("");
 }
@@ -81,7 +195,56 @@ function renderArchive(){
  const target=$("slipArchive");if(!target)return;
  const closed=archive.filter(ticket=>(ticket.selections||[]).length&&(ticket.selections||[]).every(selection=>terminalStatus(selection.status||"Da giocare")));
  if(!closed.length){target.innerHTML='<div class="empty-state">Le schedine concluse appariranno qui dopo l’aggiornamento dei risultati.</div>';return;}
- target.innerHTML=closed.map(ticket=>'<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(ticket.createdAt?new Date(ticket.createdAt).toLocaleString("it-IT"):"—")+'</b><span>Conclusa</span></div><small>Probabilità stimata al salvataggio: '+pct(ticket.probability)+'</small>'+ticket.selections.map(selection=>'<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>').join("")+'<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button></div></article>').join("");
+
+ let totalStaked=0,totalWon=0,wonCount=0,lostCount=0;
+ closed.forEach(ticket=>{
+  const stake=Number(ticket.stake)||0;totalStaked+=stake;
+  const isWon=(ticket.selections||[]).every(s=>s.status==="Vinta");
+  const isLost=(ticket.selections||[]).some(s=>s.status==="Persa");
+  if(isWon){wonCount++;totalWon+=Number(ticket.potentialWin)||(stake*(Number(ticket.totalOdds)||1));}
+  else if(isLost){lostCount++;}
+ });
+ const netProfit=totalWon-totalStaked;
+ const roi=totalStaked>0?(netProfit/totalStaked):null;
+ const winRate=closed.length>0?(wonCount/closed.length):null;
+
+ const bankrollCard=
+  '<div class="bankroll-dashboard-card">'+
+   '<div class="bankroll-dashboard-head"><span class="eyebrow">IL TUO BANKROLL</span><h3>Riepilogo finanziario schedine</h3></div>'+
+   '<div class="bankroll-stats-grid">'+
+    '<div class="bankroll-stat-item"><span>Totale puntato</span><b>'+curr(totalStaked)+'</b></div>'+
+    '<div class="bankroll-stat-item"><span>Totale incassato</span><b>'+curr(totalWon)+'</b></div>'+
+    '<div class="bankroll-stat-item"><span>Bilancio netto</span><b class="'+(netProfit>=0?'profit-pos':'profit-neg')+'">'+(netProfit>=0?'+':'')+curr(netProfit)+'</b></div>'+
+    '<div class="bankroll-stat-item"><span>ROI</span><b class="'+(roi!=null?(roi>=0?'profit-pos':'profit-neg'):'')+'">'+(roi!=null?(roi>=0?'+':'')+(roi*100).toFixed(1)+'%':'—')+'</b></div>'+
+    '<div class="bankroll-stat-item"><span>Win Rate</span><b>'+(winRate!=null?(winRate*100).toFixed(1)+'% ('+wonCount+'/'+closed.length+')':'—')+'</b></div>'+
+   '</div>'+
+  '</div>';
+
+ const ticketsHtml=closed.map(ticket=>{
+  const isWon=(ticket.selections||[]).every(s=>s.status==="Vinta");
+  const isLost=(ticket.selections||[]).some(s=>s.status==="Persa");
+  const ticketStatusLabel=isWon?"Vinta":isLost?"Persa":"Conclusa";
+  const ticketStatusClass=isWon?"ticket-state-won":isLost?"ticket-state-lost":"";
+  const stake=Number(ticket.stake)||null,potWin=Number(ticket.potentialWin)||null,totalOdds=Number(ticket.totalOdds)||null;
+  const profitLoss=isWon?(potWin!=null&&stake!=null?potWin-stake:null):isLost?(stake!=null?-stake:null):null;
+
+  const financialMeta=stake!=null?
+   '<div class="ticket-financial-meta">'+
+    '<span>Puntata: <b>'+curr(stake)+'</b></span>'+
+    (totalOdds?'<span>Quota: <b>'+fmtOdds(totalOdds)+'</b></span>':'')+
+    (potWin?'<span>Incasso: <b>'+(isWon?curr(potWin):'0,00 €')+'</b></span>':'')+
+    (profitLoss!=null?'<span>Esito netto: <b class="'+(profitLoss>=0?'profit-pos':'profit-neg')+'">'+(profitLoss>=0?'+':'')+curr(profitLoss)+'</b></span>':'')+
+   '</div>':'';
+
+  return '<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(ticket.createdAt?new Date(ticket.createdAt).toLocaleString("it-IT"):"—")+'</b><span class="ticket-state '+ticketStatusClass+'">'+ticketStatusLabel+'</span></div><small>Probabilità stimata al salvataggio: '+pct(ticket.probability)+'</small>'+
+   financialMeta+
+   ticket.selections.map(selection=>{
+    const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
+    return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
+   }).join("")+'<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button></div></article>';
+ }).join("");
+
+ target.innerHTML=bankrollCard+ticketsHtml;
 }
 function setBetTab(tab){
  const selected=["create","live","archive"].includes(tab)?tab:"create";
@@ -91,8 +254,37 @@ function setBetTab(tab){
 function saveCurrentSlip(){
  const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
  const probability=rows.reduce((v,x)=>v*x.probability,1);
- const item={id:"slip-"+Date.now(),createdAt:new Date().toISOString(),probability,selections:rows.map(x=>({home:x.match.home,away:x.match.away,date:x.match.date,market:x.marketLabel,marketKey:x.marketKey,probability:x.probability,competition:x.match.competition||window.MM.getSelectedCompetition(),status:"Da giocare"}))};
- archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];writePicks();renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata su questo dispositivo.";setBetTab("live");
+ const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
+ const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
+ const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
+ const totalOdds=Number.isFinite(computedOdds)?computedOdds:null;
+ const potentialWin=totalOdds!=null?currentStake*totalOdds:null;
+ const netWin=potentialWin!=null?potentialWin-currentStake:null;
+ const expectedValue=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
+
+ const item={
+  id:"slip-"+Date.now(),
+  createdAt:new Date().toISOString(),
+  stake:currentStake,
+  totalOdds:totalOdds!=null?Number(totalOdds.toFixed(2)):null,
+  potentialWin:potentialWin!=null&&Number.isFinite(potentialWin)?Number(potentialWin.toFixed(2)):null,
+  netWin:netWin!=null&&Number.isFinite(netWin)?Number(netWin.toFixed(2)):null,
+  expectedValue:expectedValue!=null?Number(expectedValue.toFixed(4)):null,
+  probability,
+  selections:rows.map(x=>({
+   home:x.match.home,
+   away:x.match.away,
+   date:x.match.date,
+   market:x.marketLabel,
+   marketKey:x.marketKey,
+   probability:x.probability,
+   odds:x.odds||null,
+   fairOdds:ENGINE().fairOdds(x.probability),
+   competition:x.match.competition||window.MM.getSelectedCompetition(),
+   status:"Da giocare"
+  }))
+ };
+ archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];writePicks();renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata con puntata e quote registrate.";setBetTab("live");
 }
 function buildProposal(){
  proposalGenerated=true;
@@ -179,8 +371,23 @@ async function shareTicket(ticket){
 function initEvents(){
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
+ $("manualSlipSummary").addEventListener("input",event=>{
+  const oddsInput=event.target.closest(".manual-odds-input");
+  if(oddsInput){
+   const fKey=oddsInput.dataset.oddsFor,val=Number(oddsInput.value);
+   const pick=picks.find(p=>fixtureKey(p)===fKey);
+   if(pick){pick.odds=(Number.isFinite(val)&&val>1&&val<=1000)?val:null;writePicks();updateSlipCalculations();}
+   return;
+  }
+  const stakeInput=event.target.closest("#slipStakeInput");
+  if(stakeInput){
+   const val=Number(stakeInput.value);
+   if(Number.isFinite(val)&&val>=0.5&&val<=100000){currentStake=val;save(STAKE_KEY,currentStake);updateSlipCalculations();}
+  }
+ });
  $("manualSlipSummary").addEventListener("click",event=>{
   const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderSlip();return;}
+  const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
   if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderSlip();}
  });
