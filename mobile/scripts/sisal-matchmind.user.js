@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.7.0
+// @version      1.7.1
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -980,6 +980,18 @@
 
   function parseSisalMarket(text) {
     const t = String(text || "").trim().toLowerCase();
+
+    // Escludi mercati parziali o speciali non coperti dal modello partita intera (90 minuti)
+    if (t.includes("1° t") || t.includes("1° tempo") || t.includes("primo tempo") ||
+        t.includes("2° t") || t.includes("2° tempo") || t.includes("secondo tempo") ||
+        t.includes("multigoal") || t.includes("handicap") || t.includes("combo") ||
+        t.includes("parziale") || t.includes("corner") || t.includes("cartellin") ||
+        t.includes("marcatore") || t.includes("rigore") || t.includes("espulsion") ||
+        t.includes("somma gol")) {
+      return null;
+    }
+
+    // 1X2 Finale
     if (t === "1" || t.includes("esito finale 1") || t.endsWith(" 1") || t.includes("vincente 1") || t === "1 finale") {
       return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)" };
     }
@@ -989,61 +1001,76 @@
     if (t === "2" || t.includes("esito finale 2") || t.endsWith(" 2") || t.includes("vincente 2") || t === "2 finale") {
       return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)" };
     }
-    if (t === "1x" || t.includes("1x") || t.includes("doppia chance 1x")) {
+
+    // Doppia Chance Finale
+    if (t === "1x" || t.includes("doppia chance 1x") || t.endsWith(" 1x") || t.includes("dc 1x")) {
       return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance" };
     }
-    if (t === "x2" || t.includes("x2") || t.includes("doppia chance x2")) {
+    if (t === "x2" || t.includes("doppia chance x2") || t.endsWith(" x2") || t.includes("dc x2")) {
       return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance" };
     }
-    if (t === "12" || t.includes("12") || t.includes("doppia chance 12")) {
+    if (t === "12" || t.includes("doppia chance 12") || t.endsWith(" 12") || t.includes("dc 12")) {
       return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance" };
     }
-    if (t.includes("over 2,5") || t.includes("over 2.5") || t === "over" || t.includes("u/o 2,5 over") || t.includes("u/o 2.5 over")) {
+
+    // Under / Over 2.5
+    if (t.includes("2,5 over") || t.includes("2.5 over") || t.includes("over 2,5") || t.includes("over 2.5") || (t.includes("u/o 2,5") && t.includes("over")) || (t.includes("u/o 2.5") && t.includes("over"))) {
       return { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over" };
     }
-    if (t.includes("under 2,5") || t.includes("under 2.5") || t === "under" || t.includes("u/o 2,5 under") || t.includes("u/o 2.5 under")) {
+    if (t.includes("2,5 under") || t.includes("2.5 under") || t.includes("under 2,5") || t.includes("under 2.5") || (t.includes("u/o 2,5") && t.includes("under")) || (t.includes("u/o 2.5") && t.includes("under"))) {
       return { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over" };
     }
-    if (t.includes("over 1,5") || t.includes("over 1.5") || t.includes("u/o 1,5 over") || t.includes("u/o 1.5 over")) {
+
+    // Under / Over 1.5
+    if (t.includes("1,5 over") || t.includes("1.5 over") || t.includes("over 1,5") || t.includes("over 1.5") || (t.includes("u/o 1,5") && t.includes("over")) || (t.includes("u/o 1.5") && t.includes("over"))) {
       return { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over" };
     }
-    if (t.includes("under 1,5") || t.includes("under 1.5") || t.includes("u/o 1,5 under") || t.includes("u/o 1.5 under")) {
+    if (t.includes("1,5 under") || t.includes("1.5 under") || t.includes("under 1,5") || t.includes("under 1.5") || (t.includes("u/o 1,5") && t.includes("under")) || (t.includes("u/o 1.5") && t.includes("under"))) {
       return { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over" };
     }
-    if (t.includes("over 3,5") || t.includes("over 3.5") || t.includes("u/o 3,5 over") || t.includes("u/o 3.5 over")) {
+
+    // Under / Over 3.5
+    if (t.includes("3,5 over") || t.includes("3.5 over") || t.includes("over 3,5") || t.includes("over 3.5") || (t.includes("u/o 3,5") && t.includes("over")) || (t.includes("u/o 3.5") && t.includes("over"))) {
       return { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over" };
     }
-    if (t.includes("under 3,5") || t.includes("under 3.5") || t.includes("u/o 3,5 under") || t.includes("u/o 3.5 under")) {
+    if (t.includes("3,5 under") || t.includes("3.5 under") || t.includes("under 3,5") || t.includes("under 3.5") || (t.includes("u/o 3,5") && t.includes("under")) || (t.includes("u/o 3.5") && t.includes("under"))) {
       return { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over" };
     }
-    if (t === "goal" || t === "gol" || t.includes("entrambe segnano") || t.includes("gg") || t.includes("goal/goal") || t.includes("gol/gol")) {
+
+    // Gol / No Gol
+    if (t === "goal" || t === "gol" || t === "gg" || t.includes("entrambe segnano") || t.includes("goal/goal") || t.includes("gol/gol") || (t.includes("gol / no gol") && (t.endsWith("si") || t.endsWith("sì") || t.endsWith("gol")))) {
       return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol" };
     }
-    if (t === "nogoal" || t === "no goal" || t.includes("no gol") || t.includes("ng") || t.includes("almeno una non segna")) {
+    if (t === "nogoal" || t === "no goal" || t === "no gol" || t === "ng" || t.includes("almeno una non segna") || (t.includes("gol / no gol") && t.endsWith("no"))) {
       return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol" };
     }
+
     return null;
   }
 
   // Rilevamento partita singola
   function detectSingleMatch() {
-    const titleMatch = document.title.match(/([A-Za-z0-9\s]{3,22})\s*[-–vsVS]+\s*([A-Za-z0-9\s]{3,22})/i);
+    const teamSepRegex = /([A-Za-z0-9\s]{3,22})\s*(?:[-–—/]|[\r\n]+|\bvs\b|\bv\b|\bvs\.)\s*([A-Za-z0-9\s]{3,22})/i;
+
+    const titleMatch = document.title.match(teamSepRegex);
     if (titleMatch) {
       let h = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
-      let a = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").trim();
-      if (h.length >= 3 && a.length >= 3) return { home: h, away: a };
+      let a = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
+      if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
     }
 
     const headEls = document.querySelectorAll("h1, h2, [class*='title'], [class*='match-name'], [class*='scoreboard'], [data-qa*='match']");
     for (const el of headEls) {
       const txt = (el.innerText || "").trim();
-      const m = txt.match(/([A-Za-z0-9\s]{3,22})\s*[-–vsVS]+\s*([A-Za-z0-9\s]{3,22})/i);
+      const m = txt.match(teamSepRegex);
       if (m) {
-        return { home: m[1].trim(), away: m[2].trim() };
+        let h = m[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
+        let a = m[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
+        if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
       }
     }
 
-    const teamEls = Array.from(document.querySelectorAll("[class*='competitor'], [class*='team-name'], [class*='teamName']"));
+    const teamEls = Array.from(document.querySelectorAll("[class*='competitor'], [class*='team-name'], [class*='teamName'], [class*='participant']"));
     if (teamEls.length >= 2) {
       const h = (teamEls[0].innerText || "").trim();
       const a = (teamEls[1].innerText || "").trim();
@@ -1684,7 +1711,7 @@
       const oddButtons = Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
         if (el.closest("#mm-widget")) return false;
         const txt = el.innerText || "";
-        return /\b\\d+[.,]\\d{2}\b/.test(txt) && txt.length < 50;
+        return /\b\d+[.,]\d{2}\b/.test(txt) && txt.length < 50;
       });
 
       oddButtons.forEach(btn => {
@@ -1693,8 +1720,8 @@
         if (!val) return;
         let label = "";
         const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        for (const line of lines) { if (!/\b\\d+[.,]\\d{2}\b/.test(line)) { label = line; break; } }
-        if (!label && lines.length) label = lines[0].replace(/\b\\d+[.,]\\d{2}\b/, "").trim();
+        for (const line of lines) { if (!/\b\d+[.,]\d{2}\b/.test(line)) { label = line; break; } }
+        if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
         const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "") + " " + (btn.getAttribute("data-qa") || "");
         const contextText = (btn.closest("[class*='market'], [class*='group'], [class*='section'], [data-qa*='market']")?.innerText || "") + " " + label + " " + txt + " " + attrText;
         const market = parseSisalMarket(contextText);
@@ -1729,7 +1756,7 @@
         const oddButtons = Array.from(item.container.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
           if (el.closest("#mm-widget")) return false;
           const txt = el.innerText || "";
-          return /\b\\d+[.,]\\d{2}\b/.test(txt) && txt.length < 50;
+          return /\b\d+[.,]\d{2}\b/.test(txt) && txt.length < 50;
         });
         oddButtons.forEach(btn => {
           const txt = (btn.innerText || "").trim();
@@ -1737,8 +1764,8 @@
           if (!val) return;
           let label = "";
           const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-          for (const line of lines) { if (!/\b\\d+[.,]\\d{2}\b/.test(line)) { label = line; break; } }
-          if (!label && lines.length) label = lines[0].replace(/\b\\d+[.,]\\d{2}\b/, "").trim();
+          for (const line of lines) { if (!/\b\d+[.,]\d{2}\b/.test(line)) { label = line; break; } }
+          if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
           const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "");
           const market = parseSisalMarket(label + " " + txt + " " + attrText);
           if (market && mmProbs[market.key] != null) {
