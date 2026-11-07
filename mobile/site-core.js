@@ -21,25 +21,135 @@
   let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'openfootball',updatedAt:null};
   const forecastMemo=new Map();
   function trainAvailableModels(history){if(!window.MatchMindAI)return;for(const competition of Object.keys(COMPETITIONS))window.MatchMindAI.train(history,(match,prior)=>forecast(match,prior,{__skipAI:true}),competition);}
+  const DATA_ROOT='https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/';
+  const HISTORY_ROOT='https://raw.githubusercontent.com/openfootball/football.json/master/';
+  const LEAGUE_SOURCES=[
+    {id:'serie-a',folder:'ITA_1_serie-a',history:true},
+    {id:'champions-league',folder:'UEFA_1_champions-league',history:false},
+    {id:'europa-league',folder:'UEFA_1_europa-league',history:false}
+  ];
+
+  function parseCsvRows(input){
+    const rows=[];let row=[],field='',quoted=false;
+    for(let i=0;i<input.length;i++){
+      const ch=input[i];
+      if(quoted){
+        if(ch==='"'&&input[i+1]==='"'){field+='"';i++;}
+        else if(ch==='"')quoted=false;
+        else field+=ch;
+      }else if(ch==='"')quoted=true;
+      else if(ch===','){row.push(field);field='';}
+      else if(ch==='\n'){row.push(field.replace(/\r$/,''));if(row.some(x=>x!==''))rows.push(row);row=[];field='';}
+      else field+=ch;
+    }
+    if(field!==''||row.length){row.push(field.replace(/\r$/,''));rows.push(row);}
+    if(!rows.length)return[];
+    const headers=rows.shift();
+    return rows.map(values=>Object.fromEntries(headers.map((key,index)=>[key,values[index]??''])));
+  }
+
+  function normalizeMatchRow(row,competition,finished){
+    const hg=num(row.ft_home),ag=num(row.ft_away),done=finished&&hg!==null&&ag!==null;
+    return {
+      id:null,date:String(row.date||''),time:String(row.time||''),round:num(row.gw),
+      stage:row.gw?'Giornata '+row.gw:'',home:String(row.home||''),away:String(row.away||''),
+      hg:done?hg:null,ag:done?ag:null,ht:num(row.ht_home),at:num(row.ht_away),
+      hs:num(row.home_shots),as:num(row.away_shots),hst:num(row.home_target),ast:num(row.away_target),
+      hf:num(row.home_fouls),af:num(row.away_fouls),hc:num(row.home_corners),ac:num(row.away_corners),
+      hc1:num(row.home_corners_1h),ac1:num(row.away_corners_1h),hc2:num(row.home_corners_2h),ac2:num(row.away_corners_2h),
+      hy:num(row.home_yellow),ay:num(row.away_yellow),hr:num(row.home_red),ar:num(row.away_red),
+      goalMinutes:String(row.goal_minutes||''),status:done?'FT':'NS',statusLong:done?'Terminata':'In programma',
+      competition,source:'open-matchday'
+    };
+  }
+
+  async function fetchDirectCalendar(){
+    const y=seasonStart(),code=seasonCode(y);
+    const jobs=LEAGUE_SOURCES.map(async league=>{
+      const base=DATA_ROOT+league.folder+'/';
+      const [resultsCsv,fixturesCsv]=await Promise.all([
+        fetch(base+'results_'+code+'.csv',{signal:AbortSignal.timeout(15000)}).then(r=>r.ok?r.text():'').catch(()=>''),
+        fetch(base+'fixtures_'+code+'.csv',{signal:AbortSignal.timeout(15000)}).then(r=>r.ok?r.text():'').catch(()=>'')
+      ]);
+      const results=resultsCsv?parseCsvRows(resultsCsv).map(r=>normalizeMatchRow(r,league.id,true)).filter(m=>m.date&&m.home&&m.away):[];
+      const fixtures=fixturesCsv?parseCsvRows(fixturesCsv).map(r=>normalizeMatchRow(r,league.id,false)).filter(m=>m.date&&m.home&&m.away):[];
+      return {league,results,fixtures};
+    });
+    const settled=await Promise.allSettled(jobs);
+    const matches=[],history=[];
+    for(let i=0;i<settled.length;i++){
+      const s=settled[i];
+      if(s.status==='fulfilled'){
+        matches.push(...s.value.results,...s.value.fixtures);
+        history.push(...s.value.results);
+      }
+    }
+    const histJobs=[y-1,y-2,y-3].map(async year=>{
+      const folder=year+'-'+String(year+1).slice(-2);
+      const res=await fetch(HISTORY_ROOT+folder+'/it.1.json',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+      if(!res||!res.ok)return [];
+      const payload=await res.json().catch(()=>({}));
+      return (payload.matches||[]).map(row=>{
+        const ft=row.score?.ft||null,ht=row.score?.ht||null,done=Array.isArray(ft)&&ft.length>=2&&ft[0]!==null&&ft[1]!==null;
+        return {
+          id:null,date:String(row.date||''),time:String(row.time||''),round:num(String(row.round||'').match(/\d+/)?.[0]),
+          stage:String(row.round||''),home:String(row.team1||''),away:String(row.team2||''),
+          hg:done?num(ft[0]):null,ag:done?num(ft[1]):null,ht:Array.isArray(ht)?num(ht[0]):null,at:Array.isArray(ht)?num(ht[1]):null,
+          hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,
+          status:done?'FT':'NS',statusLong:done?'Terminata':'In programma',competition:'serie-a',source:'openfootball · archivio storico'
+        };
+      }).filter(m=>m.date&&m.home&&m.away&&m.hg!==null&&m.ag!==null);
+    });
+    const histSettled=await Promise.allSettled(histJobs);
+    histSettled.forEach(r=>{if(r.status==='fulfilled')history.push(...r.value);});
+
+    matches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+    history.sort((a,b)=>a.date.localeCompare(b.date));
+
+    if(!matches.length)throw new Error('I dataset pubblici non contengono partite accessibili per questa stagione.');
+    return {
+      matches,history,season:y,
+      source:'open-matchday + openfootball',
+      updatedAt:Date.now(),
+      sourceMode:'public-dataset-direct'
+    };
+  }
+
   async function loadData(force=false){
     if(dataPromise&&!force)return dataPromise;
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
       if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
-      const headers={Accept:'application/json'};
-      let response;try{response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(25000)});}catch(error){if(cached&&cached.matches?.length){data={...cached,source:'cache',stale:true,error:error.message};return data;}throw new Error('La fonte del calendario non risponde. Controlla la connessione e riprova.');}
-      let payload={};try{payload=await response.json();}catch{}
-      if(!response.ok||payload.error||payload.configured===false){
-        const message=payload.error||'Fonte pubblica openfootball non disponibile.';
-        if(cached&&cached.matches?.length){data={...cached,source:'cache · openfootball',stale:true,error:message};return data;}
-        throw new Error(message);
+      let payload=null;
+      try{
+        const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(25000)});
+        if(response.ok){
+          const body=await response.json().catch(()=>null);
+          if(body&&Array.isArray(body.matches)&&body.matches.length)payload=body;
+        }
+      }catch(_){}
+
+      if(!payload){
+        try{
+          payload=await fetchDirectCalendar();
+        }catch(directErr){
+          if(cached&&cached.matches?.length){
+            data={...cached,source:'cache · openfootball',stale:true,error:directErr.message};
+            return data;
+          }
+          throw new Error(directErr.message||'Fonte pubblica openfootball non disponibile.');
+        }
       }
-      if(!Array.isArray(payload.matches)||!payload.matches.length)throw new Error('Il dataset pubblico non ha restituito partite per questa stagione.');
-      data={matches:payload.matches,history:Array.isArray(payload.history)?payload.history:[],season:payload.season||y,source:'openfootball',updatedAt:Date.now(),sourceMode:'public-dataset'};
+
+      data={
+        matches:payload.matches,
+        history:Array.isArray(payload.history)?payload.history:[],
+        season:payload.season||y,
+        source:payload.source||'openfootball',
+        updatedAt:Date.now(),
+        sourceMode:payload.sourceMode||'public-dataset'
+      };
       try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
-      // Do not train the walk-forward AI calibration on the UI thread. The
-      // historical replay is O(n²) and can freeze mobile navigation. Keep the
-      // last validated calibration if present; training belongs in a Worker.
       return data;
     })().catch(error=>{dataPromise=null;throw error;});
     return dataPromise;
