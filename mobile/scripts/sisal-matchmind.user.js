@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.3.0
-// @description  Evidenzia le probabilità stimate del modello MatchMind e le scommesse consigliate direttamente su Sisal.
+// @version      1.4.0
+// @description  Filtra le scommesse per probabilità desiderata (es. >=60%), widget trascinabile e riducibile a icona su Sisal.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -223,14 +223,26 @@
       border: 1px solid #223249;
       border-radius: 12px;
       padding: 10px 12px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.85);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 12px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-width: 290px;
-      min-width: 230px;
+      gap: 7px;
+      max-width: 310px;
+      min-width: 260px;
+      touch-action: none;
+      user-select: none;
+    }
+    #mm-widget.mm-is-minimized {
+      min-width: unset !important;
+      max-width: unset !important;
+      padding: 6px 12px !important;
+      border-radius: 24px !important;
+      background: #090d16 !important;
+      border: 1.5px solid #10b981 !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.7) !important;
     }
     #mm-widget-head {
       display: flex;
@@ -240,33 +252,139 @@
       color: #c4f36a;
       border-bottom: 1px solid #1a2636;
       padding-bottom: 5px;
+      cursor: grab;
     }
-    .mm-recom-box {
-      background: #0f1a26;
-      border: 1px solid #1e3a2e;
-      border-left: 3px solid #10b981;
-      border-radius: 6px;
-      padding: 6px 8px;
+    #mm-widget-head:active {
+      cursor: grabbing;
+    }
+    .mm-head-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mm-icon-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .mm-icon-btn:hover {
+      background: #1e293b;
+      color: #f1f5f9;
+      border-color: #64748b;
+    }
+    .mm-filter-bar {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
+      background: #0f172a;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #1e293b;
     }
-    .mm-recom-title {
-      font-size: 11px;
-      color: #a7f3d0;
-      font-weight: 800;
+    .mm-filter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .mm-chips-row {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .mm-chip {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .mm-chip.active {
+      background: #059669;
+      color: #ffffff;
+      border-color: #10b981;
+    }
+    .mm-slider {
+      width: 100%;
+      accent-color: #10b981;
+      height: 4px;
+      cursor: pointer;
+    }
+    .mm-list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .mm-list-container::-webkit-scrollbar {
+      width: 4px;
+    }
+    .mm-list-container::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .mm-item-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      background: #0f1a26;
+      border: 1px solid #1e3a2e;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 11px;
     }
-    .mm-recom-prob {
-      font-size: 13px;
-      font-weight: 900;
-      color: #34d399;
+    .mm-item-row.is-top {
+      border-left: 3px solid #10b981;
+      background: #092019;
     }
-    .mm-recom-meta {
-      font-size: 10px;
+    .mm-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      max-width: 160px;
+      overflow: hidden;
+    }
+    .mm-item-name {
+      font-weight: 700;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mm-item-meta {
+      font-size: 9.5px;
       color: #94a3b8;
+    }
+    .mm-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .mm-prob-badge {
+      font-size: 12px;
+      font-weight: 800;
+      color: #34d399;
+      background: #064e3b;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid #059669;
+      white-space: nowrap;
     }
     .mm-btn-action {
       background: #10b981;
@@ -302,26 +420,6 @@
     }
     .mm-btn-cart:hover {
       background: #334155;
-    }
-    .mm-table-toggle {
-      background: none;
-      border: none;
-      color: #7dd3fc;
-      font-size: 10px;
-      cursor: pointer;
-      padding: 2px 0;
-      text-align: left;
-      text-decoration: underline;
-    }
-    .mm-details-table {
-      font-size: 10px;
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 4px;
-    }
-    .mm-details-table td {
-      padding: 2px 4px;
-      border-bottom: 1px solid #1a2636;
     }
   `;
 
@@ -472,8 +570,126 @@
     return null;
   }
 
+  // Stato globale
   let currentAnalysis = null;
-  let showDetailsTable = false;
+  let isMinimized = localStorage.getItem("mm_widget_minimized") === "true";
+  let minProbThreshold = parseInt(localStorage.getItem("mm_min_prob") || "50", 10);
+  if (isNaN(minProbThreshold)) minProbThreshold = 50;
+
+  // Gestione Drag & Drop universale (Touch + Mouse)
+  function initDraggable(widgetEl, handleEl) {
+    let isDragging = false;
+    let hasMoved = false;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+
+    // Ripristina posizione salvata
+    try {
+      const savedPos = JSON.parse(localStorage.getItem("mm_widget_pos") || "null");
+      if (savedPos && savedPos.left && savedPos.top) {
+        widgetEl.style.bottom = "auto";
+        widgetEl.style.right = "auto";
+        widgetEl.style.left = savedPos.left;
+        widgetEl.style.top = savedPos.top;
+      }
+    } catch(e) {}
+
+    function onDragStart(clientX, clientY) {
+      isDragging = true;
+      hasMoved = false;
+      const rect = widgetEl.getBoundingClientRect();
+      startX = clientX;
+      startY = clientY;
+      initialLeft = rect.left;
+      initialTop = rect.top;
+      widgetEl.style.bottom = "auto";
+      widgetEl.style.right = "auto";
+      widgetEl.style.left = `${initialLeft}px`;
+      widgetEl.style.top = `${initialTop}px`;
+    }
+
+    function onDragMove(clientX, clientY, e) {
+      if (!isDragging) return;
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        hasMoved = true;
+      }
+      let newLeft = initialLeft + dx;
+      let newTop = initialTop + dy;
+
+      const maxLeft = Math.max(10, window.innerWidth - widgetEl.offsetWidth - 6);
+      const maxTop = Math.max(10, window.innerHeight - widgetEl.offsetHeight - 6);
+      newLeft = Math.max(6, Math.min(newLeft, maxLeft));
+      newTop = Math.max(6, Math.min(newTop, maxTop));
+
+      widgetEl.style.left = `${newLeft}px`;
+      widgetEl.style.top = `${newTop}px`;
+
+      if (e && e.cancelable) {
+        e.preventDefault();
+      }
+    }
+
+    function onDragEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+      try {
+        localStorage.setItem("mm_widget_pos", JSON.stringify({
+          left: widgetEl.style.left,
+          top: widgetEl.style.top
+        }));
+      } catch(err) {}
+    }
+
+    // Touch
+    handleEl.addEventListener("touchstart", (e) => {
+      if (e.target.closest("button, input, a")) return;
+      if (e.touches.length === 1) {
+        onDragStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    window.addEventListener("touchmove", (e) => {
+      if (!isDragging || e.touches.length !== 1) return;
+      onDragMove(e.touches[0].clientX, e.touches[0].clientY, e);
+    }, { passive: false });
+
+    window.addEventListener("touchend", onDragEnd);
+    window.addEventListener("touchcancel", onDragEnd);
+
+    // Mouse
+    handleEl.addEventListener("mousedown", (e) => {
+      if (e.target.closest("button, input, a")) return;
+      onDragStart(e.clientX, e.clientY);
+
+      const onMouseMove = (ev) => onDragMove(ev.clientX, ev.clientY, ev);
+      const onMouseUp = () => {
+        onDragEnd();
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+      };
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    });
+
+    return () => hasMoved;
+  }
+
+  function setThreshold(val) {
+    minProbThreshold = Math.max(0, Math.min(100, Number(val)));
+    localStorage.setItem("mm_min_prob", String(minProbThreshold));
+    renderWidget();
+    updatePageBadges();
+  }
+
+  function setMinimized(minimized) {
+    isMinimized = Boolean(minimized);
+    localStorage.setItem("mm_widget_minimized", String(isMinimized));
+    renderWidget();
+  }
 
   function renderWidget() {
     let widget = document.getElementById("mm-widget");
@@ -483,101 +699,215 @@
       document.body.appendChild(widget);
     }
 
-    if (!currentAnalysis || !currentAnalysis.recommended) {
+    if (isMinimized) {
+      widget.classList.add("mm-is-minimized");
+      const matchCount = currentAnalysis && currentAnalysis.calculations
+        ? currentAnalysis.calculations.filter(c => (c.modelProb * 100) >= minProbThreshold).length
+        : 0;
+
+      widget.innerHTML = `
+        <div id="mm-widget-min-bar" style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;">
+          <span style="color:#c4f36a;font-size:13px;">🧠 MM</span>
+          <span class="mm-prob-badge" style="font-size:11px;padding:1px 6px;">${matchCount} quote ≥ ${minProbThreshold}%</span>
+          <span style="color:#38bdf8;font-size:10px;text-decoration:underline;">Espandi ↗</span>
+        </div>
+      `;
+
+      initDraggable(widget, widget);
+      widget.onclick = (e) => {
+        if (e.target.closest("button")) return;
+        setMinimized(false);
+      };
+      return;
+    }
+
+    widget.classList.remove("mm-is-minimized");
+    widget.onclick = null;
+
+    if (!currentAnalysis || !currentAnalysis.calculations.length) {
       widget.innerHTML = `
         <div id="mm-widget-head">
           <span>🧠 MatchMind</span>
-          <small style="color:#34d399">● Attivo</small>
+          <div class="mm-head-actions">
+            <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a icona">—</button>
+          </div>
         </div>
         <div style="font-size:11px;color:#94a3b8;">Scansione quote Sisal in corso…</div>
         <button id="mm-send-cart-btn" class="mm-btn-cart">📥 Invia carrello Sisal</button>
         <div style="display:flex;justify-content:space-between;margin-top:2px;">
-          <a href="${MATCHMIND_URL}" target="_blank" style="color:#7dd3fc;text-decoration:none;font-size:11px;">📋 MatchMind</a>
+          <a href="${MATCHMIND_URL}" target="_blank" style="color:#7dd3fc;text-decoration:none;font-size:11px;">📋 Apri MatchMind</a>
           <span style="color:#64748b;font-size:11px;cursor:pointer;" id="mm-rescan-btn">🔄 Scansiona</span>
         </div>
       `;
+      document.getElementById("mm-btn-minimize")?.addEventListener("click", () => setMinimized(true));
       document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
       document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
+      const headEl = document.getElementById("mm-widget-head");
+      if (headEl) initDraggable(widget, headEl);
       return;
     }
 
-    const { home, away, recommended, calculations } = currentAnalysis;
-    const recProbPct = (recommended.modelProb * 100).toFixed(0);
-    const fairOddsStr = (1 / recommended.modelProb).toFixed(2);
-    const evPct = (recommended.ev * 100).toFixed(1);
+    const { home, away, calculations } = currentAnalysis;
+    const matching = calculations.filter(c => (c.modelProb * 100) >= minProbThreshold);
 
-    let rowsHtml = "";
-    if (showDetailsTable && calculations.length) {
-      rowsHtml = `
-        <table class="mm-details-table">
-          <thead>
-            <tr style="color:#64748b;text-align:left;">
-              <th>Esito</th><th>Quota</th><th>Stima MM</th><th>EV</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${calculations.slice(0, 7).map(c => {
-              const p = (c.modelProb * 100).toFixed(0);
-              const ev = (c.ev * 100).toFixed(0);
-              const isRec = c === recommended;
-              return `
-                <tr style="${isRec ? 'color:#34d399;font-weight:700;' : ''}">
-                  <td>${c.label}</td>
-                  <td>${c.odd.toFixed(2)}</td>
-                  <td>${p}%</td>
-                  <td style="color:${c.ev > 0 ? '#34d399' : '#94a3b8'}">${ev > 0 ? '+' + ev : ev}%</td>
-                </tr>
-              `;
-            }).join("")}
-          </tbody>
-        </table>
+    const presets = [
+      { label: "Tutte", val: 0 },
+      { label: "≥40%", val: 40 },
+      { label: "≥50%", val: 50 },
+      { label: "≥60%", val: 60 },
+      { label: "≥70%", val: 70 },
+      { label: "≥80%", val: 80 }
+    ];
+
+    let itemsHtml = "";
+    if (matching.length > 0) {
+      itemsHtml = matching.map((c, idx) => {
+        const pct = (c.modelProb * 100).toFixed(0);
+        const ev = (c.ev * 100).toFixed(1);
+        const isTop = idx === 0 && c.ev > 0;
+        return `
+          <div class="mm-item-row ${isTop ? 'is-top' : ''}">
+            <div class="mm-item-info">
+              <div class="mm-item-name">${c.label} @ ${c.odd.toFixed(2)}</div>
+              <div class="mm-item-meta">
+                Equa: ${c.fairOdds.toFixed(2)} · <span style="color:${c.ev > 0 ? '#34d399' : '#94a3b8'};font-weight:700;">${c.ev > 0 ? '+' + ev : ev}% EV</span>
+              </div>
+            </div>
+            <div class="mm-item-actions">
+              <span class="mm-prob-badge">${pct}%</span>
+              <button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${home.replace(/'/g, "\'")}', '${away.replace(/'/g, "\'")}', '${c.key}', '${c.label}', ${c.odd})">
+                ⚡ MM
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    } else {
+      itemsHtml = `
+        <div style="font-size:11px;color:#94a3b8;padding:8px;text-align:center;background:#0f172a;border-radius:6px;">
+          Nessuna quota con probabilità ≥ ${minProbThreshold}%.<br/>
+          <span style="color:#38bdf8;cursor:pointer;font-weight:bold;" id="mm-reset-thresh">Abbassa a ≥ 50%</span>
+        </div>
       `;
     }
 
     widget.innerHTML = `
       <div id="mm-widget-head">
-        <span>🧠 MatchMind Stime</span>
-        <small style="color:#34d399">● Analizzata</small>
+        <span style="font-size:12px;">🧠 MatchMind · Filtro Probabilità</span>
+        <div class="mm-head-actions">
+          <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a icona">—</button>
+        </div>
       </div>
+
       <div style="font-size:11px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
         ⚽ ${home} - ${away}
       </div>
-      <div class="mm-recom-box">
-        <div class="mm-recom-title">
-          <span>🏆 SCOMMESSA CONSIGLIATA</span>
-          <span class="mm-recom-prob">${recProbPct}%</span>
+
+      <!-- Barra filtro percentuale -->
+      <div class="mm-filter-bar">
+        <div class="mm-filter-row">
+          <span>Scegli probabilità desiderata:</span>
+          <span style="color:#34d399;font-weight:800;font-size:12px;" id="mm-thresh-display">≥ ${minProbThreshold}%</span>
         </div>
-        <div style="font-size:12px;font-weight:800;color:#f1f5f9;">
-          ${recommended.label} @ ${recommended.odd.toFixed(2)}
+        <div class="mm-chips-row">
+          ${presets.map(p => `
+            <button class="mm-chip ${minProbThreshold === p.val ? 'active' : ''}" data-val="${p.val}">
+              ${p.label}
+            </button>
+          `).join("")}
         </div>
-        <div class="mm-recom-meta">
-          Stima MatchMind: ${recProbPct}% · Quota equa: ${fairOddsStr}
-          ${recommended.ev > 0 ? ` · <span style="color:#34d399;font-weight:700;">+${evPct}% EV</span>` : ''}
-        </div>
+        <input type="range" class="mm-slider" id="mm-prob-slider" min="30" max="90" step="5" value="${minProbThreshold}">
       </div>
-      <button id="mm-play-recom-btn" class="mm-btn-action">
-        ⚡ Invia Consigliata a MatchMind
-      </button>
+
+      <!-- Lista scommesse filtrate -->
+      <div class="mm-list-container">
+        ${itemsHtml}
+      </div>
+
+      <!-- Azioni carrello e matchmind -->
       <button id="mm-send-cart-btn" class="mm-btn-cart">
-        📥 Invia carrello Sisal
+        📥 Invia carrello Sisal a MatchMind
       </button>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
-        <button id="mm-toggle-table" class="mm-table-toggle">
-          ${showDetailsTable ? "Nascondi percentuali ▲" : "Tutte le probabilità MatchMind ▼"}
-        </button>
-        <span style="color:#64748b;font-size:10px;cursor:pointer;" id="mm-rescan-btn">🔄 Aggiorna</span>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;">
+        <a href="${MATCHMIND_URL}" target="_blank" style="color:#7dd3fc;text-decoration:none;">📋 Apri MatchMind</a>
+        <span style="color:#64748b;cursor:pointer;" id="mm-rescan-btn">🔄 Aggiorna (${matching.length} trovate)</span>
       </div>
-      ${rowsHtml}
     `;
 
-    document.getElementById("mm-play-recom-btn")?.addEventListener("click", (e) => {
-      window.sendToMatchMind(e, home, away, recommended.key, recommended.label, recommended.odd);
-    });
+    // Eventi
+    document.getElementById("mm-btn-minimize")?.addEventListener("click", () => setMinimized(true));
     document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
     document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
-    document.getElementById("mm-toggle-table")?.addEventListener("click", () => {
-      showDetailsTable = !showDetailsTable;
-      renderWidget();
+    document.getElementById("mm-reset-thresh")?.addEventListener("click", () => setThreshold(50));
+
+    const slider = document.getElementById("mm-prob-slider");
+    if (slider) {
+      slider.addEventListener("input", (e) => {
+        const val = Number(e.target.value);
+        document.getElementById("mm-thresh-display").textContent = `≥ ${val}%`;
+      });
+      slider.addEventListener("change", (e) => {
+        setThreshold(Number(e.target.value));
+      });
+    }
+
+    widget.querySelectorAll(".mm-chip").forEach(chip => {
+      chip.addEventListener("click", (e) => {
+        const val = Number(e.currentTarget.dataset.val);
+        setThreshold(val);
+      });
+    });
+
+    const headEl = document.getElementById("mm-widget-head");
+    if (headEl) initDraggable(widget, headEl);
+  }
+
+  function updatePageBadges() {
+    if (!currentAnalysis || !currentAnalysis.calculations) return;
+    const { calculations, home, away } = currentAnalysis;
+
+    calculations.forEach(c => {
+      const btn = c.btn;
+      if (!btn) return;
+
+      const pct = Math.round(c.modelProb * 100);
+      const meetsThreshold = pct >= minProbThreshold;
+
+      // Se rispetta la soglia desiderata dall'utente, evidenzia il bottone Sisal
+      if (meetsThreshold) {
+        btn.classList.add("mm-highlight-btn");
+      } else {
+        btn.classList.remove("mm-highlight-btn");
+      }
+
+      // Aggiorna o crea il tag percentuale sul bottone
+      let tag = btn.querySelector(".mm-prob-tag, .mm-badge-recommended");
+      if (!tag) {
+        tag = document.createElement("div");
+        tag.className = "mm-prob-tag";
+        btn.appendChild(tag);
+      }
+
+      if (meetsThreshold) {
+        tag.className = "mm-badge-recommended";
+        tag.innerHTML = `★ ${pct}%`;
+      } else {
+        tag.className = "mm-prob-tag";
+        tag.innerHTML = `🧠 ${pct}%`;
+      }
+      tag.title = `Stima MatchMind: ${pct}% · Quota equa: ${c.fairOdds.toFixed(2)}`;
+
+      // Assicurati che ci sia il bottone rapido "⚡ MM"
+      if (!btn.querySelector(".mm-send-btn")) {
+        const sendBtn = document.createElement("button");
+        sendBtn.type = "button";
+        sendBtn.className = "mm-send-btn";
+        sendBtn.innerHTML = "⚡ MM";
+        sendBtn.title = `Invia ${c.label} (${pct}%) a MatchMind`;
+        sendBtn.onclick = (e) => window.sendToMatchMind(e, home, away, c.key, c.label, c.odd);
+        btn.appendChild(sendBtn);
+      }
     });
   }
 
@@ -639,66 +969,16 @@
       }
     });
 
-    if (!calculations.length) {
-      renderWidget();
-      return;
-    }
-
-    // Scelta della scommessa consigliata:
-    // Privilegia la selezione con il miglior bilanciamento tra EV positivo e solidità probabilistica
-    let topPick = null;
-    let bestScore = -999;
-
-    calculations.forEach(c => {
-      // Score: probabilità + bonus per EV positivo
-      let score = c.modelProb + (c.ev > 0 ? c.ev * 1.5 : c.ev * 0.5);
-      if (c.odd >= 1.25 && c.odd <= 2.35) score += 0.15; // quota in range giocabile
-      if (score > bestScore) {
-        bestScore = score;
-        topPick = c;
-      }
-    });
+    // Ordina per probabilità decrescente
+    calculations.sort((a, b) => (b.modelProb || 0) - (a.modelProb || 0));
 
     currentAnalysis = {
       home: homeName,
       away: awayName,
-      recommended: topPick,
-      calculations: calculations.sort((a, b) => (b.modelProb || 0) - (a.modelProb || 0))
+      calculations
     };
 
-    // Inietta i badge sui pulsanti Sisal
-    calculations.forEach(c => {
-      const btn = c.btn;
-      if (!btn || btn.dataset.mmTagged) return;
-      btn.dataset.mmTagged = "true";
-
-      const pct = (c.modelProb * 100).toFixed(0);
-      const isTop = c === topPick;
-
-      if (isTop) {
-        btn.classList.add("mm-highlight-btn");
-        const badge = document.createElement("div");
-        badge.className = "mm-badge-recommended";
-        badge.innerHTML = `★ CONSIGLIATA ${pct}%`;
-        btn.appendChild(badge);
-      } else {
-        const tag = document.createElement("div");
-        tag.className = "mm-prob-tag";
-        tag.textContent = `🧠 ${pct}%`;
-        tag.title = `Stima MatchMind: ${pct}% · Quota equa: ${c.fairOdds.toFixed(2)}`;
-        btn.appendChild(tag);
-      }
-
-      // Bottone rapido "⚡ MM"
-      const sendBtn = document.createElement("button");
-      sendBtn.type = "button";
-      sendBtn.className = "mm-send-btn";
-      sendBtn.innerHTML = "⚡ MM";
-      sendBtn.title = `Invia ${c.label} (${pct}%) a MatchMind`;
-      sendBtn.onclick = (e) => window.sendToMatchMind(e, homeName, awayName, c.key, c.label, c.odd);
-      btn.appendChild(sendBtn);
-    });
-
+    updatePageBadges();
     renderWidget();
   }
 
