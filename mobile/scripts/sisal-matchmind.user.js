@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.1.0
-// @description  Evidenzia le quote di valore su Sisal con il modello statistico MatchMind e invia le selezioni con un clic per monitorare bankroll e vincite.
+// @version      1.3.0
+// @description  Evidenzia le probabilità stimate del modello MatchMind e le scommesse consigliate direttamente su Sisal.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -20,7 +20,7 @@
 
   const MATCHMIND_URL = "https://sonostevecazzo.github.io/MatchMind/bets.html";
 
-  // Alias squadre Serie A per matching robusto
+  // Alias squadre Serie A
   const TEAM_ALIASES = {
     inter: ["inter", "internazionale", "fc inter", "fc internazionale", "inter milan"],
     milan: ["milan", "ac milan", "acmilan"],
@@ -44,6 +44,30 @@
     venezia: ["venezia", "venezia fc"]
   };
 
+  // Parametri forza e stile squadre per modello probabilistico MatchMind
+  const TEAM_RATINGS = {
+    inter: { att: 1.95, def: 0.85, homeBoost: 0.15 },
+    juventus: { att: 1.70, def: 0.80, homeBoost: 0.12 },
+    milan: { att: 1.75, def: 1.05, homeBoost: 0.12 },
+    napoli: { att: 1.70, def: 0.90, homeBoost: 0.15 },
+    atalanta: { att: 1.90, def: 1.15, homeBoost: 0.15 },
+    roma: { att: 1.55, def: 1.10, homeBoost: 0.14 },
+    lazio: { att: 1.50, def: 1.10, homeBoost: 0.12 },
+    fiorentina: { att: 1.45, def: 1.15, homeBoost: 0.10 },
+    bologna: { att: 1.40, def: 1.05, homeBoost: 0.12 },
+    torino: { att: 1.15, def: 1.10, homeBoost: 0.10 },
+    udinese: { att: 1.15, def: 1.30, homeBoost: 0.10 },
+    genoa: { att: 1.10, def: 1.25, homeBoost: 0.12 },
+    parma: { att: 1.25, def: 1.45, homeBoost: 0.10 },
+    como: { att: 1.20, def: 1.40, homeBoost: 0.08 },
+    verona: { att: 1.05, def: 1.45, homeBoost: 0.10 },
+    cagliari: { att: 1.05, def: 1.45, homeBoost: 0.12 },
+    empoli: { att: 0.95, def: 1.35, homeBoost: 0.08 },
+    lecce: { att: 0.90, def: 1.40, homeBoost: 0.10 },
+    monza: { att: 1.00, def: 1.40, homeBoost: 0.08 },
+    venezia: { att: 0.95, def: 1.55, homeBoost: 0.08 }
+  };
+
   const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
   function canonicalTeam(name) {
@@ -59,102 +83,154 @@
     return n;
   }
 
-  function isSameMatch(h1, a1, h2, a2) {
-    return canonicalTeam(h1) === canonicalTeam(h2) && canonicalTeam(a1) === canonicalTeam(a2);
-  }
+  // Motore Poisson MatchMind (calcola matrice gol 0-7)
+  function calculateMatchMindForecast(homeName, awayName) {
+    const hKey = canonicalTeam(homeName);
+    const aKey = canonicalTeam(awayName);
 
-  // Stime probabilistiche pre-calcolate e fallback dinamico (Poisson/Elo)
-  let cachedForecasts = [];
+    const h = TEAM_RATINGS[hKey] || { att: 1.25, def: 1.25, homeBoost: 0.10 };
+    const a = TEAM_RATINGS[aKey] || { att: 1.25, def: 1.25, homeBoost: 0.10 };
 
-  // Calcolo Poisson client-side
-  function poisson(lambda, goals) {
-    if (!Number.isFinite(lambda) || lambda < 0) return 0;
-    let v = Math.exp(-lambda);
-    for (let i = 1; i <= goals; i++) v *= lambda / i;
-    return v;
-  }
+    const avgHome = 1.35;
+    const avgAway = 1.10;
 
-  function calculateGoalsProbabilities(homeXg, awayXg) {
-    let o15 = 0, o25 = 0, o35 = 0, btts = 0;
-    for (let h = 0; h <= 10; h++) {
-      for (let a = 0; a <= 10; a++) {
-        const p = poisson(homeXg, h) * poisson(awayXg, a);
-        const tot = h + a;
-        if (tot >= 2) o15 += p;
-        if (tot >= 3) o25 += p;
-        if (tot >= 4) o35 += p;
-        if (h > 0 && a > 0) btts += p;
+    const homeXg = Math.max(0.2, avgHome * (h.att / 1.30) * (a.def / 1.30) * 1.055 * (1 + h.homeBoost));
+    const awayXg = Math.max(0.2, avgAway * (a.att / 1.30) * (h.def / 1.30) * (1 - a.homeBoost * 0.4));
+
+    let pHome = 0, pDraw = 0, pAway = 0;
+    let o15 = 0, u15 = 0, o25 = 0, u25 = 0, o35 = 0, u35 = 0;
+    let bttsYes = 0, bttsNo = 0;
+
+    function poisson(lambda, k) {
+      if (lambda <= 0) return k === 0 ? 1 : 0;
+      let p = Math.exp(-lambda);
+      for (let i = 1; i <= k; i++) p *= lambda / i;
+      return p;
+    }
+
+    for (let hg = 0; hg <= 7; hg++) {
+      for (let ag = 0; ag <= 7; ag++) {
+        const prob = poisson(homeXg, hg) * poisson(awayXg, ag);
+        if (hg > ag) pHome += prob;
+        else if (hg === ag) pDraw += prob;
+        else pAway += prob;
+
+        const tot = hg + ag;
+        if (tot >= 2) o15 += prob; else u15 += prob;
+        if (tot >= 3) o25 += prob; else u25 += prob;
+        if (tot >= 4) o35 += prob; else u35 += prob;
+
+        if (hg > 0 && ag > 0) bttsYes += prob;
+        else bttsNo += prob;
       }
     }
+
     return {
-      over15: o15, under15: 1 - o15,
-      over25: o25, under25: 1 - o25,
-      over35: o35, under35: 1 - o35,
-      bttsYes: btts, bttsNo: 1 - btts
+      homeName,
+      awayName,
+      homeXg,
+      awayXg,
+      probabilities: {
+        home: pHome,
+        draw: pDraw,
+        away: pAway,
+        dc1X: pHome + pDraw,
+        dcX2: pDraw + pAway,
+        dc12: pHome + pAway,
+        over15: o15,
+        under15: u15,
+        over25: o25,
+        under25: u25,
+        over35: o35,
+        under35: u35,
+        bttsYes: bttsYes,
+        bttsNo: bttsNo
+      }
     };
   }
 
-  // Stili grafici iniettati nella pagina di Sisal
+  // Stili grafici
   const styles = `
-    .mm-badge-ev {
-      display: inline-block !important;
-      background: #0d2818 !important;
-      color: #38ef7d !important;
-      border: 1px solid #11998e !important;
+    .mm-prob-tag {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #081a2e !important;
+      color: #38bdf8 !important;
+      border: 1px solid #0284c7 !important;
       border-radius: 4px !important;
       padding: 1px 4px !important;
       font-size: 10px !important;
       font-weight: 800 !important;
-      margin-left: 4px !important;
+      margin-top: 2px !important;
       line-height: 1.2 !important;
-      box-shadow: 0 0 6px rgba(17,153,142,0.4) !important;
+      pointer-events: none !important;
+    }
+    .mm-badge-recommended {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 3px !important;
+      background: linear-gradient(135deg, #064e3b, #047857) !important;
+      color: #34d399 !important;
+      border: 1px solid #10b981 !important;
+      border-radius: 4px !important;
+      padding: 2px 5px !important;
+      font-size: 10px !important;
+      font-weight: 800 !important;
+      margin-top: 2px !important;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
       animation: mmPulse 2s infinite ease-in-out !important;
-      vertical-align: middle !important;
-      cursor: help !important;
+      line-height: 1.2 !important;
+      pointer-events: none !important;
+    }
+    .mm-highlight-btn {
+      outline: 2px solid #10b981 !important;
+      outline-offset: -2px !important;
+      background-color: rgba(16, 185, 129, 0.08) !important;
     }
     @keyframes mmPulse {
-      0%, 100% { box-shadow: 0 0 4px rgba(17,153,142,0.4); }
-      50% { box-shadow: 0 0 10px rgba(56,239,125,0.7); }
+      0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.3); }
+      50% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.7); }
     }
     .mm-send-btn {
       display: inline-flex !important;
       align-items: center !important;
-      gap: 3px !important;
+      gap: 2px !important;
       background: #111e2e !important;
       color: #c4f36a !important;
       border: 1px solid #2f4960 !important;
       border-radius: 4px !important;
-      padding: 2px 6px !important;
-      font-size: 11px !important;
+      padding: 1px 4px !important;
+      font-size: 10px !important;
       font-weight: 700 !important;
       cursor: pointer !important;
-      margin-left: 6px !important;
+      margin-top: 2px !important;
       transition: all 0.2s !important;
       text-decoration: none !important;
     }
     .mm-send-btn:hover {
       background: #1b2f46 !important;
       border-color: #c4f36a !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 2px 6px rgba(196,243,106,0.3) !important;
     }
     #mm-widget {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
+      bottom: 12px;
+      right: 12px;
       z-index: 999999;
-      background: #0a1118;
+      background: #090d16;
       color: #e2e8f0;
-      border: 1px solid #233548;
-      border-radius: 10px;
-      padding: 10px 14px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.6);
-      font-family: system-ui, -apple-system, sans-serif;
+      border: 1px solid #223249;
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 12px;
       display: flex;
       flex-direction: column;
       gap: 6px;
-      min-width: 190px;
+      max-width: 290px;
+      min-width: 230px;
     }
     #mm-widget-head {
       display: flex;
@@ -162,14 +238,90 @@
       align-items: center;
       font-weight: 700;
       color: #c4f36a;
+      border-bottom: 1px solid #1a2636;
+      padding-bottom: 5px;
     }
-    #mm-widget a {
-      color: #38ef7d;
-      text-decoration: none;
-      font-weight: 600;
+    .mm-recom-box {
+      background: #0f1a26;
+      border: 1px solid #1e3a2e;
+      border-left: 3px solid #10b981;
+      border-radius: 6px;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
-    #mm-widget a:hover {
+    .mm-recom-title {
+      font-size: 11px;
+      color: #a7f3d0;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mm-recom-prob {
+      font-size: 13px;
+      font-weight: 900;
+      color: #34d399;
+    }
+    .mm-recom-meta {
+      font-size: 10px;
+      color: #94a3b8;
+    }
+    .mm-btn-action {
+      background: #10b981;
+      color: #022c22;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .mm-btn-action:hover {
+      background: #34d399;
+    }
+    .mm-btn-cart {
+      background: #1e293b;
+      color: #c4f36a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .mm-btn-cart:hover {
+      background: #334155;
+    }
+    .mm-table-toggle {
+      background: none;
+      border: none;
+      color: #7dd3fc;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 2px 0;
+      text-align: left;
       text-decoration: underline;
+    }
+    .mm-details-table {
+      font-size: 10px;
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 4px;
+    }
+    .mm-details-table td {
+      padding: 2px 4px;
+      border-bottom: 1px solid #1a2636;
     }
   `;
 
@@ -178,38 +330,74 @@
   } else {
     const styleEl = document.createElement("style");
     styleEl.textContent = styles;
-    document.head.appendChild(styleEl);
+    document.head?.appendChild(styleEl);
   }
 
-  // Crea widget flottante in basso a destra
-  function initWidget() {
-    if (document.getElementById("mm-widget")) return;
-    const widget = document.createElement("div");
-    widget.id = "mm-widget";
-    widget.innerHTML = `
-      <div id="mm-widget-head">
-        <span>🧠 MatchMind EV</span>
-        <small id="mm-status-dot" style="color:#38ef7d">● Attivo</small>
-      </div>
-      <div style="font-size:11px;color:#94a3b8" id="mm-value-count">Scansione quote Sisal in corso…</div>
-      <button id="mm-send-cart-btn" type="button" style="background:#133320;color:#c4f36a;border:1px solid #23653b;border-radius:6px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer;margin-top:2px;display:flex;align-items:center;justify-content:center;gap:4px;">📥 Invia carrello Sisal</button>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
-        <a href="${MATCHMIND_URL}" target="_blank">📋 Apri MatchMind</a>
-        <button id="mm-rescan-btn" type="button" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:11px;">🔄 Scansiona</button>
-      </div>
-    `;
-    document.body.appendChild(widget);
-    document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
-    document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
+  // Rileva squadre dalla pagina singola Sisal
+  function detectSingleMatch() {
+    // 1. Da document.title
+    const titleMatch = document.title.match(/([A-Za-z0-9\s]{3,22})\s*[-–vsVS]+\s*([A-Za-z0-9\s]{3,22})/i);
+    if (titleMatch) {
+      let h = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
+      let a = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").trim();
+      if (h.length >= 3 && a.length >= 3) return { home: h, away: a };
+    }
+
+    // 2. Da intestazioni o scoreboard
+    const headEls = document.querySelectorAll("h1, h2, [class*='title'], [class*='match-name'], [class*='scoreboard'], [data-qa*='match']");
+    for (const el of headEls) {
+      const txt = (el.innerText || "").trim();
+      const m = txt.match(/([A-Za-z0-9\s]{3,22})\s*[-–vsVS]+\s*([A-Za-z0-9\s]{3,22})/i);
+      if (m) {
+        return { home: m[1].trim(), away: m[2].trim() };
+      }
+    }
+
+    // 3. Da elementi con competitor o team
+    const teamEls = Array.from(document.querySelectorAll("[class*='competitor'], [class*='team-name'], [class*='teamName']"));
+    if (teamEls.length >= 2) {
+      const h = (teamEls[0].innerText || "").trim();
+      const a = (teamEls[1].innerText || "").trim();
+      if (h.length >= 3 && a.length >= 3 && h !== a) {
+        return { home: h, away: a };
+      }
+    }
+
+    return null;
   }
 
-  
-  // Estrai e invia carrello/schedina attiva di Sisal
+  function parseOddsValue(text) {
+    const m = String(text || "").match(/\b(\d+[.,]\d{2})\b/);
+    if (!m) return null;
+    const v = Number(m[1].replace(",", "."));
+    return Number.isFinite(v) && v > 1.01 && v <= 100 ? v : null;
+  }
+
+  // Invia a MatchMind via hash URL
+  window.sendToMatchMind = function(event, home, away, marketKey, marketLabel, odds) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const payload = {
+      bookmaker: "Sisal",
+      home: home,
+      away: away,
+      marketKey: marketKey,
+      marketLabel: marketLabel,
+      odds: Number(odds),
+      date: new Date().toISOString().slice(0, 10),
+      timestamp: Date.now()
+    };
+    const targetUrl = MATCHMIND_URL + "#import=" + encodeURIComponent(JSON.stringify(payload));
+    window.open(targetUrl, "_blank");
+  };
+
   function sendCartToMatchMind() {
     const btn = document.getElementById("mm-send-cart-btn");
     const containers = document.querySelectorAll(`
       [class*="betslip"], [class*="coupon"], [class*="carrello"], [id*="betslip"],
-      [class*="ticket"], [data-qa*="betslip"], [class*="drawer"]
+      [class*="ticket"], [data-qa*="betslip"], [class*="drawer"], [class*="biglietto"]
     `);
 
     const items = [];
@@ -228,7 +416,7 @@
           if (seen.has(key)) return;
           seen.add(key);
 
-          const mInfo = parseSisalMarket(text) || { key: "home", label: "1" };
+          const mInfo = parseSisalMarket(text) || { key: "auto", label: "Selezione" };
           items.push({
             home: home,
             away: away,
@@ -244,7 +432,7 @@
     if (!items.length) {
       if (btn) {
         const orig = btn.innerHTML;
-        btn.innerHTML = "⚠️ Nessuna giocata nel carrello";
+        btn.innerHTML = "⚠️ Biglietto vuoto o da aprire";
         setTimeout(() => { btn.innerHTML = orig; }, 2500);
       }
       return;
@@ -267,177 +455,283 @@
     }
   }
 
-  // Invia selezione a MatchMind via URL hash
-  window.sendToMatchMind = function(event, home, away, marketKey, marketLabel, odds) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    const payload = {
-      bookmaker: "Sisal",
-      home: home,
-      away: away,
-      marketKey: marketKey,
-      marketLabel: marketLabel,
-      odds: Number(odds),
-      date: new Date().toISOString().slice(0, 10),
-      timestamp: Date.now()
-    };
-
-    const targetUrl = MATCHMIND_URL + "#import=" + encodeURIComponent(JSON.stringify(payload));
-    window.open(targetUrl, "_blank");
-
-    // Feedback visivo immediato sul pulsante
-    if (event && event.target) {
-      const btn = event.target.closest(".mm-send-btn");
-      if (btn) {
-        const orig = btn.innerHTML;
-        btn.innerHTML = "✅ Inviata!";
-        setTimeout(() => { btn.innerHTML = orig; }, 2500);
-      }
-    }
-  };
-
-  // Mappatura mercati da testo Sisal
   function parseSisalMarket(text) {
     const t = String(text || "").trim().toLowerCase();
-    if (t === "1" || t === "esito finale 1") return { key: "home", label: "1" };
-    if (t === "x" || t === "esito finale x") return { key: "draw", label: "X" };
-    if (t === "2" || t === "esito finale 2") return { key: "away", label: "2" };
-    if (t.includes("over 2,5") || t.includes("over 2.5") || t.includes("o 2.5")) return { key: "over25", label: "Over 2,5" };
-    if (t.includes("under 2,5") || t.includes("under 2.5") || t.includes("u 2.5")) return { key: "under25", label: "Under 2,5" };
-    if (t.includes("over 1,5") || t.includes("over 1.5") || t.includes("o 1.5")) return { key: "over15", label: "Over 1,5" };
-    if (t.includes("under 1,5") || t.includes("under 1.5") || t.includes("u 1.5")) return { key: "under15", label: "Under 1,5" };
-    if (t === "gol" || t === "goal" || t.includes("entrambe le squadre")) return { key: "bttsYes", label: "Gol" };
-    if (t === "no gol" || t === "no goal" || t.includes("no segnano")) return { key: "bttsNo", label: "No Gol" };
+    if (t === "1" || t.includes("esito finale 1")) return { key: "home", label: "1" };
+    if (t === "x" || t.includes("esito finale x")) return { key: "draw", label: "X" };
+    if (t === "2" || t.includes("esito finale 2")) return { key: "away", label: "2" };
+    if (t === "1x") return { key: "dc1X", label: "1X" };
+    if (t === "x2") return { key: "dcX2", label: "X2" };
+    if (t === "12") return { key: "dc12", label: "12" };
+    if (t.includes("over 2,5") || t.includes("over 2.5") || t === "over") return { key: "over25", label: "Over 2.5" };
+    if (t.includes("under 2,5") || t.includes("under 2.5") || t === "under") return { key: "under25", label: "Under 2.5" };
+    if (t.includes("over 1,5") || t.includes("over 1.5")) return { key: "over15", label: "Over 1.5" };
+    if (t.includes("under 1,5") || t.includes("under 1.5")) return { key: "under15", label: "Under 1.5" };
+    if (t === "goal" || t === "gol" || t.includes("entrambe")) return { key: "bttsYes", label: "Gol" };
+    if (t === "nogoal" || t === "no goal" || t.includes("no segnano")) return { key: "bttsNo", label: "No Gol" };
     return null;
   }
 
-  // Recupera quota numerica
-  function parseOddsValue(text) {
-    const m = String(text || "").match(/\b(\d+[,.]\d{1,2})\b/);
-    if (!m) return null;
-    const v = Number(m[1].replace(",", "."));
-    return Number.isFinite(v) && v > 1.01 && v <= 100 ? v : null;
-  }
+  let currentAnalysis = null;
+  let showDetailsTable = false;
 
-  // Scansiona la pagina di Sisal
-  let scanTimeout = null;
-  function triggerScanDebounced() {
-    if (scanTimeout) clearTimeout(scanTimeout);
-    scanTimeout = setTimeout(scanPage, 400);
+  function renderWidget() {
+    let widget = document.getElementById("mm-widget");
+    if (!widget) {
+      widget = document.createElement("div");
+      widget.id = "mm-widget";
+      document.body.appendChild(widget);
+    }
+
+    if (!currentAnalysis || !currentAnalysis.recommended) {
+      widget.innerHTML = `
+        <div id="mm-widget-head">
+          <span>🧠 MatchMind</span>
+          <small style="color:#34d399">● Attivo</small>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;">Scansione quote Sisal in corso…</div>
+        <button id="mm-send-cart-btn" class="mm-btn-cart">📥 Invia carrello Sisal</button>
+        <div style="display:flex;justify-content:space-between;margin-top:2px;">
+          <a href="${MATCHMIND_URL}" target="_blank" style="color:#7dd3fc;text-decoration:none;font-size:11px;">📋 MatchMind</a>
+          <span style="color:#64748b;font-size:11px;cursor:pointer;" id="mm-rescan-btn">🔄 Scansiona</span>
+        </div>
+      `;
+      document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
+      document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
+      return;
+    }
+
+    const { home, away, recommended, calculations } = currentAnalysis;
+    const recProbPct = (recommended.modelProb * 100).toFixed(0);
+    const fairOddsStr = (1 / recommended.modelProb).toFixed(2);
+    const evPct = (recommended.ev * 100).toFixed(1);
+
+    let rowsHtml = "";
+    if (showDetailsTable && calculations.length) {
+      rowsHtml = `
+        <table class="mm-details-table">
+          <thead>
+            <tr style="color:#64748b;text-align:left;">
+              <th>Esito</th><th>Quota</th><th>Stima MM</th><th>EV</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${calculations.slice(0, 7).map(c => {
+              const p = (c.modelProb * 100).toFixed(0);
+              const ev = (c.ev * 100).toFixed(0);
+              const isRec = c === recommended;
+              return `
+                <tr style="${isRec ? 'color:#34d399;font-weight:700;' : ''}">
+                  <td>${c.label}</td>
+                  <td>${c.odd.toFixed(2)}</td>
+                  <td>${p}%</td>
+                  <td style="color:${c.ev > 0 ? '#34d399' : '#94a3b8'}">${ev > 0 ? '+' + ev : ev}%</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    widget.innerHTML = `
+      <div id="mm-widget-head">
+        <span>🧠 MatchMind Stime</span>
+        <small style="color:#34d399">● Analizzata</small>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ⚽ ${home} - ${away}
+      </div>
+      <div class="mm-recom-box">
+        <div class="mm-recom-title">
+          <span>🏆 SCOMMESSA CONSIGLIATA</span>
+          <span class="mm-recom-prob">${recProbPct}%</span>
+        </div>
+        <div style="font-size:12px;font-weight:800;color:#f1f5f9;">
+          ${recommended.label} @ ${recommended.odd.toFixed(2)}
+        </div>
+        <div class="mm-recom-meta">
+          Stima MatchMind: ${recProbPct}% · Quota equa: ${fairOddsStr}
+          ${recommended.ev > 0 ? ` · <span style="color:#34d399;font-weight:700;">+${evPct}% EV</span>` : ''}
+        </div>
+      </div>
+      <button id="mm-play-recom-btn" class="mm-btn-action">
+        ⚡ Invia Consigliata a MatchMind
+      </button>
+      <button id="mm-send-cart-btn" class="mm-btn-cart">
+        📥 Invia carrello Sisal
+      </button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+        <button id="mm-toggle-table" class="mm-table-toggle">
+          ${showDetailsTable ? "Nascondi percentuali ▲" : "Tutte le probabilità MatchMind ▼"}
+        </button>
+        <span style="color:#64748b;font-size:10px;cursor:pointer;" id="mm-rescan-btn">🔄 Aggiorna</span>
+      </div>
+      ${rowsHtml}
+    `;
+
+    document.getElementById("mm-play-recom-btn")?.addEventListener("click", (e) => {
+      window.sendToMatchMind(e, home, away, recommended.key, recommended.label, recommended.odd);
+    });
+    document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
+    document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
+    document.getElementById("mm-toggle-table")?.addEventListener("click", () => {
+      showDetailsTable = !showDetailsTable;
+      renderWidget();
+    });
   }
 
   function scanPage() {
-    initWidget();
+    const singleMatch = detectSingleMatch();
+    const homeName = singleMatch ? singleMatch.home : "Casa";
+    const awayName = singleMatch ? singleMatch.away : "Ospite";
 
-    // Selettori Sisal tipici per contenitori di eventi sportivi
-    const eventCards = document.querySelectorAll(`
-      [class*="event-row"], [class*="match-card"], [class*="eventItem"],
-      [class*="event-card"], [data-qa*="event"], [class*="fixture-row"],
-      .event-container, tr[class*="event"]
-    `);
+    // Calcolo delle probabilità statistiche MatchMind per la partita
+    const forecast = calculateMatchMindForecast(homeName, awayName);
+    const mmProbs = forecast.probabilities;
 
-    let valueBetsFound = 0;
-
-    // Se non troviamo selettori specifici di riga, cerchiamo contenitori contenenti trattino squadra
-    const targetCards = eventCards.length ? Array.from(eventCards) : Array.from(document.querySelectorAll("div, li, tr")).filter(el => {
-      const txt = el.innerText || "";
-      return txt.includes(" - ") && /\b\d+[,.]\d{2}\b/.test(txt) && el.children.length > 2 && el.children.length < 25;
+    // Raccogli bottoni quota di Sisal
+    const oddButtons = Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
+      if (el.closest("#mm-widget")) return false;
+      const text = el.innerText || "";
+      return /\b\d+[.,]\d{2}\b/.test(text) && text.length < 50;
     });
 
-    targetCards.forEach(card => {
-      if (card.dataset.mmProcessed) return;
-
-      // Trova nomi delle squadre
-      const text = card.innerText || "";
-      const teamMatch = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (!teamMatch) return;
-
-      const home = teamMatch[1].trim();
-      const away = teamMatch[2].trim();
-      if (!home || !away || home.length < 3 || away.length < 3) return;
-
-      // Cerca pulsanti o caselle delle quote all'interno della scheda
-      const oddElements = card.querySelectorAll("button, [class*='odd'], [class*='quota'], [class*='selection']");
-      oddElements.forEach(oddEl => {
-        const oddVal = parseOddsValue(oddEl.innerText || oddEl.textContent);
-        if (!oddVal) return;
-
-        // Determina il mercato (1, X, 2, Over/Under, Gol)
-        const marketInfo = parseSisalMarket(oddEl.getAttribute("aria-label") || oddEl.innerText || oddEl.title || "");
-        if (!marketInfo) return;
-
-        // Simula o recupera la probabilità dal modello
-        // In assenza di storico in memoria usiamo una distribuzione Poisson standard per la Serie A
-        const goals = calculateGoalsProbabilities(1.45, 1.15);
-        let probability = null;
-
-        if (marketInfo.key === "over25") probability = goals.over25;
-        else if (marketInfo.key === "under25") probability = goals.under25;
-        else if (marketInfo.key === "over15") probability = goals.over15;
-        else if (marketInfo.key === "under15") probability = goals.under15;
-        else if (marketInfo.key === "bttsYes") probability = goals.bttsYes;
-        else if (marketInfo.key === "bttsNo") probability = goals.bttsNo;
-        else if (marketInfo.key === "home") probability = 0.44;
-        else if (marketInfo.key === "draw") probability = 0.28;
-        else if (marketInfo.key === "away") probability = 0.28;
-
-        if (probability && probability > 0) {
-          const fairOdds = 1 / probability;
-          const ev = (probability * oddVal) - 1;
-
-          // Se l'EV è positivo (o se vogliamo evidenziare il pulsante "Manda a MatchMind")
-          if (ev > 0.02 && !oddEl.querySelector(".mm-badge-ev")) {
-            valueBetsFound++;
-            const badge = document.createElement("span");
-            badge.className = "mm-badge-ev";
-            const evPct = (ev * 100).toFixed(1);
-            badge.textContent = `+${evPct}% EV`;
-            badge.title = `MatchMind: Probabilità ${(probability*100).toFixed(0)}% · Quota equa ${fairOdds.toFixed(2)} · Sisal ${oddVal.toFixed(2)}`;
-            oddEl.appendChild(badge);
-          }
-
-          // Aggiungi pulsante "Manda a MatchMind"
-          if (!oddEl.querySelector(".mm-send-btn")) {
-            const sendBtn = document.createElement("button");
-            sendBtn.type = "button";
-            sendBtn.className = "mm-send-btn";
-            sendBtn.innerHTML = "⚡ MM";
-            sendBtn.title = `Invia ${home} - ${away} (${marketInfo.label} @ ${oddVal}) a MatchMind`;
-            sendBtn.onclick = (e) => window.sendToMatchMind(e, home, away, marketInfo.key, marketInfo.label, oddVal);
-            oddEl.parentElement?.appendChild(sendBtn);
-          }
-        }
-      });
-
-      card.dataset.mmProcessed = "true";
-    });
-
-    const countEl = document.getElementById("mm-value-count");
-    if (countEl) {
-      countEl.textContent = valueBetsFound > 0 ? `🎯 ${valueBetsFound} Value Bet con EV positivo!` : "Nessuna anomalia evidente trovata.";
+    if (!oddButtons.length) {
+      renderWidget();
+      return;
     }
+
+    const calculations = [];
+
+    oddButtons.forEach(btn => {
+      const text = (btn.innerText || "").trim();
+      const val = parseOddsValue(text);
+      if (!val) return;
+
+      let label = "";
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        if (!/\b\d+[.,]\d{2}\b/.test(line)) {
+          label = line;
+          break;
+        }
+      }
+      if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
+
+      const contextText = (btn.closest("[class*='market'], [class*='group'], [class*='section']")?.innerText || "") + " " + label + " " + text;
+      const market = parseSisalMarket(contextText);
+
+      if (market && mmProbs[market.key]) {
+        const prob = mmProbs[market.key];
+        const fairOdds = 1 / prob;
+        const ev = (prob * val) - 1;
+
+        calculations.push({
+          btn,
+          odd: val,
+          key: market.key,
+          label: market.label,
+          modelProb: prob,
+          fairOdds,
+          ev
+        });
+      }
+    });
+
+    if (!calculations.length) {
+      renderWidget();
+      return;
+    }
+
+    // Scelta della scommessa consigliata:
+    // Privilegia la selezione con il miglior bilanciamento tra EV positivo e solidità probabilistica
+    let topPick = null;
+    let bestScore = -999;
+
+    calculations.forEach(c => {
+      // Score: probabilità + bonus per EV positivo
+      let score = c.modelProb + (c.ev > 0 ? c.ev * 1.5 : c.ev * 0.5);
+      if (c.odd >= 1.25 && c.odd <= 2.35) score += 0.15; // quota in range giocabile
+      if (score > bestScore) {
+        bestScore = score;
+        topPick = c;
+      }
+    });
+
+    currentAnalysis = {
+      home: homeName,
+      away: awayName,
+      recommended: topPick,
+      calculations: calculations.sort((a, b) => (b.modelProb || 0) - (a.modelProb || 0))
+    };
+
+    // Inietta i badge sui pulsanti Sisal
+    calculations.forEach(c => {
+      const btn = c.btn;
+      if (!btn || btn.dataset.mmTagged) return;
+      btn.dataset.mmTagged = "true";
+
+      const pct = (c.modelProb * 100).toFixed(0);
+      const isTop = c === topPick;
+
+      if (isTop) {
+        btn.classList.add("mm-highlight-btn");
+        const badge = document.createElement("div");
+        badge.className = "mm-badge-recommended";
+        badge.innerHTML = `★ CONSIGLIATA ${pct}%`;
+        btn.appendChild(badge);
+      } else {
+        const tag = document.createElement("div");
+        tag.className = "mm-prob-tag";
+        tag.textContent = `🧠 ${pct}%`;
+        tag.title = `Stima MatchMind: ${pct}% · Quota equa: ${c.fairOdds.toFixed(2)}`;
+        btn.appendChild(tag);
+      }
+
+      // Bottone rapido "⚡ MM"
+      const sendBtn = document.createElement("button");
+      sendBtn.type = "button";
+      sendBtn.className = "mm-send-btn";
+      sendBtn.innerHTML = "⚡ MM";
+      sendBtn.title = `Invia ${c.label} (${pct}%) a MatchMind`;
+      sendBtn.onclick = (e) => window.sendToMatchMind(e, homeName, awayName, c.key, c.label, c.odd);
+      btn.appendChild(sendBtn);
+    });
+
+    renderWidget();
   }
 
-  // Observer per caricamento dinamico (Single Page Application di Sisal)
+  // Observer per aggiornamenti dinamici Single Page App Sisal
+  let scanTimer = null;
   const observer = new MutationObserver((mutations) => {
     let shouldScan = false;
     for (const m of mutations) {
       if (m.addedNodes.length > 0) {
-        shouldScan = true;
-        break;
+        let internal = false;
+        for (const n of m.addedNodes) {
+          if (n.id === "mm-widget" || (n.classList && (n.classList.contains("mm-prob-tag") || n.classList.contains("mm-badge-recommended") || n.classList.contains("mm-send-btn")))) {
+            internal = true;
+            break;
+          }
+        }
+        if (!internal) {
+          shouldScan = true;
+          break;
+        }
       }
     }
-    if (shouldScan) triggerScanDebounced();
+    if (shouldScan) {
+      if (scanTimer) clearTimeout(scanTimer);
+      scanTimer = setTimeout(scanPage, 400);
+    }
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
 
-  // Primo scan al caricamento
   window.addEventListener("load", () => {
-    setTimeout(scanPage, 1200);
+    setTimeout(scanPage, 1000);
   });
-  setTimeout(scanPage, 2000);
+  setTimeout(scanPage, 1200);
 
 })();
