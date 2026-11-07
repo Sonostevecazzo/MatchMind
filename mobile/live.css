@@ -99,3 +99,5 @@
 @media(max-width:440px){.live-notification-head{align-items:flex-start;flex-direction:column}.live-notification-head button{width:100%}.live-notification-options{grid-template-columns:1fr}.live-sim-split{font-size:11px}}
 
 .live-notification-disclaimer{margin:8px 0 0;color:#829399;font-size:10px;line-height:1.45}
+
+.simulation-controls{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}.sim-mode-button{min-height:40px;padding:8px 12px;border:1px solid #42545a;border-radius:10px;background:#13201f;color:#c7d4d1;font:700 12px system-ui;cursor:pointer}.sim-mode-button:hover,.sim-mode-button.is-active{border-color:#b5e879;background:#25371f;color:#d7f5a3}.sim-mode-button:focus-visible{outline:2px solid #d7f5a3;outline-offset:2px}@media(max-width:440px){.simulation-controls{display:grid;grid-template-columns:1fr 1fr}.sim-mode-button:last-child{grid-column:1/-1}}
