@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.6.1
+// @version      1.6.2
 // @description  Ispettore quote interattivo per Sisal: parere statistico istantaneo al tap su ogni quota, verdetto (+EV, Alta probabilità, Sconsigliata), motivazioni xG e sync con MatchMind.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -988,9 +988,9 @@
 
   // STATO GLOBALE
   // Reset posizioni errate da v1.6.0
-  if (localStorage.getItem("mm_widget_ver") !== "1.6.1") {
+  if (localStorage.getItem("mm_widget_ver") !== "1.6.2") {
     localStorage.removeItem("mm_widget_pos");
-    localStorage.setItem("mm_widget_ver", "1.6.1");
+    localStorage.setItem("mm_widget_ver", "1.6.2");
   }
 
   let currentAnalysis = null;
@@ -1479,15 +1479,8 @@
         }
         tag.title = `Stima MatchMind: ${pct}% · Quota equa: ${c.fairOdds.toFixed(2)} · EV: ${(c.ev * 100).toFixed(1)}%`;
 
-        if (!btn.querySelector(".mm-send-btn")) {
-          const sendBtn = document.createElement("button");
-          sendBtn.type = "button";
-          sendBtn.className = "mm-send-btn";
-          sendBtn.innerHTML = "⚡";
-          sendBtn.title = `Invia ${c.label} (${pct}%) a MatchMind`;
-          sendBtn.onclick = (e) => window.sendToMatchMind(e, c.home, c.away, c.key, c.label, c.odd);
-          btn.appendChild(sendBtn);
-        }
+        // Assicura che nessun bottone di invio interno interferisca con il click nativo Sisal
+        btn.querySelectorAll(".mm-send-btn").forEach(el => el.remove());
       });
     } finally {
       isMutatingDOM = false;
@@ -1665,172 +1658,10 @@
 
 
   // --- GESTIONE ISPETTORE QUOTA INTERATTIVO AL TAP ---
-  let hudDismissTimer = null;
+  
+  // Click/tap sulle quote Sisal non intercettati: nessun popup o apertura automatica di MatchMind,
+  // il click rimane 100% nativo per comporre la schedina Sisal in tranquillità.
 
-  function showInspectorHud(matchInfo, selectionInfo) {
-    let hud = document.getElementById("mm-inspector-hud");
-    if (!hud) {
-      hud = document.createElement("div");
-      hud.id = "mm-inspector-hud";
-      document.body.appendChild(hud);
-    }
-
-    if (hudDismissTimer) clearTimeout(hudDismissTimer);
-
-    const { home, away, homeXg, awayXg } = matchInfo;
-    const { key, label, odd, prob, fairOdds, ev, motivation } = selectionInfo;
-
-    const pct = Math.round(prob * 100);
-    const evPct = (ev * 100).toFixed(1);
-
-    // Calcolo del Verdetto e Parere Statistico
-    let verdictClass = "mm-verdict-neutral";
-    let verdictLabel = "🟡 EQUILIBRATA";
-    let verdictAdvice = "";
-
-    if (ev >= 0.08) {
-      verdictClass = "mm-verdict-value";
-      verdictLabel = "🟢 VANTAGGIOSA (+EV)";
-      verdictAdvice = `Quota Sisal @${odd.toFixed(2)} sovrastimata rispetto al modello (quota equa reale @${fairOdds.toFixed(2)}). Margine positivo per lo scommettitore (+${evPct}% EV).`;
-    } else if (pct >= 64 && ev >= -0.05) {
-      verdictClass = "mm-verdict-highprob";
-      verdictLabel = "🔵 ALTA PROBABILITÀ";
-      verdictAdvice = `Esito solido con probabilità stimata al ${pct}%. Rischio statistico contenuto rispetto al palinsesto.`;
-    } else if (ev < -0.12) {
-      verdictClass = "mm-verdict-trap";
-      verdictLabel = "🔴 SCONSIGLIATA / QUOTA BASSA";
-      verdictAdvice = `Quota Sisal @${odd.toFixed(2)} troppo schiacciata dal bookmaker rispetto al rischio reale (probabilità stimata ${pct}%, quota equa @${fairOdds.toFixed(2)}, EV ${evPct}%).`;
-    } else if (ev >= 0) {
-      verdictClass = "mm-verdict-value";
-      verdictLabel = "🟢 VALIDA (+EV)";
-      verdictAdvice = `Leggero valore statistico (+${evPct}% EV) rispetto alla quota equa stimata @${fairOdds.toFixed(2)}.`;
-    } else {
-      verdictClass = "mm-verdict-neutral";
-      verdictLabel = "🟡 NEUTRA";
-      verdictAdvice = `Stima probabilistica (${pct}%) allineata alla lavagna del bookmaker. Nessun vantaggio statistico significativo.`;
-    }
-
-    hud.innerHTML = `
-      <div class="mm-hud-top">
-        <span class="mm-hud-match">⚽ ${home} - ${away}</span>
-        <button class="mm-hud-close" id="mm-hud-close-btn" title="Chiudi">✕</button>
-      </div>
-
-      <div class="mm-hud-selection-row">
-        <div>
-          <span class="mm-hud-selection">${label}</span>
-          <span class="mm-hud-odd">@ ${odd.toFixed(2)}</span>
-        </div>
-        <span class="mm-verdict-badge ${verdictClass}">${verdictLabel}</span>
-      </div>
-
-      <div class="mm-hud-metrics">
-        <span>Stima MM: <b>${pct}%</b></span>
-        <span>Quota Equa: <b>${fairOdds.toFixed(2)}</b></span>
-        <span style="color:${ev >= 0 ? '#34d399' : '#f87171'};font-weight:700;">${ev >= 0 ? '+' : ''}${evPct}% EV</span>
-      </div>
-
-      <div class="mm-hud-reason" style="border-left-color: ${ev >= 0.08 ? '#10b981' : (ev < -0.12 ? '#ef4444' : '#0284c7')};">
-        💡 <b>Parere:</b> ${verdictAdvice}<br/>
-        <span style="font-size:9px;color:#94a3b8;margin-top:2px;display:inline-block;">${motivation}</span>
-      </div>
-
-      <div class="mm-hud-actions">
-        <button class="mm-hud-send-btn" id="mm-hud-send-btn">
-          ⚡ Invia questa giocata a MatchMind
-        </button>
-      </div>
-    `;
-
-    document.getElementById("mm-hud-close-btn")?.addEventListener("click", () => {
-      hud.remove();
-    });
-
-    document.getElementById("mm-hud-send-btn")?.addEventListener("click", (e) => {
-      window.sendToMatchMind(e, home, away, key, label, odd);
-    });
-
-    // Auto-dismiss dopo 15 secondi di inattività
-    hudDismissTimer = setTimeout(() => {
-      if (document.body.contains(hud)) hud.remove();
-    }, 15000);
-  }
-
-  // Intercetta i click/tap sulle quote Sisal per fornire parere istantaneo
-  document.addEventListener("click", (e) => {
-    if (e.target.closest("#mm-widget, #mm-inspector-hud")) return;
-
-    const btn = e.target.closest("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']");
-    if (!btn) return;
-
-    const text = (btn.innerText || "").trim();
-    const val = parseOddsValue(text);
-    if (!val) return;
-
-    // Rileva contesto partita dalla riga/card o dalla pagina
-    let home = null, away = null;
-    const matchCard = btn.closest(`
-      [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
-      [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
-    `);
-
-    if (matchCard) {
-      const cardText = matchCard.innerText || "";
-      const m = cardText.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (m && !m[1].toLowerCase().includes("quote")) {
-        home = m[1].trim();
-        away = m[2].trim();
-      }
-    }
-
-    if (!home || !away) {
-      const single = detectSingleMatch();
-      if (single) {
-        home = single.home;
-        away = single.away;
-      }
-    }
-
-    if (!home || !away) return;
-
-    // Rileva etichetta mercato
-    let label = "";
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    for (const line of lines) {
-      if (!/\b\d+[.,]\d{2}\b/.test(line)) {
-        label = line;
-        break;
-      }
-    }
-    if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
-
-    const contextText = (btn.closest("[class*='market'], [class*='group'], [class*='section']")?.innerText || "") + " " + label + " " + text;
-    const market = parseSisalMarket(contextText);
-    if (!market) return;
-
-    const forecast = calculateMatchMindForecast(home, away);
-    const prob = forecast.probabilities[market.key];
-    if (!prob) return;
-
-    const fairOdds = 1 / prob;
-    const ev = (prob * val) - 1;
-    const motivation = generateMotivation(home, away, market.key, market.label, prob, val, fairOdds, ev, forecast.homeXg, forecast.awayXg);
-
-    showInspectorHud({
-      home,
-      away,
-      homeXg: forecast.homeXg,
-      awayXg: forecast.awayXg
-    }, {
-      key: market.key,
-      label: market.label,
-      odd: val,
-      prob,
-      fairOdds,
-      ev,
-      motivation
-    });
-  }, true);
 
   window.addEventListener("load", () => {
     setTimeout(scanPage, 1000);
