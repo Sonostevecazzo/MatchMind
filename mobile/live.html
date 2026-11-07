@@ -42,7 +42,14 @@
     <circle id="liveBall" cx="450" cy="280" r="10" fill="#fff" stroke="#17221e" stroke-width="4"/>
    </svg>
   </div>
-  <div id="simulationCaption" class="simulation-caption">La simulazione usa possesso e tiri aggregati. Le posizioni dei calciatori non sono coordinate di tracking.</div>
+  <div id="simulationCaption" class="simulation-caption">Il campo è illustrativo: schieramenti e pressione non sono coordinate reali dei giocatori.</div>
+  <div class="simulation-controls" role="group" aria-label="Controlli simulazione tattica">
+   <button type="button" class="sim-mode-button is-active" data-simulation-mode="live">Dati live</button>
+   <button type="button" class="sim-mode-button" data-simulation-mode="home">Pressione casa</button>
+   <button type="button" class="sim-mode-button" data-simulation-mode="neutral">Equilibrio</button>
+   <button type="button" class="sim-mode-button" data-simulation-mode="away">Pressione ospite</button>
+   <button type="button" class="sim-mode-button" data-simulation-mode="action">Azione animata</button>
+  </div>
   <div id="livePressure" class="live-pressure"></div>
  </section>
  <section class="live-panel">
