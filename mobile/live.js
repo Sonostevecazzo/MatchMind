@@ -12,8 +12,11 @@
   let listMatchCount = 0;
   let requestFailed = false;
   let nextScheduledKickoff = null;
+  let simulationMode = "live";
+  let animationTimer = null;
+  let animationTick = 0;
 
-  const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
+  const ESPN_BASE = "https://site.web.api.espn.com/apis/site/v2/sports/soccer/";
   const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa" };
 
   async function requestLiveDirect(query = "") {
@@ -72,19 +75,12 @@
       }).sort((a, b) => a.minute - b.minute);
 
       const statsRows = sum?.boxscore?.teams || sum?.boxscore?.statistics || [];
-      const statistics = statsRows.map(entry => {
-        const team = entry?.team || {};
-        const vals = Array.isArray(entry?.statistics) ? entry.statistics : [];
-        return {
-          team: team.displayName || team.name || null,
-          teamId: team.id || null,
-          values: vals.map(v => ({ type: String(v?.label || v?.displayName || ""), value: v?.displayValue ?? v?.value ?? null }))
-        };
-      });
+      const statistics = normalizeEspnStats(statsRows);
+      const lineups = normalizeEspnLineups(sum?.rosters);
 
       return {
         configured: false, fallback: true, source: "ESPN", sourceLabel: "ESPN · fonte pubblica",
-        updatedAt: new Date().toISOString(), fixture, events, statistics, lineups: []
+        updatedAt: new Date().toISOString(), fixture, events, statistics, lineups
       };
     }
 
@@ -178,10 +174,68 @@
     return Number.isFinite(n) ? n : null;
   }
 
+  function normalizeEspnStats(rows) {
+    return (Array.isArray(rows) ? rows : []).map(entry => {
+      const team = entry?.team || entry?.competitor || {};
+      const values = [];
+      (Array.isArray(entry?.statistics) ? entry.statistics : []).forEach(item => {
+        const label = String(item?.label || item?.displayName || "");
+        const name = String(item?.name || "").toLowerCase();
+        const value = item?.displayValue ?? item?.value ?? null;
+        if (label) values.push({ type: label, value });
+        if (name) values.push({ type: name, value });
+        const lower = label.toLowerCase();
+        if (name === "possessionpct" || lower.includes("possession")) values.push({ type: "Ball Possession", value });
+        if (name === "totalshots" || lower === "shots") values.push({ type: "Total Shots", value });
+        if (name === "shotsontarget" || lower === "on goal") values.push({ type: "Shots on Goal", value });
+        if (name === "woncorners" || lower.includes("corner")) values.push({ type: "Corner Kicks", value });
+        if (name === "foulscommitted" || lower.includes("foul")) values.push({ type: "Fouls", value });
+        if (name === "yellowcards" || lower.includes("yellow")) values.push({ type: "Yellow Cards", value });
+      });
+      return { team: team.displayName || team.name || null, teamId: team.id || null, values };
+    }).filter(row => row.team || row.teamId);
+  }
+
+  function normalizeEspnLineups(rosters) {
+    return (Array.isArray(rosters) ? rosters : []).map(entry => {
+      const team = entry?.team || {};
+      const roster = Array.isArray(entry?.roster) ? entry.roster : [];
+      const starters = roster.filter(player => player?.starter);
+      const substitutes = roster.filter(player => !player?.starter);
+      const parts = String(entry?.formation || "4-4-2").split("-").map(Number);
+      const lines = [1, ...(parts.reduce((a, b) => a + b, 0) === 10 ? parts : [4, 4, 2])];
+      let index = 0;
+      const startXI = [];
+      lines.forEach((count, rowIndex) => {
+        for (let column = 1; column <= count && index < starters.length; column++, index++) {
+          const player = starters[index];
+          startXI.push({
+            name: player?.athlete?.displayName || player?.athlete?.name || "Giocatore",
+            number: player?.jersey || "—",
+            position: player?.position?.displayName || "",
+            grid: { row: rowIndex + 1, column }
+          });
+        }
+      });
+      const mapPlayer = player => ({
+        name: player?.athlete?.displayName || player?.athlete?.name || "Giocatore",
+        number: player?.jersey || "—",
+        position: player?.position?.displayName || ""
+      });
+      return {
+        team: team.displayName || team.name || "Squadra",
+        teamId: team.id || null,
+        formation: entry?.formation || null,
+        startXI,
+        substitutes: substitutes.map(mapPlayer)
+      };
+    }).filter(lineup => lineup.startXI.length);
+  }
+
   function buildPlayers(home, away, pressureHome = 50, elapsed = 0, lineups = []) {
     const homeLineup = lineups.find(item => item.teamId === home.id || item.team === home.name);
     const awayLineup = lineups.find(item => item.teamId === away.id || item.team === away.name);
-    const drift = index => Math.sin(elapsed / 3.8 + index * 0.73) * 5.5;
+    const drift = index => Math.sin(animationTick / 8 + index * 0.73) * 5.5;
     const positionsFromLineup = (lineup, side) => {
       const starters = Array.isArray(lineup?.startXI) ? lineup.startXI.filter(player => player.grid && player.grid.row > 0 && player.grid.column > 0) : [];
       if (starters.length < 7) return null;
@@ -230,23 +284,31 @@
     const shotsHome = asNumber(statValue(home, "Total Shots"));
     const shotsAway = asNumber(statValue(away, "Total Shots"));
     const pressureAvailable = possessionHome !== null || shotsHome !== null || shotsAway !== null;
-    const pressureHome = (possessionHome == null ? 50 : possessionHome) * .55 + (shotsHome == null || shotsAway == null || shotsHome + shotsAway === 0 ? 50 : shotsHome / (shotsHome + shotsAway) * 100) * .45;
+    let pressureHome = (possessionHome == null ? 50 : possessionHome) * .55 + (shotsHome == null || shotsAway == null || shotsHome + shotsAway === 0 ? 50 : shotsHome / (shotsHome + shotsAway) * 100) * .45;
+    if (simulationMode === "home") pressureHome = 78;
+    else if (simulationMode === "away") pressureHome = 22;
+    else if (simulationMode === "neutral") pressureHome = 50;
+    else if (simulationMode === "action") pressureHome = 50 + Math.sin(animationTick / 12) * 35;
     const elapsed = number(match.elapsed) || 0;
     const formationInfo = buildPlayers(home, away, pressureHome, elapsed, lastDetail?.lineups || []);
     const homeAttacking = pressureHome >= 50;
     const pressure = Math.round(homeAttacking ? pressureHome : 100 - pressureHome);
-    const ballX = !pressureAvailable ? 450 : homeAttacking ? 520 + pressure * 2.4 : 380 - pressure * 2.4;
-    const ballY = !pressureAvailable ? 280 : 280 + Math.sin(elapsed / 3.4) * 78 + (pressure - 50) * 0.28;
+    const ballX = !pressureAvailable && simulationMode === "live" ? 450 : (homeAttacking ? 520 + pressure * 2.4 : 380 - pressure * 2.4) + Math.sin(animationTick / 10) * 16;
+    const ballY = !pressureAvailable && simulationMode === "live" ? 280 : 280 + Math.sin(animationTick / 8) * 62 + (pressure - 50) * 0.28;
     $("liveBall").setAttribute("cx", String(Math.max(70, Math.min(830, ballX))));
     $("liveBall").setAttribute("cy", String(Math.max(75, Math.min(485, ballY))));
     const team = homeAttacking ? home.name : away.name;
-    const possessionAway=possessionHome===null?null:100-possessionHome,shotsTotal=(shotsHome||0)+(shotsAway||0);
-    $("livePressure").innerHTML='<div class="live-sim-metrics"><div class="live-sim-metric"><span>Possesso</span><div class="live-sim-split"><b>'+esc(home.name)+' '+(possessionHome===null?"—":Math.round(possessionHome)+"%")+'</b><b>'+esc(away.name)+' '+(possessionAway===null?"—":Math.round(possessionAway)+"%")+'</b></div><div class="live-sim-track"><i style="width:'+(possessionHome===null?50:possessionHome)+'%"></i></div></div><div class="live-sim-metric"><span>Tiri totali</span><div class="live-sim-split"><b>'+esc(home.name)+' '+(shotsHome===null?"—":shotsHome)+'</b><b>'+esc(away.name)+' '+(shotsAway===null?"—":shotsAway)+'</b></div><div class="live-sim-track shots"><i style="width:'+(shotsTotal?shotsHome/shotsTotal*100:50)+'%"></i></div></div><div class="live-sim-pressure"><span>Pressione statistica stimata</span><b>'+(pressureAvailable?esc(team)+" · "+pressure+"/100":"Dati non disponibili")+'</b></div></div>';
+    const demoMode = simulationMode !== "live";
+    const shownPossessionHome = demoMode ? (simulationMode === "home" ? 72 : simulationMode === "away" ? 28 : 50) : possessionHome;
+    const possessionAway = shownPossessionHome === null ? null : 100 - shownPossessionHome;
+    const shownShotsHome = demoMode ? (simulationMode === "home" ? 14 : simulationMode === "away" ? 4 : 8) : shotsHome;
+    const shownShotsAway = demoMode ? (simulationMode === "home" ? 3 : simulationMode === "away" ? 12 : 8) : shotsAway;
+    const shotsTotal = (shownShotsHome || 0) + (shownShotsAway || 0);
+    $("livePressure").innerHTML='<div class="live-sim-metrics"><div class="live-sim-metric"><span>'+(demoMode?"Possesso · scenario simulato":"Possesso")+'</span><div class="live-sim-split"><b>'+esc(home.name)+' '+(shownPossessionHome===null?"—":Math.round(shownPossessionHome)+"%")+'</b><b>'+esc(away.name)+' '+(possessionAway===null?"—":Math.round(possessionAway)+"%")+'</b></div><div class="live-sim-track"><i style="width:'+(shownPossessionHome===null?50:shownPossessionHome)+'%"></i></div></div><div class="live-sim-metric"><span>'+(demoMode?"Tiri · scenario simulato":"Tiri totali")+'</span><div class="live-sim-split"><b>'+esc(home.name)+' '+(shownShotsHome===null?"—":shownShotsHome)+'</b><b>'+esc(away.name)+' '+(shownShotsAway===null?"—":shownShotsAway)+'</b></div><div class="live-sim-track shots"><i style="width:'+(shotsTotal?shownShotsHome/shotsTotal*100:50)+'%"></i></div></div><div class="live-sim-pressure"><span>'+(demoMode?"Pressione simulata":"Pressione statistica stimata")+'</span><b>'+(pressureAvailable||demoMode?esc(team)+" · "+pressure+"/100":"Dati non disponibili")+'</b></div></div>';
     const formationLabel = formationInfo.homeFormation && formationInfo.awayFormation ? "Moduli dal provider: " + formationInfo.homeFormation + " vs " + formationInfo.awayFormation + ". " : "";
     const gridLabel = formationInfo.homeGrid && formationInfo.awayGrid ? "Schieramenti iniziali basati sulla griglia delle formazioni. " : "Almeno una formazione non è disponibile: uso una disposizione schematica. ";
-    $("simulationCaption").textContent = formationLabel + gridLabel + (pressureAvailable
-      ? "Possesso e tiri aggregati suggeriscono una pressione maggiore di " + team + ". Il movimento è illustrativo e non rappresenta coordinate live dei giocatori."
-      : "Statistiche di pressione non disponibili: il pallone resta neutro. Le posizioni sono di formazione, non tracking live.");
+    const modeLabel = simulationMode === "live" ? "Dati live del provider" : "Scenario simulato: " + ({ home: "pressione casa", away: "pressione ospite", neutral: "equilibrio", action: "azione animata" }[simulationMode] || simulationMode);
+    $("simulationCaption").textContent = formationLabel + gridLabel + modeLabel + ". Il campo è illustrativo: non mostra tracking reale dei calciatori né dati di gioco generati.";
   }
 
   function renderLineups(lineups) {
@@ -299,6 +361,15 @@
     }).join("") : '<div class="live-empty compact">Il provider non ha ancora restituito eventi per questa partita.</div>';
   }
 
+  function startSimulationAnimation() {
+    if (animationTimer || !lastDetail?.fixture) return;
+    animationTimer = window.setInterval(() => {
+      if (document.hidden || !lastDetail?.fixture || $("liveDetailSection")?.hidden) return;
+      animationTick++;
+      renderSimulation(lastDetail.fixture);
+    }, 350);
+  }
+
   function renderDetail(payload) {
     const match = payload.fixture;
     if (!match) throw new Error("Partita non trovata.");
@@ -314,6 +385,7 @@
     renderStats(match);
     renderEvents(payload.events, match);
     notifyDetailChanges(payload,match);
+    startSimulationAnimation();
   }
   function notifyDetailChanges(payload,match){
     const api=window.MMNotifications;if(!api)return;const key=teamKey(match),events=Array.isArray(payload.events)?payload.events:[];
@@ -394,13 +466,27 @@
       $("liveListSection").hidden = false;
       $("liveDetailSection").hidden = true;
     }
+    document.querySelectorAll("[data-simulation-mode]").forEach(button => {
+      button.addEventListener("click", () => {
+        simulationMode = button.dataset.simulationMode || "live";
+        document.querySelectorAll("[data-simulation-mode]").forEach(item => item.classList.toggle("is-active", item === button));
+        if (lastDetail?.fixture) renderSimulation(lastDetail.fixture);
+      });
+    });
     $("refreshLive")?.addEventListener("click", refresh);
     $("refreshLiveDetail")?.addEventListener("click", refresh);
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) { if (pollHandle) clearTimeout(pollHandle); pollHandle = null; }
-      else refresh();
+      if (document.hidden) {
+        if (pollHandle) clearTimeout(pollHandle);
+        pollHandle = null;
+        if (animationTimer) clearInterval(animationTimer);
+        animationTimer = null;
+      } else {
+        refresh();
+        if (lastDetail?.fixture) startSimulationAnimation();
+      }
     });
     refresh();
   });
-  window.addEventListener("pagehide", () => { if (pollHandle) clearTimeout(pollHandle); });
+  window.addEventListener("pagehide", () => { if (pollHandle) clearTimeout(pollHandle); if (animationTimer) clearInterval(animationTimer); });
 })();
