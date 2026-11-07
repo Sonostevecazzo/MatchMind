@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.6.0
+// @version      1.6.1
 // @description  Ispettore quote interattivo per Sisal: parere statistico istantaneo al tap su ogni quota, verdetto (+EV, Alta probabilità, Sconsigliata), motivazioni xG e sync con MatchMind.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -264,7 +264,7 @@
     /* --- HUD ISPETTORE QUOTA INTERATTIVO --- */
     #mm-inspector-hud {
       position: fixed !important;
-      bottom: 12px !important;
+      bottom: 65px !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
       width: calc(100vw - 24px) !important;
@@ -490,38 +490,64 @@
     }
 
     #mm-widget {
-      position: fixed !important;
-      bottom: 12px !important;
-      right: 12px !important;
-      z-index: 999999 !important;
-      background: #0b1324 !important;
-      color: #e2e8f0 !important;
-      border: 1px solid #1e293b !important;
-      border-radius: 12px !important;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.85), 0 0 0 1px rgba(56,189,248,0.2) !important;
-      width: 320px !important;
-      max-width: calc(100vw - 20px) !important;
-      max-height: 82vh !important;
-      display: flex !important;
-      flex-direction: column !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-      font-size: 11px !important;
-      padding: 10px !important;
-      gap: 7px !important;
+      position: fixed;
+      bottom: 70px;
+      right: 12px;
+      z-index: 999999;
+      background: #0b1324;
+      color: #e2e8f0;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.85), 0 0 0 1px rgba(56,189,248,0.2);
+      width: 320px;
+      max-width: calc(100vw - 24px);
+      max-height: 52vh;
+      display: flex;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      padding: 10px;
+      gap: 7px;
       touch-action: none;
-      box-sizing: border-box !important;
-      backdrop-filter: blur(10px) !important;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
     }
 
     #mm-widget.mm-is-minimized {
       width: auto !important;
-      max-width: calc(100vw - 24px) !important;
-      padding: 6px 12px !important;
-      border-radius: 24px !important;
+      height: 34px !important;
+      min-height: 34px !important;
+      max-height: 34px !important;
+      padding: 0 10px !important;
+      border-radius: 17px !important;
       background: #081a2e !important;
       border: 1px solid #0284c7 !important;
       cursor: pointer !important;
-      box-shadow: 0 4px 16px rgba(2,132,199,0.5) !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.7) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+      gap: 6px !important;
+    }
+
+    #mm-floating-badge {
+      position: fixed;
+      bottom: 70px;
+      right: 12px;
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      background: #081a2e;
+      border: 1px solid #0284c7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999998;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      font-size: 16px;
+      user-select: none;
     }
 
     #mm-widget-head {
@@ -961,32 +987,49 @@
   }
 
   // STATO GLOBALE
+  // Reset posizioni errate da v1.6.0
+  if (localStorage.getItem("mm_widget_ver") !== "1.6.1") {
+    localStorage.removeItem("mm_widget_pos");
+    localStorage.setItem("mm_widget_ver", "1.6.1");
+  }
+
   let currentAnalysis = null;
   let currentStrategy = localStorage.getItem("mm_widget_strategy") || "balanced"; // balanced, accurate, value, doubling
-  let isMinimized = localStorage.getItem("mm_widget_minimized") === "true";
+  let isMinimized = localStorage.getItem("mm_widget_minimized") !== "false"; // Default minimizzato a pillola per non disturbare
+  let isHidden = localStorage.getItem("mm_widget_hidden") === "true";
   let minProbThreshold = parseInt(localStorage.getItem("mm_min_prob") || "50", 10);
   if (isNaN(minProbThreshold)) minProbThreshold = 50;
 
   let isMutatingDOM = false;
 
-  // Gestione Drag & Drop universale
+  // Gestione Drag & Drop universale pulita
   function initDraggable(widgetEl, handleEl) {
+    try {
+      const savedPos = JSON.parse(localStorage.getItem("mm_widget_pos") || "null");
+      if (savedPos && savedPos.left && savedPos.top) {
+        // Valida che sia all'interno dello schermo corrente
+        const numTop = parseFloat(savedPos.top);
+        const numLeft = parseFloat(savedPos.left);
+        if (numTop >= 0 && numTop < window.innerHeight - 50 && numLeft >= 0 && numLeft < window.innerWidth - 60) {
+          widgetEl.style.removeProperty("bottom");
+          widgetEl.style.removeProperty("right");
+          widgetEl.style.bottom = "auto";
+          widgetEl.style.right = "auto";
+          widgetEl.style.left = savedPos.left;
+          widgetEl.style.top = savedPos.top;
+        }
+      }
+    } catch(e) {}
+
+    if (widgetEl.__mm_drag_initialized) return;
+    widgetEl.__mm_drag_initialized = true;
+
     let isDragging = false;
     let hasMoved = false;
     let startX = 0;
     let startY = 0;
     let initialLeft = 0;
     let initialTop = 0;
-
-    try {
-      const savedPos = JSON.parse(localStorage.getItem("mm_widget_pos") || "null");
-      if (savedPos && savedPos.left && savedPos.top) {
-        widgetEl.style.bottom = "auto";
-        widgetEl.style.right = "auto";
-        widgetEl.style.left = savedPos.left;
-        widgetEl.style.top = savedPos.top;
-      }
-    } catch(e) {}
 
     function onDragStart(clientX, clientY) {
       isDragging = true;
@@ -996,6 +1039,8 @@
       startY = clientY;
       initialLeft = rect.left;
       initialTop = rect.top;
+      widgetEl.style.removeProperty("bottom");
+      widgetEl.style.removeProperty("right");
       widgetEl.style.bottom = "auto";
       widgetEl.style.right = "auto";
       widgetEl.style.left = `${initialLeft}px`;
@@ -1006,7 +1051,7 @@
       if (!isDragging) return;
       const dx = clientX - startX;
       const dy = clientY - startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) hasMoved = true;
 
       let newLeft = initialLeft + dx;
       let newTop = initialTop + dy;
@@ -1025,17 +1070,19 @@
     function onDragEnd() {
       if (!isDragging) return;
       isDragging = false;
-      try {
-        localStorage.setItem("mm_widget_pos", JSON.stringify({
-          left: widgetEl.style.left,
-          top: widgetEl.style.top
-        }));
-      } catch(err) {}
+      if (hasMoved) {
+        try {
+          localStorage.setItem("mm_widget_pos", JSON.stringify({
+            left: widgetEl.style.left,
+            top: widgetEl.style.top
+          }));
+        } catch(err) {}
+      }
     }
 
     // Touch
-    handleEl.addEventListener("touchstart", (e) => {
-      if (e.target.closest("button, input, a")) return;
+    widgetEl.addEventListener("touchstart", (e) => {
+      if (e.target.closest("button, input, a, select")) return;
       if (e.touches.length === 1) {
         onDragStart(e.touches[0].clientX, e.touches[0].clientY);
       }
@@ -1050,8 +1097,8 @@
     window.addEventListener("touchcancel", onDragEnd);
 
     // Mouse
-    handleEl.addEventListener("mousedown", (e) => {
-      if (e.target.closest("button, input, a")) return;
+    widgetEl.addEventListener("mousedown", (e) => {
+      if (e.target.closest("button, input, a, select")) return;
       onDragStart(e.clientX, e.clientY);
 
       const onMouseMove = (ev) => onDragMove(ev.clientX, ev.clientY, ev);
@@ -1084,6 +1131,12 @@
   function setMinimized(minimized) {
     isMinimized = Boolean(minimized);
     localStorage.setItem("mm_widget_minimized", String(isMinimized));
+    renderWidget();
+  }
+
+  function setHidden(hidden) {
+    isHidden = Boolean(hidden);
+    localStorage.setItem("mm_widget_hidden", String(isHidden));
     renderWidget();
   }
 
@@ -1125,38 +1178,69 @@
   // Render dell'interfaccia
   function renderWidget() {
     let widget = document.getElementById("mm-widget");
+    let floatingBadge = document.getElementById("mm-floating-badge");
+
+    if (isHidden) {
+      if (widget) widget.style.display = "none";
+      if (!floatingBadge) {
+        floatingBadge = document.createElement("div");
+        floatingBadge.id = "mm-floating-badge";
+        floatingBadge.title = "Apri MatchMind Widget";
+        floatingBadge.innerHTML = "🧠";
+        floatingBadge.onclick = () => setHidden(false);
+        document.body.appendChild(floatingBadge);
+      }
+      floatingBadge.style.display = "flex";
+      return;
+    } else {
+      if (floatingBadge) floatingBadge.style.display = "none";
+    }
+
     if (!widget) {
       widget = document.createElement("div");
       widget.id = "mm-widget";
       document.body.appendChild(widget);
     }
+    widget.style.display = "flex";
 
     const calculations = currentAnalysis?.calculations || [];
     const activePicks = filterByStrategy(calculations, currentStrategy, minProbThreshold);
 
     if (isMinimized) {
       widget.classList.add("mm-is-minimized");
+      widget.style.height = "34px";
+      widget.style.maxHeight = "34px";
+      widget.style.width = "auto";
+
       const stratLabel = currentStrategy === "value" ? "+EV" : (currentStrategy === "accurate" ? "Accuratezza" : (currentStrategy === "doubling" ? "Raddoppio" : "Bilanciata"));
 
       widget.innerHTML = `
-        <div id="mm-widget-min-bar" style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;">
-          <span style="color:#c4f36a;font-size:12px;">🧠 MM</span>
-          <span class="mm-prob-badge ${currentStrategy === 'value' ? 'is-value' : ''}" style="font-size:10px;padding:2px 6px;">
+        <div id="mm-widget-min-bar" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;user-select:none;">
+          <span style="color:#c4f36a;font-size:13px;">🧠 MM</span>
+          <span class="mm-prob-badge ${currentStrategy === 'value' ? 'is-value' : ''}" style="font-size:9px;padding:2px 5px;">
             ${activePicks.length} ${stratLabel}
           </span>
           <span style="color:#38bdf8;font-size:10px;text-decoration:underline;">Espandi ↗</span>
+          <span id="mm-min-hide-btn" style="color:#64748b;font-size:12px;padding-left:4px;cursor:pointer;" title="Nascondi widget">✕</span>
         </div>
       `;
 
       initDraggable(widget, widget);
       widget.onclick = (e) => {
-        if (e.target.closest("button")) return;
+        if (e.target.id === "mm-min-hide-btn") {
+          e.stopPropagation();
+          setHidden(true);
+          return;
+        }
         setMinimized(false);
       };
       return;
     }
 
     widget.classList.remove("mm-is-minimized");
+    widget.style.height = "auto";
+    widget.style.maxHeight = "52vh";
+    widget.style.width = "320px";
     widget.onclick = null;
 
     if (!calculations.length) {
@@ -1164,7 +1248,8 @@
         <div id="mm-widget-head">
           <span>🧠 MatchMind Sisal</span>
           <div class="mm-head-actions">
-            <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a icona">—</button>
+            <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button>
+            <button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button>
           </div>
         </div>
         <div style="font-size:11px;color:#94a3b8;padding:8px 0;text-align:center;">
@@ -1178,6 +1263,8 @@
         </div>
       `;
       document.getElementById("mm-btn-minimize")?.addEventListener("click", () => setMinimized(true));
+    document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
+      document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
       document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
       document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
       const headEl = document.getElementById("mm-widget-head");
@@ -1247,7 +1334,8 @@
       <div id="mm-widget-head">
         <span style="font-size:12px;">🧠 MatchMind · Consigli Quote</span>
         <div class="mm-head-actions">
-          <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a icona">—</button>
+          <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button>
+          <button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button>
         </div>
       </div>
 
@@ -1312,6 +1400,8 @@
 
     // Event listeners
     document.getElementById("mm-btn-minimize")?.addEventListener("click", () => setMinimized(true));
+    document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
+      document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
     document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
     document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
     document.getElementById("mm-reset-strat")?.addEventListener("click", () => setStrategy("accurate"));
