@@ -25,10 +25,14 @@
   return map[category]||map["1x2"];
  };
  const marketButtonsHtml=(m,forecast,category,selectedKey)=>{
-  const key=matchPickKey(m);
+  const key=matchPickKey(m),oddsObj=MM().matchOdds?MM().matchOdds(m):null;
   return '<div class="fixture-market-options'+(marketOptions(forecast,category).length===2?' two-outcome':'')+'">'+marketOptions(forecast,category).map(([marketKey,label,probability])=>{
    const available=Number.isFinite(probability),selected=selectedKey===marketKey;
-   return '<button type="button" class="fixture-market-button'+(selected?' is-selected':'')+'" data-market-pick data-match-key="'+esc(key)+'" data-market-key="'+esc(marketKey)+'" aria-pressed="'+(selected?'true':'false')+'"'+(available?'':' disabled')+'><span>'+esc(label)+'</span><b>'+(available?fmt(probability*100,1)+'%':'—')+'</b></button>';
+   const oddVal=oddsObj?(marketKey==='home'?oddsObj.home:marketKey==='draw'?oddsObj.draw:marketKey==='away'?oddsObj.away:marketKey==='over25'?oddsObj.over25:marketKey==='under25'?oddsObj.under25:null):null;
+   const ev=available&&oddVal?(probability*oddVal)-1:null;
+   const evBadge=ev!=null?'<small class="pill-ev '+(ev>=0?'ev-pos':'ev-neg')+'">'+(ev>=0?'+':'')+fmt(ev*100,0)+'% EV</small>':'';
+   const oddLabel=oddVal?'<span class="market-odd">@'+fmtOdds(oddVal)+'</span>':'';
+   return '<button type="button" class="fixture-market-button'+(selected?' is-selected':'')+'" data-market-pick data-match-key="'+esc(key)+'" data-market-key="'+esc(marketKey)+'" data-market-odd="'+(oddVal||'')+'" aria-pressed="'+(selected?'true':'false')+'"'+(available?'':' disabled')+'><span>'+esc(label)+' '+oddLabel+'</span><b>'+(available?fmt(probability*100,1)+'%':'—')+'</b>'+evBadge+'</button>';
   }).join('')+'</div>';
  };
  const marketPickerHtml=(m,forecast,selected)=>{
@@ -78,6 +82,8 @@
  }
  let matchFilter='upcoming',shownLimit=12,activeMatches=[];
  function initMatches(d){
+   let strategyFilter='all';
+   MM().loadOdds?.().then(()=>{render();});
    const round=$('matchRound'),teamSelect=$('matchTeam');teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+MM().getTeams(d.matches).map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join('');const rounds=[...new Set(d.matches.map(m=>Number(m.round)).filter(n=>Number.isInteger(n)&&n>0))].sort((a,b)=>a-b);
    round.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+n+'">Giornata '+n+'</option>').join('');
    const render=()=>{
@@ -87,6 +93,8 @@
     if(matchFilter==='upcoming')activeMatches=activeMatches.filter(MM().upcoming);
     else if(matchFilter==='finished')activeMatches=activeMatches.filter(MM().hasScore);
     else if(matchFilter==='stale')activeMatches=activeMatches.filter(m=>!MM().hasScore(m)&&!MM().upcoming(m));
+    if(strategyFilter==='accuracy'){activeMatches=activeMatches.filter(m=>{const f=MM().forecast(m,d.history);if(!f||!f.probabilities)return false;const p=f.probabilities;return p.home>=0.60||p.draw>=0.40||p.away>=0.60||p.o25>=0.60||(1-p.o25)>=0.60;});}
+    else if(strategyFilter==='value'){activeMatches=activeMatches.filter(m=>{const f=MM().forecast(m,d.history),o=MM().matchOdds?MM().matchOdds(m):null;if(!f||!f.probabilities||!o)return false;const p=f.probabilities;const evs=[o.home?(p.home*o.home)-1:-1,o.draw?(p.draw*o.draw)-1:-1,o.away?(p.away*o.away)-1:-1,o.over25?(p.o25*o.over25)-1:-1,o.under25?((1-p.o25)*o.under25)-1:-1];return evs.some(x=>x>0);});}
     activeMatches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
     if(matchFilter==='finished'||matchFilter==='stale')activeMatches.reverse();
     const target=$('matchList'),visible=activeMatches.slice(0,shownLimit);
@@ -97,7 +105,8 @@
     $('moreMatches').hidden=activeMatches.length<=shownLimit;
    };
    ['matchSearch','matchDate','matchTeam','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=12;render()}));
-   $('clearMatchFilters').addEventListener('click',()=>{$('matchSearch').value='';$('matchDate').value='';teamSelect.value='';round.value='';$('matchSeason').value='current';shownLimit=45;render()});
+   $('clearMatchFilters').addEventListener('click',()=>{$('matchSearch').value='';$('matchDate').value='';teamSelect.value='';round.value='';$('matchSeason').value='current';strategyFilter='all';$('strategyFilters')?.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('active',i===0));shownLimit=45;render()});
+    $('strategyFilters')?.querySelectorAll('[data-strategy]').forEach(b=>b.addEventListener('click',()=>{strategyFilter=b.dataset.strategy;$('strategyFilters').querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});shownLimit=45;render();}));
     $('matchFilters').querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{matchFilter=b.dataset.filter;$('matchFilters').querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});shownLimit=45;render()}));
    $('matchList').addEventListener('change',event=>{
     const select=event.target.closest('[data-market-picker]');if(!select)return;
@@ -113,7 +122,7 @@
     else{
      const count=rows.filter(item=>(item.competition||"serie-a")===competition).length;
      if(!current&&count>=15){$('matchPickNotice').textContent='Hai raggiunto il limite di 15 selezioni. Apri il Costruttore per modificare la schedina.';return;}
-     const record={competition:match.competition||competition,date:match.date,home:match.home,away:match.away,marketKey:button.dataset.marketKey};
+     const oddNum=button.dataset.marketOdd?Number(button.dataset.marketOdd):null;const oddsObj=MM().matchOdds?MM().matchOdds(match):null;const record={competition:match.competition||competition,date:match.date,home:match.home,away:match.away,marketKey:button.dataset.marketKey,odds:oddNum||null,bookmaker:oddNum?(oddsObj?.bookmaker||"Bet365 / Media"):null};
      if(index>=0)rows[index]=record;else rows.push(record);
     }
     writeMatchPicks(rows);$('matchPickNotice').textContent='';

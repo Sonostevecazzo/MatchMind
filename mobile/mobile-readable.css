@@ -461,3 +461,10 @@ body[data-page="bets"] .metric > small {
 .proposal-leg-prob{display:grid;gap:4px;justify-items:end;flex:0 0 auto}.proposal-leg-prob b{color:#d8f59b;font-size:21px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .proposal-add-button{width:100%;min-height:50px;margin:14px 0 8px}.proposal-caveat{font-size:12px;line-height:1.5}
 @media(max-width:420px){.proposal-summary{padding:13px}.proposal-meta{gap:5px}.proposal-meta>span{padding:8px 6px}.proposal-meta b{font-size:12px}.proposal-leg{padding:11px}.proposal-leg-match{font-size:15px}}
+
+/* Market odds and EV pills */
+.market-odd{font-size:.74rem;color:#7ee787;font-weight:600;margin-left:3px}
+.pill-ev{display:inline-block;padding:1px 5px;border-radius:6px;font-size:.7rem;font-weight:700;line-height:1.2;margin-left:4px}
+.pill-ev.ev-pos{background:#172c1c;color:#c4f36a;border:1px solid #2a502c}
+.pill-ev.ev-neg{background:#26181b;color:#f87171;border:1px solid #4a2125}
+.strategy-filter-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}

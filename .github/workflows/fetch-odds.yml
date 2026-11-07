@@ -1,0 +1,43 @@
+name: Update Football Data Odds
+
+on:
+  schedule:
+    # Run Tuesdays at 14:00 UTC (after Tuesday midweek updates)
+    - cron: '0 14 * * 2'
+    # Run Fridays at 17:30 UTC (after Friday weekend updates)
+    - cron: '30 17 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 'odds-sync'
+  cancel-in-progress: false
+
+jobs:
+  update-odds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch and convert odds from football-data
+        run: python3 mobile/scripts/fetch-odds.py
+
+      - name: Commit and push updated odds
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mobile/fixtures-odds.json
+          if git diff --staged --quiet; then
+            echo "No changes in odds feed."
+          else
+            git commit -m "chore(odds): update Serie A and Serie B odds from football-data"
+            git push origin main
+          fi
