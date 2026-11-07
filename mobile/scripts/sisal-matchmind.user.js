@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.6.2
-// @description  Ispettore quote interattivo per Sisal: parere statistico istantaneo al tap su ogni quota, verdetto (+EV, Alta probabilità, Sconsigliata), motivazioni xG e sync con MatchMind.
+// @version      1.7.0
+// @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -221,6 +221,144 @@
 
     forecastCache.set(memoKey, result);
     return result;
+  }
+
+  // Catalogo standard dei mercati calcistici supportati
+  const STANDARD_MARKETS = [
+    { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)" },
+    { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)" },
+    { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)" },
+    { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance" },
+    { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance" },
+    { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance" },
+    { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over" },
+    { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over" },
+    { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over" },
+    { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over" },
+    { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over" },
+    { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over" },
+    { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol" },
+    { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol" }
+  ];
+
+  // Valutazione statistica trasparente e comprensibile per ciascun mercato
+  function evaluateMarketSelection(prob, odd, fairOdds, ev, marketKey, marketLabel, home, away, homeXg, awayXg) {
+    const pct = Math.round((prob || 0) * 100);
+    const evPct = ev != null ? Math.round(ev * 100) : null;
+    const totXg = ((homeXg || 0) + (awayXg || 0)).toFixed(1);
+
+    let type = "neutral";
+    let badgeText = `🟡 Equilibrata (${pct}%)`;
+    let badgeClass = "mm-verdict-neutral";
+    let tagText = `🟡 ${pct}%`;
+    let shortVerdict = "Quota equilibrata";
+    let explanation = "";
+
+    if (odd != null && Number.isFinite(odd) && odd > 1.0) {
+      // 1. Quota Trappola: quota molto bassa che non ripaga il rischio reale
+      if (odd < 1.45 && ev < -0.06) {
+        type = "trap";
+        badgeText = "🔴 Quota Trappola";
+        badgeClass = "mm-verdict-trap";
+        tagText = "🔴 Trappola";
+        shortVerdict = "Sconsigliata: quota sgonfiata";
+        explanation = `Sisal paga solo ${odd.toFixed(2)}, ma la probabilità reale è del ${pct}% (quota equa ${fairOdds.toFixed(2)}). Rendimento atteso negativo (${evPct}% EV): il rischio di sorpresa non è ripagato dalla vincita minima.`;
+      }
+      // 2. Ottimo Valore: quota Sisal più generosa della reale probabilità
+      else if (ev >= 0.05 && prob >= 0.28) {
+        type = "value";
+        badgeText = `🟢 Ottimo Valore (+${evPct}% EV)`;
+        badgeClass = "mm-verdict-value";
+        tagText = `🟢 +EV ${pct}%`;
+        shortVerdict = "Consigliata per valore (+EV)";
+        explanation = `Sisal quota l'esito a ${odd.toFixed(2)}, nettamente sopra la quota equa stimata (${fairOdds.toFixed(2)} con stima reale al ${pct}%). EV nominale positivo secondo questa stima; non garantisce un risultato positivo.`;
+      }
+      // 3. Alta Probabilità: esito molto probabile e solido
+      else if (prob >= 0.60 && ev >= -0.08) {
+        type = "highprob";
+        badgeText = `🔵 Molto Probabile (${pct}%)`;
+        badgeClass = "mm-verdict-highprob";
+        tagText = `🔵 Top ${pct}%`;
+        shortVerdict = "Alta probabilità di riuscita";
+        explanation = `Probabilità elevata (${pct}%). Esito stimato frequente; la probabilità non implica convenienza e la quota resta ${odd.toFixed(2)}.`;
+      }
+      // 4. Sconsigliata: probabilità bassa o quota troppo sbilanciata a favore del bookmaker
+      else if (prob < 0.35 || ev < -0.15) {
+        type = "sconsigliata";
+        badgeText = "🔴 Sconsigliata";
+        badgeClass = "mm-verdict-sconsigliata";
+        tagText = `🔴 ${pct}% ⚠️`;
+        shortVerdict = "Rischio elevato / Non conveniente";
+        explanation = `Probabilità ridotta (${pct}%) e quota ${odd.toFixed(2)} che non compensa a sufficienza l'incertezza statistica (quota minima equa: ${fairOdds.toFixed(2)}).`;
+      }
+      // 5. Neutra: quota allineata alle probabilità
+      else {
+        type = "neutral";
+        badgeText = `🟡 Equilibrata (${pct}%)`;
+        badgeClass = "mm-verdict-neutral";
+        tagText = `🟡 ${pct}%`;
+        shortVerdict = "Quota allineata";
+        explanation = `Probabilità stimata al ${pct}% con quota Sisal a ${odd.toFixed(2)} allineata al mercato (quota equa ${fairOdds.toFixed(2)}).`;
+      }
+    } else {
+      // Valutazione teorica preventiva (se la quota Sisal non è ancora visibile a schermo)
+      if (prob >= 0.60) {
+        type = "highprob";
+        badgeText = `🔵 Molto Probabile (${pct}%)`;
+        badgeClass = "mm-verdict-highprob";
+        tagText = `🔵 ${pct}%`;
+        shortVerdict = "Alta probabilità stimata";
+        explanation = `Stima MatchMind molto solida (${pct}%). Consigliata se Sisal offre una quota superiore a ${fairOdds.toFixed(2)}.`;
+      } else if (prob <= 0.35) {
+        type = "sconsigliata";
+        badgeText = `🔴 Bassa Probabilità (${pct}%)`;
+        badgeClass = "mm-verdict-sconsigliata";
+        tagText = `🔴 ${pct}%`;
+        shortVerdict = "Esito poco probabile";
+        explanation = `Stima MatchMind al ${pct}%. Richiede una quota elevata (almeno ${fairOdds.toFixed(2)}) per avere valore.`;
+      } else {
+        type = "neutral";
+        badgeText = `🟡 Media Probabilità (${pct}%)`;
+        badgeClass = "mm-verdict-neutral";
+        tagText = `🟡 ${pct}%`;
+        shortVerdict = "In equilibrio";
+        explanation = `Stima MatchMind al ${pct}% (quota equa teorica: ${fairOdds.toFixed(2)}).`;
+      }
+    }
+
+    // Nota tattica contestuale e chiara
+    let tacticalNote = "";
+    if (marketKey === "home") {
+      tacticalNote = `${home} favorita dal fattore campo (${(homeXg || 1.2).toFixed(1)} xG previsti vs ${(awayXg || 1.2).toFixed(1)} di ${away}).`;
+    } else if (marketKey === "away") {
+      tacticalNote = `${away} in trasferta con ${(awayXg || 1.2).toFixed(1)} xG previsti vs ${(homeXg || 1.2).toFixed(1)} di ${home}.`;
+    } else if (marketKey === "draw") {
+      tacticalNote = `Previsione di equilibrio tattico e pochi strappi (${(homeXg || 1.2).toFixed(1)} vs ${(awayXg || 1.2).toFixed(1)} xG).`;
+    } else if (marketKey.startsWith("over")) {
+      tacticalNote = `Indice offensivo complessivo aperto (${totXg} gol attesi previsti nel match).`;
+    } else if (marketKey.startsWith("under")) {
+      tacticalNote = `Difese solide o volume occasioni contenuto (${totXg} gol attesi complessivi).`;
+    } else if (marketKey === "bttsYes") {
+      tacticalNote = `Buone chance che entrambe le squadre vadano a segno (${(homeXg || 1.2).toFixed(1)} e ${(awayXg || 1.2).toFixed(1)} xG).`;
+    } else if (marketKey === "bttsNo") {
+      tacticalNote = "Probabile che almeno una squadra non riesca a trovare la via della rete.";
+    } else if (marketKey.startsWith("dc")) {
+      tacticalNote = "Opzione di copertura per ridurre il rischio rispetto all'esito secco.";
+    }
+
+    return {
+      type,
+      badgeText,
+      badgeClass,
+      tagText,
+      shortVerdict,
+      explanation,
+      tacticalNote,
+      pct,
+      evPct,
+      odd: odd || null,
+      fairOdds: fairOdds || (prob ? 1 / prob : 2.0)
+    };
   }
 
   // Generatore di motivazione analitica
@@ -789,7 +927,40 @@
       text-align: center !important;
       transition: background 0.15s ease !important;
     }
-  `;
+  
+
+    /* Mercati completi e valutazioni leggibili */
+    .mm-view-tabs { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; background:#081224 !important; padding:3px !important; border-radius:8px !important; }
+    .mm-view-tab { background:transparent !important; color:#94a3b8 !important; border:0 !important; border-radius:6px !important; padding:5px 3px !important; font-size:9px !important; font-weight:800 !important; cursor:pointer !important; }
+    .mm-view-tab.active { background:#0284c7 !important; color:white !important; }
+    .mm-cat-row { display:flex !important; gap:3px !important; overflow-x:auto !important; padding:1px 0 3px !important; }
+    .mm-cat-btn { background:#152238 !important; color:#cbd5e1 !important; border:1px solid #334155 !important; border-radius:12px !important; font-size:9px !important; padding:3px 7px !important; white-space:nowrap !important; cursor:pointer !important; }
+    .mm-cat-btn.active { background:#0284c7 !important; color:white !important; border-color:#38bdf8 !important; }
+    .mm-legend-bar { display:flex !important; justify-content:space-between !important; font-size:8px !important; color:#cbd5e1 !important; gap:3px !important; }
+    .mm-legend-item { white-space:nowrap !important; }
+    .mm-legend-item i { display:inline-block !important; width:6px !important; height:6px !important; border-radius:50% !important; margin-right:2px !important; }
+    .mm-legend-item .dot-val { background:#10b981 !important; }
+    .mm-legend-item .dot-high { background:#38bdf8 !important; }
+    .mm-legend-item .dot-neu { background:#facc15 !important; }
+    .mm-legend-item .dot-trap { background:#ef4444 !important; }
+    .mm-item-cat { font-size:8px !important; color:#94a3b8 !important; text-transform:uppercase !important; font-weight:800 !important; }
+    .mm-odd-badge { background:#0f172a !important; border:1px solid #334155 !important; border-radius:5px !important; padding:2px 5px !important; color:#c4f36a !important; font-size:9px !important; white-space:nowrap !important; }
+    .mm-odd-badge.muted { color:#94a3b8 !important; }
+    .mm-verdict-row { display:flex !important; align-items:center !important; gap:5px !important; flex-wrap:wrap !important; }
+    .mm-verdict-short { color:#cbd5e1 !important; font-size:9px !important; font-weight:700 !important; }
+    .mm-verdict-sconsigliata { background:#2a1118 !important; color:#fda4af !important; border:1px solid #f43f5e !important; }
+    .mm-card-reason { display:flex !important; flex-direction:column !important; gap:2px !important; line-height:1.35 !important; }
+    .mm-reason-desc { color:#f1f5f9 !important; }
+    .mm-reason-tactical { color:#94a3b8 !important; font-size:8px !important; }
+    .mm-item-card.is-value { border-color:#10b981 !important; }
+    .mm-item-card.is-highprob { border-color:#0284c7 !important; }
+    .mm-item-card.is-trap, .mm-item-card.is-sconsigliata { border-color:#ef4444 !important; }
+    .mm-item-card.is-neutral { border-color:#ca8a04 !important; }
+    .mm-prob-tag.is-value { background:#064e3b !important; color:#34d399 !important; border-color:#10b981 !important; }
+    .mm-prob-tag.is-highprob { background:#082f49 !important; color:#38bdf8 !important; border-color:#0284c7 !important; }
+    .mm-prob-tag.is-neutral { background:#362507 !important; color:#fde047 !important; border-color:#ca8a04 !important; }
+    .mm-prob-tag.is-trap, .mm-prob-tag.is-sconsigliata { background:#450a0a !important; color:#fca5a5 !important; border-color:#ef4444 !important; }
+`;
 
   if (typeof GM_addStyle === "function") {
     GM_addStyle(styles);
@@ -809,20 +980,48 @@
 
   function parseSisalMarket(text) {
     const t = String(text || "").trim().toLowerCase();
-    if (t === "1" || t.includes("esito finale 1") || t.endsWith(" 1")) return { key: "home", label: "1" };
-    if (t === "x" || t.includes("esito finale x") || t.endsWith(" x")) return { key: "draw", label: "X" };
-    if (t === "2" || t.includes("esito finale 2") || t.endsWith(" 2")) return { key: "away", label: "2" };
-    if (t === "1x" || t.includes("1x")) return { key: "dc1X", label: "1X" };
-    if (t === "x2" || t.includes("x2")) return { key: "dcX2", label: "X2" };
-    if (t === "12" || t.includes("12")) return { key: "dc12", label: "12" };
-    if (t.includes("over 2,5") || t.includes("over 2.5") || t === "over" || t.includes("u/o 2,5 over")) return { key: "over25", label: "Over 2.5" };
-    if (t.includes("under 2,5") || t.includes("under 2.5") || t === "under" || t.includes("u/o 2,5 under")) return { key: "under25", label: "Under 2.5" };
-    if (t.includes("over 1,5") || t.includes("over 1.5") || t.includes("u/o 1,5 over")) return { key: "over15", label: "Over 1.5" };
-    if (t.includes("under 1,5") || t.includes("under 1.5") || t.includes("u/o 1,5 under")) return { key: "under15", label: "Under 1.5" };
-    if (t.includes("over 3,5") || t.includes("over 3.5")) return { key: "over35", label: "Over 3.5" };
-    if (t.includes("under 3,5") || t.includes("under 3.5")) return { key: "under35", label: "Under 3.5" };
-    if (t === "goal" || t === "gol" || t.includes("entrambe segnano") || t.includes("gg") || t.includes("goal/goal")) return { key: "bttsYes", label: "Gol" };
-    if (t === "nogoal" || t === "no goal" || t.includes("no gol") || t.includes("ng")) return { key: "bttsNo", label: "No Gol" };
+    if (t === "1" || t.includes("esito finale 1") || t.endsWith(" 1") || t.includes("vincente 1") || t === "1 finale") {
+      return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)" };
+    }
+    if (t === "x" || t.includes("esito finale x") || t.endsWith(" x") || t.includes("pareggio") || t === "x finale") {
+      return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)" };
+    }
+    if (t === "2" || t.includes("esito finale 2") || t.endsWith(" 2") || t.includes("vincente 2") || t === "2 finale") {
+      return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)" };
+    }
+    if (t === "1x" || t.includes("1x") || t.includes("doppia chance 1x")) {
+      return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance" };
+    }
+    if (t === "x2" || t.includes("x2") || t.includes("doppia chance x2")) {
+      return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance" };
+    }
+    if (t === "12" || t.includes("12") || t.includes("doppia chance 12")) {
+      return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance" };
+    }
+    if (t.includes("over 2,5") || t.includes("over 2.5") || t === "over" || t.includes("u/o 2,5 over") || t.includes("u/o 2.5 over")) {
+      return { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over" };
+    }
+    if (t.includes("under 2,5") || t.includes("under 2.5") || t === "under" || t.includes("u/o 2,5 under") || t.includes("u/o 2.5 under")) {
+      return { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over" };
+    }
+    if (t.includes("over 1,5") || t.includes("over 1.5") || t.includes("u/o 1,5 over") || t.includes("u/o 1.5 over")) {
+      return { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over" };
+    }
+    if (t.includes("under 1,5") || t.includes("under 1.5") || t.includes("u/o 1,5 under") || t.includes("u/o 1.5 under")) {
+      return { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over" };
+    }
+    if (t.includes("over 3,5") || t.includes("over 3.5") || t.includes("u/o 3,5 over") || t.includes("u/o 3.5 over")) {
+      return { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over" };
+    }
+    if (t.includes("under 3,5") || t.includes("under 3.5") || t.includes("u/o 3,5 under") || t.includes("u/o 3.5 under")) {
+      return { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over" };
+    }
+    if (t === "goal" || t === "gol" || t.includes("entrambe segnano") || t.includes("gg") || t.includes("goal/goal") || t.includes("gol/gol")) {
+      return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol" };
+    }
+    if (t === "nogoal" || t === "no goal" || t.includes("no gol") || t.includes("ng") || t.includes("almeno una non segna")) {
+      return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol" };
+    }
     return null;
   }
 
@@ -994,6 +1193,21 @@
   }
 
   let currentAnalysis = null;
+  let currentView = localStorage.getItem("mm_widget_view") || "all_markets";
+  let currentCategoryFilter = localStorage.getItem("mm_widget_cat") || "all";
+
+  function setView(view) {
+    currentView = view;
+    localStorage.setItem("mm_widget_view", view);
+    renderWidget();
+  }
+
+  function setCategoryFilter(cat) {
+    currentCategoryFilter = cat;
+    localStorage.setItem("mm_widget_cat", cat);
+    renderWidget();
+  }
+
   let currentStrategy = localStorage.getItem("mm_widget_strategy") || "balanced"; // balanced, accurate, value, doubling
   let isMinimized = localStorage.getItem("mm_widget_minimized") !== "false"; // Default minimizzato a pillola per non disturbare
   let isHidden = localStorage.getItem("mm_widget_hidden") === "true";
@@ -1175,7 +1389,6 @@
     return filtered;
   }
 
-  // Render dell'interfaccia
   function renderWidget() {
     let widget = document.getElementById("mm-widget");
     let floatingBadge = document.getElementById("mm-floating-badge");
@@ -1204,6 +1417,7 @@
     widget.style.display = "flex";
 
     const calculations = currentAnalysis?.calculations || [];
+    const allMarketsList = currentAnalysis?.allMarketsList || calculations;
     const activePicks = filterByStrategy(calculations, currentStrategy, minProbThreshold);
 
     if (isMinimized) {
@@ -1212,13 +1426,15 @@
       widget.style.maxHeight = "34px";
       widget.style.width = "auto";
 
-      const stratLabel = currentStrategy === "value" ? "+EV" : (currentStrategy === "accurate" ? "Accuratezza" : (currentStrategy === "doubling" ? "Raddoppio" : "Bilanciata"));
+      const countBadge = currentView === "all_markets"
+        ? `${allMarketsList.length} Mercati`
+        : `${activePicks.length} Consigliate`;
 
       widget.innerHTML = `
         <div id="mm-widget-min-bar" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;user-select:none;">
           <span style="color:#c4f36a;font-size:13px;">🧠 MM</span>
-          <span class="mm-prob-badge ${currentStrategy === 'value' ? 'is-value' : ''}" style="font-size:9px;padding:2px 5px;">
-            ${activePicks.length} ${stratLabel}
+          <span style="background:#064e3b;color:#34d399;border:1px solid #10b981;border-radius:4px;font-size:9px;padding:2px 5px;">
+            ${countBadge}
           </span>
           <span style="color:#38bdf8;font-size:10px;text-decoration:underline;">Espandi ↗</span>
           <span id="mm-min-hide-btn" style="color:#64748b;font-size:12px;padding-left:4px;cursor:pointer;" title="Nascondi widget">✕</span>
@@ -1239,22 +1455,21 @@
 
     widget.classList.remove("mm-is-minimized");
     widget.style.height = "auto";
-    widget.style.maxHeight = "52vh";
-    widget.style.width = "320px";
+    widget.style.maxHeight = "58vh";
+    widget.style.width = "335px";
     widget.onclick = null;
 
-    if (!calculations.length) {
+    if (!calculations.length && !allMarketsList.length) {
       widget.innerHTML = `
         <div id="mm-widget-head">
-          <span>🧠 MatchMind Sisal</span>
+          <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.7</span></div>
           <div class="mm-head-actions">
             <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button>
             <button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button>
           </div>
         </div>
-        <div style="font-size:11px;color:#94a3b8;padding:8px 0;text-align:center;">
-          Nessuna quota calcistica rilevata nella schermata Sisal.<br/>
-          <span style="font-size:10px;color:#64748b;">Apri una partita o il palinsesto Serie A.</span>
+        <div style="font-size:11px;color:#94a3b8;padding:10px 0;text-align:center;">
+          Nessuna quota calcistica rilevata.<br/><span style="font-size:10px;color:#64748b;">Apri una singola partita o il palinsesto.</span>
         </div>
         <button id="mm-send-cart-btn" class="mm-btn-cart">📥 Invia carrello Sisal</button>
         <div style="display:flex;justify-content:space-between;margin-top:2px;">
@@ -1263,7 +1478,6 @@
         </div>
       `;
       document.getElementById("mm-btn-minimize")?.addEventListener("click", () => setMinimized(true));
-    document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
       document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
       document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
       document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
@@ -1274,166 +1488,159 @@
 
     const isMulti = currentAnalysis.isMulti;
     const headerTitle = isMulti
-      ? `⚽ Palinsesto (${currentAnalysis.matchCount} match)`
+      ? `⚽ Palinsesto (${currentAnalysis.matchCount} partite)`
       : `⚽ ${currentAnalysis.home} - ${currentAnalysis.away}`;
 
-    const presets = [
-      { label: "Tutte", val: 0 },
-      { label: "≥40%", val: 40 },
-      { label: "≥50%", val: 50 },
-      { label: "≥60%", val: 60 },
-      { label: "≥70%", val: 70 }
-    ];
+    let mainContentHtml = "";
 
-    let itemsHtml = "";
-    if (activePicks.length > 0) {
-      itemsHtml = activePicks.slice(0, 15).map((c, idx) => {
-        const pct = (c.modelProb * 100).toFixed(0);
-        const ev = (c.ev * 100).toFixed(1);
-        const isTop = idx === 0 && (c.ev > 0 || c.modelProb >= 0.65);
-        const matchTitle = isMulti ? `${c.home} - ${c.away}` : "";
+    if (currentView === "all_markets") {
+      let filteredMarkets = allMarketsList;
+      if (currentCategoryFilter !== "all") {
+        filteredMarkets = allMarketsList.filter(item => item.cat === currentCategoryFilter);
+      }
+
+      const cardsHtml = filteredMarkets.map(item => {
+        const ev = item.evaluation;
+        const matchTitle = isMulti ? `${item.home} - ${item.away}` : "";
+        const oddVal = item.odd != null ? item.odd : null;
+        const sendOdd = oddVal != null ? oddVal : item.fairOdds;
 
         return `
-          <div class="mm-item-card ${isTop ? 'is-top' : ''}">
+          <div class="mm-item-card is-${ev.type}">
             <div class="mm-card-head">
               <div>
-                <span class="mm-item-title">${c.label} @ ${c.odd.toFixed(2)}</span>
+                <div class="mm-item-cat">${item.catName}</div>
+                <div class="mm-item-title">${item.label}</div>
                 ${matchTitle ? `<div class="mm-item-match">${matchTitle}</div>` : ''}
               </div>
               <div class="mm-card-actions">
-                <span class="mm-prob-badge ${c.ev > 0 ? 'is-value' : ''}">${pct}%</span>
-                <button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${c.home.replace(/'/g, "\'")}', '${c.away.replace(/'/g, "\'")}', '${c.key}', '${c.label}', ${c.odd})">
-                  ⚡ MM
-                </button>
+                ${item.hasRealOdd ? `<span class="mm-odd-badge">Quota <b>${oddVal.toFixed(2)}</b></span>` : `<span class="mm-odd-badge muted" title="Quota equa teorica">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
+                ${item.hasRealOdd ? `<button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${item.home.replace(/'/g, "\\'")}', '${item.away.replace(/'/g, "\\'")}', '${item.key}', '${item.label.replace(/'/g, "\\'")}', ${sendOdd})">⚡ MM</button>` : ''}
               </div>
             </div>
 
+            <div class="mm-verdict-row">
+              <span class="mm-verdict-badge ${ev.badgeClass}">${ev.badgeText}</span>
+              <span class="mm-verdict-short">${ev.shortVerdict}</span>
+            </div>
+
             <div class="mm-card-metrics">
-              <span>Equa: <b>${c.fairOdds.toFixed(2)}</b></span>
-              <span style="color:${c.ev > 0 ? '#34d399' : '#94a3b8'};font-weight:700;">
-                ${c.ev > 0 ? '+' + ev : ev}% EV
-              </span>
+              <span>Stima: <b>${ev.pct}%</b></span>
+              <span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span>
+              ${item.hasRealOdd ? `<span style="color:${ev.evPct > 0 ? '#34d399' : (ev.evPct < -8 ? '#f87171' : '#fbbf24')};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
             </div>
 
             <div class="mm-card-reason">
-              💡 ${c.motivation}
+              <div class="mm-reason-desc">💡 ${ev.explanation}</div>
+              ${ev.tacticalNote ? `<div class="mm-reason-tactical">⚽ ${ev.tacticalNote}</div>` : ''}
             </div>
           </div>
         `;
       }).join("");
-    } else {
-      itemsHtml = `
-        <div style="font-size:11px;color:#94a3b8;padding:12px;text-align:center;background:#0f172a;border-radius:6px;">
-          Nessuna selezione per la strategia <b>${currentStrategy}</b> con soglia ≥ ${minProbThreshold}%.<br/>
-          <span style="color:#38bdf8;cursor:pointer;font-weight:bold;margin-top:4px;display:inline-block;" id="mm-reset-strat">Mostra Più Probabili</span>
+
+      mainContentHtml = `
+        <div class="mm-cat-row">
+          <button class="mm-cat-btn ${currentCategoryFilter === 'all' ? 'active' : ''}" data-cat="all">🌐 Tutti (${allMarketsList.length})</button>
+          <button class="mm-cat-btn ${currentCategoryFilter === '1x2' ? 'active' : ''}" data-cat="1x2">🏆 1X2</button>
+          <button class="mm-cat-btn ${currentCategoryFilter === 'btts' ? 'active' : ''}" data-cat="btts">🥅 Gol/NoGol</button>
+          <button class="mm-cat-btn ${currentCategoryFilter === 'uo' ? 'active' : ''}" data-cat="uo">⚽ Under/Over</button>
+          <button class="mm-cat-btn ${currentCategoryFilter === 'dc' ? 'active' : ''}" data-cat="dc">🛡️ Doppia Chance</button>
         </div>
+        <div class="mm-legend-bar">
+          <span class="mm-legend-item"><i class="dot-val"></i> Valore</span>
+          <span class="mm-legend-item"><i class="dot-high"></i> Probabile</span>
+          <span class="mm-legend-item"><i class="dot-neu"></i> Neutra</span>
+          <span class="mm-legend-item"><i class="dot-trap"></i> Rischiosa</span>
+        </div>
+        <div class="mm-list-container">
+          ${cardsHtml || '<div style="font-size:11px;color:#94a3b8;padding:12px;text-align:center;">Nessun mercato in questa categoria.</div>'}
+        </div>
+      `;
+    } else {
+      const presets = [
+        { label: "Tutte", val: 0 },
+        { label: "≥40%", val: 40 },
+        { label: "≥50%", val: 50 },
+        { label: "≥60%", val: 60 },
+        { label: "≥70%", val: 70 }
+      ];
+
+      let recItemsHtml = "";
+      if (activePicks.length > 0) {
+        recItemsHtml = activePicks.slice(0, 15).map(c => {
+          const ev = c.evaluation;
+          const matchTitle = isMulti ? `${c.home} - ${c.away}` : "";
+          return `
+            <div class="mm-item-card is-${ev.type}">
+              <div class="mm-card-head">
+                <div><div class="mm-item-cat">${c.catName || 'Consigliata'}</div><div class="mm-item-title">${c.label}</div>${matchTitle ? `<div class="mm-item-match">${matchTitle}</div>` : ''}</div>
+                <div class="mm-card-actions"><span class="mm-odd-badge">Quota <b>${c.odd.toFixed(2)}</b></span><button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${c.home.replace(/'/g, "\\'")}', '${c.away.replace(/'/g, "\\'")}', '${c.key}', '${c.label.replace(/'/g, "\\'")}', ${c.odd})">⚡ MM</button></div>
+              </div>
+              <div class="mm-verdict-row"><span class="mm-verdict-badge ${ev.badgeClass}">${ev.badgeText}</span><span class="mm-verdict-short">${ev.shortVerdict}</span></div>
+              <div class="mm-card-metrics"><span>Stima: <b>${ev.pct}%</b></span><span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span><span style="color:${ev.evPct > 0 ? '#34d399' : '#94a3b8'};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span></div>
+              <div class="mm-card-reason"><div class="mm-reason-desc">💡 ${ev.explanation}</div>${ev.tacticalNote ? `<div class="mm-reason-tactical">⚽ ${ev.tacticalNote}</div>` : ''}</div>
+            </div>
+          `;
+        }).join("");
+      } else {
+        recItemsHtml = `<div style="font-size:11px;color:#94a3b8;padding:12px;text-align:center;background:#0f172a;border-radius:6px;">Nessuna selezione per la strategia <b>${currentStrategy}</b> con soglia ≥ ${minProbThreshold}%.<br/><span style="color:#38bdf8;cursor:pointer;font-weight:bold;margin-top:5px;display:inline-block;" id="mm-reset-strat">Mostra Più Probabili</span></div>`;
+      }
+
+      mainContentHtml = `
+        <div class="mm-strategy-tabs">
+          <button class="mm-strat-tab ${currentStrategy === 'balanced' ? 'active' : ''}" data-strat="balanced">⚖️ Bilanciata</button>
+          <button class="mm-strat-tab ${currentStrategy === 'accurate' ? 'active' : ''}" data-strat="accurate">🎯 Accuratezza</button>
+          <button class="mm-strat-tab ${currentStrategy === 'value' ? 'active strat-value' : ''}" data-strat="value">💎 +EV Valore</button>
+          <button class="mm-strat-tab ${currentStrategy === 'doubling' ? 'active' : ''}" data-strat="doubling">✌️ Raddoppio</button>
+        </div>
+        <div class="mm-filter-bar">
+          <div class="mm-filter-row"><span>Soglia probabilità:</span><span style="color:#34d399;font-weight:800;font-size:11px;" id="mm-thresh-display">≥ ${minProbThreshold}%</span></div>
+          <div class="mm-chips-row">${presets.map(p => `<button class="mm-chip ${minProbThreshold === p.val ? 'active' : ''}" data-val="${p.val}">${p.label}</button>`).join("")}</div>
+          <input type="range" class="mm-slider" id="mm-prob-slider" min="30" max="90" step="5" value="${minProbThreshold}">
+        </div>
+        <div class="mm-list-container">${recItemsHtml}</div>
       `;
     }
 
     widget.innerHTML = `
       <div id="mm-widget-head">
-        <span style="font-size:12px;">🧠 MatchMind · Consigli Quote</span>
-        <div class="mm-head-actions">
-          <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button>
-          <button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button>
-        </div>
+        <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.7</span></div>
+        <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
-
-      <div style="font-size:11px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-        ${headerTitle}
+      <div class="mm-match-title">${headerTitle}</div>
+      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Stime indicative del modello MatchMind, non validate per questa partita. EV teorico, non garanzia.</div>
+      <div class="mm-view-tabs">
+        <button class="mm-view-tab ${currentView === 'all_markets' ? 'active' : ''}" data-view="all_markets">📋 Tutti i Mercati (${allMarketsList.length})</button>
+        <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">⭐ Solo Consigliate (${activePicks.length})</button>
       </div>
-
-      <!-- Schede Strategie (Accuratezza vs Remuneratività vs Bilanciate vs Raddoppio) -->
-      <div class="mm-strategy-tabs">
-        <button class="mm-strat-tab ${currentStrategy === 'balanced' ? 'active' : ''}" data-strat="balanced">
-          ⚖️ Bilanciata
-        </button>
-        <button class="mm-strat-tab ${currentStrategy === 'accurate' ? 'active' : ''}" data-strat="accurate">
-          🎯 Accuratezza
-        </button>
-        <button class="mm-strat-tab ${currentStrategy === 'value' ? 'active strat-value' : ''}" data-strat="value">
-          💎 +EV Valore
-        </button>
-        <button class="mm-strat-tab ${currentStrategy === 'doubling' ? 'active' : ''}" data-strat="doubling">
-          ✌️ Raddoppio
-        </button>
+      ${mainContentHtml}
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px;">
+        ${activePicks.length >= 2 ? `<button id="mm-send-top-combo-btn" class="mm-btn-combo">⚡ Invia Top ${Math.min(3, activePicks.length)} scelte a MatchMind</button>` : ''}
+        <button id="mm-send-cart-btn" class="mm-btn-cart">📥 Invia carrello Sisal a MatchMind</button>
       </div>
-
-      <!-- Barra filtro probabilità percentuale -->
-      <div class="mm-filter-bar">
-        <div class="mm-filter-row">
-          <span>Soglia probabilità:</span>
-          <span style="color:#34d399;font-weight:800;font-size:11px;" id="mm-thresh-display">≥ ${minProbThreshold}%</span>
-        </div>
-        <div class="mm-chips-row">
-          ${presets.map(p => `
-            <button class="mm-chip ${minProbThreshold === p.val ? 'active' : ''}" data-val="${p.val}">
-              ${p.label}
-            </button>
-          `).join("")}
-        </div>
-        <input type="range" class="mm-slider" id="mm-prob-slider" min="30" max="90" step="5" value="${minProbThreshold}">
-      </div>
-
-      <!-- Lista scommesse consigliate -->
-      <div class="mm-list-container">
-        ${itemsHtml}
-      </div>
-
-      <!-- Azioni rapide carrello e combo -->
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        ${activePicks.length >= 2 ? `
-          <button id="mm-send-top-combo-btn" class="mm-btn-combo">
-            ⚡ Invia Top ${Math.min(3, activePicks.length)} scelte a MatchMind
-          </button>
-        ` : ''}
-        <button id="mm-send-cart-btn" class="mm-btn-cart">
-          📥 Invia carrello Sisal a MatchMind
-        </button>
-      </div>
-
       <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;">
         <a href="${MATCHMIND_URL}" target="_blank" style="color:#7dd3fc;text-decoration:none;">📋 Apri MatchMind</a>
-        <span style="color:#64748b;cursor:pointer;" id="mm-rescan-btn">🔄 Aggiorna (${activePicks.length}/${calculations.length})</span>
+        <span style="color:#64748b;cursor:pointer;" id="mm-rescan-btn">🔄 Aggiorna (${calculations.length} quote)</span>
       </div>
     `;
 
-    // Event listeners
     document.getElementById("mm-btn-minimize")?.addEventListener("click", () => setMinimized(true));
     document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
-      document.getElementById("mm-btn-close-w")?.addEventListener("click", () => setHidden(true));
     document.getElementById("mm-send-cart-btn")?.addEventListener("click", sendCartToMatchMind);
     document.getElementById("mm-rescan-btn")?.addEventListener("click", scanPage);
     document.getElementById("mm-reset-strat")?.addEventListener("click", () => setStrategy("accurate"));
+    document.getElementById("mm-send-top-combo-btn")?.addEventListener("click", () => sendStrategyComboToMatchMind(activePicks));
 
-    document.getElementById("mm-send-top-combo-btn")?.addEventListener("click", () => {
-      sendStrategyComboToMatchMind(activePicks);
-    });
-
-    widget.querySelectorAll(".mm-strat-tab").forEach(tab => {
-      tab.addEventListener("click", (e) => {
-        const strat = e.currentTarget.dataset.strat;
-        setStrategy(strat);
-      });
-    });
+    widget.querySelectorAll(".mm-view-tab").forEach(tab => tab.addEventListener("click", e => setView(e.currentTarget.dataset.view)));
+    widget.querySelectorAll(".mm-cat-btn").forEach(btn => btn.addEventListener("click", e => setCategoryFilter(e.currentTarget.dataset.cat)));
+    widget.querySelectorAll(".mm-strat-tab").forEach(tab => tab.addEventListener("click", e => setStrategy(e.currentTarget.dataset.strat)));
 
     const slider = document.getElementById("mm-prob-slider");
     if (slider) {
-      slider.addEventListener("input", (e) => {
-        const val = Number(e.target.value);
-        document.getElementById("mm-thresh-display").textContent = `≥ ${val}%`;
-      });
-      slider.addEventListener("change", (e) => {
-        setThreshold(Number(e.target.value));
-      });
+      slider.addEventListener("input", e => { const val = Number(e.target.value); document.getElementById("mm-thresh-display").textContent = `≥ ${val}%`; });
+      slider.addEventListener("change", e => setThreshold(Number(e.target.value)));
     }
-
-    widget.querySelectorAll(".mm-chip").forEach(chip => {
-      chip.addEventListener("click", (e) => {
-        const val = Number(e.currentTarget.dataset.val);
-        setThreshold(val);
-      });
-    });
+    widget.querySelectorAll(".mm-chip").forEach(chip => chip.addEventListener("click", e => setThreshold(Number(e.currentTarget.dataset.val))));
 
     const headEl = document.getElementById("mm-widget-head");
     if (headEl) initDraggable(widget, headEl);
@@ -1443,179 +1650,109 @@
   function updatePageBadges() {
     if (!currentAnalysis || !currentAnalysis.calculations) return;
     const { calculations } = currentAnalysis;
-
     isMutatingDOM = true;
     try {
       calculations.forEach(c => {
         const btn = c.btn;
         if (!btn || !document.body.contains(btn)) return;
+        const evRes = c.evaluation;
+        btn.classList.remove("mm-highlight-valore", "mm-highlight-highprob", "mm-highlight-trap");
+        if (evRes.type === "value") btn.classList.add("mm-highlight-valore");
+        else if (evRes.type === "highprob") btn.classList.add("mm-highlight-highprob");
+        else if (evRes.type === "trap") btn.classList.add("mm-highlight-trap");
 
-        const pct = Math.round(c.modelProb * 100);
-        const meetsThreshold = pct >= minProbThreshold;
-        const hasValue = c.ev > 0;
-
-        if ((currentStrategy === "value" && hasValue) || (currentStrategy !== "value" && meetsThreshold)) {
-          btn.classList.add("mm-highlight-btn");
-        } else {
-          btn.classList.remove("mm-highlight-btn");
-        }
-
-        let tag = btn.querySelector(".mm-prob-tag, .mm-badge-recommended");
-        if (!tag) {
-          tag = document.createElement("div");
-          tag.className = "mm-prob-tag";
-          btn.appendChild(tag);
-        }
-
-        if (hasValue && c.ev >= 0.08) {
-          tag.className = "mm-badge-recommended";
-          tag.innerHTML = `★ ${pct}% (+${Math.round(c.ev * 100)}%)`;
-        } else if (meetsThreshold) {
-          tag.className = "mm-badge-recommended";
-          tag.innerHTML = `★ ${pct}%`;
-        } else {
-          tag.className = "mm-prob-tag";
-          tag.innerHTML = `🧠 ${pct}%`;
-        }
-        tag.title = `Stima MatchMind: ${pct}% · Quota equa: ${c.fairOdds.toFixed(2)} · EV: ${(c.ev * 100).toFixed(1)}%`;
-
-        // Assicura che nessun bottone di invio interno interferisca con il click nativo Sisal
+        let tag = btn.querySelector(".mm-prob-tag");
+        if (!tag) { tag = document.createElement("div"); tag.className = "mm-prob-tag"; btn.appendChild(tag); }
+        tag.className = `mm-prob-tag is-${evRes.type}`;
+        tag.innerHTML = evRes.tagText;
+        tag.title = `${c.label} · ${evRes.shortVerdict} (Stima: ${evRes.pct}%, Sisal: ${c.odd.toFixed(2)}, Equa: ${c.fairOdds.toFixed(2)})`;
         btn.querySelectorAll(".mm-send-btn").forEach(el => el.remove());
       });
-    } finally {
-      isMutatingDOM = false;
-    }
+    } finally { isMutatingDOM = false; }
   }
 
-  // Scansione principale
+  // Scansione principale della pagina Sisal
   function scanPage() {
     const singleMatch = detectSingleMatch();
     const multiMatches = detectMultipleMatches();
-
     const calculations = [];
 
     if (singleMatch) {
-      // Modalità Singolo Match
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
       const mmProbs = forecast.probabilities;
-
+      const foundOddsByMarket = new Map();
       const oddButtons = Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
         if (el.closest("#mm-widget")) return false;
-        const text = el.innerText || "";
-        return /\b\d+[.,]\d{2}\b/.test(text) && text.length < 50;
+        const txt = el.innerText || "";
+        return /\b\\d+[.,]\\d{2}\b/.test(txt) && txt.length < 50;
       });
 
       oddButtons.forEach(btn => {
-        const text = (btn.innerText || "").trim();
-        const val = parseOddsValue(text);
+        const txt = (btn.innerText || "").trim();
+        const val = parseOddsValue(txt);
         if (!val) return;
-
         let label = "";
-        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        for (const line of lines) {
-          if (!/\b\d+[.,]\d{2}\b/.test(line)) {
-            label = line;
-            break;
-          }
-        }
-        if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
-
-        const contextText = (btn.closest("[class*='market'], [class*='group'], [class*='section']")?.innerText || "") + " " + label + " " + text;
+        const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        for (const line of lines) { if (!/\b\\d+[.,]\\d{2}\b/.test(line)) { label = line; break; } }
+        if (!label && lines.length) label = lines[0].replace(/\b\\d+[.,]\\d{2}\b/, "").trim();
+        const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "") + " " + (btn.getAttribute("data-qa") || "");
+        const contextText = (btn.closest("[class*='market'], [class*='group'], [class*='section'], [data-qa*='market']")?.innerText || "") + " " + label + " " + txt + " " + attrText;
         const market = parseSisalMarket(contextText);
-
-        if (market && mmProbs[market.key]) {
+        if (market && mmProbs[market.key] != null) {
           const prob = mmProbs[market.key];
           const fairOdds = 1 / prob;
           const ev = (prob * val) - 1;
-          const motivation = generateMotivation(singleMatch.home, singleMatch.away, market.key, market.label, prob, val, fairOdds, ev, forecast.homeXg, forecast.awayXg);
-
-          calculations.push({
-            btn,
-            home: singleMatch.home,
-            away: singleMatch.away,
-            odd: val,
-            key: market.key,
-            label: market.label,
-            modelProb: prob,
-            fairOdds,
-            ev,
-            motivation
-          });
+          const evaluation = evaluateMarketSelection(prob, val, fairOdds, ev, market.key, market.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg);
+          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: val, key: market.key, label: market.label, shortLabel: market.shortLabel, cat: market.cat, catName: market.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
+          calculations.push(item);
+          if (!foundOddsByMarket.has(market.key)) foundOddsByMarket.set(market.key, item);
         }
       });
 
-      currentAnalysis = {
-        isMulti: false,
-        home: singleMatch.home,
-        away: singleMatch.away,
-        matchCount: 1,
-        calculations
-      };
+      const allMarketsList = [];
+      STANDARD_MARKETS.forEach(def => {
+        if (foundOddsByMarket.has(def.key)) {
+          allMarketsList.push(foundOddsByMarket.get(def.key));
+        } else if (mmProbs[def.key] != null) {
+          const prob = mmProbs[def.key];
+          const fairOdds = 1 / prob;
+          const evaluation = evaluateMarketSelection(prob, null, fairOdds, null, def.key, def.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg);
+          allMarketsList.push({ btn: null, home: singleMatch.home, away: singleMatch.away, odd: null, key: def.key, label: def.label, shortLabel: def.shortLabel, cat: def.cat, catName: def.catName, modelProb: prob, fairOdds, ev: null, evaluation, hasRealOdd: false });
+        }
+      });
+
+      currentAnalysis = { isMulti: false, home: singleMatch.home, away: singleMatch.away, matchCount: 1, calculations, allMarketsList };
     } else if (multiMatches.length > 0) {
-      // Modalità Palinsesto Multi-Match
       multiMatches.forEach(item => {
         const forecast = calculateMatchMindForecast(item.home, item.away);
         const mmProbs = forecast.probabilities;
-
         const oddButtons = Array.from(item.container.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
           if (el.closest("#mm-widget")) return false;
-          const text = el.innerText || "";
-          return /\b\d+[.,]\d{2}\b/.test(text) && text.length < 50;
+          const txt = el.innerText || "";
+          return /\b\\d+[.,]\\d{2}\b/.test(txt) && txt.length < 50;
         });
-
         oddButtons.forEach(btn => {
-          const text = (btn.innerText || "").trim();
-          const val = parseOddsValue(text);
+          const txt = (btn.innerText || "").trim();
+          const val = parseOddsValue(txt);
           if (!val) return;
-
           let label = "";
-          const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-          for (const line of lines) {
-            if (!/\b\d+[.,]\d{2}\b/.test(line)) {
-              label = line;
-              break;
-            }
-          }
-          if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
-
-          const contextText = label + " " + text;
-          const market = parseSisalMarket(contextText);
-
-          if (market && mmProbs[market.key]) {
+          const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          for (const line of lines) { if (!/\b\\d+[.,]\\d{2}\b/.test(line)) { label = line; break; } }
+          if (!label && lines.length) label = lines[0].replace(/\b\\d+[.,]\\d{2}\b/, "").trim();
+          const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "");
+          const market = parseSisalMarket(label + " " + txt + " " + attrText);
+          if (market && mmProbs[market.key] != null) {
             const prob = mmProbs[market.key];
             const fairOdds = 1 / prob;
             const ev = (prob * val) - 1;
-            const motivation = generateMotivation(item.home, item.away, market.key, market.label, prob, val, fairOdds, ev, forecast.homeXg, forecast.awayXg);
-
-            calculations.push({
-              btn,
-              home: item.home,
-              away: item.away,
-              odd: val,
-              key: market.key,
-              label: market.label,
-              modelProb: prob,
-              fairOdds,
-              ev,
-              motivation
-            });
+            const evaluation = evaluateMarketSelection(prob, val, fairOdds, ev, market.key, market.label, item.home, item.away, forecast.homeXg, forecast.awayXg);
+            calculations.push({ btn, home: item.home, away: item.away, odd: val, key: market.key, label: market.label, shortLabel: market.shortLabel, cat: market.cat, catName: market.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
           }
         });
       });
-
-      currentAnalysis = {
-        isMulti: true,
-        matchCount: multiMatches.length,
-        calculations
-      };
+      currentAnalysis = { isMulti: true, matchCount: multiMatches.length, calculations, allMarketsList: calculations };
     } else {
-      currentAnalysis = {
-        isMulti: false,
-        home: "Partita",
-        away: "In corso",
-        matchCount: 0,
-        calculations: []
-      };
+      currentAnalysis = { isMulti: false, home: "Partita", away: "In corso", matchCount: 0, calculations: [], allMarketsList: [] };
     }
 
     updatePageBadges();
