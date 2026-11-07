@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.7.1
+// @version      1.7.2
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -260,7 +260,7 @@
         type = "trap";
         badgeText = "🔴 Quota Trappola";
         badgeClass = "mm-verdict-trap";
-        tagText = "🔴 Trappola";
+        tagText = `🔴 ${pct}%`;
         shortVerdict = "Sconsigliata: quota sgonfiata";
         explanation = `Sisal paga solo ${odd.toFixed(2)}, ma la probabilità reale è del ${pct}% (quota equa ${fairOdds.toFixed(2)}). Rendimento atteso negativo (${evPct}% EV): il rischio di sorpresa non è ripagato dalla vincita minima.`;
       }
@@ -565,9 +565,10 @@
     }
 
     .mm-prob-tag {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+      display: block !important;
+      margin: 2px auto 0 auto !important;
+      width: fit-content !important;
+      max-width: 90% !important;
       background: #081a2e !important;
       color: #38bdf8 !important;
       border: 1px solid #0284c7 !important;
@@ -575,9 +576,8 @@
       font-size: 10px !important;
       font-weight: 800 !important;
       padding: 1px 4px !important;
-      margin-left: 3px !important;
       line-height: 1.2 !important;
-      vertical-align: middle !important;
+      text-align: center !important;
       pointer-events: none !important;
       box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
     }
@@ -978,80 +978,183 @@
     return Number.isFinite(v) && v > 1.01 && v <= 100 ? v : null;
   }
 
-  function parseSisalMarket(text) {
-    const t = String(text || "").trim().toLowerCase();
+    // Estrae il titolo del mercato immediato e l'eventuale linea (Under/Over) per un bottone quota
+  function getMarketContext(btn) {
+    let marketTitle = "";
+    let lineInfo = "";
 
-    // Escludi mercati parziali o speciali non coperti dal modello partita intera (90 minuti)
-    if (t.includes("1° t") || t.includes("1° tempo") || t.includes("primo tempo") ||
-        t.includes("2° t") || t.includes("2° tempo") || t.includes("secondo tempo") ||
-        t.includes("multigoal") || t.includes("handicap") || t.includes("combo") ||
-        t.includes("parziale") || t.includes("corner") || t.includes("cartellin") ||
-        t.includes("marcatore") || t.includes("rigore") || t.includes("espulsion") ||
-        t.includes("somma gol")) {
+    let curr = btn.parentElement;
+    for (let i = 0; i < 4 && curr && curr !== document.body; i++) {
+      if (!lineInfo) {
+        const sel = curr.querySelector("select");
+        if (sel) lineInfo = sel.value || (sel.options && sel.options[sel.selectedIndex]?.text) || "";
+      }
+      const titleEl = curr.querySelector("h3, h4, h5, [class*='market-title'], [class*='marketTitle'], [class*='market_title'], [class*='title']");
+      if (titleEl && !titleEl.contains(btn) && !titleEl.closest("button")) {
+        const t = (titleEl.innerText || titleEl.textContent || "").trim();
+        if (t && !t.toUpperCase().includes("TOP SCOMMESSE") && t.length < 45) {
+          marketTitle = t;
+          break;
+        }
+      }
+      let prev = curr.previousElementSibling;
+      while (prev) {
+        const t = (prev.innerText || prev.textContent || "").trim();
+        if (t && t.length < 45 && !t.toUpperCase().includes("TOP SCOMMESSE")) {
+          marketTitle = t;
+          break;
+        }
+        prev = prev.previousElementSibling;
+      }
+      if (marketTitle) break;
+      curr = curr.parentElement;
+    }
+
+    const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "") + " " + (btn.getAttribute("data-qa") || "");
+    return { marketTitle, lineInfo, attrText };
+  }
+
+  // Risolve quota numerica e tipologia mercato Sisal per un bottone
+  function resolveOddsButton(btn) {
+    let label = "";
+    let val = null;
+
+    // 1. Cerca nei nodi figli diretti (escludendo badge MM)
+    const children = Array.from(btn.children).filter(el => !el.classList.contains("mm-prob-tag") && !el.classList.contains("mm-badge-recommended"));
+    if (children.length >= 2) {
+      for (const c of children) {
+        const txt = (c.innerText || c.textContent || "").trim();
+        const m = txt.match(/^(\d+[.,]\d{2})$/);
+        if (m && !val) val = parseFloat(m[1].replace(",", "."));
+        else if (!label && txt.length < 25) label = txt;
+      }
+    }
+
+    // 2. Fallback su righe di testo
+    if (!val) {
+      const rawText = (btn.innerText || btn.textContent || "").trim();
+      const parts = rawText.split(/[\r\n\s]+/).map(p => p.trim()).filter(Boolean);
+      for (const p of parts) {
+        const m = p.match(/^(\d+[.,]\d{2})$/);
+        if (m && !val) val = parseFloat(m[1].replace(",", "."));
+        else if (!label && !m && p.length < 25) label = p;
+      }
+    }
+
+    // 3. Fallback su aria-label
+    if (!val) {
+      const aria = btn.getAttribute("aria-label") || "";
+      const m = aria.match(/\b(\d+[.,]\d{2})\b/);
+      if (m) val = parseFloat(m[1].replace(",", "."));
+    }
+
+    if (!val || isNaN(val) || val <= 1.0) return null;
+
+    const { marketTitle, lineInfo, attrText } = getMarketContext(btn);
+    const lNorm = (label || "").trim().toUpperCase();
+    const mNorm = ((marketTitle || "") + " " + (attrText || "")).toLowerCase();
+
+    // Esclusioni mercati non supportati dal modello full-time 90 min
+    if (mNorm.includes("1° t") || mNorm.includes("1° tempo") || mNorm.includes("primo tempo") ||
+        mNorm.includes("2° t") || mNorm.includes("2° tempo") || mNorm.includes("secondo tempo") ||
+        mNorm.includes("multigoal") || mNorm.includes("handicap") || mNorm.includes("combo") ||
+        mNorm.includes("parziale") || mNorm.includes("corner") || mNorm.includes("cartellin") ||
+        mNorm.includes("marcatore") || mNorm.includes("rigore") || mNorm.includes("espulsion") ||
+        mNorm.includes("somma gol")) {
       return null;
     }
 
+    // Doppia Chance
+    if (lNorm === "1X" || lNorm === "1-X" || mNorm.includes("doppia chance 1x")) {
+      return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance", odd: val };
+    }
+    if (lNorm === "X2" || lNorm === "X-2" || mNorm.includes("doppia chance x2")) {
+      return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance", odd: val };
+    }
+    if (lNorm === "12" || lNorm === "1-2" || mNorm.includes("doppia chance 12")) {
+      return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance", odd: val };
+    }
+
+    // Goal / No Goal
+    if (lNorm === "GOAL" || lNorm === "GOL" || lNorm === "GG" || (mNorm.includes("goal") && (lNorm === "SI" || lNorm === "SÌ"))) {
+      return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol", odd: val };
+    }
+    if (lNorm === "NOGOAL" || lNorm === "NO GOAL" || lNorm === "NO GOL" || lNorm === "NG" || (mNorm.includes("goal") && lNorm === "NO")) {
+      return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol", odd: val };
+    }
+
+    // Under / Over
+    if (lNorm === "UNDER" || lNorm === "OVER" || lNorm.startsWith("U ") || lNorm.startsWith("O ") || mNorm.includes("under") || mNorm.includes("over")) {
+      const isOver = lNorm === "OVER" || lNorm.startsWith("O") || mNorm.includes("over");
+      let line = "2.5";
+      const lineStr = (lineInfo + " " + mNorm + " " + (btn.textContent || ""));
+      if (lineStr.includes("1.5") || lineStr.includes("1,5")) line = "1.5";
+      else if (lineStr.includes("3.5") || lineStr.includes("3,5")) line = "3.5";
+      else if (lineStr.includes("2.5") || lineStr.includes("2,5")) line = "2.5";
+
+      if (line === "1.5") {
+        return isOver ?
+          { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over", odd: val } :
+          { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over", odd: val };
+      }
+      if (line === "3.5") {
+        return isOver ?
+          { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over", odd: val } :
+          { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over", odd: val };
+      }
+      return isOver ?
+        { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over", odd: val } :
+        { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over", odd: val };
+    }
+
     // 1X2 Finale
-    if (t === "1" || t.includes("esito finale 1") || t.endsWith(" 1") || t.includes("vincente 1") || t === "1 finale") {
-      return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)" };
+    if (lNorm === "1") {
+      return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
     }
-    if (t === "x" || t.includes("esito finale x") || t.endsWith(" x") || t.includes("pareggio") || t === "x finale") {
-      return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)" };
+    if (lNorm === "X") {
+      return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
     }
-    if (t === "2" || t.includes("esito finale 2") || t.endsWith(" 2") || t.includes("vincente 2") || t === "2 finale") {
-      return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)" };
-    }
-
-    // Doppia Chance Finale
-    if (t === "1x" || t.includes("doppia chance 1x") || t.endsWith(" 1x") || t.includes("dc 1x")) {
-      return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance" };
-    }
-    if (t === "x2" || t.includes("doppia chance x2") || t.endsWith(" x2") || t.includes("dc x2")) {
-      return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance" };
-    }
-    if (t === "12" || t.includes("doppia chance 12") || t.endsWith(" 12") || t.includes("dc 12")) {
-      return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance" };
-    }
-
-    // Under / Over 2.5
-    if (t.includes("2,5 over") || t.includes("2.5 over") || t.includes("over 2,5") || t.includes("over 2.5") || (t.includes("u/o 2,5") && t.includes("over")) || (t.includes("u/o 2.5") && t.includes("over"))) {
-      return { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over" };
-    }
-    if (t.includes("2,5 under") || t.includes("2.5 under") || t.includes("under 2,5") || t.includes("under 2.5") || (t.includes("u/o 2,5") && t.includes("under")) || (t.includes("u/o 2.5") && t.includes("under"))) {
-      return { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over" };
-    }
-
-    // Under / Over 1.5
-    if (t.includes("1,5 over") || t.includes("1.5 over") || t.includes("over 1,5") || t.includes("over 1.5") || (t.includes("u/o 1,5") && t.includes("over")) || (t.includes("u/o 1.5") && t.includes("over"))) {
-      return { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over" };
-    }
-    if (t.includes("1,5 under") || t.includes("1.5 under") || t.includes("under 1,5") || t.includes("under 1.5") || (t.includes("u/o 1,5") && t.includes("under")) || (t.includes("u/o 1.5") && t.includes("under"))) {
-      return { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over" };
-    }
-
-    // Under / Over 3.5
-    if (t.includes("3,5 over") || t.includes("3.5 over") || t.includes("over 3,5") || t.includes("over 3.5") || (t.includes("u/o 3,5") && t.includes("over")) || (t.includes("u/o 3.5") && t.includes("over"))) {
-      return { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over" };
-    }
-    if (t.includes("3,5 under") || t.includes("3.5 under") || t.includes("under 3,5") || t.includes("under 3.5") || (t.includes("u/o 3,5") && t.includes("under")) || (t.includes("u/o 3.5") && t.includes("under"))) {
-      return { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over" };
-    }
-
-    // Gol / No Gol
-    if (t === "goal" || t === "gol" || t === "gg" || t.includes("entrambe segnano") || t.includes("goal/goal") || t.includes("gol/gol") || (t.includes("gol / no gol") && (t.endsWith("si") || t.endsWith("sì") || t.endsWith("gol")))) {
-      return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol" };
-    }
-    if (t === "nogoal" || t === "no goal" || t === "no gol" || t === "ng" || t.includes("almeno una non segna") || (t.includes("gol / no gol") && t.endsWith("no"))) {
-      return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol" };
+    if (lNorm === "2") {
+      return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
     }
 
     return null;
   }
 
-  // Rilevamento partita singola
+  // Compatibilità legacy
+  function parseSisalMarket(text) {
+    const t = String(text || "").trim().toLowerCase();
+    if (t === "1") return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)" };
+    if (t === "x") return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)" };
+    if (t === "2") return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)" };
+    if (t === "1x") return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance" };
+    if (t === "x2") return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance" };
+    if (t === "12") return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance" };
+    return null;
+  }
+
+  // Rilevamento partita singola con fallback su URL pathname, title e DOM
   function detectSingleMatch() {
     const teamSepRegex = /([A-Za-z0-9\s]{3,22})\s*(?:[-–—/]|[\r\n]+|\bvs\b|\bv\b|\bvs\.)\s*([A-Za-z0-9\s]{3,22})/i;
 
+    // 1. Fallback su pathname URL Sisal (es. /scommesse-matchpoint/.../roma-sassuolo o /roma-sassuolo-2026...)
+    try {
+      const path = (window.location.pathname || "").toLowerCase();
+      const segments = path.split("/").filter(Boolean);
+      for (let i = segments.length - 1; i >= 0; i--) {
+        const seg = segments[i].replace(/-\d{6,}$/, "");
+        const parts = seg.split("-");
+        if (parts.length >= 2) {
+          const h = parts[0].trim();
+          const a = parts[1].trim();
+          if (h.length >= 3 && a.length >= 3 && h !== a && !h.includes("scommesse") && !h.includes("evento") && !h.includes("calcio")) {
+            return { home: h, away: a };
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 2. Title della pagina
     const titleMatch = document.title.match(teamSepRegex);
     if (titleMatch) {
       let h = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
@@ -1059,6 +1162,7 @@
       if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
     }
 
+    // 3. Headings e titoli evento
     const headEls = document.querySelectorAll("h1, h2, [class*='title'], [class*='match-name'], [class*='scoreboard'], [data-qa*='match']");
     for (const el of headEls) {
       const txt = (el.innerText || "").trim();
@@ -1070,6 +1174,7 @@
       }
     }
 
+    // 4. Selettori squadre concorrenti
     const teamEls = Array.from(document.querySelectorAll("[class*='competitor'], [class*='team-name'], [class*='teamName'], [class*='participant']"));
     if (teamEls.length >= 2) {
       const h = (teamEls[0].innerText || "").trim();
@@ -1710,29 +1815,21 @@
       const foundOddsByMarket = new Map();
       const oddButtons = Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
         if (el.closest("#mm-widget")) return false;
-        const txt = el.innerText || "";
+        const txt = el.innerText || el.textContent || "";
         return /\b\d+[.,]\d{2}\b/.test(txt) && txt.length < 50;
       });
 
       oddButtons.forEach(btn => {
-        const txt = (btn.innerText || "").trim();
-        const val = parseOddsValue(txt);
-        if (!val) return;
-        let label = "";
-        const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        for (const line of lines) { if (!/\b\d+[.,]\d{2}\b/.test(line)) { label = line; break; } }
-        if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
-        const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "") + " " + (btn.getAttribute("data-qa") || "");
-        const contextText = (btn.closest("[class*='market'], [class*='group'], [class*='section'], [data-qa*='market']")?.innerText || "") + " " + label + " " + txt + " " + attrText;
-        const market = parseSisalMarket(contextText);
-        if (market && mmProbs[market.key] != null) {
-          const prob = mmProbs[market.key];
+        const resolved = resolveOddsButton(btn);
+        if (!resolved) return;
+        if (mmProbs[resolved.key] != null) {
+          const prob = mmProbs[resolved.key];
           const fairOdds = 1 / prob;
-          const ev = (prob * val) - 1;
-          const evaluation = evaluateMarketSelection(prob, val, fairOdds, ev, market.key, market.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg);
-          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: val, key: market.key, label: market.label, shortLabel: market.shortLabel, cat: market.cat, catName: market.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
+          const ev = (prob * resolved.odd) - 1;
+          const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg);
+          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
           calculations.push(item);
-          if (!foundOddsByMarket.has(market.key)) foundOddsByMarket.set(market.key, item);
+          if (!foundOddsByMarket.has(resolved.key)) foundOddsByMarket.set(resolved.key, item);
         }
       });
 
@@ -1755,25 +1852,18 @@
         const mmProbs = forecast.probabilities;
         const oddButtons = Array.from(item.container.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
           if (el.closest("#mm-widget")) return false;
-          const txt = el.innerText || "";
+          const txt = el.innerText || el.textContent || "";
           return /\b\d+[.,]\d{2}\b/.test(txt) && txt.length < 50;
         });
         oddButtons.forEach(btn => {
-          const txt = (btn.innerText || "").trim();
-          const val = parseOddsValue(txt);
-          if (!val) return;
-          let label = "";
-          const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-          for (const line of lines) { if (!/\b\d+[.,]\d{2}\b/.test(line)) { label = line; break; } }
-          if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
-          const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "");
-          const market = parseSisalMarket(label + " " + txt + " " + attrText);
-          if (market && mmProbs[market.key] != null) {
-            const prob = mmProbs[market.key];
+          const resolved = resolveOddsButton(btn);
+          if (!resolved) return;
+          if (mmProbs[resolved.key] != null) {
+            const prob = mmProbs[resolved.key];
             const fairOdds = 1 / prob;
-            const ev = (prob * val) - 1;
-            const evaluation = evaluateMarketSelection(prob, val, fairOdds, ev, market.key, market.label, item.home, item.away, forecast.homeXg, forecast.awayXg);
-            calculations.push({ btn, home: item.home, away: item.away, odd: val, key: market.key, label: market.label, shortLabel: market.shortLabel, cat: market.cat, catName: market.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
+            const ev = (prob * resolved.odd) - 1;
+            const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, item.home, item.away, forecast.homeXg, forecast.awayXg);
+            calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
           }
         });
       });
@@ -1785,10 +1875,6 @@
     updatePageBadges();
     renderWidget();
   }
-
-  // Observer ottimizzato per Single Page App Sisal (anti-lag, debounced)
-  let scanTimer = null;
-  let lastScanTime = 0;
 
   const observer = new MutationObserver((mutations) => {
     if (isMutatingDOM) return;
@@ -1831,5 +1917,12 @@
     setTimeout(scanPage, 1000);
   });
   setTimeout(scanPage, 1200);
+
+
+  // Scansione periodica ogni 2.5 secondi per gestire la Single Page App di Sisal durante scroll e navigazione
+  setInterval(() => {
+    if (document.hidden) return;
+    scanPage();
+  }, 2500);
 
 })();
