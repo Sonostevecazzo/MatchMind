@@ -13,14 +13,130 @@
   let requestFailed = false;
   let nextScheduledKickoff = null;
 
-  async function requestLive(query = "") {
-    const response = await fetch("./api/live-match" + query, { headers: { Accept: "application/json" }, cache: "no-store" });
-    let payload = {};
-    try { payload = await response.json(); } catch {}
-    if (!response.ok || payload.error) throw new Error(payload.error || "Il provider live non ha restituito dati.");
-    return payload;
+  const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
+  const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa" };
+
+  async function requestLiveDirect(query = "") {
+    const qParams = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
+    const targetComp = qParams.get("competition") || competition || "serie-a";
+    const leagueCode = ESPN_LEAGUES[targetComp] || "ita.1";
+    const leagueName = targetComp === "champions-league" ? "Champions League" : targetComp === "europa-league" ? "Europa League" : "Serie A";
+    const fid = qParams.get("fixture");
+
+    if (fid) {
+      const summaryUrl = ESPN_BASE + leagueCode + "/summary?event=" + encodeURIComponent(fid);
+      const res = await fetch(summaryUrl, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) throw new Error("Partita live non trovata su ESPN (" + res.status + ")");
+      const sum = await res.json();
+      const comp = sum?.header?.competitions?.[0] || {};
+      const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
+      const home = competitors.find(item => item?.homeAway === "home") || competitors[0] || {};
+      const away = competitors.find(item => item?.homeAway === "away") || competitors[1] || {};
+      const rawStatus = comp.status || {};
+      const statusType = rawStatus.type || rawStatus;
+      const state = String(statusType.state || "").toLowerCase();
+      const statusName = String(statusType.name || statusType.description || "").toUpperCase();
+      const displayClock = String(rawStatus.displayClock || statusType.displayClock || "");
+      const clockMatch = displayClock.match(/(\d{1,3})/);
+      const elapsed = clockMatch ? Number(clockMatch[1]) : null;
+      let short = "NS";
+      if (statusType.completed || state === "post") short = "FT";
+      else if (statusName.includes("HALF")) short = "HT";
+      else if (state === "in") short = (elapsed !== null && elapsed > 45) ? "2H" : "1H";
+
+      const fixture = {
+        id: String(fid),
+        date: comp.date || null,
+        timestamp: comp.date ? Date.parse(comp.date) : null,
+        elapsed, extra: null, status: short,
+        statusLong: statusType.detail || statusType.description || short,
+        league: leagueName,
+        home: { id: home?.team?.id || null, name: home?.team?.displayName || home?.team?.name || "Casa", logo: home?.team?.logo || null },
+        away: { id: away?.team?.id || null, name: away?.team?.displayName || away?.team?.name || "Trasferta", logo: away?.team?.logo || null },
+        goals: { home: home?.score != null ? Number(home.score) : null, away: away?.score != null ? Number(away.score) : null },
+        halftime: { home: null, away: null }
+      };
+
+      const eventRows = sum?.keyEvents || sum?.plays?.items || sum?.plays || [];
+      const events = eventRows.map(item => {
+        const clock = item?.clock?.displayValue || item?.time?.displayValue || "";
+        const m = String(clock).match(/(\d{1,3})/);
+        const p = item?.participants?.[0]?.athlete || {};
+        return {
+          minute: m ? Number(m[1]) : 0, extra: null,
+          team: item?.team?.displayName || item?.team?.name || null,
+          player: p.displayName || p.name || null,
+          type: String(item?.type?.text || item?.type || "Evento"),
+          detail: item?.text || item?.description || ""
+        };
+      }).sort((a, b) => a.minute - b.minute);
+
+      const statsRows = sum?.boxscore?.teams || sum?.boxscore?.statistics || [];
+      const statistics = statsRows.map(entry => {
+        const team = entry?.team || {};
+        const vals = Array.isArray(entry?.statistics) ? entry.statistics : [];
+        return {
+          team: team.displayName || team.name || null,
+          teamId: team.id || null,
+          values: vals.map(v => ({ type: String(v?.label || v?.displayName || ""), value: v?.displayValue ?? v?.value ?? null }))
+        };
+      });
+
+      return {
+        configured: false, fallback: true, source: "ESPN", sourceLabel: "ESPN · fonte pubblica",
+        updatedAt: new Date().toISOString(), fixture, events, statistics, lineups: []
+      };
+    }
+
+    const scoreboardUrl = ESPN_BASE + leagueCode + "/scoreboard?limit=100";
+    const res = await fetch(scoreboardUrl, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error("ESPN HTTP " + res.status);
+    const data = await res.json();
+    const matches = (data.events || []).map(event => {
+      const comp = event?.competitions?.[0] || {};
+      const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
+      const home = competitors.find(item => item?.homeAway === "home") || competitors[0] || {};
+      const away = competitors.find(item => item?.homeAway === "away") || competitors[1] || {};
+      const statusType = comp.status?.type || comp.status || {};
+      const state = String(statusType.state || "").toLowerCase();
+      const statusName = String(statusType.name || statusType.description || "").toUpperCase();
+      const displayClock = String(comp.status?.displayClock || statusType.displayClock || "");
+      const clockMatch = displayClock.match(/(\d{1,3})/);
+      const elapsed = clockMatch ? Number(clockMatch[1]) : null;
+      let short = "NS";
+      if (statusType.completed || state === "post") short = "FT";
+      else if (statusName.includes("HALF")) short = "HT";
+      else if (state === "in") short = (elapsed !== null && elapsed > 45) ? "2H" : "1H";
+      return {
+        id: String(event?.id || comp.id || ""),
+        date: event?.date || comp.date || null,
+        timestamp: event?.date ? Date.parse(event.date) : null,
+        elapsed, extra: null, status: short,
+        statusLong: statusType.detail || statusType.description || short,
+        league: leagueName,
+        home: { id: home?.team?.id || null, name: home?.team?.displayName || home?.team?.name || "Casa", logo: home?.team?.logo || null },
+        away: { id: away?.team?.id || null, name: away?.team?.displayName || away?.team?.name || "Trasferta", logo: away?.team?.logo || null },
+        goals: { home: home?.score != null ? Number(home.score) : null, away: away?.score != null ? Number(away.score) : null }
+      };
+    }).filter(m => ["1H", "HT", "2H", "ET", "LIVE"].includes(m.status) && m.id)
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    return {
+      configured: false, fallback: true, source: "ESPN", sourceLabel: "ESPN · fonte pubblica",
+      competition: targetComp, updatedAt: new Date().toISOString(), matches,
+      note: "Risultati live pubblici ESPN. Aggiornamento automatico."
+    };
   }
 
+  async function requestLive(query = "") {
+    try {
+      const response = await fetch("./api/live-match" + query, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(10000) });
+      let payload = {};
+      try { payload = await response.json(); } catch {}
+      if (response.ok && !payload.error) return payload;
+    } catch (_) {}
+    return await requestLiveDirect(query);
+  }
   function logo(team) {
     if (!team?.logo) return '<span class="live-team-monogram">' + esc((team?.name || "?").slice(0, 2).toUpperCase()) + "</span>";
     return '<img class="live-team-logo" src="' + esc(team.logo) + '" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;live-team-monogram&quot;>?</span>\'">';
