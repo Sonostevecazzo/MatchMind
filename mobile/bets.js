@@ -12,6 +12,46 @@ let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFix
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
+const TEAM_ALIASES = {
+  inter: ["inter", "internazionale", "fc inter", "fc internazionale"],
+  milan: ["milan", "ac milan", "acmilan"],
+  juventus: ["juventus", "juve", "juventus fc"],
+  roma: ["roma", "as roma"],
+  lazio: ["lazio", "ss lazio"],
+  napoli: ["napoli", "ssc napoli"],
+  verona: ["verona", "hellas verona", "hellas"],
+  atalanta: ["atalanta", "atalanta bc"],
+  fiorentina: ["fiorentina", "acf fiorentina"],
+  bologna: ["bologna", "bologna fc"],
+  torino: ["torino", "toro", "torino fc"],
+  monza: ["monza", "ac monza"],
+  udinese: ["udinese", "udinese calcio"],
+  lecce: ["lecce", "us lecce"],
+  empoli: ["empoli", "empoli fc"],
+  cagliari: ["cagliari", "cagliari calcio"],
+  genoa: ["genoa", "genoa cfc"],
+  parma: ["parma", "parma calcio"],
+  como: ["como", "como 1907"],
+  venezia: ["venezia", "venezia fc"]
+};
+
+function canonicalTeam(name) {
+  const n = norm(name);
+  for (const [canon, aliases] of Object.entries(TEAM_ALIASES)) {
+    if (canon === n || aliases.some(a => norm(a) === n)) return canon;
+  }
+  const clean = String(name || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+  const words = clean.split(/\s+/).filter(w => !["fc", "ac", "ss", "as", "cfc", "bc", "1907", "calcio", "spa"].includes(w));
+  for (const [canon, aliases] of Object.entries(TEAM_ALIASES)) {
+    if (words.includes(canon) || aliases.some(a => words.includes(a))) return canon;
+  }
+  return n;
+}
+
+function isSameMatch(h1, a1, h2, a2) {
+  return canonicalTeam(h1) === canonicalTeam(h2) && canonicalTeam(a1) === canonicalTeam(a2);
+}
+
 const fixtureKey=m=>[(m.competition||"serie-a"),m.date,norm(m.home),norm(m.away)].join("|");
 const engineKey=m=>[norm(m.home),norm(m.away)].sort().join("|")+"|"+m.date;
 const read=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value;}catch(_){return fallback;}};
@@ -60,7 +100,18 @@ function marketLabel(key){
  return item?item.label:String(key||"Mercato");
 }
 function selectedRows(){
- return picks.map(p=>{const match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(!match)return null;const forecast=getForecast(match);const odds=p.odds!=null&&Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:marketProbability(forecast,p.marketKey),forecast,odds};}).filter(Boolean);
+return picks.map(p=>{
+  let match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));
+  if(!match)match=fixtures.find(m=>isSameMatch(m.home,m.away,p.home,p.away));
+  if(!match&&p.home&&p.away){
+   match={home:p.home,away:p.away,date:p.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date()),competition:p.competition||window.MM.getSelectedCompetition()||"serie-a"};
+  }
+  if(!match)return null;
+  const forecast=data&&data.history?getForecast(match):null;
+  const odds=p.odds!=null&&Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
+  const prob=forecast?marketProbability(forecast,p.marketKey):(Number.isFinite(p.probability)?p.probability:null);
+  return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:prob,forecast,odds,bookmaker:p.bookmaker||null};
+ }).filter(Boolean);
 }
 function updateSlipCalculations(){
  const rows=selectedRows();if(!rows.length)return;
@@ -188,7 +239,12 @@ function renderOpenTickets(){
     const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
     return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+
-   '<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button></div></article>';
+   '<div class="settings-actions">' +
+    '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
+    '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
+    '<button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button>' +
+    '<button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button>' +
+   '</div></article>';
  }).join("");
 }
 function renderArchive(){
@@ -202,8 +258,14 @@ function renderArchive(){
   const stake=Number(ticket.stake)||0;totalStaked+=stake;
   const isWon=(ticket.selections||[]).every(s=>s.status==="Vinta");
   const isLost=(ticket.selections||[]).some(s=>s.status==="Persa");
-  if(isWon){wonCount++;totalWon+=Number(ticket.potentialWin)||(stake*(Number(ticket.totalOdds)||1));}
-  else if(isLost){lostCount++;}
+  if(isWon){
+   wonCount++;
+   const actualWon=Number.isFinite(Number(ticket.actualPayout))?Number(ticket.actualPayout):(Number(ticket.potentialWin)||(stake*(Number(ticket.totalOdds)||1)));
+   totalWon+=actualWon;
+  }else if(isLost){
+   lostCount++;
+   if(Number.isFinite(Number(ticket.actualPayout))&&Number(ticket.actualPayout)>0){totalWon+=Number(ticket.actualPayout);}
+  }
  });
  const netProfit=totalWon-totalStaked;
  const roi=totalStaked>0?(netProfit/totalStaked):null;
@@ -233,8 +295,10 @@ function renderArchive(){
    '<div class="ticket-financial-meta">'+
     '<span>Puntata: <b>'+curr(stake)+'</b></span>'+
     (totalOdds?'<span>Quota: <b>'+fmtOdds(totalOdds)+'</b></span>':'')+
-    (potWin?'<span>Incasso: <b>'+(isWon?curr(potWin):'0,00 €')+'</b></span>':'')+
-    (profitLoss!=null?'<span>Esito netto: <b class="'+(profitLoss>=0?'profit-pos':'profit-neg')+'">'+(profitLoss>=0?'+':'')+curr(profitLoss)+'</b></span>':'')+
+    (potWin?'<span>Incasso potenziale: <b>'+curr(potWin)+'</b></span>':'')+
+    (ticket.actualPayout!=null?'<span>Incasso effettivo: <b class="profit-pos">'+curr(Number(ticket.actualPayout))+'</b></span>':(isWon&&potWin?'<span>Incasso: <b class="profit-pos">'+curr(potWin)+'</b></span>':'<span>Incasso: <b>0,00 €</b></span>'))+
+    (profitLoss!=null?'<span>Bilancio: <b class="'+(profitLoss>=0?'profit-pos':'profit-neg')+'">'+(profitLoss>=0?'+':'')+curr(profitLoss)+'</b></span>':'')+
+    (ticket.bookmaker?'<span>Bookmaker: <b>'+esc(ticket.bookmaker)+'</b></span>':'')+
    '</div>':'';
 
   return '<article class="archive-ticket"><div class="archive-ticket-head"><b>Schedina · '+esc(ticket.createdAt?new Date(ticket.createdAt).toLocaleString("it-IT"):"—")+'</b><span class="ticket-state '+ticketStatusClass+'">'+ticketStatusLabel+'</span></div><small>Probabilità stimata al salvataggio: '+pct(ticket.probability)+'</small>'+
@@ -242,7 +306,12 @@ function renderArchive(){
    ticket.selections.map(selection=>{
     const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
     return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
-   }).join("")+'<div class="settings-actions"><button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button><button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button></div></article>';
+   }).join("")+'<div class="settings-actions">' +
+    '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
+    '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
+    '<button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button>' +
+    '<button type="button" class="secondary" data-delete="'+esc(ticket.id)+'">Elimina</button>' +
+   '</div></article>';
  }).join("");
 
  target.innerHTML=bankrollCard+ticketsHtml;
@@ -281,6 +350,7 @@ function saveCurrentSlip(){
    probability:x.probability,
    odds:x.odds||null,
    fairOdds:ENGINE().fairOdds(x.probability),
+bookmaker:x.bookmaker||null,
    competition:x.match.competition||window.MM.getSelectedCompetition(),
    status:"Da giocare"
   }))
@@ -370,7 +440,84 @@ async function shareTicket(ticket){
  const body=["MatchMind · Schedina",...ticket.selections.map(x=>x.home+" – "+x.away+" | "+x.market+(x.odds?" @ "+fmtOdds(Number(x.odds)):"")+" | "+pct(x.probability)),"Probabilità combinata stimata: "+pct(ticket.probability),...financial].join("\n");
  try{if(navigator.share)await navigator.share({title:"Schedina MatchMind",text:body});else{await navigator.clipboard.writeText(body);$("archiveStatus").textContent="Schedina copiata negli appunti.";}}catch(e){if(e.name!=="AbortError")$("archiveStatus").textContent="Condivisione non disponibile in questo browser.";}
 }
+
+function handleUrlImport(){
+ let raw="";
+ const hash=window.location.hash||"";
+ if(hash.startsWith("#import=")){
+  raw=decodeURIComponent(hash.slice(8));
+ }else if(hash.startsWith("#import-slip=")){
+  raw=decodeURIComponent(hash.slice(13));
+ }else if(window.location.search){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get("import"))raw=params.get("import");
+ }
+ if(!raw)return;
+
+ try{
+  let payload=null;
+  try{payload=JSON.parse(raw);}catch(_){try{payload=JSON.parse(atob(raw));}catch(__){}}
+  if(!payload)return;
+
+  const items=Array.isArray(payload.selections)?payload.selections:(Array.isArray(payload)?payload:[payload]);
+  const defaultBkmk=payload.bookmaker||"Esterno";
+  let count=0;
+
+  items.forEach(item=>{
+   if(!item||!item.home||!item.away||!item.marketKey)return;
+   const home=String(item.home).trim(),away=String(item.away).trim();
+   let match=fixtures.find(m=>isSameMatch(m.home,m.away,home,away));
+   const comp=item.competition||(match&&match.competition)||window.MM.getSelectedCompetition()||"serie-a";
+   const date=(match&&match.date)||item.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date());
+   const oddsNum=Number(item.odds);
+   const odds=(Number.isFinite(oddsNum)&&oddsNum>1&&oddsNum<=1000)?oddsNum:null;
+   const bkmk=item.bookmaker||defaultBkmk;
+
+   const pickData={
+    competition:comp,
+    date:date,
+    home:match?match.home:home,
+    away:match?match.away:away,
+    marketKey:item.marketKey,
+    odds:odds,
+    bookmaker:bkmk
+   };
+
+   const existingIdx=picks.findIndex(p=>isSameMatch(p.home,p.away,pickData.home,pickData.away));
+   if(existingIdx>=0){
+    picks[existingIdx]={...picks[existingIdx],...pickData};
+   }else if(picks.length<15){
+    picks.push(pickData);
+   }
+   count++;
+  });
+
+  if(count>0){
+   if(payload.stake&&Number(payload.stake)>=0.5){
+    currentStake=Number(payload.stake);
+    save(STAKE_KEY,currentStake);
+   }
+   writePicks();
+   slipExpanded=true;
+   setBetTab("create");
+   renderSlip();
+   updateSlipCalculations();
+   const statusLine=$("manualBuilderStatus");
+   if(statusLine){
+    statusLine.innerHTML='<span style="color:#c4f36a;font-weight:700;">📥 Importate '+count+' selezioni da '+esc(defaultBkmk)+' con quote.</span> Rivedi puntata ed EV, poi premi <i>Salva schedina</i>.';
+   }
+   if(window.history&&window.history.replaceState){
+    const clean=window.location.pathname+window.location.search.replace(/[?&]import=[^&]*/,"").replace(/^&/,"?");
+    window.history.replaceState(null,"",clean);
+   }
+  }
+ }catch(err){
+  console.warn("MatchMind import error:",err);
+ }
+}
+
 function initEvents(){
+
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
  $("manualSlipSummary").addEventListener("input",event=>{
@@ -401,8 +548,53 @@ function initEvents(){
  $("refreshArchive").addEventListener("click",updateArchive);
  ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
   const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();return;}
-  const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);}
+  const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);return;}
+  const winBtn=event.target.closest("[data-settle-win]");if(winBtn){
+   const ticket=archive.find(x=>x.id===winBtn.dataset.settleWin);
+   if(ticket){
+    (ticket.selections||[]).forEach(s=>s.status="Vinta");
+    save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
+    $("archiveStatus").textContent="Schedina segnata come Vinta. Incasso accreditato nel bankroll.";
+   }
+   return;
+  }
+  const lossBtn=event.target.closest("[data-settle-loss]");if(lossBtn){
+   const ticket=archive.find(x=>x.id===lossBtn.dataset.settleLoss);
+   if(ticket){
+    (ticket.selections||[]).forEach(s=>s.status="Persa");
+    ticket.actualPayout=0;
+    save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
+    $("archiveStatus").textContent="Schedina segnata come Persa.";
+   }
+   return;
+  }
+  const reopenBtn=event.target.closest("[data-reopen]");if(reopenBtn){
+   const ticket=archive.find(x=>x.id===reopenBtn.dataset.reopen);
+   if(ticket){
+    (ticket.selections||[]).forEach(s=>s.status="Da giocare");
+    delete ticket.actualPayout;
+    save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
+   }
+   return;
+  }
+  const editPayoutBtn=event.target.closest("[data-edit-payout]");if(editPayoutBtn){
+   const ticket=archive.find(x=>x.id===editPayoutBtn.dataset.editPayout);
+   if(ticket){
+    const currentVal=ticket.actualPayout!=null?ticket.actualPayout:(ticket.potentialWin||0);
+    const inputVal=window.prompt("Inserisci l'incasso effettivo (€) per questa schedina:",currentVal);
+    if(inputVal!==null){
+     const numVal=parseFloat(inputVal.replace(",","."));
+     if(Number.isFinite(numVal)&&numVal>=0){
+      ticket.actualPayout=numVal;
+      save(ARCHIVE_KEY,archive);renderArchive();
+      $("archiveStatus").textContent="Incasso effettivo aggiornato a "+curr(numVal)+".";
+     }
+    }
+   }
+   return;
+  }
  }));
+ window.addEventListener("hashchange",handleUrlImport);
 }
 let monitorTimer=null;
 function hasTodayOpenTicket(){
@@ -429,6 +621,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   if(teamSelect)teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+window.MM.getTeams(fixtures).map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");
   if(roundSelect){const rounds=[...new Set(fixtures.map(m=>String(m.round||"")).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));roundSelect.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+esc(n)+'">Giornata '+esc(n)+'</option>').join("");}
   renderFixtures();renderSlip();renderOpenTickets();renderArchive();
+  handleUrlImport();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
   monitorTimer=window.setInterval(()=>{const active=document.querySelector("[data-bets-tab=\"live\"]")?.getAttribute("aria-selected")==="true";if(active&&!document.hidden&&hasTodayOpenTicket())updateArchive();},900000);

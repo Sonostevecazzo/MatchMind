@@ -25,6 +25,19 @@
   <button id="buildTicket" type="button" class="primary">Genera proposta statistica</button>
   <div id="ticketResults" style="margin-top:14px"><div class="empty-state">La proposta sarà calcolata dopo il caricamento del calendario e dello storico.</div></div>
  </section>
+ 
+ <section class="section panel panel-pad sisal-integration-box">
+  <div class="sisal-integration-content">
+   <div class="sisal-badge-logo">⚡ SISAL INTEGRATION</div>
+   <h3>Evidenzia quote & invia da Sisal</h3>
+   <p>Installa lo script personale per evidenziare le scommesse con valore atteso (EV+) direttamente sul sito di Sisal e trasferire quote e giocate in MatchMind con un tocco.</p>
+   <div class="sisal-actions">
+    <a href="./scripts/sisal-matchmind.user.js" class="button primary" download="sisal-matchmind.user.js">Scarica UserScript (.user.js)</a>
+    <small>Compatibile con Tampermonkey, Violentmonkey, Safari Userscripts e Kiwi Browser</small>
+   </div>
+  </div>
+ </section>
+
  <section class="section panel panel-pad" id="manualBuilder">
   <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Qui trovi soltanto le giocate che hai aggiunto dalla pagina Partite. Puoi rivederle, rimuoverle e confermare la schedina.</p></div></div>
   <div id="manualSlipSummary"><div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div></div>
@@ -76,6 +89,20 @@
 .profit-neg{color:#f87171!important}
 .ticket-state.ticket-state-won{background:#172c1c;color:#c4f36a;border:1px solid #2a502c}
 .ticket-state.ticket-state-lost{background:#2c1918;color:#f87171;border:1px solid #522827}
+
+.sisal-integration-box{margin-top:14px;background:linear-gradient(135deg,#0c1a1f,#102422);border:1px solid #1a423a;border-radius:14px;padding:16px}
+.sisal-badge-logo{display:inline-block;padding:2px 8px;border-radius:6px;background:#183e2b;color:#38ef7d;font-size:.72rem;font-weight:800;letter-spacing:.06em;margin-bottom:8px}
+.sisal-integration-content h3{margin:0 0 6px;color:#f0f4f8;font-size:1.15rem}
+.sisal-integration-content p{margin:0 0 12px;color:#9eb3ad;font-size:.85rem;line-height:1.45}
+.sisal-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.sisal-actions a.button{display:inline-block;padding:8px 14px;background:#17834e;color:#fff;font-weight:700;border-radius:8px;text-decoration:none}
+.sisal-actions a.button:hover{background:#1ea764}
+.sisal-actions small{color:#76918a;font-size:.76rem}
+.settle-btn-win{border-color:#2a502c!important;color:#c4f36a!important}
+.settle-btn-win:hover{background:#172c1c!important}
+.settle-btn-loss{border-color:#522827!important;color:#f87171!important}
+.settle-btn-loss:hover{background:#2c1918!important}
+
 </style></main>
 </body>
 </html>
