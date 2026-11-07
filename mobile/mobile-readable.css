@@ -468,3 +468,41 @@ body[data-page="bets"] .metric > small {
 .pill-ev.ev-pos{background:#172c1c;color:#c4f36a;border:1px solid #2a502c}
 .pill-ev.ev-neg{background:#26181b;color:#f87171;border:1px solid #4a2125}
 .strategy-filter-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+
+
+/* Strategy filter banner & badges */
+.strategy-banner{padding:10px 14px;border-radius:10px;font-size:.85rem;font-weight:600;margin-top:10px;animation:fadeIn .2s ease}
+.strategy-banner.value-banner{background:#112618;border:1px solid #23542c;color:#a3e635}
+.strategy-banner.accuracy-banner{background:#122133;border:1px solid #1e3a5f;color:#60a5fa}
+
+.strategy-match-badge{padding:8px 12px;border-radius:8px 8px 0 0;font-size:.8rem;font-weight:600;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:6px}
+.strategy-match-badge.value{background:linear-gradient(90deg,#142c1c,#0f2015);color:#bbf7d0}
+.strategy-match-badge.accuracy{background:linear-gradient(90deg,#172a42,#111f30);color:#bfdbfe}
+.strategy-match-badge b{color:#fff;font-weight:700}
+
+/* Builder strategy pills & hint */
+.builder-strategy-pills{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:6px}
+.builder-strategy-pills .pill{font-size:.82rem;white-space:nowrap;touch-action:manipulation}
+.builder-strategy-hint{display:block;color:#94a3b8;font-size:.78rem;margin-top:2px}
+
+/* Proposal variant switcher tabs */
+.proposal-variant-tabs{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px;padding-bottom:2px}
+.variant-tab{background:#151c24;color:#94a3b8;border:1px solid #24303e;padding:7px 12px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s ease;touch-action:manipulation}
+.variant-tab:hover{background:#1c2530;color:#e2e8f0}
+.variant-tab.active{background:#2563eb;color:#fff;border-color:#3b82f6;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+
+/* Proposal leg details, odds & motivations */
+.proposal-leg{margin-bottom:12px;background:#0f151c;border:1px solid #1e293b;border-radius:12px;padding:12px}
+.proposal-leg-odds{font-size:.78rem;color:#94a3b8;margin-top:2px}
+.proposal-leg-odds b{color:#7ee787}
+.proposal-leg-reason{background:#141c26;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:8px 10px;margin-top:10px;font-size:.8rem;line-height:1.45;color:#cbd5e1}
+.proposal-leg-reason .reason-head{font-size:.72rem;font-weight:800;color:#60a5fa;letter-spacing:.04em;margin-bottom:3px}
+.proposal-leg-reason p{margin:0;color:#e2e8f0}
+.proposal-leg-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+.small-btn{font-size:.75rem!important;padding:4px 9px!important;border-radius:6px!important;touch-action:manipulation}
+.proposal-disclaimer{font-size:.74rem;color:#64748b;margin-top:8px;line-height:1.35}
+.ev-pos-text{color:#a3e635!important}
+
+/* Animation & App fluidity */
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+button,input,select,a{-webkit-tap-highlight-color:transparent}

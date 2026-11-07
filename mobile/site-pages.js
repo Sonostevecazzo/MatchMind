@@ -35,8 +35,8 @@
    return '<button type="button" class="fixture-market-button'+(selected?' is-selected':'')+'" data-market-pick data-match-key="'+esc(key)+'" data-market-key="'+esc(marketKey)+'" data-market-odd="'+(oddVal||'')+'" aria-pressed="'+(selected?'true':'false')+'"'+(available?'':' disabled')+'><span>'+esc(label)+' '+oddLabel+'</span><b>'+(available?fmt(probability*100,1)+'%':'—')+'</b>'+evBadge+'</button>';
   }).join('')+'</div>';
  };
- const marketPickerHtml=(m,forecast,selected)=>{
-  const key=matchPickKey(m),category=selected?marketCategoryForKey(selected.marketKey):"1x2",id="market-"+MM().norm(key);
+ const marketPickerHtml=(m,forecast,selected,preferredCategory=null)=>{
+  const key=matchPickKey(m),category=selected?marketCategoryForKey(selected.marketKey):(preferredCategory||"1x2"),id="market-"+MM().norm(key);
   const options=[["1x2","1X2"],["goals15","Over/Under 1,5"],["goals25","Over/Under 2,5"],["goals35","Over/Under 3,5"],["btts","Gol / No Gol"],["combo-goals","1X2 + Over/Under"],["combo-btts","1X2 + Gol / No Gol"]];
   return '<div class="fixture-market-panel" data-market-panel="'+esc(key)+'"><div class="fixture-market-picker"><label for="'+esc(id)+'">Mercato</label><select id="'+esc(id)+'" data-market-picker data-match-key="'+esc(key)+'">'+options.map(([value,label])=>'<option value="'+value+'"'+(value===category?' selected':'')+'>'+label+'</option>').join('')+'</select></div>'+
    marketButtonsHtml(m,forecast,category,selected&&selected.marketKey)+
@@ -59,9 +59,33 @@
   const statusClass=done?'finished':state==='Da aggiornare'?'stale':'scheduled';
   const centerLabel=done?'RISULTATO FINALE':state==='Da aggiornare'?'ORARIO DA DEFINIRE':'';
   const forecast=!done&&MM().upcoming(m)?MM().forecast(m,MM().data.history):null;
+  let stratBadge='',autoCategory=null;
+  if(forecast&&!done){
+   const p=forecast.probabilities,o=MM().matchOdds?MM().matchOdds(m):null;
+   if(strategyFilter==='value'&&o){
+    const evList=[
+     {key:'home',cat:'1x2',label:'1',odd:o.home,ev:o.home?(p.home*o.home)-1:-1,prob:p.home},
+     {key:'draw',cat:'1x2',label:'X',odd:o.draw,ev:o.draw?(p.draw*o.draw)-1:-1,prob:p.draw},
+     {key:'away',cat:'1x2',label:'2',odd:o.away,ev:o.away?(p.away*o.away)-1:-1,prob:p.away},
+     {key:'over25',cat:'goals25',label:'Over 2,5',odd:o.over25,ev:o.over25?(p.o25*o.over25)-1:-1,prob:p.o25},
+     {key:'under25',cat:'goals25',label:'Under 2,5',odd:o.under25,ev:o.under25?((1-p.o25)*o.under25)-1:-1,prob:1-p.o25}
+    ].filter(x=>x.odd&&x.ev>0).sort((a,b)=>b.ev-a.ev);
+    if(evList.length){const top=evList[0];autoCategory=top.cat;stratBadge='<div class="strategy-match-badge value"><span>📈 Valore: <b>'+esc(top.label)+' @'+fmtOdds(top.odd)+'</b> (+'+fmt(top.ev*100,0)+'% EV · stima '+fmt(top.prob*100,0)+'%)</span></div>';}
+   }else if(strategyFilter==='accuracy'){
+    const accList=[
+     {key:'home',cat:'1x2',label:'1',prob:p.home},
+     {key:'away',cat:'1x2',label:'2',prob:p.away},
+     {key:'over25',cat:'goals25',label:'Over 2,5',prob:p.o25},
+     {key:'under25',cat:'goals25',label:'Under 2,5',prob:1-p.o25},
+     {key:'bttsYes',cat:'btts',label:'Gol',prob:p.btts},
+     {key:'bttsNo',cat:'btts',label:'No Gol',prob:1-p.btts}
+    ].filter(x=>x.prob>=0.58).sort((a,b)=>b.prob-a.prob);
+    if(accList.length){const top=accList[0];autoCategory=top.cat;stratBadge='<div class="strategy-match-badge accuracy"><span>🎯 Alta probabilità: <b>'+esc(top.label)+'</b> al '+fmt(top.prob*100,0)+'%</span></div>';}
+   }
+  }
   const saved=showMarketPicker&&forecast?readMatchPicks().find(x=>matchPickKey(x)===matchPickKey(m)):null;
-  const preview=forecast?(showMarketPicker?marketPickerHtml(m,forecast,saved):'<div class="fixture-preview"><div class="preview-head"><span>STIMA MATCHMIND</span><small>'+(forecast.sampleEnough?'Campione adeguato':'Campione limitato')+'</small></div><div class="preview-probs">'+[['1',forecast.probabilities.home],['X',forecast.probabilities.draw],['2',forecast.probabilities.away]].map(([label,value])=>'<div><span>'+label+'</span> <b>'+fmt(value*100,0)+'%</b></div>').join('')+'</div></div>'):'';
-  return '<article class="fixture"><div class="fixture-head"><span class="league-label"><img class="competition-logo-small" src="https://media.api-sports.io/football/leagues/'+competition.logo+'.png" alt="" loading="lazy" onerror="this.remove()"> '+competition.name.toUpperCase()+(m.round?' <span class="fixture-round">· GIORNATA '+m.round+'</span>':'')+'</span><span class="fixture-state '+statusClass+'">'+state+'</span></div>'+
+  const preview=forecast?(showMarketPicker?marketPickerHtml(m,forecast,saved,autoCategory):'<div class="fixture-preview"><div class="preview-head"><span>STIMA MATCHMIND</span><small>'+(forecast.sampleEnough?'Campione adeguato':'Campione limitato')+'</small></div><div class="preview-probs">'+[['1',forecast.probabilities.home],['X',forecast.probabilities.draw],['2',forecast.probabilities.away]].map(([label,value])=>'<div><span>'+label+'</span> <b>'+fmt(value*100,0)+'%</b></div>').join('')+'</div></div>'):'';
+  return '<article class="fixture">'+stratBadge+'<div class="fixture-head"><span class="league-label"><img class="competition-logo-small" src="https://media.api-sports.io/football/leagues/'+competition.logo+'.png" alt="" loading="lazy" onerror="this.remove()"> '+competition.name.toUpperCase()+(m.round?' <span class="fixture-round">· GIORNATA '+m.round+'</span>':'')+'</span><span class="fixture-state '+statusClass+'">'+state+'</span></div>'+
    '<div class="fixture-main fixture-horizontal"><a class="fixture-side home" href="'+MM().teamUrl(m.home)+'">'+MM().badge(m.home)+'<b>'+esc(m.home)+'</b></a><div class="fixture-center"><strong class="fixture-score '+(done?'':'pending')+'">'+score+'</strong><span class="fixture-center-label">'+centerLabel+'</span></div><a class="fixture-side away" href="'+MM().teamUrl(m.away)+'">'+MM().badge(m.away)+'<b>'+esc(m.away)+'</b></a></div>'+preview+
    '<div class="fixture-foot"><span class="fixture-date">'+esc(MM().shortDate(m))+(m.time?' · '+esc(m.time):'')+'</span><a href="'+MM().matchUrl(m)+'">Match center <span aria-hidden="true">↗</span></a></div></article>';
  };
@@ -100,7 +124,14 @@
     const target=$('matchList'),visible=activeMatches.slice(0,shownLimit);
     $('matchListTitle').textContent={upcoming:'In programma',finished:'Risultati',stale:'Da aggiornare',all:'Tutte le partite'}[matchFilter];
     $('matchListSummary').textContent=activeMatches.length+' partite trovate · '+(season==='previous'?'stagione precedente':'stagione corrente')+' · Seleziona un mercato e tocca un esito per aggiungerlo alla schedina.';
-    target.innerHTML=visible.length?groupCards(visible,matchFilter==='finished'||matchFilter==='stale',true):'<div class="empty-state">Nessuna partita corrisponde ai filtri selezionati.</div>';
+    const banner=$('strategyBanner');
+    if(banner){
+     if(strategyFilter==='value'){banner.style.display='block';banner.className='strategy-banner value-banner';banner.innerHTML='<span>📈 <b>'+activeMatches.length+' partite</b> con quote a valore atteso positivo (+EV) secondo MatchMind.</span>';}
+     else if(strategyFilter==='accuracy'){banner.style.display='block';banner.className='strategy-banner accuracy-banner';banner.innerHTML='<span>🎯 <b>'+activeMatches.length+' partite</b> con esiti ad alta affidabilità statistica (≥58%).</span>';}
+     else{banner.style.display='none';}
+    }
+    target.innerHTML=visible.length?groupCards(visible,matchFilter==='finished'||matchFilter==='stale',true):'<div class="empty-state"><p>Nessuna partita corrisponde ai filtri selezionati.</p>'+(strategyFilter!=='all'?'<button type="button" class="pill" id="resetStrategyBtn" style="margin-top:10px">Azzera filtri strategia</button>':'')+'</div>';
+    $('resetStrategyBtn')?.addEventListener('click',()=>{strategyFilter='all';$('strategyFilters')?.querySelectorAll('button').forEach((x,i)=>{x.classList.toggle('active',i===0);x.setAttribute('aria-pressed',String(i===0));});render();});
     updateMatchSlipActions();
     $('moreMatches').hidden=activeMatches.length<=shownLimit;
    };

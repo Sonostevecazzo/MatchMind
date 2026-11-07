@@ -18,11 +18,24 @@
  </div>
  <div id="betsTabCreate" class="bets-tab-panel" role="tabpanel">
  <section class="section panel panel-pad" id="automaticBuilder">
-  <div class="section-head"><div><div class="eyebrow">ANALISI AUTOMATICA</div><h2>Costruttore probabilistico</h2><p>La proposta può usare mercati singoli o combinati sulla stessa partita. La soglia orienta il rischio della selezione; le tue preferenze manuali restano prioritarie.</p></div></div>
+  <div class="section-head"><div><div class="eyebrow">ANALISI AUTOMATICA</div><h2>Costruttore probabilistico</h2><p>Genera e confronta combinazioni orientate alle quote e ai modelli Poisson/Elo. Seleziona la strategia tra massima probabilità o massimo valore (+EV), con spiegazione analitica per ciascuna scelta.</p></div></div>
+  <div class="field">
+   <label>Strategia quote e obiettivo</label>
+   <div class="filter-row builder-strategy-pills" id="builderStrategyPills" aria-label="Strategia quote">
+    <button type="button" class="pill active" data-bstrategy="balanced" aria-pressed="true">⚖️ Bilanciata (Quota & Valore)</button>
+    <button type="button" class="pill" data-bstrategy="accuracy" aria-pressed="false">🎯 Più Probabili (Accuratezza)</button>
+    <button type="button" class="pill" data-bstrategy="value" aria-pressed="false">📈 Più Remunerative (+EV)</button>
+    <button type="button" class="pill" data-bstrategy="double" aria-pressed="false">💰 Raddoppio (~2.00x)</button>
+   </div>
+   <small id="builderStrategyDesc" class="builder-strategy-hint">Bilanciamento ideale: quote con valore atteso positivo (+EV) ed esiti solidi secondo il modello.</small>
+  </div>
   <div class="field"><label for="targetProbability">Probabilità obiettivo della combinazione: <b id="targetProbabilityLabel">55%</b></label><input id="targetProbability" type="range" min="0" max="100" step="1" value="55"><div class="range-scale"><span>0%</span><span>50%</span><span>100%</span></div></div>
   <div class="field"><label for="marketMode">Tipo di giocata</label><select id="marketMode"><option value="auto" selected>Automatico · singoli e combinati</option><option value="single">Solo mercati singoli</option><option value="combo-goals">1X2 + Over/Under</option><option value="combo-btts">1X2 + Gol/No Gol</option></select><small>Le combinazioni sulla stessa partita sono calcolate sulla distribuzione dei risultati, tenendo conto della correlazione tra gli eventi.</small></div>
   <div class="field"><label for="maxLegs">Numero massimo di partite</label><select id="maxLegs"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option></select></div>
-  <button id="buildTicket" type="button" class="primary">Genera proposta statistica</button>
+  <div class="builder-action-row" style="display:flex;gap:10px;flex-wrap:wrap">
+   <button id="buildTicket" type="button" class="primary" style="flex:1;min-width:180px">Genera proposta statistica</button>
+   <button id="remixTicket" type="button" class="secondary" style="display:none;min-width:140px">🎲 Altra variante</button>
+  </div>
   <div id="ticketResults" style="margin-top:14px"><div class="empty-state">La proposta sarà calcolata dopo il caricamento del calendario e dello storico.</div></div>
  </section>
  

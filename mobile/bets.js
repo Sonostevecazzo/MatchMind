@@ -357,27 +357,221 @@ bookmaker:x.bookmaker||null,
  };
  archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];writePicks();renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata con puntata e quote registrate.";setBetTab("live");
 }
+let currentBuilderStrategy='balanced';
+let proposalVariants={};
+let variantCycleIndex=0;
+
+function generateMotivation(match,marketKey,marketLabel,prob,oddsVal,forecast){
+ const h=forecast?.home||{},a=forecast?.away||{};
+ const hXg=Number(forecast?.homeXg||1.3),aXg=Number(forecast?.awayXg||1.1);
+ const totXg=hXg+aXg;
+ const pPct=Math.round(prob*100);
+ const evVal=oddsVal&&oddsVal>1?(prob*oddsVal-1):null;
+ const evText=evVal!=null?' (Valore atteso: '+(evVal>=0?'+':'')+Math.round(evVal*100)+'% EV)':'';
+ const oddsRef=oddsVal?' @'+oddsVal.toFixed(2)+evText:'';
+ if(marketKey==='home'){
+  const ppg=Number(h.pointsPerGame||1.3).toFixed(1);
+  return esc(match.home)+' solida nel rendimento interno (media '+ppg+' pt/gara, '+hXg.toFixed(1)+' xG attesi). Il modello Poisson/Elo stima il '+pPct+'% di vittoria interna'+oddsRef+'.';
+ }
+ if(marketKey==='away'){
+  const ppg=Number(a.pointsPerGame||1.2).toFixed(1);
+  return esc(match.away)+' superiore nelle metriche esterne ('+ppg+' pt/gara). MatchMind stima il '+pPct+'% per il successo ospite'+oddsRef+'.';
+ }
+ if(marketKey==='draw'){
+  return 'Elevato equilibrio tattico tra '+esc(match.home)+' e '+esc(match.away)+' (xG attesi '+hXg.toFixed(1)+' vs '+aXg.toFixed(1)+'). Probabilità pareggio stimata al '+pPct+'%'+oddsRef+'.';
+ }
+ if(marketKey==='over25'||marketKey==='over15'||marketKey==='over35'){
+  return 'Indice offensivo combinato elevato ('+totXg.toFixed(1)+' xG attesi complessivi). La distribuzione Poisson assegna il '+pPct+'% a '+esc(marketLabel)+oddsRef+'.';
+ }
+ if(marketKey==='under25'||marketKey==='under15'||marketKey==='under35'){
+  return 'Solidità difensiva e volume di occasioni contenuto (somma '+totXg.toFixed(1)+' xG). Il modello calcola il '+pPct+'% per '+esc(marketLabel)+oddsRef+'.';
+ }
+ if(marketKey==='bttsYes'){
+  return 'Entrambe le formazioni presentano regolarità realizzativa e concessioni difensive recenti. Probabilità Gol al '+pPct+'%'+oddsRef+'.';
+ }
+ if(marketKey==='bttsNo'){
+  return 'Almeno una squadra evidenzia difficoltà offensive o tenuta difensiva superiore. Probabilità No Gol al '+pPct+'%'+oddsRef+'.';
+ }
+ if(String(marketKey).startsWith('combo:')){
+  return 'Esito congiunto ricavato dalla matrice 6×6 dei punteggi esatti. Stima reale del '+pPct+'% considerando la correlazione statistica tra esito e gol'+oddsRef+'.';
+ }
+ return 'Stima statistica MatchMind calcolata al '+pPct+'%'+oddsRef+' su storico recente e metriche di rendimento.';
+}
+
+function resolveOddForMarket(oddsObj,marketKey,prob){
+ if(!oddsObj)return{odd:Number((1/Math.max(0.01,prob)).toFixed(2)),isReal:false,bookmaker:'Stima equa MM'};
+ let val=null;
+ if(marketKey==='home')val=oddsObj.home;
+ else if(marketKey==='draw')val=oddsObj.draw;
+ else if(marketKey==='away')val=oddsObj.away;
+ else if(marketKey==='over25')val=oddsObj.over25;
+ else if(marketKey==='under25')val=oddsObj.under25;
+ if(Number.isFinite(val)&&val>1)return{odd:val,isReal:true,bookmaker:oddsObj.bookmaker||'Bet365 / Media'};
+ return{odd:Number((1/Math.max(0.01,prob)).toFixed(2)),isReal:false,bookmaker:'Stima equa MM'};
+}
+
 function buildProposal(){
  proposalGenerated=true;
  const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
  const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
- const first=upcoming[0],candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+ const first=upcoming[0];
+ const candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
  const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
  const marketMode=$("marketMode")?.value||"auto";
- const result=ENGINE().buildTicket(candidateFixtures,m=>getForecast(m),target,{maxLegs,marketOverrides:overrides,marketMode});
- if(!result.available){$("ticketResults").innerHTML='<div class="notice warning">'+esc(result.reason)+'</div><small>Partite analizzate: '+(result.upcomingFixtures||0)+' · campioni utilizzabili: '+(result.eligibleFixtures||0)+'. Per le squadre con meno di tre risultati precedenti il modello non genera una proposta.</small>';proposal=[];return;}
- proposal=result.selections.map(x=>({match:x.match,marketKey:x.marketKey,marketLabel:x.market,probability:x.probability,confidence:x.confidence,preferredByUser:x.preferredByUser}));
- const profileLabel=marketMode==='combo-goals'?'1X2 + Over/Under':marketMode==='combo-btts'?'1X2 + Gol/No Gol':marketMode==='single'?'Mercati singoli':'Automatico';
+
+ // Evaluate all candidate selections across matches
+ const allEvaluations=[];
+ candidateFixtures.forEach(m=>{
+  const forecast=getForecast(m);
+  if(!forecast||!forecast.probabilities)return;
+  const o=window.MM.matchOdds?window.MM.matchOdds(m):null;
+  const overrideKey=overrides[engineKey(m)];
+  const candidateKeys=overrideKey?[overrideKey]:(marketMode==='single'?[
+   'home','draw','away','over15','under15','over25','under25','over35','under35','bttsYes','bttsNo'
+  ]:marketMode==='combo-goals'?[
+   'home','away','over25','under25','combo:home+over25','combo:home+under25','combo:away+over25','combo:away+under25'
+  ]:marketMode==='combo-btts'?[
+   'home','away','bttsYes','bttsNo','combo:home+bttsYes','combo:home+bttsNo','combo:away+bttsYes','combo:away+bttsNo'
+  ]:[
+   'home','draw','away','over15','under15','over25','under25','bttsYes','bttsNo','combo:home+over25','combo:away+over25'
+  ]);
+
+  candidateKeys.forEach(mKey=>{
+   const prob=ENGINE().marketProbability(forecast,mKey);
+   if(!Number.isFinite(prob)||prob<0.15)return;
+   const oddInfo=resolveOddForMarket(o,mKey,prob);
+   const ev=oddInfo.isReal?(prob*oddInfo.odd)-1:0;
+   const label=ENGINE().marketLabel(mKey);
+   allEvaluations.push({
+    match:m,
+    marketKey:mKey,
+    marketLabel:label,
+    probability:prob,
+    odds:oddInfo.odd,
+    isRealOdd:oddInfo.isReal,
+    bookmaker:oddInfo.bookmaker,
+    ev:ev,
+    confidence:forecast.sampleEnough?'Campione solido':'Campione parziale',
+    preferredByUser:Boolean(overrideKey&&overrideKey===mKey),
+    reason:generateMotivation(m,mKey,label,prob,oddInfo.isReal?oddInfo.odd:null,forecast)
+   });
+  });
+ });
+
+ if(!allEvaluations.length){
+  $("ticketResults").innerHTML='<div class="notice warning">Nessuna partita analizzabile trovata per il turno selezionato.</div>';
+  proposal=[];return;
+ }
+
+ // Build 4 distinct strategy pools
+ const poolByMatch=(comparator)=>{
+  const seenMatches=new Set();
+  const sorted=allEvaluations.slice().sort(comparator);
+  const picked=[];
+  for(const item of sorted){
+   const mKey=fixtureKey(item.match);
+   if(!seenMatches.has(mKey)){
+    seenMatches.add(mKey);
+    picked.push(item);
+   }
+  }
+  return picked;
+ };
+
+ const accPool=poolByMatch((a,b)=>b.probability-a.probability);
+ const valPool=poolByMatch((a,b)=>{
+  if(a.isRealOdd&&!b.isRealOdd)return -1;
+  if(!a.isRealOdd&&b.isRealOdd)return 1;
+  return (b.ev||0)-(a.ev||0);
+ });
+ const balPool=poolByMatch((a,b)=>{
+  const scoreA=(a.probability*0.6)+(Math.max(0,a.ev||0)*0.4);
+  const scoreB=(b.probability*0.6)+(Math.max(0,b.ev||0)*0.4);
+  return scoreB-scoreA;
+ });
+ const dblPool=accPool.filter(x=>x.odds>=1.20&&x.odds<=1.75).slice(0,2);
+
+ const makeLegs=(pool,count,offset=0)=>{
+  if(!pool.length)return[];
+  const actualCount=Math.min(count,pool.length);
+  const start=offset%Math.max(1,pool.length-actualCount+1);
+  return pool.slice(start,start+actualCount);
+ };
+
+ proposalVariants={
+  balanced:makeLegs(balPool,Math.min(maxLegs,4),variantCycleIndex),
+  accuracy:makeLegs(accPool,Math.min(maxLegs,4),variantCycleIndex),
+  value:makeLegs(valPool,Math.min(maxLegs,4),variantCycleIndex),
+  double:dblPool.length===2?dblPool:makeLegs(accPool,2,variantCycleIndex)
+ };
+
+ proposal=proposalVariants[currentBuilderStrategy]||proposalVariants.balanced;
+ renderProposalUI();
+}
+
+function renderProposalUI(){
+ if(!proposal||!proposal.length){
+  $("ticketResults").innerHTML='<div class="empty-state">Nessuna selezione generata per questa combinazione.</div>';
+  return;
+ }
+ const mult=proposal.reduce((acc,x)=>acc*(x.odds||1),1);
+ const jointProb=proposal.reduce((acc,x)=>acc*x.probability,1);
+ const combEv=(jointProb*mult)-1;
+ const estWin10=(10*mult).toFixed(2);
  const proposalDate=value=>{if(!value)return 'Data da definire';const date=new Date(value+'T12:00:00');return Number.isNaN(date.getTime())?String(value):date.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});};
- $("ticketResults").innerHTML='<section class="proposal-summary"><div class="proposal-summary-head"><span class="eyebrow">RISULTATO DEL MODELLO</span><span class="proposal-state '+(result.thresholdReached?'reached':'not-reached')+'">'+(result.thresholdReached?'Obiettivo raggiunto':'Obiettivo non raggiunto')+'</span></div><div class="proposal-total"><span>Probabilità stimata della schedina</span><b>'+pct(result.probability)+'</b></div><div class="proposal-meta"><span><small>Obiettivo</small><b>'+pct(result.threshold)+'</b></span><span><small>Eventi</small><b>'+proposal.length+'</b></span><span><small>Profilo</small><b>'+esc(profileLabel)+'</b></span></div><p>Probabilità media richiesta per selezione: <b>'+pct(result.desiredMarketProbability)+'</b></p></section>'+
- '<div class="proposal-list-heading"><b>Selezioni proposte</b><small>La percentuale a destra riguarda il singolo evento</small></div>'+
- proposal.map((x,i)=>'<article class="proposal-leg"><div class="proposal-leg-top"><span class="proposal-leg-number">EVENTO '+(i+1)+'</span><time>'+esc(proposalDate(x.match.date))+(x.match.time?' · '+esc(x.match.time):'')+'</time></div><div class="proposal-leg-match">'+esc(x.match.home)+' <span>–</span> '+esc(x.match.away)+'</div><div class="proposal-leg-bottom"><div class="proposal-leg-pick"><small>GIOCATA</small><b>'+esc(x.marketLabel)+'</b><small>Confidenza: '+esc(x.confidence)+(x.preferredByUser?' · tua preferenza':'')+'</small></div><div class="proposal-leg-prob"><small>PROBABILITÀ</small><b>'+pct(x.probability)+'</b></div></div></article>').join("")+
- '<button id="addProposal" type="button" class="primary proposal-add-button">Aggiungi '+proposal.length+' selezioni alla schedina</button>'+
- '<div class="notice warning proposal-caveat">'+(result.thresholdReached?'La soglia è stata raggiunta secondo il modello. ':'La soglia non è stata raggiunta: questa è la combinazione più vicina disponibile, non una proposta conforme all’obiettivo. ')+esc(result.assumption)+' '+esc(result.warning||"")+'</div>';
+
+ const tabsHtml='<div class="proposal-variant-tabs" role="tablist">'+
+  [['balanced','⚖️ Bilanciata'],['accuracy','🎯 Più Probabili'],['value','📈 Valore (+EV)'],['double','💰 Raddoppio (~2x)']].map(([key,lbl])=>
+   '<button type="button" class="variant-tab'+(currentBuilderStrategy===key?' active':'')+'" data-switch-strategy="'+key+'">'+lbl+'</button>'
+  ).join('')+'</div>';
+
+ const summaryHtml='<section class="proposal-summary">'+
+  '<div class="proposal-summary-head"><span class="eyebrow">RISULTATO DEL MODELLO</span><span class="proposal-state reached">'+(currentBuilderStrategy==='value'?'Focus Valore':currentBuilderStrategy==='accuracy'?'Focus Accuratezza':currentBuilderStrategy==='double'?'Obiettivo Raddoppio':'Combinazione Ottimale')+'</span></div>'+
+  '<div class="proposal-total"><span>Quota totale moltiplicatore</span><b>@'+mult.toFixed(2)+'</b></div>'+
+  '<div class="proposal-meta">'+
+   '<span><small>Probabilità stimata</small><b>'+pct(jointProb)+'</b></span>'+
+   '<span><small>Partite</small><b>'+proposal.length+'</b></span>'+
+   '<span><small>Puntando 10€</small><b>'+estWin10+'€</b></span>'+
+   '<span><small>Valore atteso</small><b class="'+(combEv>=0?'ev-pos-text':'')+'">'+(combEv>=0?'+':'')+Math.round(combEv*100)+'% EV</b></span>'+
+  '</div>'+
+  '<p class="proposal-disclaimer">I calcoli assumono indipendenza statistica tra gli incontri. Le quote e le probabilità sono stime teoriche per orientare le scelte.</p>'+
+ '</section>';
+
+ const listHtml='<div class="proposal-list-heading"><b>Analisi e selezioni proposte</b><small>Tocca una partita per sostituirla o inseriscila singolarmente</small></div>'+
+ proposal.map((x,i)=>{
+  const evPill=x.isRealOdd?'<span class="pill-ev '+(x.ev>=0?'ev-pos':'ev-neg')+'">'+(x.ev>=0?'+':'')+Math.round(x.ev*100)+'% EV</span>':'<span class="pill-ev" style="background:#1b2430;color:#94a3b8">Quota equa</span>';
+  return '<article class="proposal-leg" data-leg-index="'+i+'">'+
+   '<div class="proposal-leg-top"><span class="proposal-leg-number">PARTITA '+(i+1)+'</span><time>'+esc(proposalDate(x.match.date))+(x.match.time?' · '+esc(x.match.time):'')+'</time></div>'+
+   '<div class="proposal-leg-match">'+esc(x.match.home)+' <span>–</span> '+esc(x.match.away)+'</div>'+
+   '<div class="proposal-leg-bottom">'+
+    '<div class="proposal-leg-pick"><small>ESITO PROPOSTO</small><b>'+esc(x.marketLabel)+'</b><div class="proposal-leg-odds">Quota <b>@'+Number(x.odds).toFixed(2)+'</b> ('+esc(x.bookmaker)+') '+evPill+'</div></div>'+
+    '<div class="proposal-leg-prob"><small>STIMA MM</small><b>'+pct(x.probability)+'</b></div>'+
+   '</div>'+
+   '<div class="proposal-leg-reason"><div class="reason-head">💡 MOTIVAZIONE MATCHMIND</div><p>'+x.reason+'</p></div>'+
+   '<div class="proposal-leg-actions">'+
+    '<button type="button" class="ghost small-btn add-single-leg" data-leg-idx="'+i+'">➕ Aggiungi singola</button>'+
+    '<button type="button" class="ghost small-btn swap-single-leg" data-leg-idx="'+i+'">🔄 Cambia match</button>'+
+   '</div>'+
+  '</article>';
+ }).join('');
+
+ const actionsHtml='<div class="proposal-action-bar">'+
+  '<button id="addProposal" type="button" class="primary proposal-add-button">Aggiungi '+proposal.length+' selezioni alla schedina</button>'+
+  '<button id="shuffleProposal" type="button" class="secondary" style="margin-top:8px;width:100%">🎲 Genera variante alternativa</button>'+
+ '</div>';
+
+ $("ticketResults").innerHTML=tabsHtml+summaryHtml+listHtml+actionsHtml;
+ if($("remixTicket"))$("remixTicket").style.display='inline-block';
 }
 function applyProposal(){
- proposal.forEach(x=>{const m=x.match,p={competition:m.competition||window.MM.getSelectedCompetition(),date:m.date,home:m.home,away:m.away,marketKey:x.marketKey};const index=picks.findIndex(y=>fixtureKey(y)===fixtureKey(p));if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);});
- writePicks();slipExpanded=true;renderSlip();$("manualBuilderStatus").textContent="Proposta aggiunta alla schedina. Puoi modificare o rimuovere ogni esito.";
+ proposal.forEach(x=>{
+  const m=x.match;
+  const p={competition:m.competition||window.MM.getSelectedCompetition(),date:m.date,home:m.home,away:m.away,marketKey:x.marketKey,odds:x.isRealOdd?x.odds:null,bookmaker:x.isRealOdd?x.bookmaker:null};
+  const index=picks.findIndex(y=>fixtureKey(y)===fixtureKey(p));
+  if(index>=0)picks[index]=p;else if(picks.length<15)picks.push(p);
+ });
+ writePicks();slipExpanded=true;renderSlip();
+ $("manualBuilderStatus").textContent="Proposta aggiunta alla schedina ("+proposal.length+" selezioni con quote e calcoli EV).";
 }
 function evaluateMarket(key,homeGoals,awayGoals){
  const total=homeGoals+awayGoals;
@@ -544,7 +738,72 @@ function initEvents(){
  $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
  $("marketMode").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
  $("buildTicket").addEventListener("click",buildProposal);
- $("ticketResults").addEventListener("click",event=>{if(event.target.closest("#addProposal"))applyProposal();});
+ $("ticketResults").addEventListener("click",event=>{
+  const addAll=event.target.closest("#addProposal");
+  if(addAll){applyProposal();return;}
+  const switchBtn=event.target.closest("[data-switch-strategy]");
+  if(switchBtn){
+   currentBuilderStrategy=switchBtn.dataset.switchStrategy;
+   updateBuilderPillUI(currentBuilderStrategy);
+   proposal=proposalVariants[currentBuilderStrategy]||proposalVariants.balanced;
+   renderProposalUI();
+   return;
+  }
+  const shuffleBtn=event.target.closest("#shuffleProposal");
+  if(shuffleBtn){
+   variantCycleIndex++;
+   buildProposal();
+   return;
+  }
+  const addSingle=event.target.closest(".add-single-leg");
+  if(addSingle){
+   const idx=Number(addSingle.dataset.legIdx);
+   const item=proposal[idx];
+   if(item){
+    const m=item.match,p={competition:m.competition||window.MM.getSelectedCompetition(),date:m.date,home:m.home,away:m.away,marketKey:item.marketKey,odds:item.isRealOdd?item.odds:null,bookmaker:item.isRealOdd?item.bookmaker:null};
+    const existingIdx=picks.findIndex(y=>fixtureKey(y)===fixtureKey(p));
+    if(existingIdx>=0)picks[existingIdx]=p;else if(picks.length<15)picks.push(p);
+    writePicks();slipExpanded=true;renderSlip();
+    addSingle.textContent='✓ Aggiunta!';
+    setTimeout(()=>{if(addSingle)addSingle.textContent='➕ Aggiungi singola';},2000);
+   }
+   return;
+  }
+  const swapBtn=event.target.closest(".swap-single-leg");
+  if(swapBtn){
+   variantCycleIndex++;
+   buildProposal();
+   return;
+  }
+ });
+
+ function updateBuilderPillUI(stratKey){
+  $("builderStrategyPills")?.querySelectorAll("button").forEach(btn=>{
+   const active=btn.dataset.bstrategy===stratKey;
+   btn.classList.toggle("active",active);
+   btn.setAttribute("aria-pressed",String(active));
+  });
+  const descEl=$("builderStrategyDesc");
+  if(descEl){
+   descEl.textContent=stratKey==='accuracy'?'Massima probabilità: esiti con elevata affidabilità statistica (≥58%).':stratKey==='value'?'Massima remuneratività: selezioni con quota del bookmaker superiore alla stima equa (+EV).':stratKey==='double'?'Raddoppio: 2 eventi solidi selezionati per raggiungere circa quota @2.00 complessiva.':'Bilanciamento ideale: quote con valore atteso positivo ed esiti solidi.';
+  }
+ }
+
+ $("builderStrategyPills")?.addEventListener("click",event=>{
+  const btn=event.target.closest("[data-bstrategy]");
+  if(!btn)return;
+  currentBuilderStrategy=btn.dataset.bstrategy;
+  updateBuilderPillUI(currentBuilderStrategy);
+  if(proposalGenerated){
+   proposal=proposalVariants[currentBuilderStrategy]||proposalVariants.balanced;
+   renderProposalUI();
+  }
+ });
+
+ $("remixTicket")?.addEventListener("click",()=>{
+  variantCycleIndex++;
+  buildProposal();
+ });
  $("refreshArchive").addEventListener("click",updateArchive);
  ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
   const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();return;}
@@ -604,6 +863,7 @@ function hasTodayOpenTicket(){
 document.addEventListener("DOMContentLoaded",async()=>{
  initEvents();$("globalStatus").textContent="Carico calendario e risultati storici…";
  try{
+  await window.MM.loadOdds?.();
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));

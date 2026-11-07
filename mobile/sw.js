@@ -1,10 +1,10 @@
-const CACHE='matchmind-pwa-v89-20261107-sisal-sync';
+const CACHE='matchmind-pwa-v90-20261107-builder-odds-flow';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
  './site.css','./mobile-readable.css','./analysis.css','./live.css','./site-core.js','./site-pages.js','./elo.js','./tipsaudit.js',
  './rounds.js','./ai-engine.js','./bets-engine.js','./bets.js','./live.js','./notifications.js',
- './manifest.webmanifest','./icon.svg','./brand-full.svg','./scripts/sisal-matchmind.user.js'
+ './fixtures-odds.json','./manifest.webmanifest','./icon.svg','./brand-full.svg','./scripts/sisal-matchmind.user.js'
 ];
 self.addEventListener('install',event=>{
  event.waitUntil(
