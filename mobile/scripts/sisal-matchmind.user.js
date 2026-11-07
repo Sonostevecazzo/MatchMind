@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.5.0
-// @description  Analisi probabilistica MatchMind su Sisal: strategie (Accuratezza, +EV, Bilanciate), motivazioni analitiche, quote eque, widget mobile trascinabile e sincronizzazione schedina.
+// @version      1.6.0
+// @description  Ispettore quote interattivo per Sisal: parere statistico istantaneo al tap su ogni quota, verdetto (+EV, Alta probabilità, Sconsigliata), motivazioni xG e sync con MatchMind.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -261,6 +261,171 @@
 
   // Stili grafici avanzati
   const styles = `
+    /* --- HUD ISPETTORE QUOTA INTERATTIVO --- */
+    #mm-inspector-hud {
+      position: fixed !important;
+      bottom: 12px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: calc(100vw - 24px) !important;
+      max-width: 400px !important;
+      background: #091224 !important;
+      border: 1px solid #1e293b !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.92), 0 0 0 1px rgba(56,189,248,0.3) !important;
+      color: #f1f5f9 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      padding: 10px 12px !important;
+      z-index: 9999999 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 6px !important;
+      animation: mmSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      box-sizing: border-box !important;
+      backdrop-filter: blur(14px) !important;
+    }
+
+    @keyframes mmSlideUp {
+      from { transform: translate(-50%, 35px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    .mm-hud-top {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+    }
+
+    .mm-hud-match {
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      color: #38bdf8 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 250px !important;
+    }
+
+    .mm-hud-close {
+      background: #1e293b !important;
+      border: none !important;
+      color: #94a3b8 !important;
+      width: 22px !important;
+      height: 22px !important;
+      border-radius: 11px !important;
+      cursor: pointer !important;
+      font-size: 12px !important;
+      font-weight: bold !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+    }
+    .mm-hud-close:hover {
+      background: #334155 !important;
+      color: #ffffff !important;
+    }
+
+    .mm-hud-selection-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 2px 0 !important;
+    }
+
+    .mm-hud-selection {
+      font-size: 13px !important;
+      font-weight: 900 !important;
+      color: #ffffff !important;
+    }
+
+    .mm-hud-odd {
+      color: #c4f36a !important;
+      font-weight: 800 !important;
+      font-size: 13px !important;
+    }
+
+    .mm-verdict-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      padding: 2px 8px !important;
+      border-radius: 4px !important;
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.3px !important;
+      text-transform: uppercase !important;
+    }
+    .mm-verdict-value {
+      background: #064e3b !important;
+      color: #34d399 !important;
+      border: 1px solid #10b981 !important;
+    }
+    .mm-verdict-highprob {
+      background: #082f49 !important;
+      color: #38bdf8 !important;
+      border: 1px solid #0284c7 !important;
+    }
+    .mm-verdict-neutral {
+      background: #451a03 !important;
+      color: #fbbf24 !important;
+      border: 1px solid #d97706 !important;
+    }
+    .mm-verdict-trap {
+      background: #450a0a !important;
+      color: #f87171 !important;
+      border: 1px solid #ef4444 !important;
+    }
+
+    .mm-hud-metrics {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      font-size: 10px !important;
+      color: #94a3b8 !important;
+      background: #0f172a !important;
+      padding: 5px 8px !important;
+      border-radius: 6px !important;
+      border: 1px solid #1e293b !important;
+    }
+
+    .mm-hud-metrics b {
+      color: #f8fafc !important;
+    }
+
+    .mm-hud-reason {
+      font-size: 10px !important;
+      line-height: 1.35 !important;
+      color: #e2e8f0 !important;
+      padding: 5px 8px !important;
+      border-radius: 5px !important;
+      background: rgba(15,23,42,0.7) !important;
+      border-left: 3px solid #0284c7 !important;
+    }
+
+    .mm-hud-actions {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin-top: 2px !important;
+    }
+
+    .mm-hud-send-btn {
+      flex: 1 !important;
+      background: #0284c7 !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 6px !important;
+      padding: 7px 10px !important;
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      cursor: pointer !important;
+      text-align: center !important;
+      transition: background 0.15s ease !important;
+    }
+    .mm-hud-send-btn:hover {
+      background: #0369a1 !important;
+    }
+
     .mm-prob-tag {
       display: inline-flex !important;
       align-items: center !important;
@@ -1407,6 +1572,175 @@
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
+
+
+  // --- GESTIONE ISPETTORE QUOTA INTERATTIVO AL TAP ---
+  let hudDismissTimer = null;
+
+  function showInspectorHud(matchInfo, selectionInfo) {
+    let hud = document.getElementById("mm-inspector-hud");
+    if (!hud) {
+      hud = document.createElement("div");
+      hud.id = "mm-inspector-hud";
+      document.body.appendChild(hud);
+    }
+
+    if (hudDismissTimer) clearTimeout(hudDismissTimer);
+
+    const { home, away, homeXg, awayXg } = matchInfo;
+    const { key, label, odd, prob, fairOdds, ev, motivation } = selectionInfo;
+
+    const pct = Math.round(prob * 100);
+    const evPct = (ev * 100).toFixed(1);
+
+    // Calcolo del Verdetto e Parere Statistico
+    let verdictClass = "mm-verdict-neutral";
+    let verdictLabel = "🟡 EQUILIBRATA";
+    let verdictAdvice = "";
+
+    if (ev >= 0.08) {
+      verdictClass = "mm-verdict-value";
+      verdictLabel = "🟢 VANTAGGIOSA (+EV)";
+      verdictAdvice = `Quota Sisal @${odd.toFixed(2)} sovrastimata rispetto al modello (quota equa reale @${fairOdds.toFixed(2)}). Margine positivo per lo scommettitore (+${evPct}% EV).`;
+    } else if (pct >= 64 && ev >= -0.05) {
+      verdictClass = "mm-verdict-highprob";
+      verdictLabel = "🔵 ALTA PROBABILITÀ";
+      verdictAdvice = `Esito solido con probabilità stimata al ${pct}%. Rischio statistico contenuto rispetto al palinsesto.`;
+    } else if (ev < -0.12) {
+      verdictClass = "mm-verdict-trap";
+      verdictLabel = "🔴 SCONSIGLIATA / QUOTA BASSA";
+      verdictAdvice = `Quota Sisal @${odd.toFixed(2)} troppo schiacciata dal bookmaker rispetto al rischio reale (probabilità stimata ${pct}%, quota equa @${fairOdds.toFixed(2)}, EV ${evPct}%).`;
+    } else if (ev >= 0) {
+      verdictClass = "mm-verdict-value";
+      verdictLabel = "🟢 VALIDA (+EV)";
+      verdictAdvice = `Leggero valore statistico (+${evPct}% EV) rispetto alla quota equa stimata @${fairOdds.toFixed(2)}.`;
+    } else {
+      verdictClass = "mm-verdict-neutral";
+      verdictLabel = "🟡 NEUTRA";
+      verdictAdvice = `Stima probabilistica (${pct}%) allineata alla lavagna del bookmaker. Nessun vantaggio statistico significativo.`;
+    }
+
+    hud.innerHTML = `
+      <div class="mm-hud-top">
+        <span class="mm-hud-match">⚽ ${home} - ${away}</span>
+        <button class="mm-hud-close" id="mm-hud-close-btn" title="Chiudi">✕</button>
+      </div>
+
+      <div class="mm-hud-selection-row">
+        <div>
+          <span class="mm-hud-selection">${label}</span>
+          <span class="mm-hud-odd">@ ${odd.toFixed(2)}</span>
+        </div>
+        <span class="mm-verdict-badge ${verdictClass}">${verdictLabel}</span>
+      </div>
+
+      <div class="mm-hud-metrics">
+        <span>Stima MM: <b>${pct}%</b></span>
+        <span>Quota Equa: <b>${fairOdds.toFixed(2)}</b></span>
+        <span style="color:${ev >= 0 ? '#34d399' : '#f87171'};font-weight:700;">${ev >= 0 ? '+' : ''}${evPct}% EV</span>
+      </div>
+
+      <div class="mm-hud-reason" style="border-left-color: ${ev >= 0.08 ? '#10b981' : (ev < -0.12 ? '#ef4444' : '#0284c7')};">
+        💡 <b>Parere:</b> ${verdictAdvice}<br/>
+        <span style="font-size:9px;color:#94a3b8;margin-top:2px;display:inline-block;">${motivation}</span>
+      </div>
+
+      <div class="mm-hud-actions">
+        <button class="mm-hud-send-btn" id="mm-hud-send-btn">
+          ⚡ Invia questa giocata a MatchMind
+        </button>
+      </div>
+    `;
+
+    document.getElementById("mm-hud-close-btn")?.addEventListener("click", () => {
+      hud.remove();
+    });
+
+    document.getElementById("mm-hud-send-btn")?.addEventListener("click", (e) => {
+      window.sendToMatchMind(e, home, away, key, label, odd);
+    });
+
+    // Auto-dismiss dopo 15 secondi di inattività
+    hudDismissTimer = setTimeout(() => {
+      if (document.body.contains(hud)) hud.remove();
+    }, 15000);
+  }
+
+  // Intercetta i click/tap sulle quote Sisal per fornire parere istantaneo
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("#mm-widget, #mm-inspector-hud")) return;
+
+    const btn = e.target.closest("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']");
+    if (!btn) return;
+
+    const text = (btn.innerText || "").trim();
+    const val = parseOddsValue(text);
+    if (!val) return;
+
+    // Rileva contesto partita dalla riga/card o dalla pagina
+    let home = null, away = null;
+    const matchCard = btn.closest(`
+      [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
+      [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
+    `);
+
+    if (matchCard) {
+      const cardText = matchCard.innerText || "";
+      const m = cardText.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
+      if (m && !m[1].toLowerCase().includes("quote")) {
+        home = m[1].trim();
+        away = m[2].trim();
+      }
+    }
+
+    if (!home || !away) {
+      const single = detectSingleMatch();
+      if (single) {
+        home = single.home;
+        away = single.away;
+      }
+    }
+
+    if (!home || !away) return;
+
+    // Rileva etichetta mercato
+    let label = "";
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (!/\b\d+[.,]\d{2}\b/.test(line)) {
+        label = line;
+        break;
+      }
+    }
+    if (!label && lines.length) label = lines[0].replace(/\b\d+[.,]\d{2}\b/, "").trim();
+
+    const contextText = (btn.closest("[class*='market'], [class*='group'], [class*='section']")?.innerText || "") + " " + label + " " + text;
+    const market = parseSisalMarket(contextText);
+    if (!market) return;
+
+    const forecast = calculateMatchMindForecast(home, away);
+    const prob = forecast.probabilities[market.key];
+    if (!prob) return;
+
+    const fairOdds = 1 / prob;
+    const ev = (prob * val) - 1;
+    const motivation = generateMotivation(home, away, market.key, market.label, prob, val, fairOdds, ev, forecast.homeXg, forecast.awayXg);
+
+    showInspectorHud({
+      home,
+      away,
+      homeXg: forecast.homeXg,
+      awayXg: forecast.awayXg
+    }, {
+      key: market.key,
+      label: market.label,
+      odd: val,
+      prob,
+      fairOdds,
+      ev,
+      motivation
+    });
+  }, true);
 
   window.addEventListener("load", () => {
     setTimeout(scanPage, 1000);
