@@ -1,15 +1,19 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.3.1
+// @version      2.4.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
 // @match        https://scommesse.sisal.it/*
+// @match        https://*.sisal.it/*
+// @match        https://sisal.it/*
 // @match        https://*.lovable.app/*
 // @match        https://sonostevecazzo.github.io/MatchMind/*
 // @match        http://localhost:8080/*
+// @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
+// @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
 // @icon         https://sonostevecazzo.github.io/MatchMind/icon.svg
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
@@ -20,9 +24,12 @@
 
 (function() {
   'use strict';
+  const MM_SCRIPT_VERSION = "2.4.0";
+  const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
+  const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
   // --- PONTE MATCHMIND (v2.2): sulle pagine dell'app copia lo stato delle giocate inviate a Sisal ---
-  if (!/sisal\.it$/i.test(location.hostname)) {
+  if (!/(^|\.)sisal\.it$/i.test(location.hostname)) {
     if (!document.querySelector('body[data-page]') && !/bets\.html/.test(location.pathname)) return;
     const sync = () => {
       try {
@@ -32,6 +39,11 @@
           window.dispatchEvent(new CustomEvent("mm-sisal-status"));
         }
         localStorage.setItem("mm_sisal_bridge_seen", String(Date.now()));
+        localStorage.setItem("mm_sisal_script_version", MM_SCRIPT_VERSION);
+        const seen = String(gmGet("mm_sisal_last_seen", "") || "");
+        if (seen && localStorage.getItem("mm_sisal_seen_on_sisal") !== seen) localStorage.setItem("mm_sisal_seen_on_sisal", seen);
+        const cart = String(gmGet("mm_sisal_cart", "") || "");
+        if (cart && localStorage.getItem("mm_sisal_cart") !== cart) { localStorage.setItem("mm_sisal_cart", cart); window.dispatchEvent(new CustomEvent("mm-sisal-status")); }
       } catch (e) {}
     };
     sync(); setInterval(sync, 2000);
@@ -1620,7 +1632,7 @@
       if (!floatingBadge) {
         floatingBadge = document.createElement("div");
         floatingBadge.id = "mm-floating-badge";
-        floatingBadge.title = "Apri MatchMind Widget";
+        floatingBadge.title = "MatchMind v" + MM_SCRIPT_VERSION + " attivo: tocca per aprire";
         floatingBadge.innerHTML = "🧠";
         floatingBadge.onclick = () => setHidden(false);
         document.body.appendChild(floatingBadge);
@@ -1648,13 +1660,14 @@
       widget.style.maxHeight = "34px";
       widget.style.width = "auto";
 
+      const queued = readPlayQueue().filter(q => q.status !== "added").length;
       const countBadge = currentView === "all_markets"
         ? `${allMarketsList.length} Mercati`
         : `${activePicks.length} Consigliate`;
 
       widget.innerHTML = `
         <div id="mm-widget-min-bar" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;user-select:none;">
-          <span style="color:#c4f36a;font-size:13px;">🧠 MM</span>
+          <span id="mm-status-pill" style="color:#c4f36a;font-size:12px;">${pillStatusText(queued)}</span>
           <span style="background:#064e3b;color:#34d399;border:1px solid #10b981;border-radius:4px;font-size:9px;padding:2px 5px;">
             ${countBadge}
           </span>
@@ -1684,7 +1697,7 @@
     if (!calculations.length && !allMarketsList.length) {
       widget.innerHTML = `
         <div id="mm-widget-head">
-          <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.8</span></div>
+          <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#34d399;">v${MM_SCRIPT_VERSION} · Attivo</span></div>
           <div class="mm-head-actions">
             <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button>
             <button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button>
@@ -1826,7 +1839,7 @@
 
     widget.innerHTML = `
       <div id="mm-widget-head">
-        <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.8</span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#34d399;">v${MM_SCRIPT_VERSION} · Attivo</span></div>
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
@@ -1954,6 +1967,7 @@
       renderWidget();
       return;
     }
+    syncCartState();
     const singleMatch = detectSingleMatch();
     const multiMatches = detectMultipleMatches();
     const calculations = [];
@@ -2021,11 +2035,73 @@
       currentAnalysis = { isMulti: false, home: "Partita", away: "In corso", matchCount: 0, calculations: [], allMarketsList: [] };
     }
 
-    autoPlayQueue(calculations);
+    const footballQueue = readPlayQueue().filter(q => q.sport !== "nba" && q.status !== "added");
+    autoPlayQueue(footballQueue.length ? calculations.concat(scanFootballSelections(footballQueue)) : calculations);
     updatePageBadges();
     renderWidget();
   }
-  // --- GIOCATE DA MATCHMIND → SISAL (v2.3.1) ---
+  // --- GIOCATE DA MATCHMIND → SISAL (v2.4.0) ---
+  function pillStatusText(queued) {
+    return "🎯 MatchMind v" + MM_SCRIPT_VERSION + " (Attivo) · " + queued + (queued === 1 ? " giocata in coda" : " giocate in coda");
+  }
+  // Testo normalizzato a parole: evita che «roma» combaci con «romania».
+  function wordText(text) { return " " + String(text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " "; }
+  function footballAliases(name) {
+    const canon = canonicalTeam(name);
+    const list = [name, canon].concat(TEAM_ALIASES[canon] || []);
+    return Array.from(new Set(list.map(v => wordText(v).trim()).filter(v => v.length >= 3)));
+  }
+  // Testo di un contenitore con spazi tra i nodi: <span>Inter</span><span>Milan</span> non diventa «intermilan».
+  function spacedText(node) {
+    const parts = [];
+    const walker = document.createTreeWalker(node, 4);
+    while (walker.nextNode()) { const t = walker.currentNode.nodeValue; if (t && t.trim()) parts.push(t); if (parts.length > 400) break; }
+    return parts.join(" ");
+  }
+  function footballTeamInText(text, name) {
+    const clean = wordText(text);
+    return footballAliases(name).some(a => clean.includes(" " + a + " "));
+  }
+  // Fallback calcio: se i contenitori palinsesto non riconoscono la partita, risale gli antenati di ogni quota.
+  function scanFootballSelections(queue) {
+    const found = [];
+    const todo = (queue || []).filter(q => q.sport !== "nba" && q.status !== "added");
+    if (!todo.length) return found;
+    const buttons = Array.from(new Set(Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection'], [data-outcome]"))
+      .map(b => b.closest('button,[role="button"]') || b)))
+      .filter(b => !b.closest("#mm-widget") && !b.closest(NBA_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 60 && /\b\d+[.,]\d{2}\b/.test(b.innerText || b.textContent || ""));
+    for (const item of todo) {
+      let eventSeen = false;
+      for (const btn of buttons) {
+        let container = btn.parentElement;
+        for (let depth = 0; depth < 8 && container && container !== document.body; depth++, container = container.parentElement) {
+          if ((container.textContent || "").length > 5000 || container.querySelectorAll("button, [role='button']").length > 80) break;
+          const text = spacedText(container);
+          if (!footballTeamInText(text, item.home) || !footballTeamInText(text, item.away)) continue;
+          eventSeen = true;
+          const resolved = resolveOddsButton(btn);
+          if (resolved && !found.some(c => c.btn === btn)) found.push({ ...resolved, btn, home: item.home, away: item.away, sport: "football", fallback: true });
+          break;
+        }
+      }
+      if (eventSeen) found.push({ home: item.home, away: item.away, sport: "football", key: "event", btn: null });
+    }
+    return found;
+  }
+  // Conta le righe visibili del biglietto Sisal e le condivide con MatchMind tramite il ponte.
+  function syncCartState() {
+    try {
+      const rows = new Set();
+      document.querySelectorAll(NBA_CART_SELECTOR).forEach(cart => {
+        if (cart.closest("#mm-widget") || !cart.getClientRects().length) return;
+        cart.querySelectorAll('[class*="betslip-item" i],[class*="selection" i],[data-testid*="selection" i],li').forEach(r => { if (/\d+[.,]\d{2}/.test(r.textContent || "") && (r.textContent || "").length < 600) rows.add((r.textContent || "").trim().slice(0, 120)); });
+      });
+      const queue = readPlayQueue();
+      const state = JSON.stringify({ at: Date.now(), rows: rows.size, added: queue.filter(q => q.status === "added").length, queued: queue.filter(q => q.status !== "added").length, version: MM_SCRIPT_VERSION });
+      gmSet("mm_sisal_cart", state);
+      gmSet("mm_sisal_last_seen", String(Date.now()));
+    } catch (e) {}
+  }
   const PLAY_KEY = "mm_play_queue";
   function readPlayQueue() {
     try {
@@ -2206,7 +2282,7 @@
       }
       item.status = "added"; item.error = ""; item.errorType = ""; item.sisalOdds = hit.odd; item.updatedAt = Date.now(); changed = true;
     }
-    if (changed) writePlayQueue(queue);
+    if (changed) { writePlayQueue(queue); if (typeof syncCartState === "function") syncCartState(); }
   }
   function renderPlayQueue(widget) {
     const queue = readPlayQueue();
@@ -2227,6 +2303,9 @@
   function escapeHtml(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 
+  // Dichiarate qui: prima mancavano e l'osservatore andava in errore a ogni modifica della pagina Sisal.
+  let lastScanTime = 0;
+  let scanTimer = null;
   const observer = new MutationObserver((mutations) => {
     if (isMutatingDOM) return;
 
