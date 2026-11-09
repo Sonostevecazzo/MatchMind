@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.8.0
+// @version      1.9.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -149,16 +149,54 @@
   // Cache dei calcoli Poisson per evitare ricalcoli inutili
   const forecastCache = new Map();
   const matchContexts = {};
+  let injuriesData = null;
+
+  function loadInjuriesData() {
+    try {
+      fetch("https://sonostevecazzo.github.io/MatchMind/injuries-data.json", { cache: "default" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.teams) {
+            injuriesData = d;
+            forecastCache.clear();
+            if (currentAnalysis && !currentAnalysis.isMulti) {
+              updatePageBadges();
+              renderWidget();
+            }
+          }
+        })
+        .catch(() => {});
+    } catch (_) {}
+  }
+  loadInjuriesData();
+
+  function findTeamInjuries(teamName) {
+    if (!teamName || !injuriesData || !injuriesData.teams) return null;
+    const can = canonicalTeam(teamName);
+    for (const [k, v] of Object.entries(injuriesData.teams)) {
+      if (canonicalTeam(k) === can) return v;
+    }
+    return null;
+  }
 
   function getMatchContext(home, away) {
     const key = `${canonicalTeam(home)}|${canonicalTeam(away)}`;
-    return matchContexts[key] || {
-      attackingAbsencesHome: 0,
-      defensiveAbsencesHome: 0,
-      motivationHome: 0,
-      attackingAbsencesAway: 0,
-      defensiveAbsencesAway: 0,
-      motivationAway: 0
+    const manual = matchContexts[key];
+    if (manual && manual.__manual) return manual;
+    const hInj = findTeamInjuries(home);
+    const aInj = findTeamInjuries(away);
+    const autoAttH = Math.min(3, (hInj && hInj.assenze_attacco) || 0);
+    const autoDefH = Math.min(3, (hInj && hInj.assenze_difesa) || 0);
+    const autoAttA = Math.min(3, (aInj && aInj.assenze_attacco) || 0);
+    const autoDefA = Math.min(3, (aInj && aInj.assenze_difesa) || 0);
+    return {
+      attackingAbsencesHome: manual ? (manual.attackingAbsencesHome ?? autoAttH) : autoAttH,
+      defensiveAbsencesHome: manual ? (manual.defensiveAbsencesHome ?? autoDefH) : autoDefH,
+      motivationHome: manual ? (manual.motivationHome ?? 0) : 0,
+      attackingAbsencesAway: manual ? (manual.attackingAbsencesAway ?? autoAttA) : autoAttA,
+      defensiveAbsencesAway: manual ? (manual.defensiveAbsencesAway ?? autoDefA) : autoDefA,
+      motivationAway: manual ? (manual.motivationAway ?? 0) : 0,
+      __isAuto: !manual || !manual.__manual
     };
   }
 

@@ -57,7 +57,57 @@ const engineKey=m=>[norm(m.home),norm(m.away)].sort().join("|")+"|"+m.date;
 const read=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value;}catch(_){return fallback;}};
 const save=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch(_){$("globalStatus").textContent="Spazio locale insufficiente per salvare i dati."; }};
 const markets=()=>ENGINE().marketChoices();
-function getContext(match){return contexts[fixtureKey(match)]||{};}
+function getContext(match){
+  const key = fixtureKey(match);
+  const manual = contexts[key];
+  if (manual && manual.__manual) return manual;
+  const inj = (window.MM && window.MM.getMatchInjuries) ? window.MM.getMatchInjuries(match.home, match.away) : null;
+  if (manual && Object.keys(manual).length > 0) return manual;
+  if (inj && inj.hasData) return { ...inj.autoContext, __auto: true };
+  return {};
+}
+
+function renderInjuriesCard(match) {
+  const inj = (window.MM && window.MM.getMatchInjuries) ? window.MM.getMatchInjuries(match.home, match.away) : null;
+  if (!inj || !inj.hasData) return '';
+  const h = inj.home, a = inj.away;
+  const hTot = h ? h.totale_assenze : 0;
+  const aTot = a ? a.totale_assenze : 0;
+  const formatList = (team) => {
+    if (!team) return '<li>Dati non disponibili</li>';
+    const items = [];
+    if (team.infortunati && team.infortunati.length) {
+      team.infortunati.forEach(p => items.push('<li><span class="injury-role-badge">' + esc(p.role) + '</span> <b>' + esc(p.player) + '</b>: <small>' + esc(p.detail) + '</small></li>'));
+    }
+    if (team.squalificati && team.squalificati.length) {
+      team.squalificati.forEach(p => items.push('<li class="text-danger">🔴 <b>' + esc(p.player) + '</b> (squalificato): <small>' + esc(p.detail) + '</small></li>'));
+    }
+    if (team.diffidati && team.diffidati.length) {
+      items.push('<li class="text-muted"><small>🟡 Diffidati: ' + team.diffidati.map(p => esc(p.player)).join(', ') + '</small></li>');
+    }
+    return items.length ? items.join('') : '<li>Nessuna assenza segnalata (rosa al completo)</li>';
+  };
+
+  return '<details class="injury-auto-drawer">' +
+    '<summary class="injury-auto-summary">' +
+      '<span>🏥 <b>Infermeria & Assenze ufficiali</b>: ' + esc(match.home) + ' (' + hTot + ') vs ' + esc(match.away) + ' (' + aTot + ')</span>' +
+      '<small class="injury-toggle-btn">Bollettino ▾</small>' +
+    '</summary>' +
+    '<div class="injury-auto-body">' +
+      '<div class="injury-team-col">' +
+        '<h6>' + esc(match.home) + ' (' + hTot + ' assenti)</h6>' +
+        '<ul class="injury-player-list">' + formatList(h) + '</ul>' +
+      '</div>' +
+      '<div class="injury-team-col">' +
+        '<h6>' + esc(match.away) + ' (' + aTot + ' assenti)</h6>' +
+        '<ul class="injury-player-list">' + formatList(a) + '</ul>' +
+      '</div>' +
+      '<div class="injury-auto-footer">' +
+        '<small>⚡ Le assenze di titolari in attacco e difesa sono già conteggiate in automatico nelle probabilità e nell’EV.</small>' +
+      '</div>' +
+    '</div>' +
+  '</details>';
+}
 function getForecast(match){return window.MM.forecast(match,data.history,getContext(match));}
 function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
 function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
@@ -84,6 +134,7 @@ function renderFixture(match){
  return '<article class="manual-fixture-card"><div class="manual-fixture-heading"><div><b>'+esc(match.home)+' – '+esc(match.away)+'</b><small>'+esc(window.MM.shortDate(match))+(match.time?' · '+esc(match.time):'')+' · confidenza '+esc(f.confidence)+'</small></div>'+(selected?'<span class="manual-picked-label">'+esc(marketLabel(selected.marketKey))+'</span>':'')+'</div>'+
  '<div class="fixture-forecast-strip"><span>1 <b>'+pct(p.home)+'</b></span><span>X <b>'+pct(p.draw)+'</b></span><span>2 <b>'+pct(p.away)+'</b></span><span>xG <b>'+f.homeXg.toFixed(2)+' – '+f.awayXg.toFixed(2)+'</b></span></div>'+
  '<div class="fixture-form-context"><span>'+esc(match.home)+' forma: <b>'+esc(form(f.home))+'</b></span><span>'+esc(match.away)+' forma: <b>'+esc(form(f.away))+'</b></span><span>'+esc(stand(f.standings.home))+'</span><span>'+esc(stand(f.standings.away))+'</span></div>'+
+ renderInjuriesCard(match)+
  '<div class="fixture-market-options">'+buttons+'</div><details class="manual-other-markets"><summary>Contesto squadra: assenze, infortuni e motivazione</summary><div class="context-controls"><div class="context-grid">'+absenceHtml+'</div>'+motivationHtml+'<small>Inserisci solo titolari realmente indisponibili. Le assenze sono una correzione indicativa, non una valutazione del valore individuale del giocatore. La motivazione automatica deriva dalla classifica; l’impostazione manuale è una tua valutazione.</small></div></details></article>';
 }
 function renderFixtures(){
@@ -184,7 +235,8 @@ function renderSlip(){
     '<span class="financial-pill">Equa: <b>'+fmtOdds(fairOdds)+'</b></span>'+
     '<span class="financial-pill '+(singleEv!=null?evClass:'text-muted')+'" data-ev-for="'+esc(fKey)+'">'+(singleEv!=null?'EV: <b>'+fmtEv(singleEv)+'</b>':'EV: <i>inserisci quota</i>')+'</span>'+
    '</div>'+
-   '<details class="slip-context-drawer">'+
+   renderInjuriesCard(row.match)+
+ '<details class="slip-context-drawer">'+
     '<summary class="slip-context-summary">'+
      '<span>⚙️ Correzione manuale contesto / assenze</span>'+
      (hasCustomContext?'<b class="context-active-badge">⚡ '+contextDesc+'</b>':'<small class="text-muted">Neutro</small>')+
@@ -947,6 +999,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
  initEvents();$("globalStatus").textContent="Carico calendario e risultati storici…";
  try{
   await window.MM.loadOdds?.();
+  await window.MM.loadInjuries?.();
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));

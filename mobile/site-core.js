@@ -563,6 +563,73 @@ function eventForecast(match,history){
     })().catch(() => []);
     return oddsPromise;
   }
+  let injuriesPromise = null, injuriesData = null;
+  const INJURIES_CACHE_KEY = 'mm_injuries_data_v1';
+  async function loadInjuries(force = false) {
+    if (!force && injuriesData) return injuriesData;
+    if (!force && injuriesPromise) return injuriesPromise;
+    injuriesPromise = (async () => {
+      if (!force) {
+        try {
+          const cached = localStorage.getItem(INJURIES_CACHE_KEY);
+          if (cached) {
+            injuriesData = JSON.parse(cached);
+            return injuriesData;
+          }
+        } catch (_) {}
+      }
+      try {
+        const resp = await fetch('./injuries-data.json', { cache: 'no-cache', signal: AbortSignal.timeout(6000) });
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json && json.teams) {
+            injuriesData = json;
+            try { localStorage.setItem(INJURIES_CACHE_KEY, JSON.stringify(json)); } catch (_) {}
+            return injuriesData;
+          }
+        }
+      } catch (_) {}
+      if (!injuriesData) {
+        try {
+          const cached = localStorage.getItem(INJURIES_CACHE_KEY);
+          if (cached) injuriesData = JSON.parse(cached);
+        } catch (_) {}
+      }
+      return injuriesData;
+    })().catch(() => injuriesData);
+    return injuriesPromise;
+  }
+  function findTeamInjuries(teamName) {
+    if (!teamName || !injuriesData || !injuriesData.teams) return null;
+    const teams = injuriesData.teams;
+    if (teams[teamName]) return teams[teamName];
+    for (const key of Object.keys(teams)) {
+      if (sameTeam(key, teamName)) return teams[key];
+    }
+    return null;
+  }
+  function getMatchInjuries(homeName, awayName) {
+    const home = findTeamInjuries(homeName);
+    const away = findTeamInjuries(awayName);
+    const attAbsH = Math.min(3, (home && home.assenze_attacco) || 0);
+    const defAbsH = Math.min(3, (home && home.assenze_difesa) || 0);
+    const attAbsA = Math.min(3, (away && away.assenze_attacco) || 0);
+    const defAbsA = Math.min(3, (away && away.assenze_difesa) || 0);
+    return {
+      home,
+      away,
+      hasData: Boolean(home || away),
+      autoContext: {
+        attackingAbsencesHome: attAbsH,
+        defensiveAbsencesHome: defAbsH,
+        attackingAbsencesAway: attAbsA,
+        defensiveAbsencesAway: defAbsA,
+        motivationHome: 0,
+        motivationAway: 0
+      }
+    };
+  }
+
   function matchOdds(m) {
     if (!m || !oddsList || !oddsList.length) return null;
     return oddsList.find(o =>
@@ -570,5 +637,5 @@ function eventForecast(match,history){
     ) ? oddsList.find(o => sameTeam(o.home, m.home) && sameTeam(o.away, m.away)).odds : null;
   }
 
-  window.MM={loadOdds,matchOdds,$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
+  window.MM={loadOdds,matchOdds,loadInjuries,getMatchInjuries,findTeamInjuries,$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
 })();
