@@ -116,6 +116,18 @@ test("forecast exposes venue form, standings and manual availability adjustments
   assert.ok(["alta","media","limitata","molto bassa"].includes(base.confidence));
   assert.ok(adjusted.homeXg<base.homeXg);
   assert.ok(adjusted.homeVenue.played>0);
+
+  const heavyAbsHome = window.MM.forecast(match, rows, { attackingAbsencesHome: 2, defensiveAbsencesHome: 1 });
+  assert.ok(heavyAbsHome.homeXg < base.homeXg, "heavy absences must reduce home xG");
+  assert.ok(heavyAbsHome.probabilities.home < base.probabilities.home, "heavy absences must reduce home 1X2 probability");
+
+  const motHome = window.MM.forecast(match, rows, { motivationHome: 1 });
+  assert.ok(motHome.homeXg > base.homeXg, "positive motivation must increase home xG");
+  assert.ok(motHome.probabilities.home > base.probabilities.home, "positive motivation must increase home 1X2 probability");
+
+  const neutral = window.MM.forecast(match, rows, { attackingAbsencesHome: 0, defensiveAbsencesHome: 0, motivationHome: 0 });
+  assert.equal(neutral.homeXg, base.homeXg, "neutral options must keep home xG identical");
+  assert.equal(neutral.probabilities.home, base.probabilities.home, "neutral options must keep 1X2 identical");
 });
 
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      1.7.2
+// @version      1.8.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -148,6 +148,25 @@
 
   // Cache dei calcoli Poisson per evitare ricalcoli inutili
   const forecastCache = new Map();
+  const matchContexts = {};
+
+  function getMatchContext(home, away) {
+    const key = `${canonicalTeam(home)}|${canonicalTeam(away)}`;
+    return matchContexts[key] || {
+      attackingAbsencesHome: 0,
+      defensiveAbsencesHome: 0,
+      motivationHome: 0,
+      attackingAbsencesAway: 0,
+      defensiveAbsencesAway: 0,
+      motivationAway: 0
+    };
+  }
+
+  function setMatchContext(home, away, ctx) {
+    const key = `${canonicalTeam(home)}|${canonicalTeam(away)}`;
+    matchContexts[key] = { ...(matchContexts[key] || {}), ...ctx };
+    forecastCache.clear();
+  }
 
   function poisson(lambda, k) {
     if (lambda <= 0) return k === 0 ? 1 : 0;
@@ -156,11 +175,13 @@
     return p;
   }
 
-  // Motore Poisson MatchMind (matrice gol 0-7)
+  // Motore Poisson MatchMind (matrice gol 0-7) con supporto correttivi manuali assenze e motivazione
   function calculateMatchMindForecast(homeName, awayName) {
     const hKey = canonicalTeam(homeName);
     const aKey = canonicalTeam(awayName);
-    const memoKey = `${hKey}|${aKey}`;
+    const ctx = getMatchContext(homeName, awayName);
+    const ctxHash = `${ctx.attackingAbsencesHome||0}_${ctx.defensiveAbsencesHome||0}_${ctx.motivationHome||0}_${ctx.attackingAbsencesAway||0}_${ctx.defensiveAbsencesAway||0}_${ctx.motivationAway||0}`;
+    const memoKey = `${hKey}|${aKey}|${ctxHash}`;
 
     if (forecastCache.has(memoKey)) {
       return forecastCache.get(memoKey);
@@ -172,8 +193,16 @@
     const avgHome = 1.35;
     const avgAway = 1.10;
 
-    const homeXg = Math.max(0.2, avgHome * (h.att / 1.25) * (a.def / 1.25) * 1.05 * (1 + h.homeBoost));
-    const awayXg = Math.max(0.2, avgAway * (a.att / 1.25) * (h.def / 1.25) * (1 - a.homeBoost * 0.35));
+    const attH = Math.max(0, Math.min(3, Number(ctx.attackingAbsencesHome) || 0));
+    const defH = Math.max(0, Math.min(3, Number(ctx.defensiveAbsencesHome) || 0));
+    const motH = Math.max(-1, Math.min(1, Number(ctx.motivationHome) || 0));
+
+    const attA = Math.max(0, Math.min(3, Number(ctx.attackingAbsencesAway) || 0));
+    const defA = Math.max(0, Math.min(3, Number(ctx.defensiveAbsencesAway) || 0));
+    const motA = Math.max(-1, Math.min(1, Number(ctx.motivationAway) || 0));
+
+    const homeXg = Math.max(0.15, avgHome * (h.att / 1.25) * (a.def / 1.25) * 1.05 * (1 + h.homeBoost) * (1 + motH * 0.03) * (1 - 0.04 * attH) * (1 + 0.04 * defA));
+    const awayXg = Math.max(0.15, avgAway * (a.att / 1.25) * (h.def / 1.25) * (1 - a.homeBoost * 0.35) * (1 + motA * 0.03) * (1 - 0.04 * attA) * (1 + 0.04 * defH));
 
     let pHome = 0, pDraw = 0, pAway = 0;
     let o15 = 0, u15 = 0, o25 = 0, u25 = 0, o35 = 0, u35 = 0;
@@ -1223,6 +1252,7 @@
       marketKey: marketKey,
       marketLabel: marketLabel,
       odds: Number(odds),
+      context: getMatchContext(home, away),
       date: new Date().toISOString().slice(0, 10),
       timestamp: Date.now()
     };
@@ -1239,7 +1269,8 @@
       marketKey: c.key,
       marketLabel: c.label,
       odds: c.odd,
-      bookmaker: "Sisal"
+      bookmaker: "Sisal",
+      context: getMatchContext(c.home, c.away)
     }));
 
     const payload = {
@@ -1285,7 +1316,8 @@
             marketKey: mInfo.key,
             marketLabel: mInfo.label,
             odds: oddVal,
-            bookmaker: "Sisal"
+            bookmaker: "Sisal",
+            context: getMatchContext(home, away)
           });
         }
       });
@@ -1594,7 +1626,7 @@
     if (!calculations.length && !allMarketsList.length) {
       widget.innerHTML = `
         <div id="mm-widget-head">
-          <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.7</span></div>
+          <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.8</span></div>
           <div class="mm-head-actions">
             <button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button>
             <button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button>
@@ -1736,11 +1768,41 @@
 
     widget.innerHTML = `
       <div id="mm-widget-head">
-        <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.7</span></div>
+        <div style="display:flex;align-items:center;gap:5px;"><span>🧠 MatchMind Sisal</span><span style="font-size:9px;background:#1e293b;padding:1px 4px;border-radius:4px;color:#94a3b8;">v1.8</span></div>
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
       <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Stime indicative del modello MatchMind, non validate per questa partita. EV teorico, non garanzia.</div>
+      ${!isMulti && currentAnalysis.home && currentAnalysis.away ? (() => {
+        const curCtx = getMatchContext(currentAnalysis.home, currentAnalysis.away);
+        const isCustom = Boolean(curCtx.attackingAbsencesHome || curCtx.defensiveAbsencesHome || curCtx.motivationHome || curCtx.attackingAbsencesAway || curCtx.defensiveAbsencesAway || curCtx.motivationAway);
+        return `
+        <details class="mm-context-drawer" style="margin-top:4px;margin-bottom:6px;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:6px;font-size:10px;">
+          <summary style="cursor:pointer;color:#38bdf8;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+            <span>⚙️ Correzione assenze & motivazione</span>
+            ${isCustom ? '<span style="color:#34d399;font-weight:800;">⚡ Modificato</span>' : '<span style="color:#64748b;">Neutro</span>'}
+          </summary>
+          <div style="margin-top:6px;display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:700;color:#f8fafc;">${currentAnalysis.home}:</span>
+              <div style="display:flex;gap:4px;">
+                <button type="button" class="mm-ctx-btn" data-action="abs-home" style="padding:2px 6px;background:#1e293b;border:1px solid #475569;border-radius:4px;color:#f1f5f9;font-size:9px;cursor:pointer;">⚠️ Assenze (-10%)</button>
+                <button type="button" class="mm-ctx-btn" data-action="mot-home" style="padding:2px 6px;background:#1e293b;border:1px solid #475569;border-radius:4px;color:#f1f5f9;font-size:9px;cursor:pointer;">🔥 Decisiva (+5%)</button>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:700;color:#f8fafc;">${currentAnalysis.away}:</span>
+              <div style="display:flex;gap:4px;">
+                <button type="button" class="mm-ctx-btn" data-action="abs-away" style="padding:2px 6px;background:#1e293b;border:1px solid #475569;border-radius:4px;color:#f1f5f9;font-size:9px;cursor:pointer;">⚠️ Assenze (-10%)</button>
+                <button type="button" class="mm-ctx-btn" data-action="mot-away" style="padding:2px 6px;background:#1e293b;border:1px solid #475569;border-radius:4px;color:#f1f5f9;font-size:9px;cursor:pointer;">🔥 Decisiva (+5%)</button>
+              </div>
+            </div>
+            <div style="text-align:right;margin-top:2px;">
+              <button type="button" class="mm-ctx-btn" data-action="reset" style="padding:2px 8px;background:#3f1d1d;border:1px solid #7f1d1d;border-radius:4px;color:#fca5a5;font-size:9px;cursor:pointer;">↺ Reset neutro</button>
+            </div>
+          </div>
+        </details>`;
+      })() : ''}
       <div class="mm-view-tabs">
         <button class="mm-view-tab ${currentView === 'all_markets' ? 'active' : ''}" data-view="all_markets">📋 Tutti i Mercati (${allMarketsList.length})</button>
         <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">⭐ Solo Consigliate (${activePicks.length})</button>
@@ -1773,6 +1835,24 @@
       slider.addEventListener("change", e => setThreshold(Number(e.target.value)));
     }
     widget.querySelectorAll(".mm-chip").forEach(chip => chip.addEventListener("click", e => setThreshold(Number(e.currentTarget.dataset.val))));
+
+    widget.querySelectorAll(".mm-ctx-btn").forEach(btn => btn.addEventListener("click", e => {
+      const action = e.currentTarget.dataset.action;
+      const h = currentAnalysis.home, a = currentAnalysis.away;
+      if (!h || !a) return;
+      if (action === "abs-home") {
+        setMatchContext(h, a, { attackingAbsencesHome: 2, defensiveAbsencesHome: 1 });
+      } else if (action === "mot-home") {
+        setMatchContext(h, a, { motivationHome: 1 });
+      } else if (action === "abs-away") {
+        setMatchContext(h, a, { attackingAbsencesAway: 2, defensiveAbsencesAway: 1 });
+      } else if (action === "mot-away") {
+        setMatchContext(h, a, { motivationAway: 1 });
+      } else if (action === "reset") {
+        setMatchContext(h, a, { attackingAbsencesHome: 0, defensiveAbsencesHome: 0, motivationHome: 0, attackingAbsencesAway: 0, defensiveAbsencesAway: 0, motivationAway: 0 });
+      }
+      scanPage();
+    }));
 
     const headEl = document.getElementById("mm-widget-head");
     if (headEl) initDraggable(widget, headEl);

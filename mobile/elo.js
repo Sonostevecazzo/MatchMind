@@ -79,6 +79,7 @@
   const K=Number.isFinite(options.kFactor)?options.kFactor:20;
   const homeAdvantage=Number.isFinite(options.homeAdvantage)?options.homeAdvantage:40;
   const initial=Number.isFinite(options.initialRating)?options.initialRating:1500;
+  const eloShift=Number.isFinite(options.eloShift)?options.eloShift:0;
   const competition=match&&match.competition||'serie-a';
   const played=(history||[]).filter(m=>valid(m)&&m.date<String(match.date||'')&&(m.competition||'serie-a')===competition).slice().sort((a,b)=>a.date.localeCompare(b.date));
   if(played.length<30)return null;
@@ -101,7 +102,7 @@
   }
   const homeCount=counts.get(key(match.home))||0,awayCount=counts.get(key(match.away))||0;
   if(homeCount<10||awayCount<10)return null;
-  const expected=1/(1+Math.pow(10,-((rating(match.home)-rating(match.away)+homeAdvantage)/400)));
+  const expected=1/(1+Math.pow(10,-((rating(match.home)-rating(match.away)+homeAdvantage+eloShift)/400)));
   const draw=clamp((priorDraws+6)/(priorMatches+24),.12,.38);
   const home=clamp(expected-draw/2,.005,1-draw-.005);
   return {home,draw,away:1-draw-home,method:'Elo',kFactor:K,homeAdvantage,homeRating:rating(match.home),awayRating:rating(match.away),historyCount:priorMatches};

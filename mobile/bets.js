@@ -160,6 +160,17 @@ function renderSlip(){
   const fairOdds=ENGINE().fairOdds(row.probability);
   const singleEv=ENGINE().expectedValue(row.probability,row.odds);
   const evClass=singleEv!=null?(singleEv>=0?"ev-pos":"ev-neg"):"";
+  const ctx=getContext(row.match);
+  const hasCustomContext=Boolean(ctx.attackingAbsencesHome||ctx.defensiveAbsencesHome||ctx.attackingAbsencesAway||ctx.defensiveAbsencesAway||ctx.motivationHome||ctx.motivationAway);
+  const contextDesc = hasCustomContext ? [
+    ctx.attackingAbsencesHome ? (esc(row.match.home)+' att -'+ctx.attackingAbsencesHome) : '',
+    ctx.defensiveAbsencesHome ? (esc(row.match.home)+' dif -'+ctx.defensiveAbsencesHome) : '',
+    ctx.motivationHome ? (esc(row.match.home)+' mot '+(ctx.motivationHome>0?'+1':'-1')) : '',
+    ctx.attackingAbsencesAway ? (esc(row.match.away)+' att -'+ctx.attackingAbsencesAway) : '',
+    ctx.defensiveAbsencesAway ? (esc(row.match.away)+' dif -'+ctx.defensiveAbsencesAway) : '',
+    ctx.motivationAway ? (esc(row.match.away)+' mot '+(ctx.motivationAway>0?'+1':'-1')) : ''
+  ].filter(Boolean).join(" · ") : "";
+
   return '<div class="manual-selected-row" data-fixture="'+esc(fKey)+'">'+
    '<div class="manual-selected-row-main">'+
     '<span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b>'+
@@ -173,6 +184,34 @@ function renderSlip(){
     '<span class="financial-pill">Equa: <b>'+fmtOdds(fairOdds)+'</b></span>'+
     '<span class="financial-pill '+(singleEv!=null?evClass:'text-muted')+'" data-ev-for="'+esc(fKey)+'">'+(singleEv!=null?'EV: <b>'+fmtEv(singleEv)+'</b>':'EV: <i>inserisci quota</i>')+'</span>'+
    '</div>'+
+   '<details class="slip-context-drawer">'+
+    '<summary class="slip-context-summary">'+
+     '<span>⚙️ Correzione manuale contesto / assenze</span>'+
+     (hasCustomContext?'<b class="context-active-badge">⚡ '+contextDesc+'</b>':'<small class="text-muted">Neutro</small>')+
+    '</summary>'+
+    '<div class="slip-context-body">'+
+     '<div class="slip-context-row">'+
+      '<span class="slip-context-team-label">'+esc(row.match.home)+'</span>'+
+      '<label>Att. assenti: <select data-context="'+esc(fKey)+'" data-context-field="attackingAbsencesHome">'+selectOptions(ctx.attackingAbsencesHome)+'</select></label>'+
+      '<label>Dif. assenti: <select data-context="'+esc(fKey)+'" data-context-field="defensiveAbsencesHome">'+selectOptions(ctx.defensiveAbsencesHome)+'</select></label>'+
+      '<label>Motivazione: <select data-context="'+esc(fKey)+'" data-context-field="motivationHome">'+motivationOptions(ctx.motivationHome)+'</select></label>'+
+     '</div>'+
+     '<div class="slip-context-row">'+
+      '<span class="slip-context-team-label">'+esc(row.match.away)+'</span>'+
+      '<label>Att. assenti: <select data-context="'+esc(fKey)+'" data-context-field="attackingAbsencesAway">'+selectOptions(ctx.attackingAbsencesAway)+'</select></label>'+
+      '<label>Dif. assenti: <select data-context="'+esc(fKey)+'" data-context-field="defensiveAbsencesAway">'+selectOptions(ctx.defensiveAbsencesAway)+'</select></label>'+
+      '<label>Motivazione: <select data-context="'+esc(fKey)+'" data-context-field="motivationAway">'+motivationOptions(ctx.motivationAway)+'</select></label>'+
+     '</div>'+
+     '<div class="slip-context-presets">'+
+      '<span class="slip-preset-title">Preset rapidi:</span>'+
+      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="heavy-abs-home">⚠️ Assenze '+esc(row.match.home)+'</button>'+
+      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="heavy-abs-away">⚠️ Assenze '+esc(row.match.away)+'</button>'+
+      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="high-mot-home">🔥 Decisiva '+esc(row.match.home)+'</button>'+
+      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="high-mot-away">🔥 Decisiva '+esc(row.match.away)+'</button>'+
+      '<button type="button" class="slip-preset-btn btn-reset" data-context-preset="'+esc(fKey)+'" data-preset-type="reset">↺ Reset</button>'+
+     '</div>'+
+    '</div>'+
+   '</details>'+
   '</div>';
  }).join("");
 
@@ -677,6 +716,11 @@ function handleUrlImport(){
     bookmaker:bkmk
    };
 
+   const fKey=fixtureKey(pickData);
+   if(item.context&&typeof item.context==="object"){
+    contexts[fKey]={...(contexts[fKey]||{}),...item.context};
+    save(CONTEXT_KEY,contexts);
+   }
    const existingIdx=picks.findIndex(p=>isSameMatch(p.home,p.away,pickData.home,pickData.away));
    if(existingIdx>=0){
     picks[existingIdx]={...picks[existingIdx],...pickData};
@@ -714,6 +758,22 @@ function initEvents(){
 
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
+ const handleContextChange=event=>{
+  const select=event.target.closest("[data-context-field]");
+  if(select){
+   const fKey=select.dataset.context,field=select.dataset.contextField;
+   if(fKey&&field){
+    contexts[fKey]=contexts[fKey]||{};
+    contexts[fKey][field]=Number(select.value);
+    save(CONTEXT_KEY,contexts);
+    renderSlip();
+    renderFixtures();
+   }
+  }
+ };
+ $("manualSlipSummary").addEventListener("change",handleContextChange);
+ $("manualFixtures")?.addEventListener("change",handleContextChange);
+
  $("manualSlipSummary").addEventListener("input",event=>{
   const oddsInput=event.target.closest(".manual-odds-input");
   if(oddsInput){
@@ -729,6 +789,29 @@ function initEvents(){
   }
  });
  $("manualSlipSummary").addEventListener("click",event=>{
+  const presetBtn=event.target.closest("[data-context-preset]");
+  if(presetBtn){
+   const fKey=presetBtn.dataset.contextPreset;
+   const type=presetBtn.dataset.presetType;
+   contexts[fKey]=contexts[fKey]||{};
+   if(type==="heavy-abs-home"){
+    contexts[fKey].attackingAbsencesHome=2;
+    contexts[fKey].defensiveAbsencesHome=1;
+   }else if(type==="heavy-abs-away"){
+    contexts[fKey].attackingAbsencesAway=2;
+    contexts[fKey].defensiveAbsencesAway=1;
+   }else if(type==="high-mot-home"){
+    contexts[fKey].motivationHome=1;
+   }else if(type==="high-mot-away"){
+    contexts[fKey].motivationAway=1;
+   }else if(type==="reset"){
+    delete contexts[fKey];
+   }
+   save(CONTEXT_KEY,contexts);
+   renderSlip();
+   renderFixtures();
+   return;
+  }
   const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderSlip();return;}
   const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();

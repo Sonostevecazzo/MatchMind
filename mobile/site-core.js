@@ -375,13 +375,18 @@
     const motivationHome=clamp(Number(options.motivationHome)||0,-1,1),motivationAway=clamp(Number(options.motivationAway)||0,-1,1);
     const attAbsH=clamp(Number(options.attackingAbsencesHome)||0,0,3),defAbsH=clamp(Number(options.defensiveAbsencesHome)||0,0,3);
     const attAbsA=clamp(Number(options.attackingAbsencesAway)||0,0,3),defAbsA=clamp(Number(options.defensiveAbsencesAway)||0,0,3);
-    let homeXg=Math.max(0.15,Math.min(4.5,allHome*((hAttack+0.65)/(allHome+0.65))*((aDefence+0.65)/(allHome+0.65))*1.055*(1+formHome)*(1+pressureHome*0.012)*(1+motivationHome*0.02)*(1-0.035*attAbsH)*(1+0.035*defAbsA)));
-    let awayXg=Math.max(0.15,Math.min(4.5,allAway*((aAttack+0.65)/(allAway+0.65))*((hDefence+0.65)/(allAway+0.65))*(1+formAway)*(1+pressureAway*0.012)*(1+motivationAway*0.02)*(1-0.035*attAbsA)*(1+0.035*defAbsH)));
+    const contextShiftHome=clamp(Number(options.contextShiftHome)||0,-0.4,0.4);
+    const contextShiftAway=clamp(Number(options.contextShiftAway)||0,-0.4,0.4);
+    let homeXg=Math.max(0.15,Math.min(4.5,allHome*((hAttack+0.65)/(allHome+0.65))*((aDefence+0.65)/(allHome+0.65))*1.055*(1+formHome)*(1+pressureHome*0.012)*(1+motivationHome*0.02)*(1+contextShiftHome)*(1-0.035*attAbsH)*(1+0.035*defAbsA)));
+    let awayXg=Math.max(0.15,Math.min(4.5,allAway*((aAttack+0.65)/(allAway+0.65))*((hDefence+0.65)/(allAway+0.65))*(1+formAway)*(1+pressureAway*0.012)*(1+motivationAway*0.02)*(1+contextShiftAway)*(1-0.035*attAbsA)*(1+0.035*defAbsH)));
     const dates=hist.map(m=>m.date).filter(Boolean).sort(),scoreMatrix=[];let matrixMass=0;
     for(let homeGoals=0;homeGoals<=5;homeGoals++)for(let awayGoals=0;awayGoals<=5;awayGoals++){const probability=poisson(homeXg,homeGoals)*poisson(awayXg,awayGoals);matrixMass+=probability;scoreMatrix.push({homeGoals,awayGoals,probability});}
     const minTeamSample=Math.min(h.played,a.played),confidence=minTeamSample>=10?"alta":minTeamSample>=6?"media":minTeamSample>=3?"limitata":"molto bassa";
     const poissonProbabilities=probs(homeXg,awayXg);
-    const eloProbabilities=options.__forcePoisson?null:(window.MatchMindElo&&window.MatchMindElo.eloProbabilities(match,hist));
+    const netContextShift=(motivationHome-motivationAway)*20 + (contextShiftHome-contextShiftAway)*150 + (defAbsA-attAbsH)*25 - (defAbsH-attAbsA)*25;
+    const eloOptions={...options};
+    if(netContextShift && !options.eloShift)eloOptions.eloShift=netContextShift;
+    const eloProbabilities=options.__forcePoisson?null:(window.MatchMindElo&&window.MatchMindElo.eloProbabilities(match,hist,eloOptions));
     const rawProbabilities=eloProbabilities?{...poissonProbabilities,home:eloProbabilities.home,draw:eloProbabilities.draw,away:eloProbabilities.away}:poissonProbabilities;
     const predictionMethod=eloProbabilities?'elo-1x2-poisson-goals':'poisson';
     const aiModel=options.__skipAI?null:(window.MatchMindAI&&window.MatchMindAI.modelFor(competition));
