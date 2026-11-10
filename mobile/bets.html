@@ -52,7 +52,19 @@
  </section>
 
  <section class="section panel panel-pad" id="manualBuilder">
-  <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Qui trovi soltanto le giocate che hai aggiunto dalla pagina Partite. Puoi rivederle, rimuoverle e confermare la schedina.</p></div></div>
+  <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Seleziona le partite qui sotto oppure nella pagina Partite. Le scelte vengono condivise con il costruttore e puoi trasferirle a Sisal quando la schedina è pronta.</p></div></div>
+  <section class="section" aria-labelledby="builderFixtureTitle" style="margin-top:14px">
+   <div class="section-head"><div><div class="eyebrow">CALENDARIO DISPONIBILE</div><h3 id="builderFixtureTitle">Scegli le partite</h3><p>Il calendario è condiviso con la pagina Partite. Apri un mercato e seleziona un esito per inserirlo nella schedina.</p></div></div>
+   <div class="match-advanced-grid">
+    <div class="field"><label for="matchSearch">Cerca squadra</label><input id="matchSearch" type="search" placeholder="Es. Inter, Milan, Roma…" autocomplete="off"></div>
+    <div class="field"><label for="betsDate">Data</label><input id="betsDate" type="date"></div>
+    <div class="field"><label for="betsTeam">Squadra</label><select id="betsTeam"><option value="">Tutte le squadre</option></select></div>
+    <div class="field"><label for="betsRound">Giornata</label><select id="betsRound"><option value="">Tutte le giornate</option></select></div>
+   </div>
+   <p id="betsFixtureCount" class="status-line" aria-live="polite">Caricamento calendario…</p>
+   <div id="manualFixtures" class="fixture-list"><div class="loading-state">Caricamento partite…</div></div>
+   <div style="text-align:center;margin-top:12px"><button id="moreBetFixtures" class="ghost" type="button" hidden>Carica altre partite</button></div>
+  </section>
   <div id="manualSlipSummary"><div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div></div>
   <button id="saveManualSlip" type="button" class="primary" style="width:100%;margin-top:10px">Conferma e salva schedina</button>
   <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
