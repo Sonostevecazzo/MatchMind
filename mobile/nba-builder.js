@@ -22,7 +22,7 @@
       stake:calculations.stake,totalOdds:calculations.totalOdds,potentialWin:calculations.potentialWin,
       netWin:calculations.netWin,expectedValue:calculations.expectedValue,probability:calculations.probability,
       selections:rows.map(x=>({
-        home:String(x.home),away:String(x.away),date:String(x.date||""),
+        home:String(x.home),away:String(x.away),date:String(x.date||""),eventId:String(x.id||x.eventId||""),side:x.side==="home"?"home":"away",team:String(x.team||(x.side==="home"?x.home:x.away)),sport:"nba",
         market:String(x.market||("Vittoria "+(x.side==="home"?"casa":"trasferta"))),
         marketKey:String(x.marketKey||("nbaMoneyline:"+x.side)),
         probability:Number(x.probability),odds:Number.isFinite(Number(x.odds))&&Number(x.odds)>1?Number(x.odds):null,
