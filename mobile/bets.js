@@ -111,7 +111,7 @@ function renderInjuriesCard(match) {
 function getForecast(match){return window.MM.forecast(match,data.history,getContext(match));}
 function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
 function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
-function writePicks(){const stored=readPicks(),nba=stored.filter(p=>p&&p.sport==="nba");save(PICKS_KEY,nba.concat(picks));}
+function writePicks(){const stored=readPicks(),competition=window.MM.getSelectedCompetition(),retained=stored.filter(p=>p&&(p.sport==="nba"||(p.competition||"serie-a")!==competition)),current=picks.map(p=>({...p,competition:p.competition||competition}));save(PICKS_KEY,retained.concat(current));window.dispatchEvent(new Event("matchmind:picks-updated"));}
 window.addEventListener("matchmind:picks-updated",()=>{picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());if(data){renderSlip();}});
 function selectedFor(match){return picks.find(p=>fixtureKey(p)===fixtureKey(match));}
 function selectOptions(value){return [0,1,2,3].map(n=>'<option value="'+n+'"'+(Number(value||0)===n?' selected':'')+'>'+n+'</option>').join("");}
