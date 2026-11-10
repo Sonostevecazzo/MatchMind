@@ -1076,6 +1076,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());
+  slipExpanded=picks.length>0;
   contexts=read(CONTEXT_KEY,{});
   archive=read(ARCHIVE_KEY,[]);
   if(!Array.isArray(archive))archive=[];
