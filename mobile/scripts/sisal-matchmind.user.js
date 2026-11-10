@@ -1828,6 +1828,7 @@
           </div>
         </details>`;
       })() : ''}
+      <div style="font-size:10px;color:#fbbf24;background:#30250b;border:1px solid #854d0e;border-radius:5px;padding:6px;margin:4px 0;">Stima esplorativa su baseline neutra: rating squadra e xG specifici non sono verificati. Non usare come probabilità calibrate o indicazione di puntata.</div>
       <div class="mm-view-tabs">
         <button class="mm-view-tab ${currentView === 'all_markets' ? 'active' : ''}" data-view="all_markets">📋 Tutti i Mercati (${allMarketsList.length})</button>
         <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">⭐ Solo Consigliate (${activePicks.length})</button>
@@ -2233,7 +2234,7 @@
       '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">Apri la partita su Sisal, verifica manualmente esito e quota e aggiungila tu al biglietto. MatchMind non clicca né conferma scommesse.</div>' +
       queue.map(q => '<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;padding:3px 0;border-top:1px solid #1e293b;">' +
         '<span>' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + ' · <b>' + escapeHtml(q.label) + '</b></span>' +
-        '<span style="color:' + (q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24") + ';white-space:nowrap;" title="' + escapeHtml(q.error || "") + '">' + (q.status === "added" ? "✓ aggiunta" + (q.sisalOdds ? " @" + Number(q.sisalOdds).toFixed(2) : "") : q.status === "error" ? "⚠ errore" : q.status === "manual" ? "da aggiungere" : "in attesa") + '</span></div>' + (q.status === "error" && q.error ? '<div style="font-size:10.5px;color:#fca5a5;padding:0 0 3px;">' + escapeHtml(q.error) + '</div>' : '')).join("");
+        '<span style="color:' + (q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24") + ';white-space:nowrap;" title="' + escapeHtml(q.error || "") + '">' + (q.status === "added" ? "✓ aggiunta" + (q.sisalOdds ? " @" + Number(q.sisalOdds).toFixed(2) : "") : q.status === "error" ? "⚠ errore" : q.status === "manual" ? "da aggiungere" : "in attesa") + '</span></div>' + ((q.status === "error" || q.status === "manual") && q.error ? '<div style="font-size:10.5px;color:#fca5a5;padding:0 0 3px;">' + escapeHtml(q.error) + '</div>' : '')).join("");
     widget.insertBefore(box, document.getElementById("mm-resize-grip"));
     box.querySelector("#mm-play-clear").onclick = (e) => { e.stopPropagation(); writePlayQueue([]); renderWidget(); };
   }
