@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.9.0
+// @version      2.10.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -23,7 +23,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.9.0";
+  const MM_SCRIPT_VERSION = "2.10.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -752,9 +752,26 @@
       font-size: 11px;
       padding: 10px;
       gap: 7px;
-      touch-action: none;
+      touch-action: pan-y;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       box-sizing: border-box;
       backdrop-filter: blur(10px);
+    }
+
+    @media (max-width: 600px) {
+      #mm-widget {
+        width: min(370px, calc(100vw - 18px)) !important;
+        max-width: calc(100vw - 18px) !important;
+        max-height: 46dvh !important;
+        right: 9px !important;
+        bottom: calc(82px + env(safe-area-inset-bottom)) !important;
+        padding: 8px !important;
+        gap: 5px !important;
+      }
+      #mm-play-queue-items { max-height: 180px; overflow-y: auto; overscroll-behavior: contain; }
+      #mm-play-toggle, #mm-play-clear { min-height: 32px; padding: 3px 7px; font-size: 10px; }
     }
 
     #mm-widget.mm-is-minimized {
@@ -1090,7 +1107,7 @@
     let lineInfo = "";
 
     let curr = btn.parentElement;
-    for (let i = 0; i < 4 && curr && curr !== document.body; i++) {
+    for (let i = 0; i < 8 && curr && curr !== document.body; i++) {
       if (!lineInfo) {
         const sel = curr.querySelector("select");
         if (sel) lineInfo = sel.value || (sel.options && sel.options[sel.selectedIndex]?.text) || "";
@@ -1711,7 +1728,7 @@
           </div>
         </div>
         <div style="font-size:11px;color:#94a3b8;padding:10px 4px;text-align:center;">
-          \${currentAnalysis?.sport === "nba"
+          ${currentAnalysis?.sport === "nba"
             ? "Modalità NBA: il modello calcio è disattivato su questa pagina. Usa il costruttore NBA di MatchMind per le stime basket."
             : currentAnalysis?.forecastUnavailable
               ? "Analisi sospesa: mancano rating squadra verificati e versionati. Le quote si possono consultare e trasferire, ma MatchMind non mostra percentuali, quote eque, EV o consigli non supportati dai dati."
@@ -2470,15 +2487,15 @@
       if (!sameMatch.length) continue;
       const hit = sameMatch.find(c => c.btn && c.key === item.marketKey);
       if (!hit) {
-        item.status = "error"; item.errorType = "notfound";
-        item.error = "Partita trovata, ma mercato/quota non riconosciuti. Apri l'evento e riprova.";
+        item.status = "pending"; item.errorType = "";
+        item.error = "Partita riconosciuta; mercato non ancora identificato. Apri l'evento e usa «Trova quota».";
       } else if (hit.btn.disabled || hit.btn.getAttribute("aria-disabled") === "true") {
         item.status = "error"; item.errorType = "notfound"; item.error = "Quota sospesa o non disponibile su Sisal.";
       } else {
         item.status = "manual"; item.errorType = "";
         item.error = "Mercato individuato e contrassegnato. Premi «Aggiungi al biglietto» e verifica la quota.";
         item.sisalOdds = hit.odd; item.sisalOutcome = hit.outcome || null;
-        if (item.sport !== "nba" && hit.btn && item.marketKey === hit.key) {
+        if (hit.btn && item.marketKey === hit.key) {
           markSelectedMarket(hit.btn, item, hit.odd);
         }
       }
@@ -2493,32 +2510,42 @@
     if (!queue.length) { if (box) box.remove(); return; }
     if (!box) { box = document.createElement("div"); box.id = "mm-play-queue"; }
     const done = queue.filter(q => q.status === "added").length;
+    const expanded = box.dataset.expanded === "true";
     box.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:12px;margin-bottom:4px;">' +
-        '<span>🎯 Giocate da MatchMind: ' + done + '/' + queue.length + ' nel biglietto</span>' +
+      '<div style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:12px;margin-bottom:4px;">' +
+        '<span style="flex:1;min-width:0;">🎯 MatchMind: ' + done + '/' + queue.length + ' nel biglietto</span>' +
+        '<button type="button" id="mm-play-toggle" class="mm-icon-btn" aria-expanded="' + expanded + '">' + (expanded ? 'Nascondi' : 'Dettagli') + '</button>' +
         '<button type="button" id="mm-play-clear" class="mm-icon-btn" title="Svuota elenco">🗑</button>' +
       '</div>' +
-      '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">Aggiungi ogni selezione con il pulsante dedicato. Controlla il biglietto Sisal: la conferma della scommessa resta manuale.</div>' +
+      '<div id="mm-play-queue-items" style="display:' + (expanded ? 'block' : 'none') + ';">' +
+      '<div style="font-size:10px;color:#94a3b8;margin-bottom:5px;">Le quote si aggiungono solo dopo un tuo comando. Controlla sempre la schedina Sisal.</div>' +
       queue.map((q, i) => {
         const state = q.status === "added" ? "✓ nel biglietto" :
           q.status === "clicked" ? "click inviato · verifica" :
           q.status === "error" ? "⚠ da verificare" :
           q.status === "manual" ? "quota individuata" : "in attesa";
         const color = q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24";
-        const action = q.status === "added" || q.status === "clicked" ? "" :
+        const action = q.status === "added" || q.status === "clicked" || q.status === "manual" ? "" :
           '<button type="button" data-mm-add-queue="' + i + '" style="border:1px solid #36536a;background:#123047;color:#e0f2fe;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:800;white-space:nowrap;">' +
-            (q.status === "error" ? "Riprova" : "Aggiungi al biglietto") + '</button>';
+            (q.status === "error" ? "Riprova" : "Trova quota") + '</button>';
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #1e293b;">' +
           '<span style="min-width:0;font-size:11px;">' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + '<br><b>' + escapeHtml(q.label) + '</b>' +
+          (Number.isFinite(Number(q.probability)) && Number(q.probability) > 0 && Number(q.probability) < 1 ? ' · ' + Math.round(Number(q.probability) * 100) + '%' : '') +
           (q.sisalOdds ? ' · @' + Number(q.sisalOdds).toFixed(2) : '') + '</span>' +
           '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">' +
             '<span style="font-size:10px;color:' + color + ';">' + state + '</span>' + action +
           '</span></div>' +
-          (q.error ? '<div style="font-size:10px;color:#fca5a5;padding:0 0 5px;">' + escapeHtml(q.error) + '</div>' : '');
-      }).join("");
+          (q.error ? '<div style="font-size:10px;color:#cbd5e1;padding:0 0 5px;">' + escapeHtml(q.error) + '</div>' : '');
+      }).join("") + '</div>';
+    box.dataset.expanded = String(expanded);
     const anchor = document.getElementById("mm-resize-grip");
     if (anchor && anchor.parentElement === widget) widget.insertBefore(box, anchor);
     else widget.appendChild(box);
+    box.querySelector("#mm-play-toggle")?.addEventListener("click", event => {
+      event.stopPropagation();
+      box.dataset.expanded = String(box.dataset.expanded !== "true");
+      renderPlayQueue(widget);
+    });
     box.querySelector("#mm-play-clear")?.addEventListener("click", event => {
       event.stopPropagation();
       writePlayQueue([]);
