@@ -16,7 +16,7 @@ test("Sisal userscript compiles and reports the current version and installer UR
 });
 
 test("empty-state message interpolates NBA and unavailable-model states instead of printing source code", () => {
-  assert.equal(script.includes("\\\\${currentAnalysis?.sport"), false);
+  assert.doesNotMatch(script, /\\\$\{currentAnalysis\?\.sport/);
   assert.ok(script.includes('${currentAnalysis?.sport === "nba"'));
   assert.ok(script.includes('${currentAnalysis?.forecastUnavailable'));
 });
