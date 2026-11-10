@@ -164,6 +164,40 @@ return picks.map(p=>{
   return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:prob,forecast,odds,bookmaker:p.bookmaker||null};
  }).filter(Boolean);
 }
+const SISAL_URL = "https://www.sisal.it/scommesse-matchpoint";
+const SISAL_MARKET_LABELS = {
+  home: "1", draw: "X", away: "2", dc1X: "1X", dcX2: "X2", dc12: "12",
+  over15: "Over 1.5", under15: "Under 1.5", over25: "Over 2.5", under25: "Under 2.5",
+  over35: "Over 3.5", under35: "Under 3.5", bttsYes: "Gol", bttsNo: "No Gol"
+};
+function playOnSisal() {
+  const items = picks.filter(p => p && p.sport !== "nba" && p.home && p.away && SISAL_MARKET_LABELS[p.marketKey])
+    .map(p => ({
+      sport: "football",
+      home: String(p.home),
+      away: String(p.away),
+      marketKey: String(p.marketKey),
+      label: SISAL_MARKET_LABELS[p.marketKey],
+      odds: Number.isFinite(Number(p.odds)) && Number(p.odds) > 1 ? Number(p.odds) : null,
+      date: p.date || ""
+    }));
+  const status = $("manualBuilderStatus");
+  if (!items.length) {
+    if (status) status.textContent = picks.length
+      ? "Nessuna selezione calcio compatibile con i mercati Sisal supportati (1X2, doppia chance, Under/Over, Gol/No Gol)."
+      : "Schedina vuota: aggiungi prima una selezione.";
+    return;
+  }
+  const sentAt = Date.now();
+  const url = SISAL_URL + "#mmplay=" + encodeURIComponent(JSON.stringify({ sentAt, items }));
+  let opened = null;
+  try { opened = window.open(url, "_blank"); } catch (_) {}
+  if (opened) { try { opened.opener = null; } catch (_) {} }
+  else window.location.href = url;
+  const skipped = picks.length - items.length;
+  if (status) status.textContent = "Trasferite a Sisal " + items.length + " selezioni. Sul widget MatchMind premi «Aggiungi al biglietto» per ciascuna; controlla il riepilogo prima di confermare." +
+    (skipped ? " " + skipped + " selezioni combinate o non supportate sono state escluse." : "");
+}
 function updateSlipCalculations(){
  const rows=selectedRows();if(!rows.length)return;
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
@@ -303,6 +337,10 @@ function renderSlip(){
    '<div class="manual-summary-actions">'+
     '<button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button>'+
     '<button type="button" id="clearCurrentSlip" class="secondary">Svuota</button>'+
+   '</div>'+
+   '<div class="sisal-play-box" style="margin-top:12px;padding:12px;border:1px solid #31523f;border-radius:10px;background:#0d1b18;">'+
+    '<button type="button" id="playOnSisal" class="primary" style="width:100%;">🎯 Trasferisci selezioni a Sisal</button>'+
+    '<small style="display:block;margin-top:7px;color:#9eb3ad;line-height:1.45;">Lo script Tampermonkey individua le quote e mostra un pulsante per aggiungerle al biglietto. Ogni selezione richiede un tuo tocco; la conferma della scommessa resta sempre manuale.</small>'+
    '</div>'+
   '</div>'+
  '</details>';
@@ -841,6 +879,7 @@ function initEvents(){
   }
  });
  $("manualSlipSummary").addEventListener("click",event=>{
+  if(event.target.closest("#playOnSisal")){playOnSisal();return;}
   const presetBtn=event.target.closest("[data-context-preset]");
   if(presetBtn){
    const fKey=presetBtn.dataset.contextPreset;
