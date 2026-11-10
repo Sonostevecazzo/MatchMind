@@ -65,7 +65,7 @@ test("match page exposes a real Sisal handoff for selected football picks", () =
   assert.match(matchesHtml, /id="sendMatchPicksSisal"/);
   assert.match(matchesHtml, /id="matchSlipCount"/);
   assert.match(sitePages, /const sendMatchPicksToSisal=/);
-  assert.match(sitePages, /sendMatchPicksToSisal\(\)/);
+  assert.match(sitePages, /addEventListener\("click",sendMatchPicksToSisal\)/);
   assert.match(sitePages, /#mmplay=/);
   assert.match(sitePages, /item\.marketKey\]\)\.map/);
   assert.match(sitePages, /status\.textContent=.*La conferma resta manuale/s);
