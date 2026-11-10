@@ -1,7 +1,7 @@
 {
-  "name": "MatchMind — Serie A Intelligence",
+  "name": "MatchMind — Sports Intelligence",
   "short_name": "MatchMind",
-  "description": "Centro Serie A, risultati e analisi statistiche",
+  "description": "Calcio e NBA: partite, risultati e analisi statistiche",
   "lang": "it-IT",
   "start_url": "./matches.html",
   "scope": "./",
