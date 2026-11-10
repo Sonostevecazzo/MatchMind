@@ -139,7 +139,7 @@ function renderFixture(match){
 }
 function renderFixtures(){
  const target=$("manualFixtures");if(!target)return;
- const query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
+ const query=norm($("matchSearch")?.value||""),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
  const rows=fixtures.filter(m=>(!query||norm(m.home).includes(query)||norm(m.away).includes(query))&&(!date||m.date===date)&&(!team||norm(m.home)===norm(team)||norm(m.away)===norm(team))&&(!round||String(m.round||"")===round));
  const visible=rows.slice(0,visibleFixtureLimit);
  target.innerHTML=visible.length?visible.map(renderFixture).join(""):'<div class="empty-state">Nessuna partita corrisponde ai filtri. Modifica la ricerca.</div>';
@@ -547,7 +547,9 @@ function buildProposal(){
  const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
  const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
  const first=upcoming[0];
- const candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+ const hasRound=Boolean(first&&first.round!==null&&first.round!==undefined&&String(first.round).trim()!=="");
+ let candidateFixtures=!first?[]:(hasRound?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+ if(!candidateFixtures.length&&upcoming.length)candidateFixtures=upcoming.slice(0,Math.min(upcoming.length,Math.max(1,Math.min(maxLegs*2,12))));
  const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
  const marketMode=$("marketMode")?.value||"auto";
 
@@ -624,10 +626,18 @@ function buildProposal(){
  const dblPool=accPool.filter(x=>x.odds>=1.20&&x.odds<=1.75).slice(0,2);
 
  const makeLegs=(pool,count,offset=0)=>{
-  if(!pool.length)return[];
+  if(!pool.length||count<=0)return[];
   const actualCount=Math.min(count,pool.length);
-  const start=offset%Math.max(1,pool.length-actualCount+1);
-  return pool.slice(start,start+actualCount);
+  const start=offset%pool.length;
+  const ordered=pool.slice(start).concat(pool.slice(0,start));
+  const picked=[];let joint=1,bestGap=Math.abs(1-target);
+  for(const item of ordered){
+   if(picked.length>=actualCount)break;
+   const nextJoint=joint*item.probability,nextGap=Math.abs(nextJoint-target);
+   if(picked.length&&nextGap>=bestGap)break;
+   picked.push(item);joint=nextJoint;bestGap=nextGap;
+  }
+  return picked;
  };
 
  proposalVariants={
@@ -867,6 +877,22 @@ function initEvents(){
  $("manualSlipSummary").addEventListener("change",handleContextChange);
  $("manualFixtures")?.addEventListener("change",handleContextChange);
 
+ $("manualFixtures")?.addEventListener("click",event=>{
+  const button=event.target.closest("[data-pick]");if(!button)return;
+  const fixture=fixtures.find(item=>fixtureKey(item)===button.dataset.pick);if(!fixture)return;
+  const current=selectedFor(fixture);
+  if(current&&current.marketKey===button.dataset.market){picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));}
+  else if(current){current.marketKey=button.dataset.market;}
+  else if(picks.length<15){picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:button.dataset.market});}
+  else{$("manualBuilderStatus").textContent="Hai raggiunto il limite di 15 selezioni.";return;}
+  writePicks();renderFixtures();renderSlip();
+ });
+ const rerenderFixtureFilters=()=>{visibleFixtureLimit=12;renderFixtures();};
+ ["matchSearch","betsDate","betsTeam","betsRound"].forEach(id=>{
+  const control=$(id);if(control)control.addEventListener(id==="matchSearch"?"input":"change",rerenderFixtureFilters);
+ });
+ $("moreBetFixtures")?.addEventListener("click",()=>{visibleFixtureLimit+=12;renderFixtures();});
+
  $("manualSlipSummary").addEventListener("input",event=>{
   const oddsInput=event.target.closest(".manual-odds-input");
   if(oddsInput){
@@ -1044,7 +1070,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   await window.MM.loadInjuries?.();
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
-  picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
+  picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());
   contexts=read(CONTEXT_KEY,{});
   archive=read(ARCHIVE_KEY,[]);
   if(!Array.isArray(archive))archive=[];
