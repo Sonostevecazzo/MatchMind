@@ -1,9 +1,9 @@
-const CACHE='matchmind-pwa-v96-20261110-builder-maxlegs';
+const CACHE='matchmind-pwa-v97-20261110-nba-builder';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
  './site.css','./mobile-readable.css','./analysis.css','./live.css','./site-core.js','./site-pages.js','./elo.js','./tipsaudit.js',
- './rounds.js','./ai-engine.js','./bets-engine.js','./bets.js','./live.js','./notifications.js','./nba.js','./nba.css','./nba-engine.mjs',
+ './rounds.js','./ai-engine.js','./bets-engine.js','./bets.js','./live.js','./notifications.js','./nba.js','./nba-builder.js','./nba.css','./nba-engine.mjs',
  './fixtures-odds.json','./manifest.webmanifest','./icon.svg','./brand-full.svg','./scripts/sisal-matchmind.user.js'
 ];
 self.addEventListener('install',event=>{
