@@ -2,7 +2,9 @@
 (function(){
   "use strict";
   const $=id=>document.getElementById(id),KEY="matchmind-manual-selections-v1",LEGACY="matchmind-nba-picks-v1",PAGE=20;
-  const state={view:"upcoming",query:"",shown:PAGE,data:null,loading:false};
+  const state={view:"upcoming",query:"",date:"",shown:PAGE,data:null,loading:false};
+  const ARCHIVE_KEY="matchmind-slip-archive-v2",STAKE_KEY="matchmind-slip-default-stake";
+  let nbaStake=10;try{const saved=Number(JSON.parse(localStorage.getItem(STAKE_KEY)||"10"));if(Number.isFinite(saved)&&saved>=0.5&&saved<=100000)nbaStake=saved;}catch{}
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const pct=p=>Number.isFinite(Number(p))?Math.round(Number(p)*100)+"%":"—";
   const when=iso=>{const d=new Date(iso);return Number.isNaN(d.getTime())?"Data non disponibile":d.toLocaleDateString("it-IT",{weekday:"short",day:"2-digit",month:"short"})+" · "+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});};
@@ -53,10 +55,25 @@
   }
   function renderSlip(){
     const box=$("nbaSlip"),rows=picks();
-    box.hidden=!rows.length;
-    if(!rows.length)return;
-    const combined=rows.reduce((a,x)=>a*(Number.isFinite(Number(x.probability))?Number(x.probability):0),1);
-    box.innerHTML='<h2>Schedina condivisa · NBA ('+rows.length+')</h2>'+rows.map((x,i)=>'<div class="nba-slip-row"><span><b>'+esc(x.away)+' @ '+esc(x.home)+'</b><small>Vince '+esc(x.team)+' · '+esc(when(x.start))+' · stima '+pct(x.probability)+' · quote non disponibili</small></span><button type="button" class="ghost" data-remove="'+i+'" aria-label="Rimuovi selezione">Rimuovi</button></div>').join("")+'<p class="nba-note">Probabilità combinata indicativa: <b>'+pct(combined)+'</b>. Presuppone indipendenza tra partite. Nessuna quota o vincita viene stimata senza quote verificate.</p><div class="nba-slip-actions"><button type="button" class="secondary" id="nbaSlipClear">Svuota selezioni NBA</button><button type="button" class="primary" id="nbaPlaySisal">Apri NBA su Sisal ↗</button></div><small class="nba-note">Sul widget MatchMind premi «Aggiungi al biglietto» per ogni selezione NBA e verifica che compaia nel riepilogo Sisal. La conferma della scommessa resta manuale.</small>';
+    if(!box)return;
+    const calc=window.MMNbaBuilder.calculate(rows,nbaStake);
+    const list=rows.length?rows.map((x,i)=>'<div class="nba-slip-row"><span><b>'+esc(x.away)+' @ '+esc(x.home)+'</b><small>Vincente: '+esc(x.team)+' · '+esc(when(x.start))+' · stima '+pct(x.probability)+'</small><label class="nba-odds-field">Quota verificata <input type="number" min="1.01" max="1000" step="0.01" placeholder="es. 1.90" value="'+(Number.isFinite(Number(x.odds))&&Number(x.odds)>1?esc(x.odds):'')+'" data-nba-odds="'+esc(x.id||x.eventId)+'"></label></span><button type="button" class="ghost" data-remove="'+i+'" aria-label="Rimuovi selezione">Rimuovi</button></div>').join(""):'<div class="empty-state">Nessuna selezione. Nel calendario premi «Vittoria casa» o «Vittoria trasferta» per aggiungere un evento.</div>';
+    box.innerHTML='<div class="section-head"><div><div class="eyebrow">NBA BET BUILDER</div><h2>Costruttore schedina NBA · '+rows.length+' eventi</h2><p>Selezioni multiple sul mercato vincente. Le probabilità provengono dal modello Elo; le quote vanno inserite da una fonte verificata.</p></div></div>'+list+
+    '<div class="nba-builder-financials"><label>Puntata (€)<input id="nbaStake" type="number" min="0.5" max="100000" step="0.5" value="'+nbaStake+'"></label><div><small>Probabilità combinata stimata</small><b>'+pct(calc.probability)+'</b></div><div><small>Quota totale</small><b>'+(calc.totalOdds!==null?calc.totalOdds.toFixed(2):'Inserisci tutte le quote')+'</b></div><div><small>Incasso lordo potenziale</small><b>'+(calc.potentialWin!==null?calc.potentialWin.toFixed(2)+' €':'—')+'</b></div><div><small>EV stimato</small><b>'+(calc.expectedValue!==null?(calc.expectedValue>=0?'+':'')+(calc.expectedValue*100).toFixed(1)+'%':'—')+'</b></div></div>'+
+    '<p class="nba-note">Il prodotto delle probabilità assume indipendenza tra partite. Non include mercati handicap o Over/Under: il modello attuale non dispone ancora di probabilità calibrate per questi mercati.</p>'+
+    '<div class="nba-slip-actions"><button type="button" class="secondary" id="nbaSlipClear" '+(!rows.length?'disabled':'')+'>Svuota</button><button type="button" class="secondary" id="nbaSaveSlip" '+(!rows.length?'disabled':'')+'>Salva schedina</button><button type="button" class="primary" id="nbaPlaySisal" '+(!rows.length?'disabled':'')+'>Trasferisci a Sisal ↗</button></div><p id="nbaBuilderStatus" class="status-line" aria-live="polite"></p>';
+  }
+  function saveNbaSlip(){
+    const rows=picks(),status=$("nbaBuilderStatus");
+    if(!rows.length){if(status)status.textContent="Aggiungi almeno una selezione NBA.";return;}
+    try{
+      const ticket=window.MMNbaBuilder.toArchiveTicket(rows,nbaStake);
+      let archive=[];try{const stored=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]");if(Array.isArray(stored))archive=stored;}catch{}
+      archive.unshift(ticket);localStorage.setItem(ARCHIVE_KEY,JSON.stringify(archive.slice(0,100)));
+      writeAll(readAll().filter(x=>x.sport!=="nba"));
+      if(status)status.textContent="Schedina NBA salvata nell'archivio condiviso. Puoi ritrovarla nella sezione Scommesse.";
+      renderSlip();render();
+    }catch(error){if(status)status.textContent=error.message;}
   }
   function openSisal(){
     const rows=picks(),items=rows.map(x=>({sport:"nba",eventId:String(x.id||x.eventId),home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start,date:x.date,marketKey:x.marketKey,label:"Vincente incontro (supplementari inclusi): "+x.team}));
@@ -71,7 +88,7 @@
     if(state.view==="ranking"){renderRanking();return;}
     const q=state.query.trim().toLowerCase(),now=Date.now();
     let rows=state.view==="results"?state.data.games.filter(g=>g.status==="FT").slice().reverse():state.data.games.filter(g=>g.status!=="FT"&&Date.parse(g.start)>=now-6*60*60*1000);
-    rows=rows.filter(g=>!q||g.home.toLowerCase().includes(q)||g.away.toLowerCase().includes(q));
+    rows=rows.filter(g=>(!q||g.home.toLowerCase().includes(q)||g.away.toLowerCase().includes(q))&&(!state.date||String(g.start||"").slice(0,10)===state.date));
     $("nbaListTitle").textContent=state.view==="results"?"Risultati":"In programma";
     $("nbaSummary").textContent=rows.length+' partite · stagione '+state.data.season+' · fonte ESPN'+(state.data.errors?.length?' · '+state.data.errors.length+' richieste parziali non riuscite':"");
     $("nbaList").innerHTML=rows.length?rows.slice(0,state.shown).map(card).join(""):'<div class="empty-state">Nessuna partita trovata con questi filtri.</div>';
@@ -101,16 +118,24 @@
       render();
     });
     $("nbaSearch").addEventListener("input",event=>{state.query=event.target.value;state.shown=PAGE;render();});
+    $("nbaDateFilter")?.addEventListener("change",event=>{state.date=event.target.value;state.shown=PAGE;render();});
     $("nbaList").addEventListener("click",event=>{const button=event.target.closest("[data-pick]");if(!button)return;const game=state.data?.games.find(x=>String(x.id)===button.dataset.pick);if(game?.prediction)togglePick(game,button.dataset.side);});
     $("nbaSlip").addEventListener("click",event=>{
       const remove=event.target.closest("[data-remove]");
       if(remove){const rows=picks(),target=rows[Number(remove.dataset.remove)];if(target)writeAll(readAll().filter(x=>!(x.sport==="nba"&&String(x.id||x.eventId)===String(target.id||target.eventId))));render();return;}
       if(event.target.closest("#nbaSlipClear")){writeAll(readAll().filter(x=>x.sport!=="nba"));render();return;}
+      if(event.target.closest("#nbaSaveSlip")){saveNbaSlip();return;}
       if(event.target.closest("#nbaPlaySisal"))openSisal();
+    });
+    $("nbaSlip").addEventListener("input",event=>{
+      const odds=event.target.closest("[data-nba-odds]");
+      if(odds){const pick=readAll().find(x=>x.sport==="nba"&&String(x.id||x.eventId)===odds.dataset.nbaOdds);if(pick){const value=Number(odds.value);pick.odds=Number.isFinite(value)&&value>1&&value<=1000?value:null;writeAll(readAll());renderSlip();}return;}
+      const stake=event.target.closest("#nbaStake");
+      if(stake){const value=Number(stake.value);if(Number.isFinite(value)&&value>=0.5&&value<=100000){nbaStake=value;try{localStorage.setItem(STAKE_KEY,JSON.stringify(value));}catch{}renderSlip();}}
     });
     $("nbaMore").addEventListener("click",()=>{state.shown+=PAGE;render();});
     $("nbaRefresh").addEventListener("click",()=>load(true));
-    window.addEventListener("matchmind:picks-updated",renderSlip);
+    window.addEventListener("matchmind:picks-updated",()=>{renderSlip();render();});
     window.addEventListener("storage",event=>{if(!event.key||event.key===KEY)renderSlip();});
     load();
   });
