@@ -191,7 +191,7 @@
     return p;
   }
 
-  // Motore Poisson MatchMind (matrice gol 0-7) con supporto correttivi manuali assenze e motivazione
+  // Motore Poisson esplorativo MatchMind (matrice gol 0-12) con correttivi manuali non verificati.
   function calculateMatchMindForecast(homeName, awayName) {
     const hKey = canonicalTeam(homeName);
     const aKey = canonicalTeam(awayName);
@@ -258,9 +258,9 @@
         home: pHome,
         draw: pDraw,
         away: pAway,
-        dc1X: Math.min(0.99, pHome + pDraw),
-        dcX2: Math.min(0.99, pDraw + pAway),
-        dc12: Math.min(0.99, pHome + pAway),
+        dc1X: pHome + pDraw,
+        dcX2: pDraw + pAway,
+        dc12: pHome + pAway,
         over15: o15,
         under15: u15,
         over25: o25,
