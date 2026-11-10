@@ -35,7 +35,7 @@ for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js
 subprocess.run(["node","--check",str(ROOT/"scripts"/"sisal-matchmind.user.js")],check=True)
 for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js",ROOT/"functions"/"api"/"public"/"nba.js",ROOT/"nba-engine.mjs"]:
  subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
-for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","sisal-bridge.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","nba-builder.test.cjs","sisal-bridge.test.cjs","sisal-model-guard.test.cjs"]:
+for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","sisal-bridge.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","nba-builder.test.cjs","sisal-bridge.test.cjs","sisal-model-guard.test.cjs","sisal-transfer.test.mjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
