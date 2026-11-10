@@ -170,8 +170,8 @@ const SISAL_MARKET_LABELS = {
   over15: "Over 1.5", under15: "Under 1.5", over25: "Over 2.5", under25: "Under 2.5",
   over35: "Over 3.5", under35: "Under 3.5", bttsYes: "Gol", bttsNo: "No Gol"
 };
-function playOnSisal() {
-  const items = picks.filter(p => p && p.sport !== "nba" && p.home && p.away && SISAL_MARKET_LABELS[p.marketKey])
+function buildSisalItems(list) {
+  return (Array.isArray(list) ? list : []).filter(p => p && p.sport !== "nba" && p.home && p.away && SISAL_MARKET_LABELS[p.marketKey])
     .map(p => ({
       sport: "football",
       home: String(p.home),
@@ -181,6 +181,9 @@ function playOnSisal() {
       odds: Number.isFinite(Number(p.odds)) && Number(p.odds) > 1 ? Number(p.odds) : null,
       date: p.date || ""
     }));
+}
+function playOnSisal() {
+  const items = buildSisalItems(picks);
   const status = $("manualBuilderStatus");
   if (!items.length) {
     if (status) status.textContent = picks.length
