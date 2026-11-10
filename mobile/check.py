@@ -73,7 +73,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v95-20261110-sisal-update-queue" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v96-20261110-builder-maxlegs" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -125,7 +125,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v95-20261110-sisal-update-queue" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v96-20261110-builder-maxlegs" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
@@ -143,6 +143,8 @@ assert "MMNotifications" in (ROOT/"notifications.js").read_text(encoding="utf-8"
 assert "remote Web Push needs a server sender" in (ROOT/"notifications.js").read_text(encoding="utf-8")
 assert "live-sim-track" in (ROOT/"live.css").read_text(encoding="utf-8")
 assert "data-notification-category" in (ROOT/"live.html").read_text(encoding="utf-8")
+assert "balanced:makeLegs(balPool,maxLegs,variantCycleIndex)" in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert "Math.min(maxLegs,4)" not in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "proposal-summary" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "proposal-leg-match" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "Aggiungi '+proposal.length+' selezioni" in (ROOT/"bets.js").read_text(encoding="utf-8")
