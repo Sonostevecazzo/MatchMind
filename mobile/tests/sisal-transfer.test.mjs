@@ -160,8 +160,9 @@ test("Sisal widget escapes no interpolations and keeps the NBA market probabilit
 });
 
 test("the imported selection queue is collapsed by default and can be expanded", () => {
-  assert.match(script, /const expanded = box\.dataset\.expanded === "true"/);
+  assert.match(script, /const expanded = gmGet\("mm_sisal_queue_expanded", "false"\) === "true"/);
   assert.match(script, /id="mm-play-toggle"/);
   assert.match(script, /id="mm-play-queue-items" style="display:' \+ \(expanded \? 'block' : 'none'\)/);
   assert.match(script, /max-height: 46dvh/);
+  assert.match(script, /hasOverLabel = \\/\\b\\(over\\|oltre\\)\\b\\|piu/);
 });
