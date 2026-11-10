@@ -190,7 +190,7 @@
        return '<article class="athletic-news-item"><div><small>'+esc(dateLabel)+' · THE ATHLETIC</small><b><a href="'+esc(article.url)+'" target="_blank" rel="noopener noreferrer">'+esc(article.title)+'</a></b>'+(article.summary?'<p>'+esc(article.summary)+'</p>':'')+'</div></article>';
       }).join('')+'<small class="athletic-news-note">'+esc(payload.note||'Titoli e sintesi dal feed RSS ufficiale.')+'</small>';
      })
-     .catch(error=>{newsTarget.innerHTML='<div class="empty-state">Notizie The Athletic non disponibili: '+esc(error.message||'errore feed')+'. <a href="https://www.nytimes.com/athletic/rss/football/" target="_blank" rel="noopener">Apri il feed ↗</a></div>';});
+     .catch(error=>{newsTarget.innerHTML='<div class="empty-state">Notizie The Athletic non disponibili: '+esc((error.message||'errore feed').replace(/[.!?]+$/,''))+'. <a href="https://www.nytimes.com/athletic/rss/football/" target="_blank" rel="noopener">Apri il feed ↗</a></div>';});
    }
  }
  function tableHTML(rows){
