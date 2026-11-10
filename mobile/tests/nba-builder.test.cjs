@@ -21,12 +21,15 @@ test("NBA builder does not invent total odds when one leg has no bookmaker quote
  assert.equal(result.expectedValue,null);
 });
 test("NBA archive ticket preserves market, probability, odds and pending status",()=>{
- const rows=[{home:"Boston Celtics",away:"New York Knicks",date:"2026-11-11",side:"home",team:"Boston Celtics",marketKey:"nbaMoneyline:home",probability:0.65,odds:1.9}];
+ const rows=[{id:"nba-event-123",home:"Boston Celtics",away:"New York Knicks",date:"2026-11-11",side:"home",team:"Boston Celtics",marketKey:"nbaMoneyline:home",probability:0.65,odds:1.9}];
  const ticket=builder.toArchiveTicket(rows,5,new Date("2026-11-10T17:00:00Z"));
  assert.equal(ticket.sport,"nba");
  assert.equal(ticket.competition,"nba");
  assert.equal(ticket.stake,5);
  assert.equal(ticket.selections[0].marketKey,"nbaMoneyline:home");
+ assert.equal(ticket.selections[0].eventId,"nba-event-123");
+ assert.equal(ticket.selections[0].side,"home");
+ assert.equal(ticket.selections[0].sport,"nba");
  assert.equal(ticket.selections[0].status,"Da giocare");
  assert.equal(ticket.selections[0].odds,1.9);
 });
