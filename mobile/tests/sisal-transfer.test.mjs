@@ -88,6 +88,33 @@ test("builder preserves shared selections and applies the target probability to 
   assert.match(bets, /const nextJoint=joint\*item\.probability,nextGap=Math\.abs\(nextJoint-target\)/);
 });
 
+
+test("builder writes preserve picks from other competitions and NBA", () => {
+  const start = bets.indexOf("function readPicks()");
+  const end = bets.indexOf('window.addEventListener("matchmind:picks-updated"', start);
+  assert.ok(start >= 0 && end > start);
+  const source = bets.slice(start, end);
+  const storage = [
+    { competition: "serie-a", home: "Inter", away: "Milan", marketKey: "home" },
+    { competition: "champions-league", home: "Arsenal", away: "PSG", marketKey: "away" },
+    { sport: "nba", competition: "nba", home: "Celtics", away: "Lakers", marketKey: "nbaMoneyline:home" }
+  ];
+  let saved = null, dispatched = false;
+  const write = new Function("PICKS_KEY", "read", "save", "window", "Event", "picks",
+    source + "; return writePicks;"
+  )("matchmind-manual-selections-v1", (key, fallback) => storage, (key, value) => { saved = value; },
+    { MM: { getSelectedCompetition: () => "serie-a" }, dispatchEvent: event => { dispatched = event.type === "matchmind:picks-updated"; } },
+    class Event { constructor(type) { this.type = type; } },
+    [{ home: "Roma", away: "Lazio", marketKey: "draw" }]
+  );
+  write();
+  assert.deepEqual(saved.map(x => x.competition || x.sport), ["champions-league", "nba", "serie-a"]);
+  assert.equal(saved[0].home, "Arsenal");
+  assert.equal(saved[1].home, "Celtics");
+  assert.equal(saved[2].home, "Roma");
+  assert.equal(dispatched, true);
+});
+
 test("NBA market fallback accepts a true two-way winner market and excludes handicap or regulation", () => {
   const marketStart = script.indexOf("const NBA_EXCLUDED =");
   const activeStart = script.indexOf("function nbaActiveMarketText()", marketStart);
