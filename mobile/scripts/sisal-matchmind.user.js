@@ -2545,9 +2545,9 @@
           q.status === "error" ? "⚠ da verificare" :
           q.status === "manual" ? "quota individuata" : "in attesa";
         const color = q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24";
-        const action = q.status === "added" || q.status === "clicked" || q.status === "manual" ? "" :
+        const action = q.status === "added" || q.status === "clicked" ? "" :
           '<button type="button" data-mm-add-queue="' + i + '" style="border:1px solid #36536a;background:#123047;color:#e0f2fe;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:800;white-space:nowrap;">' +
-            (q.status === "error" ? "Riprova" : "Trova quota") + '</button>';
+            (q.status === "manual" ? "Aggiungi al biglietto" : q.status === "error" ? "Riprova" : "Trova quota") + '</button>';
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #1e293b;">' +
           '<span style="min-width:0;font-size:11px;">' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + '<br><b>' + escapeHtml(q.label) + '</b>' +
           (Number.isFinite(Number(q.probability)) && Number(q.probability) > 0 && Number(q.probability) < 1 ? ' · ' + Math.round(Number(q.probability) * 100) + '%' : '') +
