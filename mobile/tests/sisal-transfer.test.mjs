@@ -6,6 +6,9 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
+const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
+const matchesHtml = readFileSync(resolve(ROOT, "matches.html"), "utf8");
+const sitePages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 const nba = readFileSync(resolve(ROOT, "nba.js"), "utf8");
 const script = readFileSync(resolve(ROOT, "scripts/sisal-matchmind.user.js"), "utf8");
 
@@ -18,7 +21,7 @@ test("Sisal userscript compiles and matches the production and preview app domai
 
 test("the imported queue is rendered in both empty and populated widget states", () => {
   assert.equal((script.match(/renderPlayQueue\(widget\);/g) || []).length, 2);
-  assert.match(script, /id="mm-play-queue"/);
+  assert.match(script, /box\.id = "mm-play-queue"/);
   assert.match(script, /data-mm-add-queue/);
   assert.match(script, /addQueuedSelection\(button\.dataset\.mmAddQueue\)/);
 });
@@ -54,6 +57,34 @@ test("football payload maps only supported markets and excludes NBA and combinat
   assert.deepEqual(items.map(x => x.label), ["1", "Over 2.5"]);
   assert.equal(items[0].sport, "football");
   assert.equal(items[0].odds, 2.1);
+});
+
+
+test("match page exposes a real Sisal handoff for selected football picks", () => {
+  assert.match(matchesHtml, /id="matchSlipActions"/);
+  assert.match(matchesHtml, /id="sendMatchPicksSisal"/);
+  assert.match(matchesHtml, /id="matchSlipCount"/);
+  assert.match(sitePages, /const sendMatchPicksToSisal=/);
+  assert.match(sitePages, /sendMatchPicksToSisal\(\)/);
+  assert.match(sitePages, /#mmplay=/);
+  assert.match(sitePages, /item\.marketKey\]\)\.map/);
+  assert.match(sitePages, /status\.textContent=.*La conferma resta manuale/s);
+});
+
+test("bet builder renders and wires its own upcoming match browser", () => {
+  for (const id of ["matchSearch", "betsDate", "betsTeam", "betsRound", "betsFixtureCount", "manualFixtures", "moreBetFixtures"]) {
+    assert.match(betsHtml, new RegExp('id="' + id + '"'));
+  }
+  assert.match(bets, /\$\("manualFixtures"\)\?\.addEventListener\("click"/);
+  assert.match(bets, /\$\("moreBetFixtures"\)\?\.addEventListener\("click"/);
+  assert.match(bets, /\["matchSearch","betsDate","betsTeam","betsRound"\]/);
+  assert.match(bets, /const hasRound=Boolean\(first&&first\.round/);
+  assert.match(bets, /if\(!candidateFixtures\.length&&upcoming\.length\)/);
+});
+
+test("builder preserves shared selections and applies the target probability to proposal size", () => {
+  assert.match(bets, /picks=readPicks\(\)\.filter\(p=>\(p\.competition\|\|"serie-a"\)===window\.MM\.getSelectedCompetition\(\)\);/);
+  assert.match(bets, /const nextJoint=joint\*item\.probability,nextGap=Math\.abs\(nextJoint-target\)/);
 });
 
 test("NBA market fallback accepts a true two-way winner market and excludes handicap or regulation", () => {
