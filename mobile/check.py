@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parent
 manifest=json.loads((ROOT/"manifest.webmanifest").read_text(encoding="utf-8"))
 assert manifest.get("name") and manifest.get("display")=="standalone"
 assert (ROOT/"sw.js").is_file()
-required=["index.html","matches.html","live.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
+required=["index.html","matches.html","live.html","nba.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
 for name in required:
  p=ROOT/name
  assert p.is_file(),f"Missing screen: {name}"
@@ -30,11 +30,11 @@ scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
 with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
-for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","sisal-bridge.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
+for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","sisal-bridge.js","tipsaudit.js","bets.js","live.js","nba.js","nba-builder.js","elo.js","rounds.js","sw.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
-for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js"]:
+for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js",ROOT/"functions"/"api"/"public"/"nba.js",ROOT/"nba-engine.mjs"]:
  subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
-for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","sisal-bridge.test.cjs","tipsaudit.test.cjs"]:
+for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","sisal-bridge.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","nba-builder.test.cjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
@@ -47,8 +47,16 @@ assert "athleticNews" in (ROOT/"explore.html").read_text(encoding="utf-8")
 assert "api/athletic-news" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
-assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
-assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
+nba_html=(ROOT/"nba.html").read_text(encoding="utf-8")
+nba_core=(ROOT/"nba.js").read_text(encoding="utf-8")
+nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
+nba_engine=(ROOT/"nba-engine.mjs").read_text(encoding="utf-8")
+assert 'data-page="nba"' in nba_html and 'id="nbaSlip"' in nba_html
+assert "nba-builder.js" in nba_html and "nba.js" in nba_html
+assert "matchmind-manual-selections-v1" in nba_core and "matchmind-slip-archive-v2" in nba_core
+assert "calculate" in nba_builder and "predictNba" in nba_engine
+assert "./nba.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "./nba.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
@@ -58,7 +66,7 @@ assert 'appearance:none!important' in (ROOT/"site.css").read_text(encoding="utf-
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert core.index("['live.html','live','Live']") < core.index("['matches.html','matches','Partite']")
-assert "page==='live'?'live'" in core and "page==='mind'?'mind'" in core
+assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "page==='mind'?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
 assert "window.MatchMindAI.train" in core
@@ -68,7 +76,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v95-20261110-news-punctuation" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v99-20261110-nba-recovery" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
