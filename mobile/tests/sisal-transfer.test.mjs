@@ -151,3 +151,17 @@ test("football and NBA handoffs both use the mmplay payload contract", () => {
   assert.match(nba, /sport:"nba"/);
   assert.match(nba, /eventId:String\(x\.id\|\|x\.eventId\)/);
 });
+
+test("Sisal widget escapes no interpolations and keeps the NBA market probability", () => {
+  assert.doesNotMatch(script, /\\\\\$\\{currentAnalysis\?\.sport/);
+  assert.match(script, /\\$\{currentAnalysis\?\.sport === "nba"/);
+  assert.match(nba, /probability:Number\.isFinite\(Number\(x\.probability\)\)/);
+  assert.match(script, /if \(hit\.btn && item\.marketKey === hit\.key\)\s*\{\s*markSelectedMarket/);
+});
+
+test("the imported selection queue is collapsed by default and can be expanded", () => {
+  assert.match(script, /const expanded = box\.dataset\.expanded === "true"/);
+  assert.match(script, /id="mm-play-toggle"/);
+  assert.match(script, /id="mm-play-queue-items" style="display:' \+ \(expanded \? 'block' : 'none'\)/);
+  assert.match(script, /max-height: 46dvh/);
+});
