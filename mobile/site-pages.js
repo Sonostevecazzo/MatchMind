@@ -10,6 +10,30 @@
  let strategyFilter='all';
  const readMatchPicks=()=>{try{const rows=JSON.parse(localStorage.getItem(MATCH_PICKS_KEY)||"[]");return Array.isArray(rows)?rows.filter(x=>x&&x.date&&x.home&&x.away&&x.marketKey):[]}catch(_){return[]}};
  const writeMatchPicks=rows=>{try{localStorage.setItem(MATCH_PICKS_KEY,JSON.stringify(rows))}catch(_){};window.dispatchEvent(new Event("matchmind:picks-updated"));};
+
+ const MATCH_SISAL_MARKET_LABELS={home:"1",draw:"X",away:"2",dc1X:"1X",dcX2:"X2",dc12:"12",over15:"Over 1.5",under15:"Under 1.5",over25:"Over 2.5",under25:"Under 2.5",over35:"Over 3.5",under35:"Under 3.5",bttsYes:"Gol",bttsNo:"No Gol"};
+ const sendMatchPicksToSisal=()=>{
+  const competition=MM().getSelectedCompetition();
+  const selected=readMatchPicks().filter(item=>(item.competition||"serie-a")===competition);
+  const items=selected.filter(item=>MATCH_SISAL_MARKET_LABELS[item.marketKey]).map(item=>({
+   sport:"football",competition:item.competition||competition,home:String(item.home),away:String(item.away),
+   marketKey:String(item.marketKey),label:MATCH_SISAL_MARKET_LABELS[item.marketKey],
+   odds:Number.isFinite(Number(item.odds))&&Number(item.odds)>1?Number(item.odds):null,date:item.date||""
+  }));
+  const status=$("matchSlipStatus");
+  if(!items.length){
+   if(status)status.textContent=selected.length?"Le selezioni presenti usano mercati combinati/non supportati dal trasferimento Sisal. Sostituiscile con un esito singolo: 1X2, Over/Under o Gol/No Gol.":"Aggiungi prima almeno un esito alla schedina.";
+   return;
+  }
+  const payload={sentAt:Date.now(),items};
+  const url="https://www.sisal.it/scommesse-matchpoint#mmplay="+encodeURIComponent(JSON.stringify(payload));
+  let opened=null;
+  try{opened=window.open(url,"_blank");}catch(_){}
+  if(opened){try{opened.opener=null;}catch(_){}}
+  else window.location.href=url;
+  const skipped=selected.length-items.length;
+  if(status)status.textContent="Trasferimento aperto per "+items.length+" selezioni. Sul widget MatchMind di Sisal verifica la partita e premi «Aggiungi al biglietto» per ogni esito."+(skipped?" "+skipped+" selezioni combinate/non supportate non sono state trasferite.":"")+" La conferma resta manuale.";
+ };
  const marketCategoryForKey=key=>String(key||"").startsWith("combo:")?(String(key).endsWith(":bttsYes")||String(key).endsWith(":bttsNo")?"combo-btts":"combo-goals"):key==="bttsYes"||key==="bttsNo"?"btts":/^(over|under)15$/.test(key)?"goals15":/^(over|under)25$/.test(key)?"goals25":/^(over|under)35$/.test(key)?"goals35":"1x2";
  const marketOptions=(forecast,category)=>{
   const p=forecast.probabilities;
@@ -165,6 +189,7 @@
    });
    $('moreMatches').addEventListener('click',()=>{shownLimit+=12;render()});
    window.addEventListener('matchmind:picks-updated',()=>{render();updateMatchSlipActions();});
+   $("sendMatchPicksSisal")?.addEventListener("click",sendMatchPicksToSisal);
    updateMatchSlipActions();
    render();
  }
