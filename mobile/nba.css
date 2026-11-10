@@ -1,0 +1,42 @@
+.nba-toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.nba-list{display:grid;gap:10px}
+.nba-card{border:1px solid var(--line,#293640);border-radius:14px;background:var(--surface,#101820);padding:13px;display:grid;gap:10px}
+.nba-meta{color:var(--muted,#9eabb5);font-size:12px;text-align:center}
+.nba-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px}
+.nba-team{display:flex;align-items:center;gap:7px;min-width:0;font-weight:800;font-size:13px}
+.nba-team.away{justify-content:flex-end;text-align:right}
+.nba-team img{width:30px;height:30px;object-fit:contain;flex:0 0 auto}
+.nba-team span{overflow:hidden;text-overflow:ellipsis}
+.nba-score{font-size:19px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nba-pred{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.nba-pick,.nba-stat{min-width:0;display:grid;align-content:center;gap:3px;text-align:center;border:1px solid var(--line,#293640);border-radius:10px;background:#0b1219;padding:8px 4px;color:inherit}
+.nba-pick{cursor:pointer;font:inherit}
+.nba-pick span,.nba-stat span{font-size:10px;color:var(--muted,#9eabb5);line-height:1.25}
+.nba-pick b,.nba-stat b{font-size:15px;font-variant-numeric:tabular-nums}
+.nba-pick small{font-size:10px;color:#a9b7c1}
+.nba-pick.fav b,.nba-pick.on b{color:#c4f36a}
+.nba-pick.on{border-color:#9ccf54;background:#172315}
+.nba-note{font-size:11px;color:var(--muted,#9eabb5);line-height:1.45}
+.nba-slip{display:grid;gap:9px}
+.nba-slip h2{font-size:17px;margin:0}
+.nba-slip-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line,#293640)}
+.nba-slip-row span{display:grid;gap:3px;min-width:0}
+.nba-slip-row small{font-size:11px;color:var(--muted,#9eabb5)}
+.nba-slip-actions{display:flex;gap:8px;flex-wrap:wrap}
+.nba-slip-actions>*{flex:1}
+.nba-table-wrap{overflow-x:auto}
+.nba-table{width:100%;border-collapse:collapse;font-size:13px}
+.nba-table th,.nba-table td{padding:9px 7px;border-bottom:1px solid var(--line,#293640);text-align:right;white-space:nowrap}
+.nba-table th:first-child,.nba-table td:first-child{text-align:left}
+.nba-table th{font-size:11px;color:var(--muted,#9eabb5)}
+.nba-more-wrap{text-align:center;margin-top:12px}
+@media(max-width:430px){.nba-pred{grid-template-columns:repeat(2,minmax(0,1fr))}.nba-team{font-size:12px}.nba-team img{width:25px;height:25px}}
+
+.nba-filter-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(150px,1fr);gap:10px}
+.nba-builder-financials{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;padding:12px;border:1px solid var(--line,#293640);border-radius:12px;background:#0b1219}
+.nba-builder-financials>div,.nba-builder-financials>label{display:grid;gap:5px;align-content:center}
+.nba-builder-financials small{font-size:10px;color:var(--muted,#9eabb5)}
+.nba-builder-financials b{font-size:15px;font-variant-numeric:tabular-nums}
+.nba-builder-financials input,.nba-odds-field input{width:100%;min-width:0;background:#101820;color:inherit;border:1px solid var(--line,#293640);border-radius:8px;padding:9px}
+.nba-odds-field{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;font-size:11px;color:var(--muted,#9eabb5);max-width:150px}
+@media(max-width:520px){.nba-filter-grid{grid-template-columns:1fr}.nba-slip-row{align-items:flex-start}}

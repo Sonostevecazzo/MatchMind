@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090d11">
+<meta name="description" content="MatchMind · NBA: calendario, risultati e pronostici statistici">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./site.css">
+<link rel="stylesheet" href="./mobile-readable.css?v=20261110-nba">
+<link rel="stylesheet" href="./nba.css?v=20261110-1">
+<title>MatchMind · NBA</title>
+<script defer src="./site-core.js"></script>
+<script defer src="./nba-builder.js?v=20261110-2"></script>
+<script defer src="./nba.js?v=20261110-2"></script>
+</head>
+<body data-page="nba" data-title="NBA" data-subtitle="Calendario, risultati e previsioni statistiche del basket NBA.">
+<div id="siteHeader"></div>
+<main class="page-wrap">
+  <div class="page-intro"><div class="eyebrow">MATCHMIND / NBA</div><h1 id="pageTitle">NBA</h1><p id="pageSubtitle">Calendario, risultati e previsioni statistiche del basket NBA.</p></div>
+  <section class="section panel panel-pad">
+    <div class="nba-filter-grid"><div class="field"><label for="nbaSearch">Cerca squadra</label><input id="nbaSearch" type="search" placeholder="Es. Lakers, Celtics…" autocomplete="off"></div><div class="field"><label for="nbaDateFilter">Data partita</label><input id="nbaDateFilter" type="date"></div></div>
+    <div class="nba-toolbar" id="nbaTabs" role="tablist" aria-label="Sezioni NBA">
+      <button class="pill active" data-view="upcoming" role="tab" aria-selected="true">In programma</button>
+      <button class="pill" data-view="results" role="tab" aria-selected="false">Risultati</button>
+      <button class="pill" data-view="ranking" role="tab" aria-selected="false">Classifica forza</button>
+    </div>
+  </section>
+  <section id="nbaSlip" class="section panel panel-pad nba-slip" aria-live="polite"><div class="section-head"><div><div class="eyebrow">NBA BET BUILDER</div><h2>Costruttore schedina NBA</h2><p>Seleziona il vincente previsto dal modello per ogni partita. Quote inserite manualmente; nessuna quota viene inventata.</p></div></div><div class="empty-state">Nessuna selezione. Scegli una squadra vincente dal calendario per iniziare.</div></section>
+  <section class="section">
+    <div class="section-head"><div><h2 id="nbaListTitle">In programma</h2><p id="nbaSummary">Caricamento calendario NBA…</p></div><button id="nbaRefresh" class="secondary" type="button">Aggiorna</button></div>
+    <div id="nbaList" class="nba-list"><div class="loading-state">Caricamento…</div></div>
+    <div class="nba-more-wrap"><button id="nbaMore" class="ghost" hidden>Mostra altre partite</button></div>
+  </section>
+  <p class="data-disclaimer">Il modello NBA usa Elo con vantaggio casalingo e medie punti stagionali con regressione verso la media di lega. Le percentuali sono stime, non garanzie. Campione ridotto e dati ESPN incompleti vengono segnalati. Nessuna quota viene inventata: il valore atteso non è calcolabile senza una quota verificata.</p>
+  <div id="globalStatus" class="status-line" aria-live="polite"></div>
+  <footer class="site-footer">MatchMind · Dati ESPN pubblici, soggetti a copertura e ritardi. Le selezioni non vengono inviate automaticamente a Sisal.</footer>
+</main>
+</body>
+</html>

@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parent
 manifest=json.loads((ROOT/"manifest.webmanifest").read_text(encoding="utf-8"))
 assert manifest.get("name") and manifest.get("display")=="standalone"
 assert (ROOT/"sw.js").is_file()
-required=["index.html","matches.html","live.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
+required=["index.html","matches.html","live.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","nba.html","bets.html","data.html","settings.html"]
 for name in required:
  p=ROOT/name
  assert p.is_file(),f"Missing screen: {name}"
@@ -14,9 +14,11 @@ for name in required:
  assert '<html lang="it">' in html,f"{name} must declare Italian"
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
-  assert 'id="matchSlipPreview"' not in html
+  assert 'id="matchSlipPreview"' in html and 'id="sendMatchPicksSisal"' in html
  if name=="analysis-lab.html":
   assert 'id="analysisOverview"' in html and "bets-engine.js" in html
+ if name=="nba.html":
+  assert 'data-page="nba"' in html and "nba.js" in html and "nba.css" in html
  if name!="index.html": assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "bets.js" in html
@@ -24,17 +26,18 @@ for name in required:
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
   assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
- elif name!="index.html": assert "site-pages.js" in html
+ elif name not in ("index.html","nba.html"): assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
 with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
-for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js"]:
+for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js","nba.js","nba-builder.js","scripts/sisal-matchmind.user.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
-for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js"]:
+for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js",ROOT/"functions"/"api"/"public"/"nba.js"]:
  subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
-for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs"]:
+subprocess.run(["node","--check",str(ROOT/"nba-engine.mjs")],check=True)
+for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","nba-builder.test.cjs","sisal-transfer.test.mjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
@@ -47,8 +50,21 @@ assert "athleticNews" in (ROOT/"explore.html").read_text(encoding="utf-8")
 assert "api/athletic-news" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
-assert "nba.html" not in (ROOT/"sw.js").read_text(encoding="utf-8")
-assert not (ROOT/"nba.html").exists() and not (ROOT/"nba.js").exists()
+assert "./nba.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "./nba.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert (ROOT/"nba.html").is_file() and (ROOT/"nba.js").is_file()
+assert "./nba-builder.js" in (ROOT/"nba.html").read_text(encoding="utf-8")
+assert "Costruttore schedina NBA" in (ROOT/"nba.html").read_text(encoding="utf-8")
+assert "./nba-builder.js?v=20261110-2" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "MMNbaBuilder.toArchiveTicket" in (ROOT/"nba.js").read_text(encoding="utf-8")
+assert "data-nba-odds" in (ROOT/"nba.js").read_text(encoding="utf-8")
+assert "nbaSaveSlip" in (ROOT/"nba.js").read_text(encoding="utf-8")
+assert "eventId:String(x.id||x.eventId||" in (ROOT/"nba-builder.js").read_text(encoding="utf-8")
+assert 'selection.sport==="nba"' in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert 'fetch("./api/public/nba"' in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert 'data-side="' in (ROOT/"nba.js").read_text(encoding="utf-8") and "nbaMoneyline:" in (ROOT/"nba.js").read_text(encoding="utf-8")
+assert "slipExpanded=picks.length>0" in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert (ROOT/"functions"/"api"/"public"/"nba.js").is_file()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
@@ -68,7 +84,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v90-20261107-builder-odds-flow" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v98-20261110-nba-archive" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -88,14 +104,31 @@ assert (ROOT/"functions"/"api"/"live-match.js").is_file()
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
-assert 'id="manualFixtures"' not in bets_html and 'id="manualSlipSummary"' in bets_html
-assert 'href="./matches.html"' in bets_html and "aggiunto dalla pagina Partite" in bets_html
+assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
+assert 'href="./matches.html"' in bets_html and "Seleziona le partite qui sotto" in bets_html
 assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
-assert "Sisal" not in bets_js and "playerApi" not in bets_js
+assert "playOnSisal" in bets_js and "mmplay=" in bets_js and "playerApi" not in bets_js
+assert "retained=stored.filter" in bets_js and 'dispatchEvent(new Event("matchmind:picks-updated"))' in bets_js
+userscript=(ROOT/"scripts"/"sisal-matchmind.user.js").read_text(encoding="utf-8")
+assert "@version      2.7.0" in userscript and "data-mm-add-queue" in userscript
+assert "Aggiungi al biglietto" in userscript and "placeBet" not in userscript
 assert "matchStandingsContext" in core and "pointsPerGame" in core
 
 assert "home_corners_1h" in calendar and "home_yellow" in calendar
+
+assert 'id="matchSlipActions"' in (ROOT/"matches.html").read_text(encoding="utf-8")
+assert 'id="sendMatchPicksSisal"' in (ROOT/"matches.html").read_text(encoding="utf-8")
+assert "sendMatchPicksToSisal" in (ROOT/"site-pages.js").read_text(encoding="utf-8") and "#mmplay=" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert 'id="betsFixtureCount"' in bets_html and 'id="moreBetFixtures"' in bets_html
+assert 'addEventListener("click"' in bets_js and "moreBetFixtures" in bets_js
+
+
+pages=(ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert pages.count("let strategyFilter='all';") == 1
+assert pages.index("let strategyFilter='all';") < pages.index("const matchCard=")
+assert "function initMatches(d){\n   let strategyFilter='all';" not in pages
+
 print("MatchMind PWA, public data source, optional Live provider, syntax and model checks passed.")
 
 assert "shownLimit=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
@@ -103,7 +136,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v90-20261107-builder-odds-flow" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v98-20261110-nba-archive" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
@@ -121,6 +154,8 @@ assert "MMNotifications" in (ROOT/"notifications.js").read_text(encoding="utf-8"
 assert "remote Web Push needs a server sender" in (ROOT/"notifications.js").read_text(encoding="utf-8")
 assert "live-sim-track" in (ROOT/"live.css").read_text(encoding="utf-8")
 assert "data-notification-category" in (ROOT/"live.html").read_text(encoding="utf-8")
+assert "balanced:makeLegs(balPool,maxLegs,variantCycleIndex)" in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert "Math.min(maxLegs,4)" not in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "proposal-summary" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "proposal-leg-match" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "Aggiungi '+proposal.length+' selezioni" in (ROOT/"bets.js").read_text(encoding="utf-8")

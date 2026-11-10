@@ -1143,3 +1143,6 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 .brand-copy b{display:block;color:#f1f5f7;font-size:16px;font-weight:900;letter-spacing:-.6px;line-height:1.1}
 .brand-copy small{display:block;margin-top:4px;color:#9ba8b2;font-size:7px;font-weight:800;letter-spacing:1.5px;white-space:nowrap}
 @media(max-width:420px){.brand-mark{flex-basis:50px!important;width:50px!important;height:50px!important}.brand-link{gap:9px}.brand-copy b{font-size:15px}.brand-copy small{font-size:6px;letter-spacing:1.2px}}
+
+/* MatchMind NBA navigation: five primary sections, single-row mobile layout. */
+@media(max-width:760px){.mobile-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}.mobile-nav .nav-item{min-width:0}.mobile-nav .nav-item>span:last-child{font-size:10px}}

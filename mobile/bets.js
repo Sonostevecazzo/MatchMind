@@ -111,7 +111,7 @@ function renderInjuriesCard(match) {
 function getForecast(match){return window.MM.forecast(match,data.history,getContext(match));}
 function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
 function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
-function writePicks(){save(PICKS_KEY,picks);}
+function writePicks(){const stored=readPicks(),competition=window.MM.getSelectedCompetition(),retained=stored.filter(p=>p&&(p.sport==="nba"||(p.competition||"serie-a")!==competition)),current=picks.map(p=>({...p,competition:p.competition||competition}));save(PICKS_KEY,retained.concat(current));window.dispatchEvent(new Event("matchmind:picks-updated"));}
 window.addEventListener("matchmind:picks-updated",()=>{picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());if(data){renderSlip();}});
 function selectedFor(match){return picks.find(p=>fixtureKey(p)===fixtureKey(match));}
 function selectOptions(value){return [0,1,2,3].map(n=>'<option value="'+n+'"'+(Number(value||0)===n?' selected':'')+'>'+n+'</option>').join("");}
@@ -139,7 +139,7 @@ function renderFixture(match){
 }
 function renderFixtures(){
  const target=$("manualFixtures");if(!target)return;
- const query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
+ const query=norm($("matchSearch")?.value||""),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
  const rows=fixtures.filter(m=>(!query||norm(m.home).includes(query)||norm(m.away).includes(query))&&(!date||m.date===date)&&(!team||norm(m.home)===norm(team)||norm(m.away)===norm(team))&&(!round||String(m.round||"")===round));
  const visible=rows.slice(0,visibleFixtureLimit);
  target.innerHTML=visible.length?visible.map(renderFixture).join(""):'<div class="empty-state">Nessuna partita corrisponde ai filtri. Modifica la ricerca.</div>';
@@ -163,6 +163,43 @@ return picks.map(p=>{
   const prob=forecast?marketProbability(forecast,p.marketKey):(Number.isFinite(p.probability)?p.probability:null);
   return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:prob,forecast,odds,bookmaker:p.bookmaker||null};
  }).filter(Boolean);
+}
+const SISAL_URL = "https://www.sisal.it/scommesse-matchpoint";
+const SISAL_MARKET_LABELS = {
+  home: "1", draw: "X", away: "2", dc1X: "1X", dcX2: "X2", dc12: "12",
+  over15: "Over 1.5", under15: "Under 1.5", over25: "Over 2.5", under25: "Under 2.5",
+  over35: "Over 3.5", under35: "Under 3.5", bttsYes: "Gol", bttsNo: "No Gol"
+};
+function buildSisalItems(list) {
+  return (Array.isArray(list) ? list : []).filter(p => p && p.sport !== "nba" && p.home && p.away && SISAL_MARKET_LABELS[p.marketKey])
+    .map(p => ({
+      sport: "football",
+      home: String(p.home),
+      away: String(p.away),
+      marketKey: String(p.marketKey),
+      label: SISAL_MARKET_LABELS[p.marketKey],
+      odds: Number.isFinite(Number(p.odds)) && Number(p.odds) > 1 ? Number(p.odds) : null,
+      date: p.date || ""
+    }));
+}
+function playOnSisal() {
+  const items = buildSisalItems(picks);
+  const status = $("manualBuilderStatus");
+  if (!items.length) {
+    if (status) status.textContent = picks.length
+      ? "Nessuna selezione calcio compatibile con i mercati Sisal supportati (1X2, doppia chance, Under/Over, Gol/No Gol)."
+      : "Schedina vuota: aggiungi prima una selezione.";
+    return;
+  }
+  const sentAt = Date.now();
+  const url = SISAL_URL + "#mmplay=" + encodeURIComponent(JSON.stringify({ sentAt, items }));
+  let opened = null;
+  try { opened = window.open(url, "_blank"); } catch (_) {}
+  if (opened) { try { opened.opener = null; } catch (_) {} }
+  else window.location.href = url;
+  const skipped = picks.length - items.length;
+  if (status) status.textContent = "Aperta la pagina Sisal con " + items.length + " selezioni da importare. Sul widget MatchMind premi «Aggiungi al biglietto» per ciascuna e verifica il riepilogo prima di confermare." +
+    (skipped ? " " + skipped + " selezioni combinate o non supportate sono state escluse." : "");
 }
 function updateSlipCalculations(){
  const rows=selectedRows();if(!rows.length)return;
@@ -196,6 +233,7 @@ function updateSlipCalculations(){
 
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
+ if(!target)return;
  if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
  const fairCombinedOdds=ENGINE().fairOdds(probability);
@@ -303,6 +341,10 @@ function renderSlip(){
    '<div class="manual-summary-actions">'+
     '<button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button>'+
     '<button type="button" id="clearCurrentSlip" class="secondary">Svuota</button>'+
+   '</div>'+
+   '<div class="sisal-play-box" style="margin-top:12px;padding:12px;border:1px solid #31523f;border-radius:10px;background:#0d1b18;">'+
+    '<button type="button" id="playOnSisal" class="primary" style="width:100%;">🎯 Trasferisci selezioni a Sisal</button>'+
+    '<small style="display:block;margin-top:7px;color:#9eb3ad;line-height:1.45;">Lo script Tampermonkey individua le quote e mostra un pulsante per aggiungerle al biglietto. Ogni selezione richiede un tuo tocco; la conferma della scommessa resta sempre manuale.</small>'+
    '</div>'+
   '</div>'+
  '</details>';
@@ -413,8 +455,10 @@ function setBetTab(tab){
  ["create","live","archive"].forEach(name=>{const panel=$("betsTab"+name[0].toUpperCase()+name.slice(1));if(panel)panel.hidden=name!==selected;});
 }
 function saveCurrentSlip(){
- const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
+ const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Scegli almeno un esito nel calendario qui sotto.";return;}
+ if(rows.some(x=>!Number.isFinite(x.probability)||x.probability<=0||x.probability>=1)){$("manualBuilderStatus").textContent="Schedina non salvata: manca una probabilità valida per almeno una selezione. Aggiorna il calendario e riprova.";return;}
  const probability=rows.reduce((v,x)=>v*x.probability,1);
+ if(!Number.isFinite(probability)||probability<=0||probability>1){$("manualBuilderStatus").textContent="Schedina non salvata: probabilità combinata non valida.";return;}
  const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
  const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
  const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
@@ -506,7 +550,9 @@ function buildProposal(){
  const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
  const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
  const first=upcoming[0];
- const candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+ const hasRound=Boolean(first&&first.round!==null&&first.round!==undefined&&String(first.round).trim()!=="");
+ let candidateFixtures=!first?[]:(hasRound?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+ if(!candidateFixtures.length&&upcoming.length)candidateFixtures=upcoming.slice(0,Math.min(upcoming.length,Math.max(1,Math.min(maxLegs*2,12))));
  const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
  const marketMode=$("marketMode")?.value||"auto";
 
@@ -583,16 +629,24 @@ function buildProposal(){
  const dblPool=accPool.filter(x=>x.odds>=1.20&&x.odds<=1.75).slice(0,2);
 
  const makeLegs=(pool,count,offset=0)=>{
-  if(!pool.length)return[];
+  if(!pool.length||count<=0)return[];
   const actualCount=Math.min(count,pool.length);
-  const start=offset%Math.max(1,pool.length-actualCount+1);
-  return pool.slice(start,start+actualCount);
+  const start=offset%pool.length;
+  const ordered=pool.slice(start).concat(pool.slice(0,start));
+  const picked=[];let joint=1,bestGap=Math.abs(1-target);
+  for(const item of ordered){
+   if(picked.length>=actualCount)break;
+   const nextJoint=joint*item.probability,nextGap=Math.abs(nextJoint-target);
+   if(picked.length&&nextGap>=bestGap)break;
+   picked.push(item);joint=nextJoint;bestGap=nextGap;
+  }
+  return picked;
  };
 
  proposalVariants={
-  balanced:makeLegs(balPool,Math.min(maxLegs,4),variantCycleIndex),
-  accuracy:makeLegs(accPool,Math.min(maxLegs,4),variantCycleIndex),
-  value:makeLegs(valPool,Math.min(maxLegs,4),variantCycleIndex),
+  balanced:makeLegs(balPool,maxLegs,variantCycleIndex),
+  accuracy:makeLegs(accPool,maxLegs,variantCycleIndex),
+  value:makeLegs(valPool,maxLegs,variantCycleIndex),
   double:dblPool.length===2?dblPool:makeLegs(accPool,2,variantCycleIndex)
  };
 
@@ -692,13 +746,27 @@ async function updateArchive(){
  const button=$("refreshArchive");button.disabled=true;button.textContent="Aggiorno…";
  try{
   const fresh=await window.MM.loadData(true),all=[...(fresh.matches||[]),...(fresh.history||[])];
-  let liveMatches=[];
+  let liveMatches=[],nbaGames=[];
   try{
    const response=await fetch("./api/live-match?competition="+encodeURIComponent(window.MM.getSelectedCompetition()),{headers:{Accept:"application/json"},cache:"no-store"});
    if(response.ok){const payload=await response.json();if(Array.isArray(payload.matches))liveMatches=payload.matches;}
   }catch(_){/* Public results still update if the optional live provider is unavailable. */}
+  if(archive.some(ticket=>(ticket.selections||[]).some(selection=>selection.sport==="nba"||selection.competition==="nba"))){
+   try{const response=await fetch("./api/public/nba",{headers:{Accept:"application/json"},cache:"no-store"});if(response.ok){const payload=await response.json();if(Array.isArray(payload.games))nbaGames=payload.games;}}catch(_){/* NBA archive remains pending if public scores are unavailable. */}
+  }
   const normDate=value=>String(value||"").slice(0,10);
   archive=archive.map(ticket=>({...ticket,selections:(ticket.selections||[]).map(selection=>{
+   if(selection.sport==="nba"||selection.competition==="nba"){
+    const game=nbaGames.find(item=>String(item.id)===String(selection.eventId||""));
+    if(!game)return selection;
+    const result=game.status==="FT"&&Number.isFinite(Number(game.hp))&&Number.isFinite(Number(game.ap))?String(game.ap)+"–"+String(game.hp):game.status==="LIVE"?"LIVE":null;
+    if(game.status==="FT"){
+     const won=selection.side==="home"?Number(game.hp)>Number(game.ap):Number(game.ap)>Number(game.hp);
+     return {...selection,result,status:won?"Vinta":"Persa",settledAt:new Date().toISOString()};
+    }
+    if(game.status==="LIVE")return {...selection,status:"In corso",result};
+    return {...selection,status:"Da giocare",result:null};
+   }
    const match=all.find(item=>(item.competition||"serie-a")===(selection.competition||"serie-a")&&item.date===selection.date&&norm(item.home)===norm(selection.home)&&norm(item.away)===norm(selection.away));
    if(match&&window.MM.hasScore(match)){
     const homeGoals=Number(match.hg),awayGoals=Number(match.ag),won=evaluateMarket(selection.marketKey,homeGoals,awayGoals);
@@ -826,6 +894,23 @@ function initEvents(){
  $("manualSlipSummary").addEventListener("change",handleContextChange);
  $("manualFixtures")?.addEventListener("change",handleContextChange);
 
+ $("manualFixtures")?.addEventListener("click",event=>{
+  const button=event.target.closest("[data-pick]");if(!button)return;
+  const fixture=fixtures.find(item=>fixtureKey(item)===button.dataset.pick);if(!fixture)return;
+  const current=selectedFor(fixture);
+  if(current&&current.marketKey===button.dataset.market){picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));}
+  else if(current){current.marketKey=button.dataset.market;}
+  else if(picks.length<15){picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:button.dataset.market});}
+  else{$("manualBuilderStatus").textContent="Limite di 15 selezioni raggiunto: rimuovi un evento prima di aggiungerne un altro.";return;}
+  slipExpanded=picks.length>0;
+  writePicks();renderFixtures();renderSlip();
+ });
+ const rerenderFixtureFilters=()=>{visibleFixtureLimit=12;renderFixtures();};
+ ["matchSearch","betsDate","betsTeam","betsRound"].forEach(id=>{
+  const control=$(id);if(control)control.addEventListener(id==="matchSearch"?"input":"change",rerenderFixtureFilters);
+ });
+ $("moreBetFixtures")?.addEventListener("click",()=>{visibleFixtureLimit+=12;renderFixtures();});
+
  $("manualSlipSummary").addEventListener("input",event=>{
   const oddsInput=event.target.closest(".manual-odds-input");
   if(oddsInput){
@@ -841,6 +926,7 @@ function initEvents(){
   }
  });
  $("manualSlipSummary").addEventListener("click",event=>{
+  if(event.target.closest("#playOnSisal")){playOnSisal();return;}
   const presetBtn=event.target.closest("[data-context-preset]");
   if(presetBtn){
    const fKey=presetBtn.dataset.contextPreset;
@@ -865,7 +951,7 @@ function initEvents(){
    return;
   }
   const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderSlip();return;}
-  const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});writePicks();renderFixtures();renderSlip();return;}
+  const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});else{$("manualBuilderStatus").textContent="Limite di 15 selezioni raggiunto: rimuovi un evento prima di aggiungerne un altro.";return;}slipExpanded=picks.length>0;writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
   if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderSlip();}
  });
@@ -1002,7 +1088,8 @@ document.addEventListener("DOMContentLoaded",async()=>{
   await window.MM.loadInjuries?.();
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
-  picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
+  picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition());
+  slipExpanded=picks.length>0;
   contexts=read(CONTEXT_KEY,{});
   archive=read(ARCHIVE_KEY,[]);
   if(!Array.isArray(archive))archive=[];

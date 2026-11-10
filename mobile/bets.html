@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080c11">
 <meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
-<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261104-model-builder">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261110-builder-sisal">
 <title>MatchMind · Scommesse</title>
 <script defer src="./bets-engine.js"></script><script defer src="./site-core.js"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./bets.js"></script>
 </head>
@@ -42,17 +42,29 @@
  <section class="section panel panel-pad sisal-integration-box">
   <div class="sisal-integration-content">
    <div class="sisal-badge-logo">⚡ SISAL INTEGRATION</div>
-   <h3>Evidenzia quote & invia da Sisal</h3>
-   <p>Installa lo script personale per evidenziare le scommesse con valore atteso (EV+) direttamente sul sito di Sisal e trasferire quote e giocate in MatchMind con un tocco.</p>
+   <h3>Collegamento MatchMind ↔ Sisal</h3>
+   <p>Installa lo script Tampermonkey per riconoscere partite, mercati e quote su Sisal. Dal costruttore puoi trasferire le selezioni a Sisal; sul widget premi «Aggiungi al biglietto» per ogni esito. La conferma della scommessa resta manuale.</p>
    <div class="sisal-actions">
     <a href="./scripts/sisal-matchmind.user.js" class="button primary" download="sisal-matchmind.user.js">Scarica UserScript (.user.js)</a>
-    <small>Compatibile con Tampermonkey, Violentmonkey, Safari Userscripts e Kiwi Browser</small>
+    <small>Versione 2.7.0 · Compatibile con Tampermonkey su Firefox e con i principali gestori UserScript</small>
    </div>
   </div>
  </section>
 
  <section class="section panel panel-pad" id="manualBuilder">
-  <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Qui trovi soltanto le giocate che hai aggiunto dalla pagina Partite. Puoi rivederle, rimuoverle e confermare la schedina.</p></div></div>
+  <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Seleziona le partite qui sotto oppure nella pagina Partite. Le scelte vengono condivise con il costruttore e puoi trasferirle a Sisal quando la schedina è pronta.</p></div></div>
+  <section class="section" aria-labelledby="builderFixtureTitle" style="margin-top:14px">
+   <div class="section-head"><div><div class="eyebrow">CALENDARIO DISPONIBILE</div><h3 id="builderFixtureTitle">Scegli le partite</h3><p>Il calendario è condiviso con la pagina Partite. Apri un mercato e seleziona un esito per inserirlo nella schedina.</p></div></div>
+   <div class="match-advanced-grid">
+    <div class="field"><label for="matchSearch">Cerca squadra</label><input id="matchSearch" type="search" placeholder="Es. Inter, Milan, Roma…" autocomplete="off"></div>
+    <div class="field"><label for="betsDate">Data</label><input id="betsDate" type="date"></div>
+    <div class="field"><label for="betsTeam">Squadra</label><select id="betsTeam"><option value="">Tutte le squadre</option></select></div>
+    <div class="field"><label for="betsRound">Giornata</label><select id="betsRound"><option value="">Tutte le giornate</option></select></div>
+   </div>
+   <p id="betsFixtureCount" class="status-line" aria-live="polite">Caricamento calendario…</p>
+   <div id="manualFixtures" class="fixture-list"><div class="loading-state">Caricamento partite…</div></div>
+   <div style="text-align:center;margin-top:12px"><button id="moreBetFixtures" class="ghost" type="button" hidden>Carica altre partite</button></div>
+  </section>
   <div id="manualSlipSummary"><div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div></div>
   <button id="saveManualSlip" type="button" class="primary" style="width:100%;margin-top:10px">Conferma e salva schedina</button>
   <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
