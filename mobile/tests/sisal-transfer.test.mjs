@@ -14,7 +14,7 @@ const script = readFileSync(resolve(ROOT, "scripts/sisal-matchmind.user.js"), "u
 
 test("Sisal userscript compiles and matches the production and preview app domains", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.7\.0$/m);
+  assert.match(script, /^\/\/ @version\s+2\.10\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/\*\.matchmind-3te\.pages\.dev\/\*$/m);
@@ -153,8 +153,8 @@ test("football and NBA handoffs both use the mmplay payload contract", () => {
 });
 
 test("Sisal widget escapes no interpolations and keeps the NBA market probability", () => {
-  assert.doesNotMatch(script, /\\\\\$\\{currentAnalysis\?\.sport/);
-  assert.match(script, /\\$\{currentAnalysis\?\.sport === "nba"/);
+  assert.equal(script.includes("\\${currentAnalysis?.sport"), false);
+  assert.ok(script.includes('${currentAnalysis?.sport === "nba"'));
   assert.match(nba, /probability:Number\.isFinite\(Number\(x\.probability\)\)/);
   assert.match(script, /if \(hit\.btn && item\.marketKey === hit\.key\)\s*\{\s*markSelectedMarket/);
 });
