@@ -14,7 +14,7 @@ for name in required:
  assert '<html lang="it">' in html,f"{name} must declare Italian"
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
-  assert 'id="matchSlipPreview"' not in html
+  assert 'id="matchSlipPreview"' in html and 'id="sendMatchPicksSisal"' in html
  if name=="analysis-lab.html":
   assert 'id="analysisOverview"' in html and "bets-engine.js" in html
  if name=="nba.html":
