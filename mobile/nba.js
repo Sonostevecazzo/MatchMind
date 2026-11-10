@@ -71,8 +71,9 @@
       let archive=[];try{const stored=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]");if(Array.isArray(stored))archive=stored;}catch{}
       archive.unshift(ticket);localStorage.setItem(ARCHIVE_KEY,JSON.stringify(archive.slice(0,100)));
       writeAll(readAll().filter(x=>x.sport!=="nba"));
-      if(status)status.textContent="Schedina NBA salvata nell'archivio condiviso. Puoi ritrovarla nella sezione Scommesse.";
       renderSlip();render();
+      const currentStatus=$("nbaBuilderStatus");
+      if(currentStatus)currentStatus.textContent="Schedina NBA salvata nell'archivio condiviso. Puoi ritrovarla nella sezione Scommesse.";
     }catch(error){if(status)status.textContent=error.message;}
   }
   function openSisal(){
