@@ -1953,7 +1953,7 @@
     captureIncomingPlays();
     const nbaQueue = readPlayQueue().filter(q => q.sport === "nba");
     const pageContext = String(location.pathname || "") + " " + String(location.search || "") + " " + String(document.title || "");
-    const isBasketballPage = /(?:^|\\/)basket(?:\\/|$)|(?:^|\\/)nba(?:\\/|$)|\\bbasketball\\b/i.test(pageContext);
+    const isBasketballPage = /(?:^|\/)basket(?:\/|$)|(?:^|\/)nba(?:\/|$)|\bbasketball\b/i.test(pageContext);
     if (isBasketballPage) {
       if (nbaQueue.length) autoPlayQueue(scanNbaSelections(nbaQueue));
       // Non eseguire mai il modello calcistico su eventi NBA, anche con coda vuota.
