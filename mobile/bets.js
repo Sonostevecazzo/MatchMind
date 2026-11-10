@@ -889,7 +889,6 @@ function initEvents(){
   else if(picks.length<15){picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:button.dataset.market});}
   else{$("manualBuilderStatus").textContent="Limite di 15 selezioni raggiunto: rimuovi un evento prima di aggiungerne un altro.";return;}
   slipExpanded=picks.length>0;
-  else{$("manualBuilderStatus").textContent="Hai raggiunto il limite di 15 selezioni.";return;}
   writePicks();renderFixtures();renderSlip();
  });
  const rerenderFixtureFilters=()=>{visibleFixtureLimit=12;renderFixtures();};
