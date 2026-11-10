@@ -31,3 +31,12 @@
 .nba-table th{font-size:11px;color:var(--muted,#9eabb5)}
 .nba-more-wrap{text-align:center;margin-top:12px}
 @media(max-width:430px){.nba-pred{grid-template-columns:repeat(2,minmax(0,1fr))}.nba-team{font-size:12px}.nba-team img{width:25px;height:25px}}
+
+.nba-filter-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(150px,1fr);gap:10px}
+.nba-builder-financials{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;padding:12px;border:1px solid var(--line,#293640);border-radius:12px;background:#0b1219}
+.nba-builder-financials>div,.nba-builder-financials>label{display:grid;gap:5px;align-content:center}
+.nba-builder-financials small{font-size:10px;color:var(--muted,#9eabb5)}
+.nba-builder-financials b{font-size:15px;font-variant-numeric:tabular-nums}
+.nba-builder-financials input,.nba-odds-field input{width:100%;min-width:0;background:#101820;color:inherit;border:1px solid var(--line,#293640);border-radius:8px;padding:9px}
+.nba-odds-field{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;font-size:11px;color:var(--muted,#9eabb5);max-width:150px}
+@media(max-width:520px){.nba-filter-grid{grid-template-columns:1fr}.nba-slip-row{align-items:flex-start}}
