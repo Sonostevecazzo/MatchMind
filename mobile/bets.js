@@ -746,13 +746,27 @@ async function updateArchive(){
  const button=$("refreshArchive");button.disabled=true;button.textContent="Aggiorno…";
  try{
   const fresh=await window.MM.loadData(true),all=[...(fresh.matches||[]),...(fresh.history||[])];
-  let liveMatches=[];
+  let liveMatches=[],nbaGames=[];
   try{
    const response=await fetch("./api/live-match?competition="+encodeURIComponent(window.MM.getSelectedCompetition()),{headers:{Accept:"application/json"},cache:"no-store"});
    if(response.ok){const payload=await response.json();if(Array.isArray(payload.matches))liveMatches=payload.matches;}
   }catch(_){/* Public results still update if the optional live provider is unavailable. */}
+  if(archive.some(ticket=>(ticket.selections||[]).some(selection=>selection.sport==="nba"||selection.competition==="nba"))){
+   try{const response=await fetch("./api/public/nba",{headers:{Accept:"application/json"},cache:"no-store"});if(response.ok){const payload=await response.json();if(Array.isArray(payload.games))nbaGames=payload.games;}}catch(_){/* NBA archive remains pending if public scores are unavailable. */}
+  }
   const normDate=value=>String(value||"").slice(0,10);
   archive=archive.map(ticket=>({...ticket,selections:(ticket.selections||[]).map(selection=>{
+   if(selection.sport==="nba"||selection.competition==="nba"){
+    const game=nbaGames.find(item=>String(item.id)===String(selection.eventId||""));
+    if(!game)return selection;
+    const result=game.status==="FT"&&Number.isFinite(Number(game.hp))&&Number.isFinite(Number(game.ap))?String(game.ap)+"–"+String(game.hp):game.status==="LIVE"?"LIVE":null;
+    if(game.status==="FT"){
+     const won=selection.side==="home"?Number(game.hp)>Number(game.ap):Number(game.ap)>Number(game.hp);
+     return {...selection,result,status:won?"Vinta":"Persa",settledAt:new Date().toISOString()};
+    }
+    if(game.status==="LIVE")return {...selection,status:"In corso",result};
+    return {...selection,status:"Da giocare",result:null};
+   }
    const match=all.find(item=>(item.competition||"serie-a")===(selection.competition||"serie-a")&&item.date===selection.date&&norm(item.home)===norm(selection.home)&&norm(item.away)===norm(selection.away));
    if(match&&window.MM.hasScore(match)){
     const homeGoals=Number(match.hg),awayGoals=Number(match.ag),won=evaluateMarket(selection.marketKey,homeGoals,awayGoals);
