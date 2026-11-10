@@ -1175,10 +1175,10 @@
 
     const { marketTitle, lineInfo, attrText } = getMarketContext(btn);
     const lNorm = (label || "").trim().toUpperCase();
-    const lPlain = lNorm.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+    const lPlain = lNorm.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const mNorm = ((marketTitle || "") + " " + (attrText || "")).toLowerCase();
-    const hasOverLabel = /\\b(over|oltre)\\b|piu\\s+di|more\\s+than/.test(lPlain.toLowerCase());
-    const hasUnderLabel = /\\bunder\\b|meno\\s+di|less\\s+than/.test(lPlain.toLowerCase());
+    const hasOverLabel = /\b(over|oltre)\b|piu\s+di|more\s+than/.test(lPlain.toLowerCase());
+    const hasUnderLabel = /\bunder\b|meno\s+di|less\s+than/.test(lPlain.toLowerCase());
 
     // Esclusioni mercati non supportati dal modello full-time 90 min
     if (mNorm.includes("1° t") || mNorm.includes("1° tempo") || mNorm.includes("primo tempo") ||
@@ -2494,7 +2494,13 @@
       if (item.sport !== "nba" && footballCartContains(item)) {
         item.status = "added"; item.error = ""; item.errorType = ""; item.updatedAt = Date.now(); changed = true; continue;
       }
-      if (item.status === "manual" || item.status === "clicked") continue;
+      if (item.status === "manual" || item.status === "clicked") {
+        const existingHit = (calculations || []).find(c => c && c.btn && c.key === item.marketKey &&
+          canonicalTeam(c.home) === canonicalTeam(item.home) &&
+          canonicalTeam(c.away) === canonicalTeam(item.away));
+        if (existingHit) markSelectedMarket(existingHit.btn, item, existingHit.odd);
+        continue;
+      }
       const h = canonicalTeam(item.home), a = canonicalTeam(item.away);
       const sameMatch = (calculations || []).filter(c => canonicalTeam(c.home) === h && canonicalTeam(c.away) === a &&
         (item.sport !== "nba" || (c.sport === "nba" && c.start === item.start)));
@@ -2524,7 +2530,7 @@
     if (!queue.length) { if (box) box.remove(); return; }
     if (!box) { box = document.createElement("div"); box.id = "mm-play-queue"; }
     const done = queue.filter(q => q.status === "added").length;
-    const expanded = box.dataset.expanded === "true";
+    const expanded = gmGet("mm_sisal_queue_expanded", "false") === "true";
     box.innerHTML =
       '<div style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:12px;margin-bottom:4px;">' +
         '<span style="flex:1;min-width:0;">🎯 MatchMind: ' + done + '/' + queue.length + ' nel biglietto</span>' +
@@ -2557,7 +2563,8 @@
     else widget.appendChild(box);
     box.querySelector("#mm-play-toggle")?.addEventListener("click", event => {
       event.stopPropagation();
-      box.dataset.expanded = String(box.dataset.expanded !== "true");
+      const nextExpanded = gmGet("mm_sisal_queue_expanded", "false") !== "true";
+      gmSet("mm_sisal_queue_expanded", String(nextExpanded));
       renderPlayQueue(widget);
     });
     box.querySelector("#mm-play-clear")?.addEventListener("click", event => {
