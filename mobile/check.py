@@ -73,7 +73,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v93-20261110-strategy-scope" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v94-20261110-builder-sisal-handoff" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -93,7 +93,7 @@ assert (ROOT/"functions"/"api"/"live-match.js").is_file()
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
-assert 'id="manualFixtures"' not in bets_html and 'id="manualSlipSummary"' in bets_html
+assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
 assert 'href="./matches.html"' in bets_html and "aggiunto dalla pagina Partite" in bets_html
 assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
@@ -105,10 +105,17 @@ assert "matchStandingsContext" in core and "pointsPerGame" in core
 
 assert "home_corners_1h" in calendar and "home_yellow" in calendar
 
+assert 'id="matchSlipActions"' in (ROOT/"matches.html").read_text(encoding="utf-8")
+assert 'id="sendMatchPicksSisal"' in (ROOT/"matches.html").read_text(encoding="utf-8")
+assert "sendMatchPicksToSisal" in pages and "#mmplay=" in pages
+assert 'id="betsFixtureCount"' in bets_html and 'id="moreBetFixtures"' in bets_html
+assert 'addEventListener("click"' in bets_js and "moreBetFixtures" in bets_js
+
+
 pages=(ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert pages.count("let strategyFilter='all';") == 1
 assert pages.index("let strategyFilter='all';") < pages.index("const matchCard=")
-assert "function initMatches(d){\\n   let strategyFilter='all';" not in pages
+assert "function initMatches(d){\n   let strategyFilter='all';" not in pages
 
 print("MatchMind PWA, public data source, optional Live provider, syntax and model checks passed.")
 
@@ -117,7 +124,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v93-20261110-strategy-scope" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v94-20261110-builder-sisal-handoff" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
