@@ -77,7 +77,7 @@
     }catch(error){if(status)status.textContent=error.message;}
   }
   function openSisal(){
-    const rows=picks(),items=rows.map(x=>({sport:"nba",eventId:String(x.id||x.eventId),home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start,date:x.date,marketKey:x.marketKey,label:"Vincente incontro (supplementari inclusi): "+x.team}));
+    const rows=picks(),items=rows.map(x=>({sport:"nba",eventId:String(x.id||x.eventId),home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start,date:x.date,marketKey:x.marketKey,label:"Vincente incontro (supplementari inclusi): "+x.team,probability:Number.isFinite(Number(x.probability))&&Number(x.probability)>0&&Number(x.probability)<1?Number(x.probability):null}));
     const base="https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba";
     const url=items.length?base+"#mmplay="+encodeURIComponent(JSON.stringify({sentAt:Date.now(),items})):base;
     let win=null;try{win=window.open(url,"_blank");if(win)win.opener=null;}catch{}
