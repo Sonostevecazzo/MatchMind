@@ -194,8 +194,32 @@ function updateSlipCalculations(){
  });
 }
 
+function updateSisalTransfer(rows){
+ const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
+ if(!link||!status)return;
+ const bridge=window.MatchMindSisalBridge;
+ const result=bridge?bridge.createUrl(rows):null;
+ if(!result||!result.url){
+  link.removeAttribute("href");
+  link.setAttribute("aria-disabled","true");
+  link.setAttribute("tabindex","-1");
+  link.textContent="Aggiungi selezioni supportate";
+  if(!bridge)status.textContent="Ponte Sisal non caricato. Ricarica la pagina e riprova.";
+  else if(result.skipped)status.textContent=(result.skipped===1?"1 selezione non trasferibile":result.skipped+" selezioni non trasferibili")+": il mercato non è supportato o i dati della partita sono incompleti.";
+  else status.textContent="Aggiungi almeno una selezione singola supportata per attivare il trasferimento.";
+  return;
+ }
+ link.href=result.url;
+ link.removeAttribute("aria-disabled");
+ link.removeAttribute("tabindex");
+ link.textContent="Apri Sisal con "+result.payload.items.length+" selezion"+(result.payload.items.length===1?"e":"i");
+ const skippedNote=result.skipped?(result.skipped===1?" 1 selezione non trasferibile è stata esclusa.":" "+result.skipped+" selezioni non trasferibili sono state escluse."):"";
+ status.textContent="Sisal si aprirà in una nuova scheda. Verifica partita, esito e quota, poi aggiungi ogni selezione manualmente; il bridge non compila né conferma giocate."+skippedNote;
+}
+
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
+ updateSisalTransfer(rows);
  if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
  const fairCombinedOdds=ENGINE().fairOdds(probability);
