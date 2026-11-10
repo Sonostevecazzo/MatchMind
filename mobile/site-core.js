@@ -510,12 +510,12 @@ function eventForecast(match,history){
       }
       const remove=event.target.closest('[data-slip-remove]');
       if(remove){
-        const rows=read().filter(x=>(x.competition||'serie-a')===getSelectedCompetition()),index=Number(remove.dataset.slipRemove),target=rows[index];
-        if(target){const all=read();const at=all.findIndex(x=>(x.competition||'serie-a')===(target.competition||'serie-a')&&x.date===target.date&&norm(x.home)===norm(target.home)&&norm(x.away)===norm(target.away));if(at>=0)all.splice(at,1);try{localStorage.setItem(key,JSON.stringify(all));}catch{}}
+        const rows=read().filter(x=>x.sport==='nba'||(x.competition||'serie-a')===getSelectedCompetition()),index=Number(remove.dataset.slipRemove),target=rows[index];
+        if(target){const all=read();const at=all.findIndex(x=>(x.sport||'football')===(target.sport||'football')&&(x.competition||'serie-a')===(target.competition||'serie-a')&&String(x.id||x.eventId||'')===String(target.id||target.eventId||'')&&x.date===target.date&&norm(x.home)===norm(target.home)&&norm(x.away)===norm(target.away));if(at>=0)all.splice(at,1);try{localStorage.setItem(key,JSON.stringify(all));}catch{}}
         render();window.dispatchEvent(new Event('matchmind:picks-updated'));return;
       }
       if(event.target.closest('[data-slip-clear]')){
-        const all=read().filter(x=>(x.competition||'serie-a')!==getSelectedCompetition());try{localStorage.setItem(key,JSON.stringify(all));}catch{}
+        const all=read().filter(x=>x.sport==='nba'||(x.competition||'serie-a')!==getSelectedCompetition());try{localStorage.setItem(key,JSON.stringify(all));}catch{}
         render();window.dispatchEvent(new Event('matchmind:picks-updated'));
       }
     });
