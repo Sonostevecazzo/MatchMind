@@ -641,9 +641,9 @@ function buildProposal(){
  };
 
  proposalVariants={
-  balanced:makeLegs(balPool,Math.min(maxLegs,4),variantCycleIndex),
-  accuracy:makeLegs(accPool,Math.min(maxLegs,4),variantCycleIndex),
-  value:makeLegs(valPool,Math.min(maxLegs,4),variantCycleIndex),
+  balanced:makeLegs(balPool,maxLegs,variantCycleIndex),
+  accuracy:makeLegs(accPool,maxLegs,variantCycleIndex),
+  value:makeLegs(valPool,maxLegs,variantCycleIndex),
   double:dblPool.length===2?dblPool:makeLegs(accPool,2,variantCycleIndex)
  };
 
