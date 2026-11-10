@@ -127,7 +127,7 @@
       if(event.target.closest("#nbaSaveSlip")){saveNbaSlip();return;}
       if(event.target.closest("#nbaPlaySisal"))openSisal();
     });
-    $("nbaSlip").addEventListener("input",event=>{
+    $("nbaSlip").addEventListener("change",event=>{
       const odds=event.target.closest("[data-nba-odds]");
       if(odds){const pick=readAll().find(x=>x.sport==="nba"&&String(x.id||x.eventId)===odds.dataset.nbaOdds);if(pick){const value=Number(odds.value);pick.odds=Number.isFinite(value)&&value>1&&value<=1000?value:null;writeAll(readAll());renderSlip();}return;}
       const stake=event.target.closest("#nbaStake");
