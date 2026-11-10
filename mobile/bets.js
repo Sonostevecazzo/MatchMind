@@ -198,7 +198,7 @@ function playOnSisal() {
   if (opened) { try { opened.opener = null; } catch (_) {} }
   else window.location.href = url;
   const skipped = picks.length - items.length;
-  if (status) status.textContent = "Trasferite a Sisal " + items.length + " selezioni. Sul widget MatchMind premi «Aggiungi al biglietto» per ciascuna; controlla il riepilogo prima di confermare." +
+  if (status) status.textContent = "Aperta la pagina Sisal con " + items.length + " selezioni da importare. Sul widget MatchMind premi «Aggiungi al biglietto» per ciascuna e verifica il riepilogo prima di confermare." +
     (skipped ? " " + skipped + " selezioni combinate o non supportate sono state escluse." : "");
 }
 function updateSlipCalculations(){
