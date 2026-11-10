@@ -1,21 +1,17 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.4.0
+// @version      2.5.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
 // @match        https://scommesse.sisal.it/*
-// @match        https://*.sisal.it/*
-// @match        https://sisal.it/*
-// @match        https://*.lovable.app/*
 // @match        https://sonostevecazzo.github.io/MatchMind/*
 // @match        http://localhost:8080/*
 // @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
 // @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
 // @icon         https://sonostevecazzo.github.io/MatchMind/icon.svg
-// @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
@@ -24,7 +20,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.4.0";
+  const MM_SCRIPT_VERSION = "2.5.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -110,58 +106,8 @@
     manunited: ["manchester united", "man utd", "united"]
   };
 
-  // Parametri offensivi/difensivi stimati (xG basati su stagione 2026/2027)
-  const TEAM_RATINGS = {
-    // Serie A
-    inter: { att: 1.95, def: 0.85, homeBoost: 0.15 },
-    juventus: { att: 1.70, def: 0.80, homeBoost: 0.12 },
-    milan: { att: 1.75, def: 1.05, homeBoost: 0.12 },
-    napoli: { att: 1.70, def: 0.90, homeBoost: 0.15 },
-    atalanta: { att: 1.90, def: 1.15, homeBoost: 0.15 },
-    roma: { att: 1.55, def: 1.10, homeBoost: 0.14 },
-    lazio: { att: 1.50, def: 1.10, homeBoost: 0.12 },
-    fiorentina: { att: 1.45, def: 1.15, homeBoost: 0.10 },
-    bologna: { att: 1.40, def: 1.05, homeBoost: 0.12 },
-    torino: { att: 1.15, def: 1.10, homeBoost: 0.10 },
-    udinese: { att: 1.15, def: 1.30, homeBoost: 0.10 },
-    genoa: { att: 1.10, def: 1.25, homeBoost: 0.12 },
-    parma: { att: 1.25, def: 1.45, homeBoost: 0.10 },
-    como: { att: 1.20, def: 1.40, homeBoost: 0.08 },
-    verona: { att: 1.05, def: 1.45, homeBoost: 0.10 },
-    cagliari: { att: 1.05, def: 1.45, homeBoost: 0.12 },
-    empoli: { att: 0.95, def: 1.35, homeBoost: 0.08 },
-    lecce: { att: 0.90, def: 1.40, homeBoost: 0.10 },
-    monza: { att: 1.00, def: 1.40, homeBoost: 0.08 },
-    venezia: { att: 0.95, def: 1.55, homeBoost: 0.08 },
-    // Serie B
-    sassuolo: { att: 1.40, def: 1.10, homeBoost: 0.12 },
-    pisa: { att: 1.30, def: 1.05, homeBoost: 0.12 },
-    spezia: { att: 1.25, def: 1.00, homeBoost: 0.12 },
-    cremonese: { att: 1.30, def: 1.15, homeBoost: 0.12 },
-    palermo: { att: 1.25, def: 1.20, homeBoost: 0.14 },
-    sampdoria: { att: 1.20, def: 1.20, homeBoost: 0.12 },
-    cesena: { att: 1.25, def: 1.25, homeBoost: 0.10 },
-    bari: { att: 1.10, def: 1.15, homeBoost: 0.12 },
-    frosinone: { att: 1.15, def: 1.25, homeBoost: 0.10 },
-    brescia: { att: 1.10, def: 1.20, homeBoost: 0.10 },
-    catanzaro: { att: 1.15, def: 1.25, homeBoost: 0.10 },
-    salernitana: { att: 1.10, def: 1.30, homeBoost: 0.10 },
-    // Top UEFA
-    mancity: { att: 2.30, def: 0.80, homeBoost: 0.16 },
-    realmadrid: { att: 2.25, def: 0.85, homeBoost: 0.16 },
-    bayern: { att: 2.20, def: 0.90, homeBoost: 0.15 },
-    barcelona: { att: 2.15, def: 0.95, homeBoost: 0.15 },
-    liverpool: { att: 2.15, def: 0.90, homeBoost: 0.15 },
-    arsenal: { att: 2.05, def: 0.80, homeBoost: 0.15 },
-    psg: { att: 2.00, def: 0.95, homeBoost: 0.15 },
-    leverkusen: { att: 1.95, def: 1.00, homeBoost: 0.14 },
-    atleticomadrid: { att: 1.75, def: 0.85, homeBoost: 0.14 },
-    dortmund: { att: 1.85, def: 1.15, homeBoost: 0.14 },
-    chelsea: { att: 1.75, def: 1.10, homeBoost: 0.12 },
-    tottenham: { att: 1.80, def: 1.25, homeBoost: 0.12 },
-    sporting: { att: 1.85, def: 1.00, homeBoost: 0.12 },
-    benfica: { att: 1.70, def: 1.05, homeBoost: 0.12 }
-  };
+  // Nessun rating di squadra viene assunto come xG verificato: usare baseline neutra finché non esiste una fonte versionata e validata.
+  const TEAM_RATINGS = {};
 
   const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -245,7 +191,7 @@
     return p;
   }
 
-  // Motore Poisson MatchMind (matrice gol 0-7) con supporto correttivi manuali assenze e motivazione
+  // Motore Poisson esplorativo MatchMind (matrice gol 0-12) con correttivi manuali non verificati.
   function calculateMatchMindForecast(homeName, awayName) {
     const hKey = canonicalTeam(homeName);
     const aKey = canonicalTeam(awayName);
@@ -278,8 +224,8 @@
     let o15 = 0, u15 = 0, o25 = 0, u25 = 0, o35 = 0, u35 = 0;
     let bttsYes = 0, bttsNo = 0;
 
-    for (let hg = 0; hg <= 7; hg++) {
-      for (let ag = 0; ag <= 7; ag++) {
+    for (let hg = 0; hg <= 12; hg++) {
+      for (let ag = 0; ag <= 12; ag++) {
         const prob = poisson(homeXg, hg) * poisson(awayXg, ag);
         if (hg > ag) pHome += prob;
         else if (hg === ag) pDraw += prob;
@@ -295,6 +241,14 @@
       }
     }
 
+    // Normalizza la matrice troncata: evita che le probabilità sommino meno di 1.
+    const matrixMass = pHome + pDraw + pAway;
+    if (matrixMass > 0) {
+      pHome /= matrixMass; pDraw /= matrixMass; pAway /= matrixMass;
+      o15 /= matrixMass; u15 /= matrixMass; o25 /= matrixMass; u25 /= matrixMass;
+      o35 /= matrixMass; u35 /= matrixMass; bttsYes /= matrixMass; bttsNo /= matrixMass;
+    }
+
     const result = {
       homeName,
       awayName,
@@ -304,9 +258,9 @@
         home: pHome,
         draw: pDraw,
         away: pAway,
-        dc1X: Math.min(0.99, pHome + pDraw),
-        dcX2: Math.min(0.99, pDraw + pAway),
-        dc12: Math.min(0.99, pHome + pAway),
+        dc1X: pHome + pDraw,
+        dcX2: pDraw + pAway,
+        dc12: pHome + pAway,
         over15: o15,
         under15: u15,
         over25: o25,
@@ -1874,6 +1828,7 @@
           </div>
         </details>`;
       })() : ''}
+      <div style="font-size:10px;color:#fbbf24;background:#30250b;border:1px solid #854d0e;border-radius:5px;padding:6px;margin:4px 0;">Stima esplorativa su baseline neutra: rating squadra e xG specifici non sono verificati. Non usare come probabilità calibrate o indicazione di puntata.</div>
       <div class="mm-view-tabs">
         <button class="mm-view-tab ${currentView === 'all_markets' ? 'active' : ''}" data-view="all_markets">📋 Tutti i Mercati (${allMarketsList.length})</button>
         <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">⭐ Solo Consigliate (${activePicks.length})</button>
@@ -2243,44 +2198,27 @@
     } catch (e) {}
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
   }
+  // Sicurezza: il bridge non clicca mai quote Sisal automaticamente.
+  // Le selezioni importate restano in coda e richiedono aggiunta manuale e verifica dell'utente.
   function autoPlayQueue(calculations) {
     const queue = readPlayQueue();
-    if (!queue.some(q => ["pending", "error", "adding"].includes(q.status))) return;
     let changed = false;
     for (const item of queue) {
-      if (item.status === "added") continue;
+      if (item.status === "added" || item.status === "manual") continue;
       const h = canonicalTeam(item.home), a = canonicalTeam(item.away);
       const sameMatch = (calculations || []).filter(c => canonicalTeam(c.home) === h && canonicalTeam(c.away) === a && (item.sport !== "nba" || (c.sport === "nba" && c.start === item.start)));
-      const candidate = sameMatch.find(c => c.btn && c.key === item.marketKey);
-      if (item.sport === 'nba' && nbaCartContains(item, candidate || {outcome:item.sisalOutcome})) {
-        item.status = 'added'; item.error = ''; item.errorType = ''; item.updatedAt = Date.now(); item.sisalOdds = candidate?.odd || item.sisalOdds; changed = true; continue;
-      }
-      if (item.sport === 'nba' && item.status === 'adding') {
-        if (Date.now() - item.clickedAt < 15000) continue;
-        item.status = 'error'; item.errorType = 'failed'; item.error = 'Quota cliccata, ma la selezione non è stata confermata nel biglietto Sisal. Apri il biglietto per controllare e ritenta.'; changed = true; continue;
-      }
       if (!sameMatch.length) continue;
       const hit = sameMatch.find(c => c.btn && c.key === item.marketKey);
       if (!hit) {
-        item.errorType = "notfound"; const msg = "Partita trovata su Sisal, ma la quota «" + item.label + "» non è presente o è sospesa.";
-        if (item.error !== msg) { item.status = "error"; item.error = msg; item.updatedAt = Date.now(); changed = true; }
-        continue;
+        item.status = "error"; item.errorType = "notfound";
+        item.error = "Partita trovata, ma mercato/quota non riconosciuti. Verifica e seleziona manualmente su Sisal.";
+      } else if (hit.btn.disabled || hit.btn.getAttribute("aria-disabled") === "true") {
+        item.status = "error"; item.errorType = "notfound"; item.error = "Quota sospesa o non disponibile su Sisal.";
+      } else {
+        item.status = "manual"; item.errorType = ""; item.error = "Selezione individuata. Controlla partita, mercato e quota, poi aggiungila manualmente al biglietto.";
+        item.sisalOdds = hit.odd; item.sisalOutcome = hit.outcome || null;
       }
-      const already = item.sport === "nba" ? nbaButtonSelected(hit.btn) : /selected|active|is-selected|checked/i.test(String(hit.btn.className || "")) || hit.btn.getAttribute("aria-pressed") === "true";
-      if (item.sport === "nba") {
-        if (hit.btn.disabled || hit.btn.getAttribute("aria-disabled") === "true") {
-          item.status = "error"; item.errorType = "notfound"; item.error = "La quota NBA è sospesa o non disponibile."; changed = true; continue;
-        }
-        if (item.errorType === "failed") continue;
-        try { if (!already) hit.btn.click(); item.clickedAt = Date.now(); item.status = "adding"; item.sisalOutcome = hit.outcome; item.sisalOdds = hit.odd; item.error = ""; changed = true; }
-        catch (e) { item.status = "error"; item.errorType = "failed"; item.error = "Impossibile selezionare la quota NBA: ritenta o aggiungila a mano."; changed = true; }
-        continue;
-      }
-      if (!already) {
-        try { hit.btn.click(); }
-        catch (e) { item.errorType = "failed"; item.status = "error"; item.error = "Quota trovata ma il click non è riuscito: aggiungila a mano."; item.updatedAt = Date.now(); changed = true; continue; }
-      }
-      item.status = "added"; item.error = ""; item.errorType = ""; item.sisalOdds = hit.odd; item.updatedAt = Date.now(); changed = true;
+      item.updatedAt = Date.now(); changed = true;
     }
     if (changed) { writePlayQueue(queue); if (typeof syncCartState === "function") syncCartState(); }
   }
@@ -2293,10 +2231,10 @@
     box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:12px;margin-bottom:4px;">' +
       '<span>🎯 Giocate da MatchMind: ' + done + '/' + queue.length + ' in schedina Sisal</span>' +
       '<button type="button" id="mm-play-clear" class="mm-icon-btn" title="Svuota elenco">🗑</button></div>' +
-      '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">Apri su Sisal la pagina della partita (o il palinsesto del campionato): la quota viene aggiunta da sola.</div>' +
+      '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">Apri la partita su Sisal, verifica manualmente esito e quota e aggiungila tu al biglietto. MatchMind non clicca né conferma scommesse.</div>' +
       queue.map(q => '<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;padding:3px 0;border-top:1px solid #1e293b;">' +
         '<span>' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + ' · <b>' + escapeHtml(q.label) + '</b></span>' +
-        '<span style="color:' + (q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24") + ';white-space:nowrap;" title="' + escapeHtml(q.error || "") + '">' + (q.status === "added" ? "✓ aggiunta" + (q.sisalOdds ? " @" + Number(q.sisalOdds).toFixed(2) : "") : q.status === "error" ? "⚠ errore" : "in attesa") + '</span></div>' + (q.status === "error" && q.error ? '<div style="font-size:10.5px;color:#fca5a5;padding:0 0 3px;">' + escapeHtml(q.error) + '</div>' : '')).join("");
+        '<span style="color:' + (q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24") + ';white-space:nowrap;" title="' + escapeHtml(q.error || "") + '">' + (q.status === "added" ? "✓ aggiunta" + (q.sisalOdds ? " @" + Number(q.sisalOdds).toFixed(2) : "") : q.status === "error" ? "⚠ errore" : q.status === "manual" ? "da aggiungere" : "in attesa") + '</span></div>' + ((q.status === "error" || q.status === "manual") && q.error ? '<div style="font-size:10.5px;color:#fca5a5;padding:0 0 3px;">' + escapeHtml(q.error) + '</div>' : '')).join("");
     widget.insertBefore(box, document.getElementById("mm-resize-grip"));
     box.querySelector("#mm-play-clear").onclick = (e) => { e.stopPropagation(); writePlayQueue([]); renderWidget(); };
   }
