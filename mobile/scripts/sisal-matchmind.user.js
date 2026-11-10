@@ -690,6 +690,27 @@
       outline-offset: -1px !important;
       background: rgba(16,185,129,0.12) !important;
     }
+    .mm-selected-from-app {
+      outline: 3px solid #c4f36a !important;
+      outline-offset: 1px !important;
+      background: rgba(132,204,22,.18) !important;
+      box-shadow: 0 0 0 3px rgba(132,204,22,.16) !important;
+    }
+    .mm-selected-app-tag {
+      display: block !important;
+      width: fit-content !important;
+      max-width: 100% !important;
+      margin: 3px auto 0 !important;
+      padding: 2px 6px !important;
+      border-radius: 5px !important;
+      background: #365314 !important;
+      border: 1px solid #a3e635 !important;
+      color: #ecfccb !important;
+      font-size: 10px !important;
+      line-height: 1.25 !important;
+      font-weight: 900 !important;
+      pointer-events: none !important;
+    }
 
     .mm-send-btn {
       display: inline-flex !important;
@@ -2077,7 +2098,9 @@
           if (!footballTeamInText(text, item.home) || !footballTeamInText(text, item.away)) continue;
           eventSeen = true;
           const resolved = resolveOddsButton(btn);
-          if (resolved && !found.some(c => c.btn === btn)) found.push({ ...resolved, btn, home: item.home, away: item.away, sport: "football", fallback: true });
+          if (resolved && resolved.key === item.marketKey && !found.some(c => c.btn === btn)) {
+            found.push({ ...resolved, btn, home: item.home, away: item.away, sport: "football", probability: item.probability, selectedByMatchMind: true, fallback: true });
+          }
           break;
         }
       }
@@ -2261,6 +2284,7 @@
       marketKey: String(x.marketKey),
       label: String(x.label || x.marketKey),
       odds: Number(x.odds) > 1 ? Number(x.odds) : null,
+      probability: Number.isFinite(Number(x.probability)) && Number(x.probability) > 0 && Number(x.probability) < 1 ? Number(x.probability) : null,
       date: x.date || "",
       sport: x.sport === "nba" ? "nba" : "football",
       eventId: String(x.eventId || ""),
@@ -2409,6 +2433,25 @@
     }
   }
 
+  function markSelectedMarket(btn, item, odds) {
+    if (!btn || !document.body.contains(btn)) return;
+    const probability = Number(item && item.probability);
+    const hasProbability = Number.isFinite(probability) && probability > 0 && probability < 1;
+    btn.classList.add("mm-highlight-btn", "mm-selected-from-app");
+    let tag = btn.querySelector(":scope > .mm-selected-app-tag");
+    if (!tag) {
+      tag = document.createElement("span");
+      tag.className = "mm-selected-app-tag";
+      btn.appendChild(tag);
+    }
+    tag.textContent = hasProbability
+      ? "MatchMind · " + Math.round(probability * 100) + "%"
+      : "Selezione MatchMind";
+    tag.title = "Mercato selezionato nell'app MatchMind" +
+      (hasProbability ? " · probabilità stimata " + (probability * 100).toFixed(1) + "%" : "") +
+      (Number(odds) > 1 ? " · quota Sisal " + Number(odds).toFixed(2) : "");
+  }
+
   function autoPlayQueue(calculations) {
     const queue = readPlayQueue();
     let changed = false;
@@ -2433,8 +2476,11 @@
         item.status = "error"; item.errorType = "notfound"; item.error = "Quota sospesa o non disponibile su Sisal.";
       } else {
         item.status = "manual"; item.errorType = "";
-        item.error = "Selezione individuata. Premi «Aggiungi al biglietto» e controlla il riepilogo Sisal.";
+        item.error = "Mercato individuato e contrassegnato. Premi «Aggiungi al biglietto» e verifica la quota.";
         item.sisalOdds = hit.odd; item.sisalOutcome = hit.outcome || null;
+        if (item.sport !== "nba" && hit.btn && item.marketKey === hit.key) {
+          markSelectedMarket(hit.btn, item, hit.odd);
+        }
       }
       item.updatedAt = Date.now(); changed = true;
     }
