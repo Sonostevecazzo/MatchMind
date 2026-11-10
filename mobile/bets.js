@@ -176,7 +176,7 @@ function updateSlipCalculations(){
  const ev=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
  const evAmount=ev!=null?currentStake*ev:null;
  const summary= $("manualSlipSummary")?.querySelector("details > summary span");
- if(summary)summary.textContent="Anteprima schedina · "+rows.length+" pronostici"+(potentialWin!=null?" · vincita "+curr(potentialWin):"");
+ if(summary)summary.textContent="Anteprima schedina · "+rows.length+" "+(rows.length===1?"pronostico":"pronostici")+(potentialWin!=null?" · vincita "+curr(potentialWin):"");
 
  const totalOddsEl=$("slipTotalOddsVal");if(totalOddsEl)totalOddsEl.innerHTML=totalOdds!=null?fmtOdds(totalOdds):'<small class="text-muted">'+validOdds.length+'/'+rows.length+' quote</small>';
  const fairOddsEl=$("slipFairOddsVal");if(fairOddsEl)fairOddsEl.textContent=fmtOdds(fairCombinedOdds);
@@ -316,7 +316,7 @@ function renderSlip(){
   '</div>';
 
  target.innerHTML='<details class="manual-slip-dropdown" '+(slipExpanded?'open':'')+'>'+
-  '<summary><span>Anteprima schedina · '+rows.length+' pronostici'+(potentialWin!=null?' · vincita '+curr(potentialWin):'')+'</span><b>'+pct(probability)+'</b></summary>'+
+  '<summary><span>Anteprima schedina · '+rows.length+' '+(rows.length===1?'pronostico':'pronostici')+(potentialWin!=null?' · vincita '+curr(potentialWin):'')+'</span><b>'+pct(probability)+'</b></summary>'+
   '<div class="manual-summary-card">'+
    '<div class="manual-summary-top">'+
     '<div><span class="eyebrow">SCHEDINA CORRENTE</span><b>'+rows.length+' eventi</b></div>'+
