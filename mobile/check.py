@@ -93,6 +93,7 @@ assert 'href="./matches.html"' in bets_html and "aggiunto dalla pagina Partite" 
 assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "MatchMindSisalBridge" in bets_js and "playerApi" not in bets_js
+assert "ENGINE().marketLabel(" not in bets_js and "const label=marketLabel(mKey)" in bets_js
 bets_page=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="sendSelectionsToSisal"' in bets_page and "raw.githubusercontent.com" in bets_page
 assert "./sisal-bridge.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
