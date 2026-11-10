@@ -233,6 +233,7 @@ function updateSlipCalculations(){
 
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
+ if(!target)return;
  if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
  const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
  const fairCombinedOdds=ENGINE().fairOdds(probability);
@@ -454,8 +455,10 @@ function setBetTab(tab){
  ["create","live","archive"].forEach(name=>{const panel=$("betsTab"+name[0].toUpperCase()+name.slice(1));if(panel)panel.hidden=name!==selected;});
 }
 function saveCurrentSlip(){
- const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
+ const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Scegli almeno un esito nel calendario qui sotto.";return;}
+ if(rows.some(x=>!Number.isFinite(x.probability)||x.probability<=0||x.probability>=1)){$("manualBuilderStatus").textContent="Schedina non salvata: manca una probabilità valida per almeno una selezione. Aggiorna il calendario e riprova.";return;}
  const probability=rows.reduce((v,x)=>v*x.probability,1);
+ if(!Number.isFinite(probability)||probability<=0||probability>1){$("manualBuilderStatus").textContent="Schedina non salvata: probabilità combinata non valida.";return;}
  const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
  const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
  const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
@@ -884,6 +887,8 @@ function initEvents(){
   if(current&&current.marketKey===button.dataset.market){picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));}
   else if(current){current.marketKey=button.dataset.market;}
   else if(picks.length<15){picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:button.dataset.market});}
+  else{$("manualBuilderStatus").textContent="Limite di 15 selezioni raggiunto: rimuovi un evento prima di aggiungerne un altro.";return;}
+  slipExpanded=picks.length>0;
   else{$("manualBuilderStatus").textContent="Hai raggiunto il limite di 15 selezioni.";return;}
   writePicks();renderFixtures();renderSlip();
  });
@@ -933,7 +938,7 @@ function initEvents(){
    return;
   }
   const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderSlip();return;}
-  const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});writePicks();renderFixtures();renderSlip();return;}
+  const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});else{$("manualBuilderStatus").textContent="Limite di 15 selezioni raggiunto: rimuovi un evento prima di aggiungerne un altro.";return;}slipExpanded=picks.length>0;writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
   if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderSlip();}
  });
