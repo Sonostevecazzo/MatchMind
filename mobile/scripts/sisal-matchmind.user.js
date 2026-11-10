@@ -1175,7 +1175,10 @@
 
     const { marketTitle, lineInfo, attrText } = getMarketContext(btn);
     const lNorm = (label || "").trim().toUpperCase();
+    const lPlain = lNorm.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
     const mNorm = ((marketTitle || "") + " " + (attrText || "")).toLowerCase();
+    const hasOverLabel = /\\b(over|oltre)\\b|piu\\s+di|more\\s+than/.test(lPlain.toLowerCase());
+    const hasUnderLabel = /\\bunder\\b|meno\\s+di|less\\s+than/.test(lPlain.toLowerCase());
 
     // Esclusioni mercati non supportati dal modello full-time 90 min
     if (mNorm.includes("1° t") || mNorm.includes("1° tempo") || mNorm.includes("primo tempo") ||
@@ -1207,8 +1210,10 @@
     }
 
     // Under / Over
-    if (lNorm === "UNDER" || lNorm === "OVER" || lNorm.startsWith("U ") || lNorm.startsWith("O ") || mNorm.includes("under") || mNorm.includes("over")) {
-      const isOver = lNorm === "OVER" || lNorm.startsWith("O") || mNorm.includes("over");
+    if (lNorm === "UNDER" || lNorm === "OVER" || lNorm.startsWith("U ") || lNorm.startsWith("O ") ||
+        hasOverLabel || hasUnderLabel || mNorm.includes("under") || mNorm.includes("over")) {
+      const isOver = hasOverLabel || lNorm === "OVER" || lNorm.startsWith("O") ||
+        (!hasUnderLabel && mNorm.includes("over"));
       let line = "2.5";
       const lineStr = (lineInfo + " " + mNorm + " " + (btn.textContent || ""));
       if (lineStr.includes("1.5") || lineStr.includes("1,5")) line = "1.5";
@@ -2151,6 +2156,15 @@
     const raw = JSON.stringify(list.slice(0, 30));
     try { if (typeof GM_setValue === "function") GM_setValue(PLAY_KEY, raw); } catch (e) {}
     try { localStorage.setItem(PLAY_KEY, raw); } catch (e) {}
+  }
+  // Reopen stale "not found" rows after an engine update: DOM scans must be retried against the current Sisal layout.
+  const QUEUE_VERSION_KEY = "mm_sisal_queue_version";
+  if (gmGet(QUEUE_VERSION_KEY, "") !== MM_SCRIPT_VERSION) {
+    const migrated = readPlayQueue().map(item => item && item.status === "error"
+      ? { ...item, status: "pending", error: "", errorType: "", updatedAt: Date.now() }
+      : item);
+    writePlayQueue(migrated);
+    gmSet(QUEUE_VERSION_KEY, MM_SCRIPT_VERSION);
   }
   function nbaButtonSelected(btn) {
     return btn.getAttribute("aria-pressed") === "true" || btn.getAttribute("aria-checked") === "true" ||
