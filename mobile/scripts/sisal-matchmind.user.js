@@ -2080,7 +2080,7 @@
       /^(?:selected|is-selected|checked|is-active)$/.test(btn.getAttribute("data-state") || "") ||
       Array.from(btn.classList || []).some(c => /^(?:selected|is-selected|checked|is-active|active)$/.test(c));
   }
-  const NBA_CART_SELECTOR = '[class*="betslip" i], [id*="betslip" i], [data-qa*="betslip" i], [class*="coupon" i], [class*="carrello" i], [class*="biglietto" i], [data-testid*="betslip" i]';
+  const NBA_CART_SELECTOR = '[class*="betslip" i], [id*="betslip" i], [class*="bet-slip" i], [id*="bet-slip" i], [data-qa*="betslip" i], [class*="coupon" i], [class*="carrello" i], [class*="biglietto" i], [class*="ticket" i], [id*="ticket" i], [data-testid*="betslip" i], [data-testid*="ticket" i]';
   function nbaMarketText(btn) {
     const parts = [];
     let node = btn;
