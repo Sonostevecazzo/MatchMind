@@ -32,6 +32,10 @@ test("selection click requires an explicit per-selection user action and never s
   assert.match(action, /item\.status = "clicked"/);
   assert.match(script, /box\.querySelectorAll\("\[data-mm-add-queue\]"\)/);
   assert.match(script, /button\.addEventListener\("click"/);
+  const scanStart = script.indexOf("function autoPlayQueue(calculations)");
+  const scanEnd = script.indexOf("function renderPlayQueue(widget)", scanStart);
+  assert.ok(scanStart >= 0 && scanEnd > scanStart);
+  assert.doesNotMatch(script.slice(scanStart, scanEnd), /\.click\s*\(/);
   assert.doesNotMatch(script, /placeBet|submitBet|confirmBet/i);
 });
 
