@@ -556,7 +556,7 @@ function buildProposal(){
    if(!Number.isFinite(prob)||prob<0.15)return;
    const oddInfo=resolveOddForMarket(o,mKey,prob);
    const ev=oddInfo.isReal?(prob*oddInfo.odd)-1:0;
-   const label=ENGINE().marketLabel(mKey);
+   const label=marketLabel(mKey);
    allEvaluations.push({
     match:m,
     marketKey:mKey,
