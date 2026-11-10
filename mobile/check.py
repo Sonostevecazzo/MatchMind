@@ -102,6 +102,8 @@ assert "home_corners_1h" in calendar and "home_yellow" in calendar
 print("MatchMind PWA, public data source, optional Live provider, syntax and model checks passed.")
 
 assert "shownLimit=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+site_pages=(ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "let matchFilter='upcoming',shownLimit=12,activeMatches=[],strategyFilter='all';" in site_pages
 assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
