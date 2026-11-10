@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v94-20261110-builder-sisal-handoff';
+const CACHE='matchmind-pwa-v95-20261110-sisal-update-queue';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
