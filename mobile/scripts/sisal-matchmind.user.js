@@ -2099,9 +2099,27 @@
     }
     return parts.join(' ').toLowerCase().replace(/[–—]/g, '-');
   }
+  const NBA_EXCLUDED = /handicap|spread|under|over|quarto|quarter|tempo|half|regolament|senza.*supplement|1x2|parziale/;
   function nbaWinnerMarket(market) {
-    return !/handicap|spread|under|over|quarto|quarter|tempo|half|regolament|senza.*supplement|1x2|parziale/.test(market) &&
-      /vincente|vincitore|money\s*line|winner|testa\s+a\s+testa|esito finale|risultato finale|\b1\s*[-/]\s*2\b/.test(market);
+    return !NBA_EXCLUDED.test(market) &&
+      /vincente|vincitore|money\s*line|winner|testa\s+a\s+testa|\bt\s*\/\s*t\b|esito finale|risultato finale|\b1\s*(?:-|\/)\s*2\b/.test(market);
+  }
+  function nbaActiveMarketText() {
+    const parts = [];
+    document.querySelectorAll("select").forEach(select => {
+      const option = select.options && select.options[select.selectedIndex];
+      if (option && !select.closest("#mm-widget")) parts.push(option.textContent);
+    });
+    document.querySelectorAll('[aria-selected="true"],[aria-current="true"],[class*="active" i][role="tab"],[role="tab"][class*="selected" i]')
+      .forEach(tab => { if (!tab.closest("#mm-widget") && (tab.textContent || "").length < 80) parts.push(tab.textContent); });
+    return parts.join(" ").toLowerCase().replace(/[–—]/g, "-");
+  }
+  function nbaTwoWayButtons(container) {
+    if (!container) return false;
+    const priced = Array.from(container.querySelectorAll("button, [role='button']"))
+      .filter(button => !button.closest("#mm-widget") && /\d[.,]\d{2}(?!\d)/.test(button.textContent || "") && (button.textContent || "").length < 80);
+    const unique = Array.from(new Set(priced.map(button => button.closest("button,[role='button']") || button)));
+    return unique.length === 2 && !unique.some(button => /^\s*x(?![a-z])|pareggio/i.test(button.textContent || ""));
   }
   function nbaCartContains(item, hit) {
     const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
@@ -2142,9 +2160,14 @@
     const indexes = aliases.map(a => clean.indexOf(" " + a + " ")).filter(i => i >= 0);
     return indexes.length ? Math.min(...indexes) : -1;
   }
-  function resolveNbaWinner(btn, item, context) {
+  function resolveNbaWinner(btn, item, context, container) {
     const market = nbaMarketText(btn);
-    if (!nbaWinnerMarket(market)) return null;
+    if (!nbaWinnerMarket(market)) {
+      const active = nbaActiveMarketText();
+      const supportedFallback = !NBA_EXCLUDED.test(market) &&
+        (nbaWinnerMarket(active) || (!NBA_EXCLUDED.test(active) && nbaTwoWayButtons(container)));
+      if (!supportedFallback) return null;
+    }
     const raw = (btn.innerText || Array.from(btn.children).map(c => c.textContent).join(" ") || btn.textContent || "").trim();
     const odd = parseOddsValue(raw + " " + (btn.getAttribute("aria-label") || ""));
     if (!odd) return null;
@@ -2175,7 +2198,7 @@
           const date = dated?.getAttribute("data-start") || dated?.getAttribute("data-date") || dated?.getAttribute("datetime");
           if (date && item.start && Date.parse(date) !== Date.parse(item.start) && date.slice(0, 10) !== item.date) break;
           eventSeen = true;
-          const resolved = resolveNbaWinner(btn, item, text);
+          const resolved = resolveNbaWinner(btn, item, text, container);
           if (resolved && !found.some(c => c.btn === btn && c.start === item.start)) found.push({ ...resolved, btn, home: item.home, away: item.away, sport: "nba", start: item.start });
           break;
         }
