@@ -83,6 +83,14 @@ test("bet builder renders and wires its own upcoming match browser", () => {
   assert.match(bets, /if\(!candidateFixtures\.length&&upcoming\.length\)/);
 });
 
+
+test("builder honors selected max legs instead of silently capping every strategy at four", () => {
+  assert.match(bets, /balanced:makeLegs\(balPool,maxLegs,variantCycleIndex\)/);
+  assert.match(bets, /accuracy:makeLegs\(accPool,maxLegs,variantCycleIndex\)/);
+  assert.match(bets, /value:makeLegs\(valPool,maxLegs,variantCycleIndex\)/);
+  assert.doesNotMatch(bets, /Math\.min\(maxLegs,4\)/);
+});
+
 test("builder preserves shared selections and applies the target probability to proposal size", () => {
   assert.match(bets, /picks=readPicks\(\)\.filter\(p=>\(p\.competition\|\|"serie-a"\)===window\.MM\.getSelectedCompetition\(\)\);/);
   assert.match(bets, /const nextJoint=joint\*item\.probability,nextGap=Math\.abs\(nextJoint-target\)/);
