@@ -14,7 +14,8 @@ const script = readFileSync(resolve(ROOT, "scripts/sisal-matchmind.user.js"), "u
 
 test("Sisal userscript compiles and matches the production and preview app domains", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.6\.0$/m);
+  assert.match(script, /^\/\/ @version\s+2\.7\.0$/m);
+  assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/integration\/lovable-features-no-duplicates\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/\*\.matchmind-3te\.pages\.dev\/\*$/m);
 });
