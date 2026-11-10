@@ -94,7 +94,7 @@ bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
 assert 'id="manualFixtures"' in bets_html and 'id="manualSlipSummary"' in bets_html
-assert 'href="./matches.html"' in bets_html and "aggiunto dalla pagina Partite" in bets_html
+assert 'href="./matches.html"' in bets_html and "Seleziona le partite qui sotto" in bets_html
 assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "playOnSisal" in bets_js and "mmplay=" in bets_js and "playerApi" not in bets_js
