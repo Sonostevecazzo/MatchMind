@@ -32,12 +32,12 @@ scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
 with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
-for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js","nba.js","scripts/sisal-matchmind.user.js"]:
+for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","tipsaudit.js","bets.js","live.js","elo.js","rounds.js","sw.js","nba.js","nba-builder.js","scripts/sisal-matchmind.user.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
 for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js",ROOT/"functions"/"api"/"public"/"nba.js"]:
  subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
 subprocess.run(["node","--check",str(ROOT/"nba-engine.mjs")],check=True)
-for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","sisal-transfer.test.mjs"]:
+for test in ["ai-engine.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","nba-builder.test.cjs","sisal-transfer.test.mjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
@@ -53,6 +53,10 @@ assert "media.api-sports.io" not in core
 assert "./nba.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "./nba.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert (ROOT/"nba.html").is_file() and (ROOT/"nba.js").is_file()
+assert "./nba-builder.js" in (ROOT/"nba.html").read_text(encoding="utf-8")
+assert "Costruttore schedina NBA" in (ROOT/"nba.html").read_text(encoding="utf-8")
+assert "'./nba-builder.js'" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "MMNbaBuilder.toArchiveTicket" in (ROOT/"nba.js").read_text(encoding="utf-8")
 assert (ROOT/"functions"/"api"/"public"/"nba.js").is_file()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")
@@ -73,7 +77,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v96-20261110-builder-maxlegs" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v97-20261110-nba-builder" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -125,7 +129,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v96-20261110-builder-maxlegs" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v97-20261110-nba-builder" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
