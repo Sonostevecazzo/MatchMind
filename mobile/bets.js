@@ -598,7 +598,7 @@ function buildProposal(){
   if(a.isRealOdd&&!b.isRealOdd)return -1;
   if(!a.isRealOdd&&b.isRealOdd)return 1;
   return (b.ev||0)-(a.ev||0);
- });
+ }).filter(item=>item.isRealOdd&&item.ev>0);
  const balPool=poolByMatch((a,b)=>{
   const scoreA=(a.probability*0.6)+(Math.max(0,a.ev||0)*0.4);
   const scoreB=(b.probability*0.6)+(Math.max(0,b.ev||0)*0.4);
@@ -626,12 +626,13 @@ function buildProposal(){
 
 function renderProposalUI(){
  if(!proposal||!proposal.length){
-  $("ticketResults").innerHTML='<div class="empty-state">Nessuna selezione generata per questa combinazione.</div>';
+  $("ticketResults").innerHTML=currentBuilderStrategy==='value'?'<div class="notice warning">Nessuna opportunità +EV verificabile: servono quote bookmaker reali. Su GitHub Pages le quote non sono disponibili.</div>':'<div class="empty-state">Nessuna selezione generata per questa combinazione.</div>';
   return;
  }
  const mult=proposal.reduce((acc,x)=>acc*(x.odds||1),1);
  const jointProb=proposal.reduce((acc,x)=>acc*x.probability,1);
- const combEv=(jointProb*mult)-1;
+ const allRealOdds=proposal.every(item=>item.isRealOdd);
+ const combEv=allRealOdds?(jointProb*mult)-1:null;
  const estWin10=(10*mult).toFixed(2);
  const proposalDate=value=>{if(!value)return 'Data da definire';const date=new Date(value+'T12:00:00');return Number.isNaN(date.getTime())?String(value):date.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'});};
 
@@ -642,14 +643,14 @@ function renderProposalUI(){
 
  const summaryHtml='<section class="proposal-summary">'+
   '<div class="proposal-summary-head"><span class="eyebrow">RISULTATO DEL MODELLO</span><span class="proposal-state reached">'+(currentBuilderStrategy==='value'?'Focus Valore':currentBuilderStrategy==='accuracy'?'Focus Accuratezza':currentBuilderStrategy==='double'?'Obiettivo Raddoppio':'Combinazione Ottimale')+'</span></div>'+
-  '<div class="proposal-total"><span>Quota totale moltiplicatore</span><b>@'+mult.toFixed(2)+'</b></div>'+
+  '<div class="proposal-total"><span>'+(allRealOdds?'Quota totale bookmaker':'Moltiplicatore indicativo')+'</span><b>@'+mult.toFixed(2)+'</b></div>'+
   '<div class="proposal-meta">'+
    '<span><small>Probabilità stimata</small><b>'+pct(jointProb)+'</b></span>'+
    '<span><small>Partite</small><b>'+proposal.length+'</b></span>'+
-   '<span><small>Puntando 10€</small><b>'+estWin10+'€</b></span>'+
-   '<span><small>Valore atteso</small><b class="'+(combEv>=0?'ev-pos-text':'')+'">'+(combEv>=0?'+':'')+Math.round(combEv*100)+'% EV</b></span>'+
+   '<span><small>'+(allRealOdds?'Incasso potenziale · 10€':'Incasso teorico · 10€')+'</small><b>'+estWin10+'€</b></span>'+
+   '<span><small>Valore atteso</small><b class="'+(combEv!=null&&combEv>=0?'ev-pos-text':'')+'">'+(combEv==null?'Non calcolabile senza quote reali':(combEv>=0?'+':'')+Math.round(combEv*100)+'% EV')+'</b></span>'+
   '</div>'+
-  '<p class="proposal-disclaimer">I calcoli assumono indipendenza statistica tra gli incontri. Le quote e le probabilità sono stime teoriche per orientare le scelte.</p>'+
+  '<p class="proposal-disclaimer">I calcoli assumono indipendenza statistica tra gli incontri. Quote e probabilità sono stime teoriche; senza quote bookmaker reali, moltiplicatore e incasso sono indicativi e il valore atteso non è calcolabile.</p>'+
  '</section>';
 
  const listHtml='<div class="proposal-list-heading"><b>Analisi e selezioni proposte</b><small>Tocca una partita per sostituirla o inseriscila singolarmente</small></div>'+
