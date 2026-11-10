@@ -44,3 +44,11 @@ test("basketball routes bypass the football forecast engine", () => {
   assert.match(source, /if \(isBasketballPage\) \{[\s\S]*?sport: "nba"[\s\S]*?renderWidget\(\);\s*return;/);
   assert.match(source, /const isBasketballPage =/);
 });
+
+test("transfers and highlights the selected app probability on the matching Sisal market", () => {
+  assert.match(source, /probability: Number\.isFinite\(Number\(x\.probability\)\)/);
+  assert.match(source, /function markSelectedMarket\(btn, item, odds\)/);
+  assert.match(source, /Math\.round\(probability \* 100\)/);
+  assert.match(source, /mm-selected-from-app/);
+  assert.match(source, /resolved\.key === item\.marketKey/);
+});
