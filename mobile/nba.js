@@ -62,7 +62,7 @@
     const rows=picks(),items=rows.map(x=>({sport:"nba",eventId:String(x.id||x.eventId),home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start,date:x.date,marketKey:x.marketKey,label:"Vincente incontro (supplementari inclusi): "+x.team}));
     const base="https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba";
     const url=items.length?base+"#mmplay="+encodeURIComponent(JSON.stringify({sentAt:Date.now(),items})):base;
-    let win=null;try{win=window.open(url,"_blank","noopener");}catch{}
+    let win=null;try{win=window.open(url,"_blank");if(win)win.opener=null;}catch{}
     if(!win)window.location.href=url;
     $("globalStatus").textContent=items.length?"Aperta la pagina NBA di Sisal. Controlla e aggiungi manualmente le selezioni.":"Apro il palinsesto NBA di Sisal.";
   }
@@ -70,7 +70,7 @@
     renderSlip();if(!state.data)return;
     if(state.view==="ranking"){renderRanking();return;}
     const q=state.query.trim().toLowerCase(),now=Date.now();
-    let rows=state.view==="results"?state.data.games.filter(g=>g.status==="FT"):state.data.games.filter(g=>g.status!=="FT"&&Date.parse(g.start)>=now-6*60*60*1000);
+    let rows=state.view==="results"?state.data.games.filter(g=>g.status==="FT").slice().reverse():state.data.games.filter(g=>g.status!=="FT"&&Date.parse(g.start)>=now-6*60*60*1000);
     rows=rows.filter(g=>!q||g.home.toLowerCase().includes(q)||g.away.toLowerCase().includes(q));
     $("nbaListTitle").textContent=state.view==="results"?"Risultati":"In programma";
     $("nbaSummary").textContent=rows.length+' partite · stagione '+state.data.season+' · fonte ESPN'+(state.data.errors?.length?' · '+state.data.errors.length+' richieste parziali non riuscite':"");
