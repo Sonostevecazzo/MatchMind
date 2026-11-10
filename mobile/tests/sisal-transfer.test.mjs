@@ -66,7 +66,6 @@ test("NBA market fallback accepts a true two-way winner market and excludes hand
   assert.equal(helpers.nbaWinnerMarket("Testa a Testa Risultato / 1-2"), true);
   assert.equal(helpers.nbaWinnerMarket("Testa a Testa Handicap"), false);
   assert.equal(helpers.nbaWinnerMarket("Vincente tempi regolamentari"), false);
-  const makeButton = text => ({ textContent: text, closest: selector => selector === "#mm-widget" ? null : this });
   const buttons = [{ textContent: "1 2.40", closest: () => null }, { textContent: "2 1.60", closest: () => null }];
   const container = { querySelectorAll: () => buttons };
   assert.equal(helpers.nbaTwoWayButtons(container), true);
