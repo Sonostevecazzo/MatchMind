@@ -52,6 +52,27 @@ test("football payload maps only supported markets and excludes NBA and combinat
   assert.equal(items[0].odds, 2.1);
 });
 
+test("NBA market fallback accepts a true two-way winner market and excludes handicap or regulation", () => {
+  const marketStart = script.indexOf("const NBA_EXCLUDED =");
+  const activeStart = script.indexOf("function nbaActiveMarketText()", marketStart);
+  const twoWayStart = script.indexOf("function nbaTwoWayButtons(container)", activeStart);
+  const twoWayEnd = script.indexOf("\n  function ", twoWayStart + 10);
+  assert.ok(marketStart >= 0 && activeStart > marketStart && twoWayStart > activeStart && twoWayEnd > twoWayStart);
+  const helpers = new Function("document",
+    script.slice(marketStart, activeStart) +
+    script.slice(twoWayStart, twoWayEnd) +
+    "; return { nbaWinnerMarket, nbaTwoWayButtons };"
+  )({ querySelectorAll: () => [] });
+  assert.equal(helpers.nbaWinnerMarket("Testa a Testa Risultato / 1-2"), true);
+  assert.equal(helpers.nbaWinnerMarket("Testa a Testa Handicap"), false);
+  assert.equal(helpers.nbaWinnerMarket("Vincente tempi regolamentari"), false);
+  const makeButton = text => ({ textContent: text, closest: selector => selector === "#mm-widget" ? null : this });
+  const buttons = [{ textContent: "1 2.40", closest: () => null }, { textContent: "2 1.60", closest: () => null }];
+  const container = { querySelectorAll: () => buttons };
+  assert.equal(helpers.nbaTwoWayButtons(container), true);
+  assert.equal(helpers.nbaTwoWayButtons({ querySelectorAll: () => [...buttons, { textContent: "X 12.00", closest: () => null }] }), false);
+});
+
 test("football and NBA handoffs both use the mmplay payload contract", () => {
   assert.match(bets, /function playOnSisal\(\)/);
   assert.match(bets, /#mmplay=/);
