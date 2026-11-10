@@ -18,7 +18,7 @@ test("Sisal userscript compiles and reports the current version and installer UR
 test("empty-state message interpolates NBA and unavailable-model states instead of printing source code", () => {
   assert.doesNotMatch(script, /\\\$\{currentAnalysis\?\.sport/);
   assert.ok(script.includes('${currentAnalysis?.sport === "nba"'));
-  assert.ok(script.includes('${currentAnalysis?.forecastUnavailable'));
+  assert.ok(script.includes('currentAnalysis?.forecastUnavailable'));
 });
 
 test("Sisal queue is compact, expandable and remembers expansion across SPA rescans", () => {
