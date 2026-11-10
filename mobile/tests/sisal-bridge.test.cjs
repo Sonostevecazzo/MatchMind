@@ -6,7 +6,8 @@ test("builds the exact Sisal userscript hash payload for supported selections", 
   const selection = {
     match: { home: "Roma", away: "Lazio", date: "2026-11-15" },
     marketKey: "home",
-    marketLabel: "1"
+    marketLabel: "1",
+    probability: 0.74
   };
   const result = bridge.createUrl([selection], { sentAt: 12345 });
   assert.equal(result.skipped, 0);
@@ -19,7 +20,8 @@ test("builds the exact Sisal userscript hash payload for supported selections", 
     marketKey: "home",
     label: "1",
     date: "2026-11-15",
-    sport: "football"
+    sport: "football",
+    probability: 0.74
   }]);
   assert.equal("odds" in result.payload.items[0], false);
 
