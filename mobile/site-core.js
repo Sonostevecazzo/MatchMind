@@ -453,6 +453,7 @@ function eventForecast(match,history){
       home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
       matches:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M7 2v4m10-4v4M3 9h18m-13 4h3m-3 4h6"/></svg>',
       live:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h4l2.2-4.2 4.2 8.4 2.2-4.2h4.4"/><circle cx="18.5" cy="5.5" r="2.2" fill="#c4f36a" stroke="currentColor"/></svg>',
+      nba:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3v18M5.6 5.6c4 2.4 8.8 10.4 12.8 12.8M18.4 5.6C14.4 8 9.6 16 5.6 18.4"/></svg>',
       league:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z"/><path d="m4.5 8 7.5 4 7.5-4M12 12v8.5M8.5 5l3.5 4 3.5-4"/></svg>',
       mind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><path d="M16 6h3v3"/></svg>',
       bets:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h5m-5 4h8"/></svg>',
@@ -462,6 +463,7 @@ function eventForecast(match,history){
     };
     const links=[
       ['live.html','live','Live'],
+      ['nba.html','nba','NBA'],
       ['matches.html','matches','Partite'],
       ['analysis-lab.html','mind','Analisi'],
       ['bets.html','bets','Schedina']
@@ -476,19 +478,19 @@ function eventForecast(match,history){
     const dock=document.createElement('section');
     dock.id='globalSlipDock';dock.className='global-slip-dock';dock.hidden=true;
     dock.setAttribute('aria-label','Schedina corrente');
-    const confirmHref=document.body.dataset.page==="bets"?"#saveManualSlip":"./bets.html#saveManualSlip";
+    const confirmHref=document.body.dataset.page==="bets"?"#saveManualSlip":document.body.dataset.page==="nba"?"#nbaSlip":"./bets.html#saveManualSlip";
     dock.innerHTML='<div class="global-slip-head"><button type="button" class="global-slip-toggle" data-slip-toggle aria-expanded="false"><span><b data-slip-title>Schedina</b><small data-slip-subtitle>Selezioni salvate</small></span><span class="global-slip-hint" data-slip-hint>Mostra dettagli</span></button><a class="global-slip-open" href="'+confirmHref+'">Conferma</a></div><div class="global-slip-body" data-slip-body hidden></div>';
     document.body.appendChild(dock);
     const key='matchmind-manual-selections-v1';
     const read=()=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return[];}};
     const marketLabel=value=>{
-      const labels={home:'1',draw:'X',away:'2',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol'};
+      const labels={home:'1',draw:'X',away:'2',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol','nbaMoneyline:home':'NBA · Vince casa','nbaMoneyline:away':'NBA · Vince trasferta'};
       if(labels[value])return labels[value];
       const match=String(value||'').match(/^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35|bttsYes|bttsNo)$/);
       return match?marketLabel(match[1])+' + '+marketLabel(match[2]):String(value||'Mercato');
     };
     const render=()=>{
-      const competition=getSelectedCompetition(),rows=read().filter(x=>(x.competition||'serie-a')===competition);
+      const competition=getSelectedCompetition(),rows=read().filter(x=>x.sport==='nba'||(x.competition||'serie-a')===competition);
       dock.hidden=rows.length===0;
       if(!rows.length)return;
       dock.querySelector('[data-slip-title]').textContent='Schedina · '+rows.length+' '+(rows.length===1?'selezione':'selezioni');
@@ -513,7 +515,7 @@ function eventForecast(match,history){
         render();window.dispatchEvent(new Event('matchmind:picks-updated'));return;
       }
       if(event.target.closest('[data-slip-clear]')){
-        const all=read().filter(x=>(x.competition||'serie-a')!==getSelectedCompetition());try{localStorage.setItem(key,JSON.stringify(all));}catch{}
+        const all=read().filter(x=>x.sport==='nba'?document.body.dataset.page!=='nba':(x.competition||'serie-a')!==getSelectedCompetition());try{localStorage.setItem(key,JSON.stringify(all));}catch{}
         render();window.dispatchEvent(new Event('matchmind:picks-updated'));
       }
     });
@@ -531,7 +533,7 @@ function eventForecast(match,history){
     const intro=document.querySelector('.page-intro');
     const homeCopy=page==='home'?document.querySelector('.home-hero-copy'):null;
     const pickerHost=intro||homeCopy;
-    if(pickerHost&&!$('competitionSelect')){
+    if(page!=='nba'&&pickerHost&&!$('competitionSelect')){
       const field=document.createElement('div');field.className='field competition-picker'+(page==='home'?' home-competition-picker':'');
       const label=document.createElement('label');label.htmlFor='competitionSelect';label.textContent='Competizione';
       const select=document.createElement('select');select.id='competitionSelect';select.setAttribute('aria-label','Seleziona competizione');
@@ -543,7 +545,7 @@ function eventForecast(match,history){
     }
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);location.reload();}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
   }
-  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=(page==='home'||page==='matches'||page==='match'||page==='league')?'matches':page==='live'?'live':page==='mind'?'mind':page==='bets'?'bets':(['explore','players','data','settings','team'].includes(page)?'more':'home');mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});/* Forced periodic reload disabled: it interrupted scrolling and mobile navigation. Use the explicit refresh control. */});
+  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=(page==='home'||page==='matches'||page==='match'||page==='league')?'matches':page==='live'?'live':page==='nba'?'nba':page==='mind'?'mind':page==='bets'?'bets':(['explore','players','data','settings','team'].includes(page)?'more':'home');mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});/* Forced periodic reload disabled: it interrupted scrolling and mobile navigation. Use the explicit refresh control. */});
   
   let oddsList = [];
   let oddsPromise = null;
