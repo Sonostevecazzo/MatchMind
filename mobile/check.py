@@ -59,7 +59,7 @@ assert "./nba-builder.js?v=20261110-1" in (ROOT/"sw.js").read_text(encoding="utf
 assert "MMNbaBuilder.toArchiveTicket" in (ROOT/"nba.js").read_text(encoding="utf-8")
 assert "data-nba-odds" in (ROOT/"nba.js").read_text(encoding="utf-8")
 assert "nbaSaveSlip" in (ROOT/"nba.js").read_text(encoding="utf-8")
-assert "Vittoria casa" in (ROOT/"nba.js").read_text(encoding="utf-8")
+assert 'data-side="' in (ROOT/"nba.js").read_text(encoding="utf-8") and "nbaMoneyline:" in (ROOT/"nba.js").read_text(encoding="utf-8")
 assert "slipExpanded=picks.length>0" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert (ROOT/"functions"/"api"/"public"/"nba.js").is_file()
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
