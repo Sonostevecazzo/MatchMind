@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v92-20261110-match-strategy-filter';
+const CACHE='matchmind-pwa-v93-20261110-builder-and-github-pages';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',

@@ -174,14 +174,14 @@
    if($('exploreTeamsTitle'))$('exploreTeamsTitle').textContent='Squadre '+competition.name;
    const target=$('teamDirectory'),search=$('teamSearch');
    const teams=MM().getTeams(d.matches);
-   function render(){const q=MM().norm(search.value),list=teams.filter(t=>MM().norm(t).includes(q));target.innerHTML=list.length?list.map(n=>'<div class="team-tile"><a href="'+MM().teamUrl(n)+'" style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">'+MM().badge(n)+'<b>'+esc(n)+'</b></a><button class="favorite-toggle" data-fav="'+esc(n)+'" title="Segui squadra" aria-label="Segui '+esc(n)+'">'+(MM().isFavorite(n)?favoriteIcon(true):favoriteIcon(false))+'</button></div>').join(''):'<div class="empty-state">Nessuna squadra trovata.</div>';}
+   function render(){const q=MM().norm(search.value),list=teams.filter(t=>MM().norm(t).includes(q));target.innerHTML=list.length?list.map(n=>'<div class="team-tile"><a href="'+MM().teamUrl(n)+'" style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">'+MM().badge(n)+'<b>'+esc(n)+'</b></a><button class="favorite-toggle" data-fav="'+esc(n)+'" title="'+(MM().isFavorite(n)?'Smetti di seguire '+esc(n):'Segui '+esc(n))+'" aria-label="'+(MM().isFavorite(n)?'Smetti di seguire ':'Segui ')+esc(n)+'">'+(MM().isFavorite(n)?favoriteIcon(true):favoriteIcon(false))+'</button></div>').join(''):'<div class="empty-state">Nessuna squadra trovata.</div>';}
    search.addEventListener('input',render);
-   target.addEventListener('click',e=>{const b=e.target.closest('[data-fav]');if(!b)return;const active=MM().toggleFavorite(b.dataset.fav);b.innerHTML=active?favoriteIcon(true):favoriteIcon(false);});
+   target.addEventListener('click',e=>{const b=e.target.closest('[data-fav]');if(!b)return;const active=MM().toggleFavorite(b.dataset.fav);b.innerHTML=active?favoriteIcon(true):favoriteIcon(false);b.title=(active?'Smetti di seguire ':'Segui ')+b.dataset.fav;b.setAttribute('aria-label',b.title);});
    render();
    const newsTarget=$('athleticNews');
    if(newsTarget){
     fetch('./api/athletic-news',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000)})
-     .then(response=>response.json().then(payload=>({ok:response.ok,payload})))
+     .then(async response=>{const body=await response.text();let payload;try{payload=JSON.parse(body);}catch(_){throw new Error('Feed integrato non disponibile su GitHub Pages: richiede le funzioni API di Cloudflare Pages.');}return{ok:response.ok,payload};})
      .then(({ok,payload})=>{
       if(!ok||!Array.isArray(payload.articles)||!payload.articles.length)throw new Error(payload.error||'Notizie non disponibili.');
       newsTarget.innerHTML=payload.articles.slice(0,8).map(article=>{
