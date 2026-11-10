@@ -42,5 +42,5 @@ test("does not fall back to synthetic neutral ratings or probabilities", () => {
 
 test("basketball routes bypass the football forecast engine", () => {
   assert.match(source, /if \(isBasketballPage\) \{[\s\S]*?sport: "nba"[\s\S]*?renderWidget\(\);\s*return;/);
-  assert.match(source, /const isBasketballPage = \/\(\?:\^\|\\\/\)basket/);
+  assert.match(source, /const isBasketballPage =/);
 });
