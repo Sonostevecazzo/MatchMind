@@ -98,6 +98,7 @@ assert 'href="./matches.html"' in bets_html and "Seleziona le partite qui sotto"
 assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "playOnSisal" in bets_js and "mmplay=" in bets_js and "playerApi" not in bets_js
+assert "retained=stored.filter" in bets_js and 'dispatchEvent(new Event("matchmind:picks-updated"))' in bets_js
 userscript=(ROOT/"scripts"/"sisal-matchmind.user.js").read_text(encoding="utf-8")
 assert "@version      2.7.0" in userscript and "data-mm-add-queue" in userscript
 assert "Aggiungi al biglietto" in userscript and "placeBet" not in userscript
@@ -107,7 +108,7 @@ assert "home_corners_1h" in calendar and "home_yellow" in calendar
 
 assert 'id="matchSlipActions"' in (ROOT/"matches.html").read_text(encoding="utf-8")
 assert 'id="sendMatchPicksSisal"' in (ROOT/"matches.html").read_text(encoding="utf-8")
-assert "sendMatchPicksToSisal" in pages and "#mmplay=" in pages
+assert "sendMatchPicksToSisal" in (ROOT/"site-pages.js").read_text(encoding="utf-8") and "#mmplay=" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert 'id="betsFixtureCount"' in bets_html and 'id="moreBetFixtures"' in bets_html
 assert 'addEventListener("click"' in bets_js and "moreBetFixtures" in bets_js
 
