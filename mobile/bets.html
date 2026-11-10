@@ -5,7 +5,7 @@
 <meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261104-model-builder">
 <title>MatchMind · Scommesse</title>
-<script defer src="./bets-engine.js"></script><script defer src="./site-core.js"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./bets.js"></script>
+<script defer src="./bets-engine.js"></script><script defer src="./site-core.js"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js"></script>
 </head>
 <body data-page="bets" data-title="Schedine" data-subtitle="Crea, monitora e archivia le tue schedine.">
 <div id="siteHeader"></div>
@@ -43,10 +43,10 @@
   <div class="sisal-integration-content">
    <div class="sisal-badge-logo">⚡ SISAL INTEGRATION</div>
    <h3>Evidenzia quote & invia da Sisal</h3>
-   <p>Installa lo script personale per evidenziare le scommesse con valore atteso (EV+) direttamente sul sito di Sisal e trasferire quote e giocate in MatchMind con un tocco.</p>
+   <p>Lo script evidenzia le quote su Sisal e può trasferire una quota in MatchMind. Dal builder puoi inviare a Sisal le selezioni singole supportate; dovrai controllare e aggiungere ogni esito manualmente.</p>
    <div class="sisal-actions">
-    <a href="./scripts/sisal-matchmind.user.js" class="button primary" download="sisal-matchmind.user.js">Scarica UserScript (.user.js)</a>
-    <small>Compatibile con Tampermonkey, Violentmonkey, Safari Userscripts e Kiwi Browser</small>
+    <a href="https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js" class="button primary" target="_blank" rel="noopener noreferrer">Installa UserScript in Tampermonkey</a>
+    <small>Usa Chrome o Firefox con Tampermonkey nello stesso profilo per MatchMind e Sisal. Apri il link e premi Installa; evita di installare sia Tampermonkey stabile sia Beta.</small>
    </div>
   </div>
  </section>
@@ -55,6 +55,10 @@
   <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Qui trovi soltanto le giocate che hai aggiunto dalla pagina Partite. Puoi rivederle, rimuoverle e confermare la schedina.</p></div></div>
   <div id="manualSlipSummary"><div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div></div>
   <button id="saveManualSlip" type="button" class="primary" style="width:100%;margin-top:10px">Conferma e salva schedina</button>
+  <div class="sisal-transfer-controls">
+   <a id="sendSelectionsToSisal" class="button-like primary sisal-transfer-link" aria-disabled="true" tabindex="-1" target="_blank" rel="noopener noreferrer">Apri Sisal con le selezioni</a>
+   <p id="sisalBridgeStatus" class="status-line" aria-live="polite">Aggiungi selezioni per attivare il trasferimento manuale verso Sisal.</p>
+  </div>
   <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
  </section>
  </div>
@@ -73,7 +77,7 @@
  </section>
  <div class="notice warning">Le percentuali sono stime statistiche, non garanzie. Il valore combinato è un prodotto delle probabilità delle singole partite e assume indipendenza tra eventi; la correlazione può cambiare il risultato. MatchMind non conosce automaticamente le formazioni ufficiali, gli infortuni o le squalifiche: inserisci solo indisponibilità verificate.</div>
  <div id="globalStatus" class="status-line" aria-live="polite"></div><footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
-<style>.manual-slip-dropdown{margin-top:10px;border:1px solid #40543a;border-radius:14px;background:#111b24;overflow:hidden}.manual-slip-dropdown>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;cursor:pointer;font-weight:800;list-style:none}.manual-slip-dropdown>summary::-webkit-details-marker{display:none}.manual-slip-dropdown>summary b{color:#c4f36a}.manual-slip-dropdown .manual-summary-card{border:0;border-top:1px solid #2a3842;border-radius:0;box-shadow:none}.fixture-market-options{display:block;margin-top:10px}.fixture-market-group{margin-top:12px}.fixture-market-group h4{margin:0 0 7px;color:var(--muted,#9aa9b8);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}.fixture-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}@media(max-width:560px){.fixture-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+<style>.sisal-transfer-controls{display:grid;gap:8px;margin-top:12px}.sisal-transfer-link[aria-disabled="true"]{opacity:.5;pointer-events:none;cursor:not-allowed}.manual-slip-dropdown{margin-top:10px;border:1px solid #40543a;border-radius:14px;background:#111b24;overflow:hidden}.manual-slip-dropdown>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;cursor:pointer;font-weight:800;list-style:none}.manual-slip-dropdown>summary::-webkit-details-marker{display:none}.manual-slip-dropdown>summary b{color:#c4f36a}.manual-slip-dropdown .manual-summary-card{border:0;border-top:1px solid #2a3842;border-radius:0;box-shadow:none}.fixture-market-options{display:block;margin-top:10px}.fixture-market-group{margin-top:12px}.fixture-market-group h4{margin:0 0 7px;color:var(--muted,#9aa9b8);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}.fixture-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}@media(max-width:560px){.fixture-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .manual-financial-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin:12px 0 16px;padding:12px;background:#0d141b;border-radius:11px;border:1px solid #202d38}
 .financial-metric-card{display:flex;flex-direction:column;gap:4px}
 .financial-label{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:#8f9fae}
