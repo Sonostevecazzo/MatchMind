@@ -31,7 +31,9 @@
       const rawDate = String(match.date || row.date || "").trim();
       const date = validDate(rawDate);
       const label = String(row.marketLabel || row.label || marketKey).trim() || marketKey;
-      items.push({ home, away, marketKey, label, date, sport: "football" });
+      const probability = Number(row && row.probability);
+      const validProbability = Number.isFinite(probability) && probability > 0 && probability < 1 ? probability : null;
+      items.push({ home, away, marketKey, label, date, sport: "football", probability: validProbability });
     });
     const timestamp = Number(sentAt);
     const payload = {
