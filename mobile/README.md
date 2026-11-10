@@ -2,10 +2,6 @@
 
 Smartphone-first static web app. Forecast calculations run in the browser; the app does not require a MatchMind API server or a computer that stays on.
 
-## NBA
-
-The NBA section is integrated into the existing PWA navigation at `nba.html`; it does not create a second application or a second bet-slip store. It loads the public ESPN NBA scoreboard through the Cloudflare Pages Function `/api/public/nba`, which caches the response for 15 minutes. The model is sport-specific: chronological Elo with home-court advantage and season points averages shrunk toward the league mean. It exposes upcoming games, completed results and an Elo strength table. The model does not invent bookmaker odds or expected value. NBA selections use the same `matchmind-manual-selections-v1` local store as football, tagged with `sport: "nba"`; the football bet manager preserves NBA rows when it updates football selections. Legacy NBA selections are migrated idempotently from the old NBA-only key. Sisal handoff is manual and never auto-clicks or confirms a bet.
-
 ## Cloudflare Pages deployment
 
 Create a Cloudflare Pages project connected to the public GitHub repository:
