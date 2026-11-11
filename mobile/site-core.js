@@ -544,12 +544,12 @@ function eventForecast(match,history){
       dock.classList.toggle('is-expanded',expanded);
       dock.querySelector('[data-slip-hint]').textContent=expanded?'Chiudi':'Apri';
       const onlyNba=nba===rows.length;
-      const href=onlyNba?'./bets.html?sport=nba#betsTabCreate':'./bets.html#saveManualSlip';
-      dock.querySelectorAll('[data-slip-confirm]').forEach(link=>{link.href=href;link.textContent=onlyNba?'Apri schedina NBA':'Conferma';});
-      if(nba&&football){
-        dock.querySelector('[data-slip-subtitle]').textContent='Schedina mista · gestisci calcio e NBA separatamente';
-        dock.querySelector('[data-slip-confirm-body]').textContent='Apri schedina calcio';
-      }
+      const href=onlyNba?'./bets.html?sport=nba#manualBuilder':'./bets.html?sport=football#manualBuilder';
+      dock.querySelectorAll('[data-slip-confirm]').forEach(link=>{link.href=href;link.textContent=onlyNba?'Apri schedina NBA':nba&&football?'Apri schedina mista':'Conferma';});
+      const bodyLink=dock.querySelector('[data-slip-confirm-body]');
+      bodyLink.href=href;
+      bodyLink.textContent=onlyNba?'Apri schedina NBA':nba&&football?'Apri schedina mista':'Apri schedina calcio';
+      if(nba&&football)dock.querySelector('[data-slip-subtitle]').textContent='Schedina mista · calcio e NBA nello stesso riepilogo';
     };
     dock.addEventListener('click',event=>{
       if(event.target.closest('[data-slip-toggle]')){
