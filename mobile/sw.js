@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v105-20261111-simple-navigation-nations-league';
+const CACHE='matchmind-pwa-v106-20261111-navigation-polish-nations';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
