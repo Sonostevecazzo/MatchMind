@@ -205,7 +205,7 @@ assert "strategyBanner" in (ROOT/"matches.html").read_text(encoding="utf-8")
 assert "fixtures-odds.json" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 site_core=(ROOT/"site-core.js").read_text(encoding="utf-8")
-assert "matchmind-multipage-cache-v8-competition-coverage" in site_core
+assert "matchmind-multipage-cache-v9-fixture-fallback" in site_core
 assert "cacheCoversSelected" in site_core
 assert 'selectedCompetition==="nations-league"' in site_core
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
