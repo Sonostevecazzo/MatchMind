@@ -1,7 +1,7 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v5-open-matchday';
-  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',logo:null,fallback:'A'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',logo:null,fallback:'CL'}, 'europa-league':{id:'europa-league',name:'Europa League',country:'UEFA',logo:null,fallback:'EL'} };
+  const CACHE_KEY='matchmind-multipage-cache-v6-nations-league';
+  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',kind:'club',logo:null,fallback:'A'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',kind:'club',logo:null,fallback:'CL'}, 'europa-league':{id:'europa-league',name:'Europa League',country:'UEFA',kind:'club',logo:null,fallback:'EL'}, 'nations-league':{id:'nations-league',name:'UEFA Nations League',country:'Nazionali UEFA',kind:'national',logo:null,fallback:'NL'} };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
     if(COMPETITIONS[requested]){try{localStorage.setItem('matchmind-competition-v1',requested);}catch{}return requested;}
@@ -457,27 +457,36 @@ function eventForecast(match,history){
   function toggleFavorite(name){const list=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]');}catch{return [];}})();const next=list.includes(name)?list.filter(x=>x!==name):[...list,name];saveCache('matchmind-favorites-v1',next);return next.includes(name);}
   function nav(active){
     const icons={
-      home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
       matches:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M7 2v4m10-4v4M3 9h18m-13 4h3m-3 4h6"/></svg>',
       live:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h4l2.2-4.2 4.2 8.4 2.2-4.2h4.4"/><circle cx="18.5" cy="5.5" r="2.2" fill="#c4f36a" stroke="currentColor"/></svg>',
       nba:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3v18M5.6 5.6c4 2.4 8.8 10.4 12.8 12.8M18.4 5.6C14.4 8 9.6 16 5.6 18.4"/></svg>',
-      league:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z"/><path d="m4.5 8 7.5 4 7.5-4M12 12v8.5M8.5 5l3.5 4 3.5-4"/></svg>',
-      mind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><path d="M16 6h3v3"/></svg>',
       bets:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h5m-5 4h8"/></svg>',
+      league:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z"/><path d="m4.5 8 7.5 4 7.5-4M12 12v8.5M8.5 5l3.5 4 3.5-4"/></svg>',
       more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
-      refresh:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"/></svg>',
-      install:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>'
+      mind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><path d="M16 6h3v3"/></svg>',
+      data:'<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
+      settings:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.5.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.6-1.4-2.4 1.4-1.1a7 7 0 0 1 0-1.8l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.5-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.5.9l1.7-.6 1.4 2.4-1.4 1.1a7 7 0 0 1 0 1.8Z"/></svg>'
     };
-    const links=[
+    const primary=[
       ['matches.html','matches','Calcio'],
       ['live.html','live','Live'],
       ['nba.html','nba','NBA'],
-      ['bets.html','bets','Schedina'],
-      ['explore.html','more','Altro']
+      ['bets.html','bets','Schedina']
     ];
-    const mobile=links.map(([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>').join('');
-    const desktop=links.map(([href,key,label])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'>'+label+'</a>').join('');
-    return '<header class="site-header"><button class="mobile-menu-trigger" id="mobileMenuToggle" type="button" aria-label="Apri menu" aria-controls="mobileNav" aria-expanded="false"><span></span><span></span><span></span></button><a class="brand-link" href="matches.html" aria-label="MatchMind Partite"><img class="brand-mark" src="./icon.svg" alt="" width="56" height="56"><span class="brand-copy"><b>MatchMind</b><small>SPORTS INTELLIGENCE</small></span></a><nav class="desktop-nav" aria-label="Navigazione principale">'+desktop+'</nav><div class="header-actions"><a class="header-more-link '+(active==='more'?'active':'')+'" href="explore.html" aria-label="Altro e strumenti">Altro</a><button class="refresh-data install-action" id="installApp" type="button" aria-label="Installa MatchMind" title="Installa MatchMind" hidden><span class="action-symbol">'+icons.install+'</span><span>Installa</span></button><button class="refresh-data refresh-action" id="globalRefresh" type="button" aria-label="Aggiorna dati" title="Aggiorna dati"><span class="action-symbol">'+icons.refresh+'</span><span>Aggiorna</span></button></div></header><div class="mobile-nav-backdrop" id="mobileNavBackdrop" hidden></div><nav class="mobile-nav" id="mobileNav" aria-label="Menu principale">'+mobile+'</nav>';
+    const secondary=[
+      ['league.html','league','Classifiche','league'],
+      ['explore.html','more','Squadre','explore'],
+      ['analysis-lab.html','mind','Analisi','analysis-lab'],
+      ['players.html','more','Giocatori','players'],
+      ['data.html','data','Dati','data'],
+      ['settings.html','settings','Impostazioni','settings']
+    ];
+    const page=document.body.dataset.page||'';
+    const activeSecondary=page==='league'?'league':page==='explore'||page==='team'?'explore':page==='mind'||page==='analysis-lab'?'analysis-lab':page;
+    const item=([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>';
+    const drawer=secondary.map(([href,key,label,group])=>'<a class="nav-item '+(activeSecondary===group?'active':'')+'" href="'+href+'" '+(activeSecondary===group?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>').join('');
+    const desktop=primary.map(([href,key,label])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'>'+label+'</a>').join('');
+    return '<header class="site-header"><button class="mobile-menu-trigger" id="mobileMenuToggle" type="button" aria-label="Apri Altro" aria-controls="mobileNav" aria-expanded="false"><span></span><span></span><span></span></button><a class="brand-link" href="matches.html" aria-label="MatchMind Partite"><img class="brand-mark" src="./icon.svg" alt="" width="56" height="56"><span class="brand-copy"><b>MatchMind</b><small>SPORTS INTELLIGENCE</small></span></a><nav class="desktop-nav" aria-label="Navigazione principale">'+desktop+'</nav><div class="header-actions"><a class="header-more-link '+(active==='more'?'active':'')+'" href="explore.html">Altro</a><button class="refresh-data install-action" id="installApp" type="button" aria-label="Installa MatchMind" title="Installa MatchMind" hidden><span class="action-symbol">'+icons.install+'</span><span>Installa</span></button><button class="refresh-data refresh-action" id="globalRefresh" type="button" aria-label="Aggiorna dati" title="Aggiorna dati"><span class="action-symbol">'+icons.refresh+'</span><span>Aggiorna</span></button></div></header><nav class="mobile-primary-nav" aria-label="Navigazione principale mobile">'+primary.map(item).join('')+'</nav><div class="mobile-nav-backdrop" id="mobileNavBackdrop" hidden></div><nav class="mobile-nav" id="mobileNav" aria-label="Altro"><div class="mobile-drawer-title">ALTRO <small>Strumenti e approfondimenti</small></div>'+drawer+'</nav>';
   }
 
   function mountSlipDock(){
@@ -541,12 +550,6 @@ function eventForecast(match,history){
   function mountShell(active,title,subtitle){
     const header=$('siteHeader');if(header)header.innerHTML=nav(active);const mobileNav=$('mobileNav'),menuToggle=$('mobileMenuToggle'),menuBackdrop=$('mobileNavBackdrop');const setMobileMenu=open=>{if(!mobileNav||!menuToggle||!menuBackdrop)return;mobileNav.classList.toggle('is-open',Boolean(open));menuBackdrop.hidden=!open;menuToggle.setAttribute('aria-expanded',String(Boolean(open)));menuToggle.setAttribute('aria-label',open?'Chiudi menu':'Apri menu');document.body.classList.toggle('mobile-menu-open',Boolean(open));};menuToggle?.addEventListener('click',()=>setMobileMenu(!mobileNav?.classList.contains('is-open')));menuBackdrop?.addEventListener('click',()=>setMobileMenu(false));mobileNav?.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setMobileMenu(false)));document.addEventListener('keydown',event=>{if(event.key==='Escape')setMobileMenu(false);});
     const page=document.body.dataset.page||'home';
-    if(!['nba','explore','players','data','settings','team'].includes(page)&&!$('competitionTabs')){
-      const tabs=document.createElement('nav');tabs.id='competitionTabs';tabs.className='competition-tabs';tabs.setAttribute('aria-label','Seleziona competizione');
-      const selected=getSelectedCompetition(),currentPath=location.pathname.split('/').pop()||'matches.html';
-      tabs.innerHTML='<span class="competition-tabs-label">CALCIO</span>'+Object.values(COMPETITIONS).map(item=>'<a class="competition-tab '+(item.id===selected?'active':'')+'" href="./'+esc(currentPath)+'?competition='+encodeURIComponent(item.id)+'" '+(item.id===selected?'aria-current="page"':'')+'>'+esc(item.name)+'</a>').join('');
-      if(header)header.insertAdjacentElement('afterend',tabs);
-    }
     mountSlipDock();
     if(document.body.dataset.page==='match'){const back=document.createElement('button');back.className='detail-back';back.type='button';back.innerHTML='‹ <span>Torna alle partite</span>';back.addEventListener('click',()=>{if(history.length>1)history.back();else location.href='matches.html';});const main=document.querySelector('.page-wrap');if(main)main.prepend(back);}
     const titleEl=$('pageTitle');if(titleEl)titleEl.textContent=title||'MatchMind';
@@ -554,11 +557,14 @@ function eventForecast(match,history){
     const intro=document.querySelector('.page-intro');
     const homeCopy=page==='home'?document.querySelector('.home-hero-copy'):null;
     const pickerHost=intro||homeCopy;
-    if(pickerHost&&!$('competitionSelect')&&!$('competitionTabs')&&page!=='nba'){
+    if(pickerHost&&!$('competitionSelect')&&['matches','live','league','match','mind','home'].includes(page)) {
       const field=document.createElement('div');field.className='field competition-picker'+(page==='home'?' home-competition-picker':'');
       const label=document.createElement('label');label.htmlFor='competitionSelect';label.textContent='Competizione';
       const select=document.createElement('select');select.id='competitionSelect';select.setAttribute('aria-label','Seleziona competizione');
-      Object.values(COMPETITIONS).forEach(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;select.appendChild(option);});
+      const clubGroup=document.createElement('optgroup');clubGroup.label='Competizioni per club';
+      const nationalGroup=document.createElement('optgroup');nationalGroup.label='Nazionali';
+      Object.values(COMPETITIONS).forEach(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;(item.kind==='national'?nationalGroup:clubGroup).appendChild(option);});
+      select.append(clubGroup,nationalGroup);
       select.value=getSelectedCompetition();field.append(label,select);
       const homeStatus=page==='home'&&$('homeStatus');
       if(homeStatus&&homeStatus.parentNode===pickerHost)pickerHost.insertBefore(field,homeStatus);else pickerHost.appendChild(field);
