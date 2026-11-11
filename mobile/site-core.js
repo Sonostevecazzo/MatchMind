@@ -1,6 +1,6 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v7-multileague';
+  const CACHE_KEY='matchmind-multipage-cache-v8-competition-coverage';
   const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',kind:'club',logo:null,fallback:'A'}, 'serie-b':{id:'serie-b',name:'Serie B',country:'Italia',kind:'club',logo:null,fallback:'B'}, 'premier-league':{id:'premier-league',name:'Premier League',country:'Inghilterra',kind:'club',logo:null,fallback:'PL'}, 'la-liga':{id:'la-liga',name:'La Liga',country:'Spagna',kind:'club',logo:null,fallback:'LL'}, 'bundesliga':{id:'bundesliga',name:'Bundesliga',country:'Germania',kind:'club',logo:null,fallback:'BL'}, 'ligue-1':{id:'ligue-1',name:'Ligue 1',country:'Francia',kind:'club',logo:null,fallback:'L1'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',kind:'club',logo:null,fallback:'CL'}, 'europa-league':{id:'europa-league',name:'Europa League',country:'UEFA',kind:'club',logo:null,fallback:'EL'}, 'conference-league':{id:'conference-league',name:'Conference League',country:'UEFA',kind:'club',logo:null,fallback:'ECL'}, 'coppa-italia':{id:'coppa-italia',name:'Coppa Italia',country:'Italia',kind:'club',logo:null,fallback:'CI'}, 'nations-league':{id:'nations-league',name:'UEFA Nations League',country:'Nazionali UEFA',kind:'national',logo:null,fallback:'NL'} };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
@@ -150,7 +150,9 @@
     if(dataPromise&&!force)return dataPromise;
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
-      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
+      const selected=getSelectedCompetition();
+      const cacheCoversSelected=Boolean(cached&&Array.isArray(cached.matches)&&cached.matches.some(match=>match&&match.competition===selected));
+      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&cacheCoversSelected&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       let payload=null;
       try{
         const response=await fetch('./api/competition-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(45000)});
@@ -172,13 +174,27 @@
         }
       }
 
+      const selectedCompetition=getSelectedCompetition();
+      if(!Array.isArray(payload.matches))payload.matches=[];
+      if(!payload.matches.some(match=>match&&match.competition===selectedCompetition)){
+        if(selectedCompetition==="nations-league"){
+          try{
+            const nations=await fetchDirectNationsLeague(y);
+            payload.matches=payload.matches.filter(match=>match&&match.competition!=="nations-league").concat(nations);
+            payload.history=(Array.isArray(payload.history)?payload.history:[]).filter(match=>match&&match.competition!=="nations-league").concat(nations.filter(match=>match.status==="FT"&&match.hg!==null&&match.ag!==null));
+            payload.source=(payload.source||"public-calendar")+" + ESPN Nations League fallback";
+          }catch(error){payload.nationsLeagueError=String(error&&error.message||error);}
+        }
+      }
       data={
         matches:payload.matches,
         history:Array.isArray(payload.history)?payload.history:[],
         season:payload.season||y,
         source:payload.source||'openfootball',
         updatedAt:Date.now(),
-        sourceMode:payload.sourceMode||'public-dataset'
+        sourceMode:payload.sourceMode||'public-dataset',
+        errors:Array.isArray(payload.errors)?payload.errors:[],
+        nationsLeagueError:payload.nationsLeagueError||null
       };
       try{localStorage.setItem(CACHE_KEY,JSON.stringify(data));}catch{}
       return data;
