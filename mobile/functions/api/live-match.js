@@ -1,8 +1,8 @@
 const API_BASE = "https://v3.football.api-sports.io";
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
-const LEAGUES = { "serie-a": 135, "champions-league": 2, "europa-league": 3, "nations-league": 5 };
-const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa", "nations-league": "uefa.nations" };
-const competitionLabel = competition => ({ "serie-a": "Italian Serie A", "champions-league": "UEFA Champions League", "europa-league": "UEFA Europa League", "nations-league": "UEFA Nations League" }[competition] || "Calcio");
+const LEAGUES = { "serie-a": 135, "serie-b": 136, "premier-league": 39, "la-liga": 140, "bundesliga": 78, "ligue-1": 61, "champions-league": 2, "europa-league": 3, "conference-league": 848, "coppa-italia": 137, "nations-league": 5 };
+const ESPN_LEAGUES = { "serie-a": "ita.1", "serie-b": "ita.2", "premier-league": "eng.1", "la-liga": "esp.1", "bundesliga": "ger.1", "ligue-1": "fra.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa", "conference-league": "uefa.europa.conf", "coppa-italia": "ita.coppa_italia", "nations-league": "uefa.nations" };
+const competitionLabel = competition => ({ "serie-a": "Italian Serie A", "serie-b": "Italian Serie B", "premier-league": "English Premier League", "la-liga": "Spanish La Liga", "bundesliga": "German Bundesliga", "ligue-1": "French Ligue 1", "champions-league": "UEFA Champions League", "europa-league": "UEFA Europa League", "conference-league": "UEFA Conference League", "coppa-italia": "Coppa Italia", "nations-league": "UEFA Nations League" }[competition] || "Calcio");
 
 const json = (body, status = 200, cacheSeconds = 0) => new Response(JSON.stringify(body), {
   status,
