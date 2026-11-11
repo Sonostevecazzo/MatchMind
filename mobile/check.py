@@ -15,6 +15,7 @@ for name in required:
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
   assert 'id="matchSlipPreview"' not in html
+  assert "sports-switch.js" in html and "nba.js" in html and 'id="sportSwitchMount"' in html and 'id="nbaIntegratedView"' in html
  if name=="analysis-lab.html":
   assert 'id="analysisOverview"' in html and "bets-engine.js" in html
  if name!="index.html": assert "site-core.js" in html and "mobile-readable.css" in html
@@ -24,6 +25,8 @@ for name in required:
   assert 'data-bets-tab="nba"' not in html and 'id="betsTabNba"' not in html
   assert "nba.js" in html and "nba-builder.js" in html and "nba.css" in html and "sports-switch.js" in html
   assert 'id="sportSwitchMount"' in html and 'id="nbaIntegratedView"' in html
+  assert 'id="footballBuilderView"' in html
+  assert 'id="footballBuilderView"' in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
   assert "sports-switch.js" in html and "nba.js" in html and 'id="sportSwitchMount"' in html
