@@ -203,6 +203,23 @@
           }catch(error){payload.nationsLeagueError=String(error&&error.message||error);}
         }
       }
+
+      // Recover upcoming fixtures from the established public CSV feed if ESPN
+      // returned only completed events for the selected competition.
+      const hasUpcomingForSelected=payload.matches.some(match=>match&&match.competition===selectedCompetition&&upcoming(match));
+      if(!hasUpcomingForSelected&&["serie-a","champions-league","europa-league"].includes(selectedCompetition)){
+        try{
+          const fallback=await fetchDirectCalendar();
+          const fallbackMatches=(fallback.matches||[]).filter(match=>match&&match.competition===selectedCompetition);
+          if(fallbackMatches.some(upcoming)){
+            payload.matches=payload.matches.filter(match=>!match||match.competition!==selectedCompetition).concat(fallbackMatches);
+            const fallbackHistory=(fallback.history||[]).filter(match=>match&&match.competition===selectedCompetition);
+            payload.history=(payload.history||[]).filter(match=>!match||match.competition!==selectedCompetition).concat(fallbackHistory);
+            payload.source=(payload.source||"ESPN")+" + open-matchday fallback";
+          }
+        }catch(_){/* Keep the primary response if the backup source is unavailable. */}
+      }
+
       data={
         matches:payload.matches,
         history:Array.isArray(payload.history)?payload.history:[],
