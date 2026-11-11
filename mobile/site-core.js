@@ -508,7 +508,7 @@ function eventForecast(match,history){
       dock.querySelector('[data-slip-count]').textContent=String(rows.length);
       const body=dock.querySelector('[data-slip-body]'),expanded=!body.hidden;
       const list=rows.map(item=>'<div class="global-slip-row"><span><b>'+esc(item.home)+' – '+esc(item.away)+'</b><small>'+esc(competitionLabel(item.sport==='nba'?'nba':item.competition||'serie-a'))+' · '+esc(marketLabel(item.marketKey))+' · '+esc(item.date||'Data da definire')+'</small></span><button type="button" class="global-slip-remove" data-slip-remove="'+item._index+'" aria-label="Rimuovi '+esc(item.home)+' – '+esc(item.away)+'">×</button></div>').join('');
-      const actions=(football.length?'<a class="button-like primary" href="./bets.html#saveManualSlip">Apri schedina calcio · '+football.length+'</a>':'')+(basket.length?'<a class="button-like secondary" href="./nba.html#nbaSlip">Apri schedina NBA · '+basket.length+'</a>':'');
+      const actions=(football.length?'<a class="button-like primary" href="./bets.html#sendSelectionsToSisal">Invia a Sisal · calcio · '+football.length+'</a>':'')+(basket.length?'<a class="button-like secondary" href="./nba.html#nbaSlip">Apri schedina NBA · '+basket.length+'</a>':'');
       body.innerHTML='<div class="global-slip-list">'+list+'</div><div class="global-slip-actions"><button type="button" class="secondary" data-slip-clear>Svuota</button>'+actions+'</div><small class="global-slip-note">La schedina raccoglie le selezioni di tutte le competizioni. Quote e conferma restano da verificare sul bookmaker.</small>';
       body.hidden=!expanded;
       dock.querySelector('[data-slip-toggle]').setAttribute('aria-expanded',String(expanded));
