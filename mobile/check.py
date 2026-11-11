@@ -42,7 +42,7 @@ calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8
 assert "./api/public-calendar" in core and "open-matchday" in calendar
 assert "europa-league" in core and "UEFA_1_europa-league" in calendar
 assert '"europa-league": 3' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
-assert '"europa-league": "uefa.europa"' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
+assert '"europa-league": "uefa.europa"' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")\nassert '"nations-league": "uefa.nations"' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")\nassert "uefa.nations/scoreboard" in calendar
 assert (ROOT/"functions"/"api"/"athletic-news.js").is_file()
 assert "athleticNews" in (ROOT/"explore.html").read_text(encoding="utf-8")
 assert "api/athletic-news" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
@@ -70,7 +70,7 @@ assert 'appearance:none!important' in (ROOT/"site.css").read_text(encoding="utf-
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert core.index("['matches.html','matches','Calcio']") < core.index("['live.html','live','Live']")
-assert "competitionTabs" in core and "competition-tab" in core
+assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core
 assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "page==='mind'?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
