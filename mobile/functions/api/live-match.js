@@ -1,7 +1,8 @@
 const API_BASE = "https://v3.football.api-sports.io";
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
-const LEAGUES = { "serie-a": 135, "champions-league": 2, "europa-league": 3 };
-const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa" };
+const LEAGUES = { "serie-a": 135, "champions-league": 2, "europa-league": 3, "nations-league": 5 };
+const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa", "nations-league": "uefa.nations" };
+const competitionLabel = competition => ({ "serie-a": "Italian Serie A", "champions-league": "UEFA Champions League", "europa-league": "UEFA Europa League", "nations-league": "UEFA Nations League" }[competition] || "Calcio");
 
 const json = (body, status = 200, cacheSeconds = 0) => new Response(JSON.stringify(body), {
   status,
@@ -333,7 +334,7 @@ function normalizeEspnDetail(summary, scoreboardEvent, leagueName) {
 }
 
 async function fetchEspnEvent(competition, fixtureId, date, home, away, source) {
-  const leagueName = competition === "champions-league" ? "UEFA Champions League" : competition === "europa-league" ? "UEFA Europa League" : "Italian Serie A";
+  const leagueName = competitionLabel(competition);
   if (source === "espn" && fixtureId) {
     try {
       const url = ESPN_BASE + ESPN_LEAGUES[competition] + "/summary?event=" + encodeURIComponent(fixtureId);
