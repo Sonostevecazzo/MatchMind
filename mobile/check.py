@@ -78,7 +78,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v100-20261111-sisal-navigation" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v101-20261111-sisal-bottomsheet" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -153,7 +153,10 @@ assert "combo-goals" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "combo-btts" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert 'id="saveManualSlip"' in (ROOT/"bets.html").read_text(encoding="utf-8")
 assert "saveCurrentSlip" in (ROOT/"bets.js").read_text(encoding="utf-8")
-assert "Invia a Sisal · calcio" in (ROOT/"site-core.js").read_text(encoding="utf-8") and "Apri schedina NBA" in (ROOT/"site-core.js").read_text(encoding="utf-8")
+assert "Apri schedina NBA" in (ROOT/"site-core.js").read_text(encoding="utf-8") and "data-slip-confirm" in (ROOT/"site-core.js").read_text(encoding="utf-8")
+assert "is-expanded" in (ROOT/"site-core.js").read_text(encoding="utf-8")
+assert "repeat(5,minmax(0,1fr))" in (ROOT/"site.css").read_text(encoding="utf-8")
+assert "NBA_MARKETS" in (ROOT/"sisal-bridge.js").read_text(encoding="utf-8")
 
 assert "builderStrategyPills" in (ROOT/"bets.html").read_text(encoding="utf-8")
 assert "generateMotivation" in (ROOT/"bets.js").read_text(encoding="utf-8")
