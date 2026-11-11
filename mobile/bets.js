@@ -915,7 +915,8 @@ function initEvents(){
  });
  $("targetProbability").addEventListener("input",()=>{$("targetProbabilityLabel").textContent=$("targetProbability").value+"%";if(proposalGenerated)buildProposal();});
  $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
- $("marketMode").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});\n $("builderPeriod")?.addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
+ $("marketMode").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
+ $("builderPeriod")?.addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
  $("buildTicket").addEventListener("click",buildProposal);
  $("ticketResults").addEventListener("click",event=>{
   const addAll=event.target.closest("#addProposal");
