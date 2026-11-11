@@ -2324,7 +2324,6 @@
       homeAbbr: x.homeAbbr || "",
       awayAbbr: x.awayAbbr || "",
       status: "pending",
-      autoAdd: true,
       sentAt: Number(incoming && incoming.sentAt) || Date.now()
     }));
     if (!items.length) return false;
