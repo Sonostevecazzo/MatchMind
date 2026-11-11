@@ -1,7 +1,7 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v6-nations-league';
-  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',kind:'club',logo:null,fallback:'A'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',kind:'club',logo:null,fallback:'CL'}, 'europa-league':{id:'europa-league',name:'Europa League',country:'UEFA',kind:'club',logo:null,fallback:'EL'}, 'nations-league':{id:'nations-league',name:'UEFA Nations League',country:'Nazionali UEFA',kind:'national',logo:null,fallback:'NL'} };
+  const CACHE_KEY='matchmind-multipage-cache-v7-multileague';
+  const COMPETITIONS={ 'serie-a':{id:'serie-a',name:'Serie A',country:'Italia',kind:'club',logo:null,fallback:'A'}, 'serie-b':{id:'serie-b',name:'Serie B',country:'Italia',kind:'club',logo:null,fallback:'B'}, 'premier-league':{id:'premier-league',name:'Premier League',country:'Inghilterra',kind:'club',logo:null,fallback:'PL'}, 'la-liga':{id:'la-liga',name:'La Liga',country:'Spagna',kind:'club',logo:null,fallback:'LL'}, 'bundesliga':{id:'bundesliga',name:'Bundesliga',country:'Germania',kind:'club',logo:null,fallback:'BL'}, 'ligue-1':{id:'ligue-1',name:'Ligue 1',country:'Francia',kind:'club',logo:null,fallback:'L1'}, 'champions-league':{id:'champions-league',name:'Champions League',country:'UEFA',kind:'club',logo:null,fallback:'CL'}, 'europa-league':{id:'europa-league',name:'Europa League',country:'UEFA',kind:'club',logo:null,fallback:'EL'}, 'conference-league':{id:'conference-league',name:'Conference League',country:'UEFA',kind:'club',logo:null,fallback:'ECL'}, 'coppa-italia':{id:'coppa-italia',name:'Coppa Italia',country:'Italia',kind:'club',logo:null,fallback:'CI'}, 'nations-league':{id:'nations-league',name:'UEFA Nations League',country:'Nazionali UEFA',kind:'national',logo:null,fallback:'NL'} };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
     if(COMPETITIONS[requested]){try{localStorage.setItem('matchmind-competition-v1',requested);}catch{}return requested;}
@@ -153,7 +153,7 @@
       if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       let payload=null;
       try{
-        const response=await fetch('./api/public-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(25000)});
+        const response=await fetch('./api/competition-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(25000)});
         if(response.ok){
           const body=await response.json().catch(()=>null);
           if(body&&Array.isArray(body.matches)&&body.matches.length)payload=body;
