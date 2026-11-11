@@ -35,6 +35,24 @@ async function fetchText(url){
 async function fetchJson(url){return JSON.parse(await fetchText(url));}
 function seasonCode(year){return String(year).slice(-2)+String(year+1).slice(-2);}
 function seasonFolder(year){return String(year)+"-"+String(year+1).slice(-2);}
+async function fetchNationsLeague(season){
+ const from=String(season)+"0701",to=String(season+1)+"0630";
+ const url="https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500";
+ const payload=await fetchJson(url),events=Array.isArray(payload.events)?payload.events:[];
+ return events.map(event=>{
+  const competition=event?.competitions?.[0]||{},teams=Array.isArray(competition.competitors)?competition.competitors:[];
+  const home=teams.find(team=>team?.homeAway==="home")||teams[0]||{},away=teams.find(team=>team?.homeAway==="away")||teams[1]||{};
+  const homeName=home?.team?.displayName||home?.team?.name||home?.displayName||home?.name;
+  const awayName=away?.team?.displayName||away?.team?.name||away?.displayName||away?.name;
+  const date=String(event?.date||competition?.date||"");
+  const status=competition?.status?.type||event?.status?.type||{};
+  const done=Boolean(status.completed)||String(status.state||"").toLowerCase()==="post";
+  const score=value=>value===null||value===undefined||value===""?null:number(value);
+  if(!date||!homeName||!awayName)return null;
+  const row={id:String(event?.id||""),date:date.slice(0,10),time:date.length>=16?date.slice(11,16):"",round:null,stage:"UEFA Nations League",home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:"nations-league",source:"ESPN"};
+  return row;
+ }).filter(Boolean);
+}
 async function getPublicCalendar(){
  const now=new Date(),season=now.getUTCMonth()>=6?now.getUTCFullYear():now.getUTCFullYear()-1,code=seasonCode(season);
  const jobs=LEAGUES.map(async league=>{
@@ -45,6 +63,12 @@ async function getPublicCalendar(){
   return {league,results,fixtures};
  });
  const settled=await Promise.allSettled(jobs),matches=[],history=[],errors=[];
+ const nationsResult=await Promise.allSettled([fetchNationsLeague(season)]);
+ if(nationsResult[0].status==="fulfilled"){
+  const nations=nationsResult[0].value;
+  matches.push(...nations);
+  history.push(...nations.filter(match=>match.status==="FT"&&match.hg!==null&&match.ag!==null));
+ }else errors.push("nations-league: "+String(nationsResult[0].reason?.message||nationsResult[0].reason));
  for(let i=0;i<settled.length;i++){
   const item=settled[i],league=LEAGUES[i];
   if(item.status!=="fulfilled"){errors.push(league.id+": "+String(item.reason?.message||item.reason));continue;}
@@ -65,7 +89,7 @@ async function getPublicCalendar(){
  if(!matches.length) return new Response(JSON.stringify({configured:true,type:"calendar",error:"I dataset pubblici non sono raggiungibili o non contengono dati per la stagione "+code+".",matches:[],history:[],errors}),{status:503,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
  matches.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
  history.sort((a,b)=>a.date.localeCompare(b.date));
- const body={configured:true,type:"calendar",source:"open-matchday + openfootball storico",season,matches,history,errors,updatedAt:new Date().toISOString(),note:"Calendari e risultati aggiornati quotidianamente dal dataset open-matchday; statistiche evento solo quando presenti. Archivio Serie A precedente da openfootball. Nessun dato live, quote, xG, formazioni o infortuni."};
+ const body={configured:true,type:"calendar",source:"open-matchday + openfootball + ESPN Nations League",season,matches,history,errors,updatedAt:new Date().toISOString(),note:"Calendari e risultati da open-matchday; archivio Serie A da openfootball; Nations League da ESPN. Copertura statistica non uniforme. Nessuna quota, xG, formazione o infortunio viene inventato."};
  return new Response(JSON.stringify(body),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"public, max-age="+CACHE_SECONDS}});
 }
 export async function onRequestGet(context={}){
