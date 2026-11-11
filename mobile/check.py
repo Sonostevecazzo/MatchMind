@@ -101,7 +101,7 @@ assert "uefanationsleague/standings" in (ROOT/"data.html").read_text(encoding="u
 assert "uefanationsleague/statistics" in (ROOT/"data.html").read_text(encoding="utf-8")
 assert "mobile-primary-nav" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert 'id="builderPeriod"' in bets_html
-assert "const period=$(\"builderPeriod\")||\"next-round\"" in (ROOT/"bets.js").read_text(encoding="utf-8")
+assert "const period=$(\"builderPeriod\")?.value||\"next-round\"" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "const storedFootball=readPicks().filter(p=>p&&p.sport!==\"nba\")" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "return footballRows.concat(nbaRows)" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "buildProposal" in nba_builder and "nbaAutoProposal" in (ROOT/"sports-switch.js").read_text(encoding="utf-8")
