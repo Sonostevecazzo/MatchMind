@@ -75,6 +75,11 @@ assert "live.html" in core and "Live" in core
 assert core.index("['matches.html','matches','Calcio']") < core.index("['live.html','live','Live']")
 assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core
 assert "mobile-drawer-title" in core
+assert "teams:'<svg" in core and "players:'<svg" in core
+assert "nationsLeagueStats" in (ROOT/"data.html").read_text(encoding="utf-8")
+assert "Squadre più prolifiche" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "uefanationsleague/standings" in (ROOT/"data.html").read_text(encoding="utf-8")
+assert "uefanationsleague/statistics" in (ROOT/"data.html").read_text(encoding="utf-8")
 assert "mobile-primary-nav" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "page==='mind'?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
@@ -86,7 +91,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v107-20261111-nations-rome-time" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v108-20261111-drawer-nations-stats" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
