@@ -80,6 +80,7 @@ async function getCalendar(request) {
   const selected = COMPETITIONS[selectedId] ? selectedId : "serie-a";
   const competition = COMPETITIONS[selected];
   const now = new Date();
+  const year = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
   const startDate = new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-2));
   const endDate = new Date(startDate); endDate.setUTCDate(endDate.getUTCDate()+92);
   const entries = await Promise.all([[selected,competition]].map(async ([id, config]) => {
@@ -89,7 +90,7 @@ async function getCalendar(request) {
   const matches = entries.flatMap(x => x.matches).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const history = matches.filter(match => match.status === "FT" && match.hg !== null && match.ag !== null);
   // Preserve the five-season Serie A archive used by the Elo/Poisson forecasts.
-  const historicalYears = await Promise.allSettled(Array.from({ length: 5 }, (_, index) => year - 1 - index).map(async historicalYear => {
+  const historicalYears = selected === "serie-a" ? await Promise.allSettled(Array.from({ length: 5 }, (_, index) => year - 1 - index).map(async historicalYear => {
     const url = HISTORY_ROOT + seasonFolder(historicalYear) + "/it.1.json";
     const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw new Error("Archivio Serie A HTTP " + response.status);
@@ -110,7 +111,7 @@ async function getCalendar(request) {
         competition: "serie-a", source: "openfootball · archivio storico"
       };
     }).filter(match => match.date && match.home && match.away && match.hg !== null && match.ag !== null);
-  }));
+  })) : [];
   const historyErrors = [];
   historicalYears.forEach((result, index) => {
     if (result.status === "fulfilled") history.push(...result.value);
