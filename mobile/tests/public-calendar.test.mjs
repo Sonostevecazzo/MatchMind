@@ -8,7 +8,10 @@ test("public calendar merges club competitions and keyless ESPN Nations League f
   const csv = "gw,date,time,home,away,ft_home,ft_away,ft_result,ht_home,ht_away,ht_result,home_shots,away_shots,home_target,away_target,home_fouls,away_fouls,home_corners,away_corners,home_corners_1h,away_corners_1h,home_corners_2h,away_corners_2h,home_yellow,away_yellow,home_red,away_red,goal_minutes,source\n";
   globalThis.fetch = async (url) => {
     const value = String(url);
-    if (value.includes("uefa.nations/scoreboard")) {\n      return new Response(JSON.stringify({ events: [{ id: "nl-2026-01", date: "2026-09-05T18:45:00Z", competitions: [{ status: { type: { state: "post", completed: true, shortDetail: "FT" } }, competitors: [{ homeAway: "home", score: "2", team: { displayName: "Italy" } }, { homeAway: "away", score: "1", team: { displayName: "France" } }] }] }] }), { status: 200 });\n    }\n    if (value.includes("results_2627.csv")) {
+    if (value.includes("uefa.nations/scoreboard")) {
+      return new Response(JSON.stringify({ events: [{ id: "nl-2026-01", date: "2026-09-05T18:45:00Z", competitions: [{ status: { type: { state: "post", completed: true, shortDetail: "FT" } }, competitors: [{ homeAway: "home", score: "2", team: { displayName: "Italy" } }, { homeAway: "away", score: "1", team: { displayName: "France" } }] }] }] }), { status: 200 });
+    }
+    if (value.includes("results_2627.csv")) {
       const isSerieA = value.includes("ITA_1_serie-a");
       return new Response(csv + (isSerieA
         ? "1,2026-10-30,20:45,Inter,Milan,2,1,H,1,0,H,12,8,5,3,10,11,6,4,3,2,3,2,2,3,0,0,15,fd.co.uk\n"
@@ -31,7 +34,9 @@ test("public calendar merges club competitions and keyless ESPN Nations League f
   assert.equal(serieResult.hc, 6);
   assert.equal(serieResult.hs, 12);
   assert.equal(serieResult.hy, 2);
-  assert.ok(body.matches.some(x => x.home === "Roma" && x.hg === null));\n  assert.ok(body.matches.some(x => x.competition === "nations-league" && x.home === "Italy" && x.away === "France" && x.hg === 2));\n  assert.ok(body.history.some(x => x.competition === "nations-league" && x.hg === 2));
+  assert.ok(body.matches.some(x => x.home === "Roma" && x.hg === null));
+  assert.ok(body.matches.some(x => x.competition === "nations-league" && x.home === "Italy" && x.away === "France" && x.hg === 2));
+  assert.ok(body.history.some(x => x.competition === "nations-league" && x.hg === 2));
   assert.ok(body.history.some(x => x.source === "openfootball · archivio storico" && x.hg === 2));
   assert.equal(JSON.stringify(body).includes("API_FOOTBALL_KEY"), false);
 });
