@@ -37,3 +37,21 @@ test("NBA builder rejects invalid stake or missing model probabilities",()=>{
  assert.throws(()=>builder.toArchiveTicket([{probability:null,odds:2}],5),/non valida/);
  assert.throws(()=>builder.toArchiveTicket([{probability:0.6,odds:2}],0),/non valida/);
 });
+
+
+test("NBA proposal generator filters by probability and the selected period, without inventing odds",()=>{
+ const now=Date.parse("2026-11-11T12:00:00Z");
+ const games=[
+  {id:"game-a",home:"Boston Celtics",away:"New York Knicks",start:"2026-11-12T00:30:00Z",status:"NS",prediction:{homeWin:0.68,awayWin:0.32,reliable:true,spread:4,total:220,homePoints:112,awayPoints:108}},
+  {id:"game-b",home:"Milwaukee Bucks",away:"Orlando Magic",start:"2026-11-14T00:00:00Z",status:"NS",prediction:{homeWin:0.44,awayWin:0.56,reliable:true,spread:-2,total:218,homePoints:108,awayPoints:110}},
+  {id:"game-c",home:"Denver Nuggets",away:"Phoenix Suns",start:"2026-12-01T02:00:00Z",status:"NS",prediction:{homeWin:0.72,awayWin:0.28,reliable:false,spread:6,total:225,homePoints:116,awayPoints:109}},
+  {id:"game-d",home:"Miami Heat",away:"Chicago Bulls",start:"2026-11-10T01:00:00Z",status:"FT",prediction:{homeWin:0.7,awayWin:0.3,reliable:true}}
+ ];
+ const result=builder.buildProposal(games,{now,minProbability:0.55,maxSelections:5,periodDays:7});
+ assert.equal(result.available,true);
+ assert.deepEqual(result.selections.map(x=>x.id),["game-a","game-b"]);
+ assert.equal(result.selections[0].side,"home");
+ assert.equal(result.selections[1].side,"away");
+ assert.ok(result.selections.every(x=>x.odds===null));
+ assert.ok(result.selections.every(x=>x.marketKey.startsWith("nbaMoneyline:")));
+});
