@@ -17,8 +17,8 @@
   function buildProposal(games,options={}){
     const now=Number.isFinite(Number(options.now))?Number(options.now):Date.now();
     const threshold=Number.isFinite(Number(options.minProbability))?Math.max(0.5,Math.min(0.95,Number(options.minProbability))):0.55;
-    const max=Number.isFinite(Number(options.maxSelections))?Math.max(1,Math.min(15,Math.floor(Number(options.maxSelections)))):4;
-    const period=options.periodDays==="all"?null:Math.max(1,Math.min(180,Number(options.periodDays)||7));
+    const max=Number.isFinite(Number(options.maxSelections))?Math.max(1,Math.min(30,Math.floor(Number(options.maxSelections)))):4;
+    const period=options.periodDays==="all"?null:Math.max(1,Math.min(365,Number(options.periodDays)||7));
     const query=String(options.query||"").trim().toLowerCase();
     const date=String(options.date||"");
     const candidates=[];
