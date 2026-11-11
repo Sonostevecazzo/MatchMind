@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.13.0
+// @version      2.14.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -23,7 +23,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.13.0";
+  const MM_SCRIPT_VERSION = "2.14.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -1653,6 +1653,12 @@
   }
 
   function renderWidget() {
+    // Modalità essenziale: nessun pannello o badge flottante su Sisal.
+    // La sincronizzazione resta attiva e vengono evidenziate solo le selezioni inviate da MatchMind.
+    document.getElementById("mm-widget")?.remove();
+    document.getElementById("mm-floating-badge")?.remove();
+    return;
+
     let widget = document.getElementById("mm-widget");
     let floatingBadge = document.getElementById("mm-floating-badge");
 
@@ -1968,6 +1974,8 @@
 
   // Aggiorna badge visivi sui bottoni Sisal nella pagina
   function updatePageBadges() {
+    // Non applicare badge statistici generici: su Sisal mostriamo solo le selezioni richieste da MatchMind.
+    return;
     if (!currentAnalysis || !currentAnalysis.calculations) return;
     const { calculations } = currentAnalysis;
     isMutatingDOM = true;
