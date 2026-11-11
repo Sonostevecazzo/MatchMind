@@ -76,11 +76,20 @@
     return {date:parts.year+'-'+parts.month+'-'+parts.day,time:parts.hour+':'+parts.minute};
   }
   async function fetchDirectNationsLeague(year){
-    const from=String(year)+"0701",to=String(year+1)+"0630";
-    const response=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500",{signal:AbortSignal.timeout(15000)});
-    if(!response.ok)throw new Error("ESPN Nations League HTTP "+response.status);
-    const payload=await response.json();
-    return (Array.isArray(payload.events)?payload.events:[]).map(event=>{
+    const start=new Date(),end=new Date(start);end.setDate(end.getDate()+92);
+    const windows=[];
+    for(let cursor=new Date(start);cursor<=end;){
+      const from=new Date(cursor),to=new Date(cursor);to.setDate(to.getDate()+6);if(to>end)to.setTime(end.getTime());
+      const fmt=d=>String(d.getFullYear())+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+      windows.push([fmt(from),fmt(to)]);cursor=new Date(to);cursor.setDate(cursor.getDate()+1);
+    }
+    const batches=await Promise.all(windows.map(async([from,to])=>{
+      const response=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500",{signal:AbortSignal.timeout(18000)});
+      if(!response.ok)throw new Error("ESPN Nations League HTTP "+response.status);
+      const payload=await response.json();return Array.isArray(payload.events)?payload.events:[];
+    }));
+    const events=[...new Map(batches.flat().map(event=>[String(event.id),event])).values()];
+    return events.map(event=>{
       const comp=event?.competitions?.[0]||{},teams=Array.isArray(comp.competitors)?comp.competitors:[];
       const home=teams.find(x=>x?.homeAway==="home")||teams[0]||{},away=teams.find(x=>x?.homeAway==="away")||teams[1]||{};
       const homeName=home?.team?.displayName||home?.team?.name||home?.displayName||home?.name;
@@ -162,7 +171,8 @@
       if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&cacheCoversSelected&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       let payload=null;
       try{
-        const response=await fetch('./api/competition-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(45000)});
+        const requestedCompetition=getSelectedCompetition();
+        const response=await fetch('./api/competition-calendar?competition='+encodeURIComponent(requestedCompetition),{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(90000)});
         if(response.ok){
           const body=await response.json().catch(()=>null);
           if(body&&Array.isArray(body.matches)&&body.matches.length)payload=body;
