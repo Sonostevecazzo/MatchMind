@@ -212,10 +212,10 @@ function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
  const bridge=window.MatchMindSisalBridge;
- const allSelections=readPicks().filter(Boolean).map(p=>({
-  ...p,match:{home:p.home,away:p.away,date:p.date||String(p.start||"").slice(0,10),competition:p.competition||(p.sport==="nba"?"nba":"serie-a"),id:p.id||p.eventId},
-  marketLabel:marketLabel(p.marketKey),
-  probability:Number.isFinite(Number(p.probability??p.prob))&&Number(p.probability??p.prob)>0&&Number(p.probability??p.prob)<1?Number(p.probability??p.prob):null
+ const allSelections=selectedRows().map(row=>({
+  ...row, sport:row.sport||"football",
+  marketLabel:row.marketLabel,
+  probability:Number.isFinite(Number(row.probability))&&row.probability>0&&row.probability<1?row.probability:null
  }));
  const result=bridge?bridge.createUrl(allSelections):null;
  if(!result||!result.url){
@@ -251,21 +251,10 @@ function renderSlip(){
  const ev=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
 
  const rowsHtml=rows.map(row=>{
-  const fKey=fixtureKey(row.match);
+  const fKey=row.removeKey||fixtureKey(row.match);
   const fairOdds=ENGINE().fairOdds(row.probability);
   const singleEv=ENGINE().expectedValue(row.probability,row.odds);
   const evClass=singleEv!=null?(singleEv>=0?"ev-pos":"ev-neg"):"";
-  const ctx=getContext(row.match);
-  const hasCustomContext=Boolean(ctx.attackingAbsencesHome||ctx.defensiveAbsencesHome||ctx.attackingAbsencesAway||ctx.defensiveAbsencesAway||ctx.motivationHome||ctx.motivationAway);
-  const contextDesc = hasCustomContext ? [
-    ctx.attackingAbsencesHome ? (esc(row.match.home)+' att -'+ctx.attackingAbsencesHome) : '',
-    ctx.defensiveAbsencesHome ? (esc(row.match.home)+' dif -'+ctx.defensiveAbsencesHome) : '',
-    ctx.motivationHome ? (esc(row.match.home)+' mot '+(ctx.motivationHome>0?'+1':'-1')) : '',
-    ctx.attackingAbsencesAway ? (esc(row.match.away)+' att -'+ctx.attackingAbsencesAway) : '',
-    ctx.defensiveAbsencesAway ? (esc(row.match.away)+' dif -'+ctx.defensiveAbsencesAway) : '',
-    ctx.motivationAway ? (esc(row.match.away)+' mot '+(ctx.motivationAway>0?'+1':'-1')) : ''
-  ].filter(Boolean).join(" · ") : "";
-
   return '<div class="manual-selected-row" data-fixture="'+esc(fKey)+'">'+
    '<div class="manual-selected-row-main">'+
     '<span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b>'+
@@ -277,40 +266,10 @@ function renderSlip(){
      '<input type="number" step="0.01" min="1.01" max="1000" placeholder="es. 1.85" class="manual-odds-input" data-odds-for="'+esc(fKey)+'" value="'+(row.odds||'')+'">'+
     '</label>'+
     '<span class="financial-pill">Equa: <b>'+fmtOdds(fairOdds)+'</b></span>'+
-    '<span class="financial-pill '+(singleEv!=null?evClass:'text-muted')+'" data-ev-for="'+esc(fKey)+'">'+(singleEv!=null?'EV: <b>'+fmtEv(singleEv)+'</b>':'EV: <i>inserisci quota</i>')+'</span>'+
+    '<span class="financial-pill '+(singleEv!=null?evClass:"text-muted")+'" data-ev-for="'+esc(fKey)+'">'+(singleEv!=null?'EV: <b>'+fmtEv(singleEv)+'</b>':'EV: <i>inserisci quota</i>')+'</span>'+
    '</div>'+
-   (row.sport==="nba"?"":renderInjuriesCard(row.match)+
- '<details class="slip-context-drawer">'+
-    '<summary class="slip-context-summary">'+
-     '<span>⚙️ Correzione manuale contesto / assenze</span>'+
-     (hasCustomContext?'<b class="context-active-badge">⚡ '+contextDesc+'</b>':'<small class="text-muted">Neutro</small>')+
-    '</summary>'+
-    '<div class="slip-context-body">'+
-     '<div class="slip-context-row">'+
-      '<span class="slip-context-team-label">'+esc(row.match.home)+'</span>'+
-      '<label>Att. assenti: <select data-context="'+esc(fKey)+'" data-context-field="attackingAbsencesHome">'+selectOptions(ctx.attackingAbsencesHome)+'</select></label>'+
-      '<label>Dif. assenti: <select data-context="'+esc(fKey)+'" data-context-field="defensiveAbsencesHome">'+selectOptions(ctx.defensiveAbsencesHome)+'</select></label>'+
-      '<label>Motivazione: <select data-context="'+esc(fKey)+'" data-context-field="motivationHome">'+motivationOptions(ctx.motivationHome)+'</select></label>'+
-     '</div>'+
-     '<div class="slip-context-row">'+
-      '<span class="slip-context-team-label">'+esc(row.match.away)+'</span>'+
-      '<label>Att. assenti: <select data-context="'+esc(fKey)+'" data-context-field="attackingAbsencesAway">'+selectOptions(ctx.attackingAbsencesAway)+'</select></label>'+
-      '<label>Dif. assenti: <select data-context="'+esc(fKey)+'" data-context-field="defensiveAbsencesAway">'+selectOptions(ctx.defensiveAbsencesAway)+'</select></label>'+
-      '<label>Motivazione: <select data-context="'+esc(fKey)+'" data-context-field="motivationAway">'+motivationOptions(ctx.motivationAway)+'</select></label>'+
-     '</div>'+
-     '<div class="slip-context-presets">'+
-      '<span class="slip-preset-title">Preset rapidi:</span>'+
-      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="heavy-abs-home">⚠️ Assenze '+esc(row.match.home)+'</button>'+
-      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="heavy-abs-away">⚠️ Assenze '+esc(row.match.away)+'</button>'+
-      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="high-mot-home">🔥 Decisiva '+esc(row.match.home)+'</button>'+
-      '<button type="button" class="slip-preset-btn" data-context-preset="'+esc(fKey)+'" data-preset-type="high-mot-away">🔥 Decisiva '+esc(row.match.away)+'</button>'+
-      '<button type="button" class="slip-preset-btn btn-reset" data-context-preset="'+esc(fKey)+'" data-preset-type="reset">↺ Reset</button>'+
-     '</div>'+
-    '</div>'+
-   '</details>')+
   '</div>';
  }).join("");
-
  const financialSummaryHtml=
   '<div class="manual-financial-grid">'+
    '<div class="financial-metric-card">'+
