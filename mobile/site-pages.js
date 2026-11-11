@@ -205,17 +205,22 @@
  function initLeague(d){
   const competition=MM().competitionInfo(d.competition),phaseRows=d.matches;
   document.body.dataset.title=competition.name;document.title='MatchMind · '+competition.name;if($('pageTitle'))$('pageTitle').textContent=competition.name;
-  if($('pageSubtitle'))$('pageSubtitle').textContent=['champions-league','europa-league'].includes(competition.id)?'Fase campionato, calendario e numeri del torneo.':'Classifica, calendario e numeri del campionato.';
+  const nationalCompetition=competition.id==='nations-league';
+  if($('pageSubtitle'))$('pageSubtitle').textContent=nationalCompetition?'Calendario e risultati delle nazionali UEFA.':'Fase campionato, calendario e numeri della competizione.';
   if($('leagueCompetitionName'))$('leagueCompetitionName').textContent=competition.name+' · '+competition.country;
   const logo=$('leagueCompetitionLogo');if(logo){logo.src='https://media.api-sports.io/football/leagues/'+competition.logo+'.png';logo.alt='Logo '+competition.name;}
   const badge=document.querySelector('.competition-fallback');if(badge)badge.textContent=competition.fallback;
-  const table=MM().standings(phaseRows.filter(MM().hasScore));$('leagueSeason').textContent='Stagione '+d.season+'/'+String(d.season+1).slice(-2)+' · '+table.length+' squadre con risultati';
-  $('standingsBody').innerHTML=tableHTML(table);
-  const future=phaseRows.filter(MM().upcoming).sort((a,b)=>a.date.localeCompare(b.date));
-  $('leagueFixtureList').innerHTML=future.length?groupCards(future):'<div class="empty-state">Nessuna partita futura disponibile.</div>';
+  const table=MM().standings(phaseRows.filter(MM().hasScore));$('leagueSeason').textContent='Stagione '+d.season+'/'+String(d.season+1).slice(-2)+' · '+(nationalCompetition?'calendario ESPN':table.length+' squadre con risultati');
+  $('standingsBody').innerHTML=nationalCompetition?'<div class="notice">La Nations League è organizzata in gruppi e leghe: MatchMind non mostra una classifica unica che mescolerebbe gruppi diversi.</div>':tableHTML(table);
+  const future=phaseRows.filter(m=>nationalCompetition?true:MM().upcoming(m)).sort((a,b)=>a.date.localeCompare(b.date));
+  $('leagueFixtureList').innerHTML=future.length?groupCards(future):'<div class="empty-state">Nessuna partita disponibile per questa competizione.</div>';
   const played=phaseRows.filter(MM().hasScore),goals=played.reduce((s,m)=>s+Number(m.hg)+Number(m.ag),0);
   const home=played.filter(m=>m.hg>m.ag).length,draw=played.filter(m=>m.hg===m.ag).length,away=played.filter(m=>m.hg<m.ag).length;
   $('leagueStatsGrid').innerHTML='<div class="metric"><span>PARTITE CONCLUSE</span><b>'+played.length+'</b><small>risultati nel feed della stagione</small></div><div class="metric"><span>GOL TOTALI</span><b>'+goals+'</b><small>'+fmt(played.length?goals/played.length:0,2)+' per partita</small></div><div class="metric"><span>VITTORIE CASA</span><b>'+home+'</b><small>esiti con successo della squadra di casa</small></div><div class="metric"><span>PAREGGI / TRASFERTE</span><b>'+draw+' / '+away+'</b><small>pareggi e vittorie in trasferta</small></div>';
+  if(nationalCompetition){
+    $('leagueTabs').innerHTML='<button class="pill active" data-view="fixtures" role="tab" aria-selected="true">Calendario e risultati</button>';
+    $('leagueStandings').hidden=true;$('leagueStats').hidden=true;$('leagueFixtures').hidden=false;
+  }
   $('leagueTabs').querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{const view=b.dataset.view;$('leagueTabs').querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-selected',String(x===b));});$('leagueStandings').hidden=view!=='standings';$('leagueFixtures').hidden=view!=='fixtures';$('leagueStats').hidden=view!=='stats';}));
  }
  function initTeam(d){
