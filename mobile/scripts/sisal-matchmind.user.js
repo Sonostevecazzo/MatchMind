@@ -2434,8 +2434,8 @@
       btn.appendChild(tag);
     }
     tag.textContent = hasProbability
-      ? "MatchMind · " + Math.round(probability * 100) + "%"
-      : "Selezione MatchMind";
+      ? "SELEZIONA · MatchMind " + Math.round(probability * 100) + "%"
+      : "SELEZIONA · MatchMind";
     tag.title = "Mercato selezionato nell'app MatchMind" +
       (hasProbability ? " · probabilità stimata " + (probability * 100).toFixed(1) + "%" : "") +
       (Number(odds) > 1 ? " · quota Sisal " + Number(odds).toFixed(2) : "");
