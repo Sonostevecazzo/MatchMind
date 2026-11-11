@@ -129,6 +129,7 @@ async function fetchCompetition(id, competition, startDate, endDate) {
   }));
   const batches = settled.filter(result => result.status === "fulfilled").map(result => result.value);
   if (!batches.length) {
+    if (id === "nations-league") return nationsLeagueOfficialFallback();
     const failure = settled.find(result => result.status === "rejected");
     throw failure?.reason || new Error(id + " ESPN: tutte le finestre calendario non disponibili");
   }
