@@ -54,6 +54,8 @@ nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
 nba_engine=(ROOT/"nba-engine.mjs").read_text(encoding="utf-8")
 assert 'data-page="nba"' in nba_html and 'id="nbaSlip"' in nba_html
 assert "nba-builder.js" in nba_html and "nba.js" in nba_html
+assert 'data-bets-tab="nba"' in bets_html and "nba-builder.js?v=20261111-builder-tab" in bets_html and "nba.js?v=20261111-builder-tab" in bets_html
+assert "grid-template-columns:repeat(4,minmax(0,1fr))" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "matchmind-manual-selections-v1" in nba_core and "matchmind-slip-archive-v2" in nba_core
 assert "calculate" in nba_builder and "predictNba" in nba_engine
 assert "./nba.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
