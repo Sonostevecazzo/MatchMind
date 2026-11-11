@@ -51,3 +51,11 @@
  .nba-builder-financials>div b{flex:0 0 auto;text-align:right;white-space:nowrap}
  .nba-builder-financials>label{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,124px);align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line,#293640)}
 }
+
+
+/* Shared football / NBA selector used on Matches, Live and Bets. */
+.sport-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;margin:12px 0 16px;border:1px solid var(--line,#293744);border-radius:14px;background:var(--surface-1,#101922)}
+.sport-switch-button{min-height:44px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted,#9aa9b8);font:inherit;font-weight:750;letter-spacing:.01em;cursor:pointer}
+.sport-switch-button.is-active{background:#c4f36a;color:#11190c;border-color:#c4f36a;box-shadow:0 3px 12px #0003}
+.sport-switch-button:focus-visible{outline:2px solid #c4f36a;outline-offset:2px}
+#nbaIntegratedView[hidden],#footballView[hidden],#footballBuilderView[hidden]{display:none!important}
