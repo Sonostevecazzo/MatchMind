@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.14.0
+// @version      2.15.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -23,7 +23,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.14.0";
+  const MM_SCRIPT_VERSION = "2.15.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -49,7 +49,7 @@
     return;
   }
 
-  const MATCHMIND_URL = "https://matchmind-3te.pages.dev/bets.html";
+  const MATCHMIND_URL = "https://recovery-nba-mainline-202611.matchmind-3te.pages.dev/bets.html";
 
   // Alias squadre (Serie A, Serie B, Coppe Europee)
   const TEAM_ALIASES = {
