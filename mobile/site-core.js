@@ -153,7 +153,7 @@
       if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       let payload=null;
       try{
-        const response=await fetch('./api/competition-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(25000)});
+        const response=await fetch('./api/competition-calendar',{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(45000)});
         if(response.ok){
           const body=await response.json().catch(()=>null);
           if(body&&Array.isArray(body.matches)&&body.matches.length)payload=body;
