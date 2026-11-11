@@ -70,6 +70,24 @@
     };
   }
 
+  async function fetchDirectNationsLeague(year){
+    const from=String(year)+"0701",to=String(year+1)+"0630";
+    const response=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500",{signal:AbortSignal.timeout(15000)});
+    if(!response.ok)throw new Error("ESPN Nations League HTTP "+response.status);
+    const payload=await response.json();
+    return (Array.isArray(payload.events)?payload.events:[]).map(event=>{
+      const comp=event?.competitions?.[0]||{},teams=Array.isArray(comp.competitors)?comp.competitors:[];
+      const home=teams.find(x=>x?.homeAway==="home")||teams[0]||{},away=teams.find(x=>x?.homeAway==="away")||teams[1]||{};
+      const homeName=home?.team?.displayName||home?.team?.name||home?.displayName||home?.name;
+      const awayName=away?.team?.displayName||away?.team?.name||away?.displayName||away?.name;
+      const date=String(event?.date||comp?.date||""),status=comp?.status?.type||event?.status?.type||{};
+      const done=Boolean(status.completed)||String(status.state||"").toLowerCase()==="post";
+      if(!date||!homeName||!awayName)return null;
+      const score=value=>value===null||value===undefined||value===""?null:num(value);
+      return {id:String(event?.id||""),date:date.slice(0,10),time:date.length>=16?date.slice(11,16):"",round:null,stage:"UEFA Nations League",home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:"nations-league",source:"ESPN"};
+    }).filter(Boolean);
+  }
+
   async function fetchDirectCalendar(){
     const y=seasonStart(),code=seasonCode(y);
     const jobs=LEAGUE_SOURCES.map(async league=>{
@@ -109,6 +127,7 @@
     });
     const histSettled=await Promise.allSettled(histJobs);
     histSettled.forEach(r=>{if(r.status==='fulfilled')history.push(...r.value);});
+    try{const nations=await fetchDirectNationsLeague(y);matches.push(...nations);history.push(...nations.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));}catch(_){/* Optional public national-team feed. */}
 
     matches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
     history.sort((a,b)=>a.date.localeCompare(b.date));
@@ -116,7 +135,7 @@
     if(!matches.length)throw new Error('I dataset pubblici non contengono partite accessibili per questa stagione.');
     return {
       matches,history,season:y,
-      source:'open-matchday + openfootball',
+      source:'open-matchday + openfootball + ESPN Nations League',
       updatedAt:Date.now(),
       sourceMode:'public-dataset-direct'
     };
