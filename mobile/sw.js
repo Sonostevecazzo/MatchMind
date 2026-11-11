@@ -2,9 +2,9 @@ const CACHE='matchmind-pwa-v110-20261112-integrated-sports';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
- './site.css','./mobile-readable.css','./sports-switch.css?v=20261112-integrated-sports',
+ './site.css','./mobile-readable.css',
  './mobile-readable.css?v=20261104-analysis','./mobile-readable.css?v=20261111-navigation-nba-builder','./mobile-readable.css?v=20261104-open-data','./mobile-readable.css?v=20261103-0117','./mobile-readable.css?v=20261104-live','./mobile-readable.css?v=20261104-navigation-cleanup','./mobile-readable.css?v=20261104-public','./analysis.css','./live.css','./site-core.js','./site-pages.js','./elo.js','./tipsaudit.js',
- './rounds.js','./sports-switch.js?v=20261112-integrated-sports','./sports-switch.css?v=20261112-integrated-sports','./ai-engine.js','./bets-engine.js','./sisal-bridge.js','./bets.js','./live.js','./notifications.js','./nba.js?v=20261112-integrated-sports','./nba-builder.js?v=20261111-builder-tab','./nba.css?v=20261112-integrated-sports','./nba-engine.mjs','./nba-engine.mjs',
+ './rounds.js','./sports-switch.js?v=20261112-integrated-sports','./ai-engine.js','./bets-engine.js','./sisal-bridge.js','./bets.js','./live.js','./notifications.js','./nba.js?v=20261112-integrated-sports','./nba-builder.js?v=20261111-builder-tab','./nba.css?v=20261112-integrated-sports','./nba-engine.mjs',
  './fixtures-odds.json','./manifest.webmanifest','./icon.svg','./brand-full.svg','./scripts/sisal-matchmind.user.js'
 ];
 self.addEventListener('install',event=>{
