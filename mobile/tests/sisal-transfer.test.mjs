@@ -99,6 +99,8 @@ test("mixed slip combines active football selections and shared NBA selections f
   assert.ok(bets.includes("const sourceMatches=allData?.matches||fixtures"));
   assert.ok(bets.includes('fixtureKey({...p,competition:p.competition||"serie-a"})===fKey'));
   assert.ok(bets.includes('fixtureKey({...p,competition:p.competition||"serie-a"})===key'));
+  assert.ok(bets.includes('eventId:x.sport==="nba"?(x.match.id||x.nbaPickId||null):null'));
+  assert.ok(bets.includes('start:x.sport==="nba"?(x.match.start||null):null'));
   assert.ok(bets.includes('const allSelections=selectedRows().map'));
   assert.ok(bets.includes('const nbaRows=readPicks().filter(p=>p&&p.sport==="nba"'));
   assert.ok(bets.includes("return footballRows.concat(nbaRows)"));
