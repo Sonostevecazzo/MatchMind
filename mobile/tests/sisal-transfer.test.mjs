@@ -28,7 +28,7 @@ test("Sisal queue is compact, expandable and remembers expansion across SPA resc
   assert.match(script, /const expanded = gmGet\("mm_sisal_queue_expanded", "false"\) === "true"/);
   assert.match(script, /id="mm-play-toggle"/);
   assert.match(script, /id="mm-play-queue-items" style="display:'/);
-  assert.match(script, /q\.status === "manual" \? "Aggiungi al biglietto"/);
+  assert.match(script, /q\.status === "manual" \? "Mostra quota"/);
   assert.match(script, /gmSet\("mm_sisal_queue_expanded", String\(nextExpanded\)\)/);
   assert.match(script, /max-height: 46dvh/);
   assert.match(script, /overflow-y: auto/);
