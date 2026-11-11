@@ -51,19 +51,39 @@ function normalizeEvent(event, competition) {
     source: "ESPN"
   };
 }
-async function fetchCompetition(id, competition, from, to) {
-  const url = ESPN_BASE + competition.slug + "/scoreboard?dates=" + from + "-" + to + "&limit=500";
-  const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(18000) });
-  if (!response.ok) throw new Error(id + " ESPN HTTP " + response.status);
-  const payload = await response.json();
-  return (Array.isArray(payload.events) ? payload.events : []).map(event => normalizeEvent(event, competition)).filter(Boolean);
+function ymd(date) {
+  return date.getUTCFullYear().toString() + String(date.getUTCMonth()+1).padStart(2,"0") + String(date.getUTCDate()).padStart(2,"0");
 }
-async function getCalendar() {
+async function fetchCompetition(id, competition, startDate, endDate) {
+  const windows = [];
+  for (let cursor = new Date(startDate); cursor <= endDate; ) {
+    const from = new Date(cursor), to = new Date(cursor);
+    to.setUTCDate(to.getUTCDate()+6);
+    if (to > endDate) to.setTime(endDate.getTime());
+    windows.push([ymd(from), ymd(to)]);
+    cursor = new Date(to); cursor.setUTCDate(cursor.getUTCDate()+1);
+  }
+  const batches = await Promise.all(windows.map(async ([from,to]) => {
+    const url = ESPN_BASE + competition.slug + "/scoreboard?dates=" + from + "-" + to + "&limit=500";
+    const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(18000) });
+    if (!response.ok) throw new Error(id + " ESPN HTTP " + response.status + " (" + from + "-" + to + ")");
+    const payload = await response.json();
+    return (Array.isArray(payload.events) ? payload.events : []).map(event => normalizeEvent(event, competition)).filter(Boolean);
+  }));
+  const unique = new Map();
+  batches.flat().forEach(match => unique.set(String(match.id || [match.date,match.home,match.away].join("|")), match));
+  return [...unique.values()];
+}
+async function getCalendar(request) {
+  const params = new URL(request.url).searchParams;
+  const selectedId = params.get("competition") || "serie-a";
+  const selected = COMPETITIONS[selectedId] ? selectedId : "serie-a";
+  const competition = COMPETITIONS[selected];
   const now = new Date();
-  const year = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
-  const from = String(year) + "0701", to = String(year + 1) + "0630";
-  const entries = await Promise.all(Object.entries(COMPETITIONS).map(async ([id, competition]) => {
-    try { return { id, matches: await fetchCompetition(id, competition, from, to), error: null }; }
+  const startDate = new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-2));
+  const endDate = new Date(startDate); endDate.setUTCDate(endDate.getUTCDate()+92);
+  const entries = await Promise.all([[selected,competition]].map(async ([id, config]) => {
+    try { return { id, matches: await fetchCompetition(id, config, startDate, endDate), error: null }; }
     catch (error) { return { id, matches: [], error: String(error?.message || error) }; }
   }));
   const matches = entries.flatMap(x => x.matches).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -107,4 +127,4 @@ async function getCalendar() {
     note: "Calendari multi-competizione da ESPN; archivio storico Serie A da openfootball. Le statistiche avanzate, le quote e le formazioni non vengono inventate."
   });
 }
-export async function onRequestGet() { return getCalendar(); }
+export async function onRequestGet({ request }) { return getCalendar(request); }
