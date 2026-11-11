@@ -24,9 +24,9 @@
     <section class="section panel panel-pad nba-auto-builder">
       <div class="section-head"><div><div class="eyebrow">PROPOSTA AUTOMATICA</div><h2>Costruttore probabilistico NBA</h2><p>Il modello Elo seleziona gli esiti moneyline con maggiore probabilità nel periodo scelto. Le quote restano vuote finché non inserisci un prezzo verificato.</p></div></div>
       <div class="nba-auto-controls">
-        <div class="field"><label for="nbaAutoMinProbability">Probabilità minima per selezione</label><select id="nbaAutoMinProbability"><option value="0.55" selected>55%</option><option value="0.60">60%</option><option value="0.65">65%</option><option value="0.70">70%</option><option value="0.75">75%</option></select></div>
+        <div class="field nba-probability-control"><label for="nbaAutoMinProbability">Probabilità minima: <output id="nbaAutoMinProbabilityValue">55%</output></label><input id="nbaAutoMinProbability" type="range" min="50" max="90" step="1" value="55"></div>
         <div class="field"><label for="nbaAutoPeriod">Periodo</label><select id="nbaAutoPeriod"><option value="7" selected>Prossimi 7 giorni</option><option value="14">Prossimi 14 giorni</option><option value="30">Prossimi 30 giorni</option><option value="all">Intera stagione</option></select></div>
-        <div class="field"><label for="nbaAutoMaxSelections">Numero massimo di eventi</label><select id="nbaAutoMaxSelections"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></div>
+        <div class="field"><label for="nbaAutoMaxSelections">Numero massimo di partite</label><input id="nbaAutoMaxSelections" type="number" min="1" max="30" step="1" value="10" inputmode="numeric"><small>Da 1 a 30 partite. La proposta mostrerà soltanto quelle che superano la soglia scelta.</small></div>
       </div>
       <button type="button" id="buildNbaProposal" class="primary" style="width:100%">Genera proposta NBA</button>
       <div id="nbaAutoProposal" aria-live="polite"><div class="empty-state">Carica il calendario NBA per generare una proposta statistica.</div></div>
