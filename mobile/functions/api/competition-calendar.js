@@ -2,18 +2,20 @@
 // supported competition; historical Serie A data remains sourced from openfootball.
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
 const HISTORY_ROOT = "https://raw.githubusercontent.com/openfootball/football.json/master/";
+const DATA_ROOT = "https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/";
+const seasonCode = year => String(year).slice(-2) + String(year + 1).slice(-2);
 const seasonFolder = year => String(year) + "-" + String(year + 1).slice(-2);
 const COMPETITIONS = {
-  "serie-a": { name: "Serie A", slug: "ita.1", sport: "football" },
-  "serie-b": { name: "Serie B", slug: "ita.2", sport: "football" },
-  "premier-league": { name: "Premier League", slug: "eng.1", sport: "football" },
-  "la-liga": { name: "La Liga", slug: "esp.1", sport: "football" },
-  "bundesliga": { name: "Bundesliga", slug: "ger.1", sport: "football" },
-  "ligue-1": { name: "Ligue 1", slug: "fra.1", sport: "football" },
-  "champions-league": { name: "Champions League", slug: "uefa.champions", sport: "football" },
-  "europa-league": { name: "Europa League", slug: "uefa.europa", sport: "football" },
-  "conference-league": { name: "Conference League", slug: "uefa.europa.conf", sport: "football" },
-  "coppa-italia": { name: "Coppa Italia", slug: "ita.coppa_italia", sport: "football" },
+  "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football" },
+  "serie-b": { name: "Serie B", slug: "ita.2", feed: "ITA_2_serie-b", sport: "football" },
+  "premier-league": { name: "Premier League", slug: "eng.1", feed: "ENG_1_premier-league", sport: "football" },
+  "la-liga": { name: "La Liga", slug: "esp.1", feed: "ESP_1_la-liga", sport: "football" },
+  "bundesliga": { name: "Bundesliga", slug: "ger.1", feed: "GER_1_bundesliga", sport: "football" },
+  "ligue-1": { name: "Ligue 1", slug: "fra.1", feed: "FRA_1_ligue-1", sport: "football" },
+  "champions-league": { name: "Champions League", slug: "uefa.champions", feed: "UEFA_1_champions-league", sport: "football" },
+  "europa-league": { name: "Europa League", slug: "uefa.europa", feed: "UEFA_1_europa-league", sport: "football" },
+  "conference-league": { name: "Conference League", slug: "uefa.europa.conf", feed: "UEFA_1_conference-league", sport: "football" },
+  "coppa-italia": { name: "Coppa Italia", slug: "ita.coppa_italia", feed: "ITA_CUP_coppa-italia", sport: "football" },
   "nations-league": { name: "UEFA Nations League", slug: "uefa.nations", sport: "football" }
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -54,7 +56,41 @@ function normalizeEvent(event, competition) {
 function ymd(date) {
   return date.getUTCFullYear().toString() + String(date.getUTCMonth()+1).padStart(2,"0") + String(date.getUTCDate()).padStart(2,"0");
 }
+function parseCsv(input) {
+  const rows=[]; let row=[], field="", quoted=false;
+  for(let i=0;i<input.length;i++){
+    const ch=input[i];
+    if(quoted){if(ch==='"'&&input[i+1]==='"'){field+='"';i++;}else if(ch==='"')quoted=false;else field+=ch;}
+    else if(ch==='"')quoted=true;
+    else if(ch===","){row.push(field);field="";}
+    else if(ch==="\\n"){row.push(field.replace(/\\r$/,""));if(row.some(value=>value!==""))rows.push(row);row=[];field="";}
+    else field+=ch;
+  }
+  if(field!==""||row.length){row.push(field.replace(/\\r$/,""));rows.push(row);}
+  if(!rows.length)return[];
+  const headers=rows.shift();
+  return rows.map(values=>Object.fromEntries(headers.map((key,index)=>[key,values[index]??""])));
+}
+function csvNumber(value){if(value===undefined||value===null||String(value).trim()==="")return null;const n=Number(value);return Number.isFinite(n)?n:null;}
+function normalizeCsv(row,id,finished){
+  const hg=csvNumber(row.ft_home),ag=csvNumber(row.ft_away),done=finished&&hg!==null&&ag!==null;
+  return {id:null,date:String(row.date||""),time:String(row.time||""),round:csvNumber(row.gw),stage:row.gw?"Giornata "+row.gw:COMPETITIONS[id].name,home:String(row.home||""),away:String(row.away||""),hg:done?hg:null,ag:done?ag:null,ht:csvNumber(row.ht_home),at:csvNumber(row.ht_away),hs:csvNumber(row.home_shots),as:csvNumber(row.away_shots),hst:csvNumber(row.home_target),ast:csvNumber(row.away_target),hf:csvNumber(row.home_fouls),af:csvNumber(row.away_fouls),hc:csvNumber(row.home_corners),ac:csvNumber(row.away_corners),hy:csvNumber(row.home_yellow),ay:csvNumber(row.away_yellow),hr:csvNumber(row.home_red),ar:csvNumber(row.away_red),goalMinutes:String(row.goal_minutes||""),status:done?"FT":"NS",statusLong:done?"Terminata":"In programma",competition:id,source:"open-matchday"};
+}
+async function fetchOpenMatchday(id,competition){
+  const code=seasonCode(new Date().getUTCMonth()>=6?new Date().getUTCFullYear():new Date().getUTCFullYear()-1);
+  const base=DATA_ROOT+competition.feed+"/";
+  const urls=[base+"results_"+code+".csv",base+"fixtures_"+code+".csv"];
+  const settled=await Promise.allSettled(urls.map(async(url,index)=>{
+    const response=await fetch(url,{headers:{Accept:"text/plain"},signal:AbortSignal.timeout(18000)});
+    if(!response.ok)throw new Error(id+" open-matchday HTTP "+response.status+" "+url);
+    return parseCsv(await response.text()).map(row=>normalizeCsv(row,id,index===0)).filter(match=>match.date&&match.home&&match.away);
+  }));
+  const results=settled.filter(x=>x.status==="fulfilled").flatMap(x=>x.value);
+  if(!results.length)throw settled.find(x=>x.status==="rejected")?.reason||new Error(id+" dataset vuoto");
+  return results;
+}
 async function fetchCompetition(id, competition, startDate, endDate) {
+  if(competition.feed) return fetchOpenMatchday(id,competition);
   const windows = [];
   for (let cursor = new Date(startDate); cursor <= endDate; ) {
     const from = new Date(cursor), to = new Date(cursor);
