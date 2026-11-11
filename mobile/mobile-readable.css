@@ -421,7 +421,7 @@ body[data-page="bets"] .metric > small {
 }
 
 /* MatchMind bet manager: short workflow tabs, clear open/settled states. */
-.bets-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:5px;margin:0 0 16px;border:1px solid #26363c;border-radius:13px;background:#0e151a;position:relative;top:auto;z-index:1}
+.bets-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:5px;margin:0 0 16px;border:1px solid #26363c;border-radius:13px;background:#0e151a;position:relative;top:auto;z-index:1}
 .bets-tab{min-height:44px;border:0;border-radius:9px;background:transparent;color:#9baab1;font-size:14px;font-weight:850}
 .bets-tab.active{background:#c4f36a;color:#17210a}
 .bets-tab-panel[hidden]{display:none!important}
