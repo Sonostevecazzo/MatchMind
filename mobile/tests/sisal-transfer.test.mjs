@@ -13,7 +13,7 @@ const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("Sisal userscript compiles and reports the current version and installer URL", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.12\.0$/m);
+  assert.match(script, /^\/\/ @version\s+2\.13\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/);
 });
@@ -55,18 +55,21 @@ test("a matching event without a confirmed market stays pending instead of being
   assert.match(script, /function findQueuedSelection\(item\)/);
 });
 
-test("explicit Sisal handoff adds matched selections to the slip but never submits a bet", () => {
+test("Sisal transfer only highlights matching markets for manual selection", () => {
   const start = script.indexOf("function addQueuedSelection(index)");
   const end = script.indexOf("function markSelectedMarket", start);
   assert.ok(start >= 0 && end > start);
   const action = script.slice(start, end);
-  assert.match(action, /hit\.btn\.click\(\)/);
-  assert.match(action, /item\.status = "clicked"/);
-  assert.match(script, /autoAdd: true/);
+  assert.match(action, /markSelectedMarket\(hit\.btn, item, hit\.odd\)/);
+  assert.match(action, /scrollIntoView/);
+  assert.doesNotMatch(action, /\.click\s*\(/);
   const autoStart = script.indexOf("function autoPlayQueue(calculations)");
   const autoEnd = script.indexOf("function renderPlayQueue(widget)", autoStart);
   assert.ok(autoStart >= 0 && autoEnd > autoStart);
-  assert.match(script.slice(autoStart, autoEnd), /autoAddIndexes\.forEach\(index => addQueuedSelection\(index\)\)/);
+  assert.match(script.slice(autoStart, autoEnd), /markSelectedMarket\(hit\.btn, item, hit\.odd\)/);
+  assert.doesNotMatch(script.slice(autoStart, autoEnd), /addQueuedSelection|autoAddIndexes/);
+  assert.match(script, /DA SELEZIONARE · evidenziata/);
+  assert.match(script, /non clicca e non invia scommesse/i);
   assert.doesNotMatch(script, /placeBet|submitBet|confirmBet/i);
 });
 
