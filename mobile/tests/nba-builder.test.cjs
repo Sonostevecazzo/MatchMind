@@ -55,3 +55,19 @@ test("NBA proposal generator filters by probability and the selected period, wit
  assert.ok(result.selections.every(x=>x.odds===null));
  assert.ok(result.selections.every(x=>x.marketKey.startsWith("nbaMoneyline:")));
 });
+
+
+test("NBA proposal accepts user-selected threshold and up to thirty fixtures",()=>{
+ const now=Date.parse("2026-11-11T12:00:00Z");
+ const games=Array.from({length:32},(_,i)=>({
+  id:"bulk-"+i,home:"Home "+i,away:"Away "+i,
+  start:new Date(now+(i+1)*3600000).toISOString(),status:"NS",
+  prediction:{homeWin:0.91-i*0.001,awayWin:0.09+i*0.001,reliable:true,spread:1,total:220,homePoints:111,awayPoints:109}
+ }));
+ const result=builder.buildProposal(games,{now,minProbability:0.9,maxSelections:30,periodDays:7});
+ assert.equal(result.threshold,0.9);
+ assert.equal(result.selections.length,30);
+ assert.equal(result.eligibleGames,32);
+ const capped=builder.buildProposal(games,{now,minProbability:0.5,maxSelections:99,periodDays:7});
+ assert.equal(capped.selections.length,30);
+});
