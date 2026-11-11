@@ -17,13 +17,26 @@
   let animationTick = 0;
 
   const ESPN_BASE = "https://site.web.api.espn.com/apis/site/v2/sports/soccer/";
-  const ESPN_LEAGUES = { "serie-a": "ita.1", "champions-league": "uefa.champions", "europa-league": "uefa.europa" };
+  const ESPN_LEAGUES = {
+    "serie-a": "ita.1", "serie-b": "ita.2", "premier-league": "eng.1",
+    "la-liga": "esp.1", "bundesliga": "ger.1", "ligue-1": "fra.1",
+    "champions-league": "uefa.champions", "europa-league": "uefa.europa",
+    "conference-league": "uefa.europa.conf", "coppa-italia": "ita.coppa_italia",
+    "nations-league": "uefa.nations"
+  };
+  const ESPN_LEAGUE_NAMES = {
+    "serie-a": "Serie A", "serie-b": "Serie B", "premier-league": "Premier League",
+    "la-liga": "La Liga", "bundesliga": "Bundesliga", "ligue-1": "Ligue 1",
+    "champions-league": "Champions League", "europa-league": "Europa League",
+    "conference-league": "Conference League", "coppa-italia": "Coppa Italia",
+    "nations-league": "UEFA Nations League"
+  };
 
   async function requestLiveDirect(query = "") {
     const qParams = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
     const targetComp = qParams.get("competition") || competition || "serie-a";
     const leagueCode = ESPN_LEAGUES[targetComp] || "ita.1";
-    const leagueName = targetComp === "champions-league" ? "Champions League" : targetComp === "europa-league" ? "Europa League" : "Serie A";
+    const leagueName = ESPN_LEAGUE_NAMES[targetComp] || "Calcio";
     const fid = qParams.get("fixture");
 
     if (fid) {
