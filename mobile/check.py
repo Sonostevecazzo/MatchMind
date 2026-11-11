@@ -90,7 +90,7 @@ assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert all(token in sports_switch for token in ['data-sport="football"','data-sport="nba"',"matchmind-sport-v1","nbaIntegratedView"])
 assert "['nba.html','nba','NBA']" not in core
-assert "matchmind-pwa-v113-20261115-nba-controls" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v114-20261116-espn-window" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
@@ -213,3 +213,9 @@ assert 'type="range" min="50" max="90" step="1"' in sports_switch
 assert 'id="nbaAutoMaxSelections" type="number" min="1" max="30"' in sports_switch
 nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
 assert "Math.min(30,Math.floor(Number(options.maxSelections)))" in nba_builder
+
+calendar_api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
+assert "params.get(\"competition\")" in calendar_api
+assert "to.setUTCDate(to.getUTCDate()+6)" in calendar_api
+assert "dates=" in calendar_api and "selectedId" in calendar_api
+assert "competition='+encodeURIComponent(requestedCompetition)" in site_core
