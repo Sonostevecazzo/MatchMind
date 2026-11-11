@@ -194,11 +194,16 @@ function updateSlipCalculations(){
  });
 }
 
-function updateSisalTransfer(rows){
+function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
  const bridge=window.MatchMindSisalBridge;
- const result=bridge?bridge.createUrl(rows):null;
+ const allFootball=readPicks().filter(p=>p&&p.sport!=="nba").map(p=>({
+  ...p,match:{home:p.home,away:p.away,date:p.date,competition:p.competition||"serie-a",id:p.id||p.eventId},
+  marketLabel:marketLabel(p.marketKey),
+  probability:Number.isFinite(Number(p.probability))&&Number(p.probability)>0&&Number(p.probability)<1?Number(p.probability):null
+ }));
+ const result=bridge?bridge.createUrl(allFootball):null;
  if(!result||!result.url){
   link.removeAttribute("href");
   link.setAttribute("aria-disabled","true");
@@ -214,7 +219,8 @@ function updateSisalTransfer(rows){
  link.removeAttribute("tabindex");
  link.textContent="Apri Sisal con "+result.payload.items.length+" selezion"+(result.payload.items.length===1?"e":"i");
  const skippedNote=result.skipped?(result.skipped===1?" 1 selezione non trasferibile è stata esclusa.":" "+result.skipped+" selezioni non trasferibili sono state escluse."):"";
- status.textContent="Sisal si aprirà in una nuova scheda. Verifica partita, esito e quota, poi aggiungi ogni selezione manualmente; il bridge non compila né conferma giocate."+skippedNote;
+ const competitions=[...new Set(result.payload.items.map(item=>item.competition||"serie-a"))];
+ status.textContent="Trasferimento pronto: "+result.payload.items.length+" selezioni in "+competitions.length+" competizioni. Apri l'evento corrispondente su Sisal, verifica esito e quota e aggiungi manualmente ogni selezione; il bridge non conferma giocate."+skippedNote;
 }
 
 function renderSlip(){
