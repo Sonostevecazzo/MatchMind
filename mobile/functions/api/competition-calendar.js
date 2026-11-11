@@ -1,6 +1,8 @@
 // Unified public football calendar. ESPN supplies current fixtures/results for every
 // supported competition; historical Serie A data remains sourced from openfootball.
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
+const HISTORY_ROOT = "https://raw.githubusercontent.com/openfootball/football.json/master/";
+const seasonFolder = year => String(year) + "-" + String(year + 1).slice(-2);
 const COMPETITIONS = {
   "serie-a": { name: "Serie A", slug: "ita.1", sport: "football" },
   "serie-b": { name: "Serie B", slug: "ita.2", sport: "football" },
@@ -65,14 +67,44 @@ async function getCalendar() {
     catch (error) { return { id, matches: [], error: String(error?.message || error) }; }
   }));
   const matches = entries.flatMap(x => x.matches).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const history = matches.filter(match => match.status === "FT" && match.hg !== null && match.ag !== null);
+  // Preserve the five-season Serie A archive used by the Elo/Poisson forecasts.
+  const historicalYears = await Promise.allSettled(Array.from({ length: 5 }, (_, index) => year - 1 - index).map(async historicalYear => {
+    const url = HISTORY_ROOT + seasonFolder(historicalYear) + "/it.1.json";
+    const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error("Archivio Serie A HTTP " + response.status);
+    const payload = await response.json();
+    return (Array.isArray(payload.matches) ? payload.matches : []).map(row => {
+      const ft = row?.score?.ft, ht = row?.score?.ht;
+      const done = Array.isArray(ft) && ft.length >= 2 && ft[0] !== null && ft[1] !== null;
+      const score = value => value === null || value === undefined || value === "" ? null : Number.isFinite(Number(value)) ? Number(value) : null;
+      return {
+        id: null, date: String(row.date || ""), time: String(row.time || ""),
+        round: Number(String(row.round || "").match(/\\d+/)?.[0]) || null,
+        stage: String(row.round || ""), home: String(row.team1 || ""), away: String(row.team2 || ""),
+        hg: done ? score(ft[0]) : null, ag: done ? score(ft[1]) : null,
+        ht: Array.isArray(ht) ? score(ht[0]) : null, at: Array.isArray(ht) ? score(ht[1]) : null,
+        hs: null, as: null, hst: null, ast: null, hf: null, af: null,
+        hc: null, ac: null, hy: null, ay: null, hr: null, ar: null,
+        status: done ? "FT" : "NS", statusLong: done ? "Terminata" : "In programma",
+        competition: "serie-a", source: "openfootball · archivio storico"
+      };
+    }).filter(match => match.date && match.home && match.away && match.hg !== null && match.ag !== null);
+  }));
+  const historyErrors = [];
+  historicalYears.forEach((result, index) => {
+    if (result.status === "fulfilled") history.push(...result.value);
+    else historyErrors.push("Archivio Serie A " + seasonFolder(year - 1 - index) + " non disponibile");
+  });
+  history.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   if (!matches.length) return json({ configured: true, type: "calendar", matches: [], history: [], errors: entries.map(x => x.error).filter(Boolean), error: "Nessuna competizione ha restituito partite. Verificare il provider ESPN." }, 503);
   const counts = Object.fromEntries(entries.map(x => [x.id, x.matches.length]));
   return json({
-    configured: true, type: "calendar", season: year, matches, history: [],
-    source: "ESPN public scoreboard", sourceMode: "multi-competition-public",
-    counts, errors: entries.filter(x => x.error).map(x => x.error),
+    configured: true, type: "calendar", season: year, matches, history,
+    source: "ESPN public scoreboard + openfootball historical Serie A", sourceMode: "multi-competition-public",
+    counts, errors: entries.filter(x => x.error).map(x => x.error).concat(historyErrors),
     updatedAt: new Date().toISOString(),
-    note: "Calendari e risultati ESPN. Le statistiche avanzate, le quote e le formazioni non vengono inventate."
+    note: "Calendari multi-competizione da ESPN; archivio storico Serie A da openfootball. Le statistiche avanzate, le quote e le formazioni non vengono inventate."
   });
 }
 export async function onRequestGet() { return getCalendar(); }
