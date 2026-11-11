@@ -40,7 +40,8 @@ for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-ca
 for test in ["ai-engine.test.mjs","odds-integrity.test.mjs","public-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","sisal-bridge.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","nba-builder.test.cjs","sisal-bridge.test.cjs","sisal-model-guard.test.cjs","sisal-transfer.test.mjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
-calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")\ncompetition_calendar=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
+calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
+competition_calendar=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
 assert "./api/competition-calendar" in core and "open-matchday" in calendar
 assert all(key in core for key in ["serie-b","premier-league","la-liga","bundesliga","ligue-1","conference-league","coppa-italia","nations-league"])\nassert all(key in competition_calendar for key in ["ita.1","ita.2","eng.1","esp.1","ger.1","fra.1","uefa.champions","uefa.europa","uefa.europa.conf","ita.coppa_italia","uefa.nations"])\nassert "multi-competition-public" in competition_calendar\nassert "europa-league" in core and "UEFA_1_europa-league" in calendar
 assert '"europa-league": 3' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
