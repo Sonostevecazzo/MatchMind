@@ -1234,3 +1234,64 @@ body[data-page="bets"] .archive-ticket{padding:15px}
   .mobile-nav{position:fixed!important;top:58px!important;bottom:calc(72px + env(safe-area-inset-bottom))!important;z-index:140!important;overflow-y:auto!important;overscroll-behavior:contain!important}
   .mobile-nav-backdrop{position:fixed!important;inset:54px 0 calc(68px + env(safe-area-inset-bottom))!important;z-index:130!important;background:#0009!important}
 }
+
+
+/* MatchMind mobile refresh: anchored navigation, larger SVG controls and stable slip dock. */
+@media (max-width:700px){
+  html,body{overscroll-behavior-x:none}
+  .mobile-primary-nav{
+    position:fixed!important;inset:auto 0 0!important;
+    min-height:76px!important;
+    padding:8px 14px calc(8px + env(safe-area-inset-bottom))!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    transform:none!important;will-change:auto!important;
+    contain:layout paint!important;
+    isolation:isolate;
+    background:rgba(8,12,18,.98)!important;
+    border-top:1px solid rgba(190,220,235,.16)!important;
+    box-shadow:0 -12px 32px rgba(0,0,0,.42)!important;
+    backdrop-filter:blur(20px) saturate(145%);
+    -webkit-backdrop-filter:blur(20px) saturate(145%);
+  }
+  .mobile-primary-nav .nav-item{
+    min-height:58px!important;gap:5px!important;padding:5px 4px!important;
+    font-size:12px!important;letter-spacing:.15px;
+    color:#9aa9b8!important;transition:background .16s ease,color .16s ease;
+  }
+  .mobile-primary-nav .nav-item.active{
+    color:#d7ff82!important;
+    background:linear-gradient(145deg,rgba(194,243,106,.16),rgba(70,120,94,.12))!important;
+    box-shadow:inset 0 0 0 1px rgba(196,243,106,.22),0 4px 14px rgba(0,0,0,.18);
+  }
+  .mobile-primary-nav .nav-icon{
+    display:grid!important;place-items:center;width:30px!important;height:30px!important;
+    border-radius:10px;background:rgba(255,255,255,.035);
+  }
+  .mobile-primary-nav .nav-icon svg{
+    width:27px!important;height:27px!important;display:block;
+    fill:none!important;stroke:currentColor!important;stroke-width:1.85!important;
+    stroke-linecap:round!important;stroke-linejoin:round!important;
+  }
+  body{padding-bottom:calc(94px + env(safe-area-inset-bottom))!important}
+  .global-slip-dock{
+    left:12px!important;right:12px!important;width:auto!important;
+    bottom:calc(86px + env(safe-area-inset-bottom))!important;
+    transform:none!important;will-change:auto!important;
+    z-index:105!important;border-radius:17px!important;
+    border-color:rgba(196,243,106,.34)!important;
+    box-shadow:0 12px 34px rgba(0,0,0,.46)!important;
+  }
+  .global-slip-dock.is-expanded{max-height:48dvh!important}
+  .global-slip-dock.is-expanded .global-slip-body{
+    display:block!important;max-height:calc(48dvh - 62px)!important;
+    overflow:auto!important;overscroll-behavior:contain!important;
+  }
+  .global-slip-head{min-height:58px!important;padding:7px 9px!important}
+  .global-slip-toggle{min-height:44px!important}
+  .global-slip-open{min-height:42px!important;padding:0 17px!important}
+  .mobile-nav{bottom:calc(84px + env(safe-area-inset-bottom))!important}
+  .mobile-nav-backdrop{inset:54px 0 calc(80px + env(safe-area-inset-bottom))!important}
+}
+@media (prefers-reduced-motion:reduce){
+  .mobile-primary-nav .nav-item{transition:none!important}
+}
