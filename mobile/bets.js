@@ -776,81 +776,53 @@ async function shareTicket(ticket){
 function handleUrlImport(){
  let raw="";
  const hash=window.location.hash||"";
- if(hash.startsWith("#import=")){
-  raw=decodeURIComponent(hash.slice(8));
- }else if(hash.startsWith("#import-slip=")){
-  raw=decodeURIComponent(hash.slice(13));
- }else if(window.location.search){
-  const params=new URLSearchParams(window.location.search);
-  if(params.get("import"))raw=params.get("import");
- }
+ if(hash.startsWith("#import=")) raw=hash.slice(8);
+ else if(hash.startsWith("#import-slip=")) raw=hash.slice(13);
+ else if(window.location.search){const params=new URLSearchParams(window.location.search);raw=params.get("import")||"";}
  if(!raw)return;
-
  try{
   let payload=null;
   try{payload=JSON.parse(raw);}catch(_){try{payload=JSON.parse(atob(raw));}catch(__){}}
   if(!payload)return;
-
   const items=Array.isArray(payload.selections)?payload.selections:(Array.isArray(payload)?payload:[payload]);
-  const defaultBkmk=payload.bookmaker||"Esterno";
-  let count=0;
-
+  const defaultBkmk=String(payload.bookmaker||"Esterno");
+  const catalog=Array.isArray(allData?.matches)?allData.matches:fixtures;
+  let count=0,skipped=0;
   items.forEach(item=>{
-   if(!item||!item.home||!item.away||!item.marketKey)return;
+   if(!item||!item.home||!item.away||!item.marketKey){skipped++;return;}
    const home=String(item.home).trim(),away=String(item.away).trim();
-   let match=fixtures.find(m=>isSameMatch(m.home,m.away,home,away));
-   const comp=item.competition||(match&&match.competition)||window.MM.getSelectedCompetition()||"serie-a";
-   const date=(match&&match.date)||item.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date());
+   const candidates=catalog.filter(m=>isSameMatch(m.home,m.away,home,away));
+   const requestedCompetition=String(item.competition||"");
+   const match=(requestedCompetition?candidates.find(m=>(m.competition||"serie-a")===requestedCompetition):null)||candidates[0]||null;
+   const comp=requestedCompetition||(match&&match.competition)||window.MM.getSelectedCompetition()||"serie-a";
+   const date=(match&&match.date)||String(item.date||"");
    const oddsNum=Number(item.odds);
-   const odds=(Number.isFinite(oddsNum)&&oddsNum>1&&oddsNum<=1000)?oddsNum:null;
-   const bkmk=item.bookmaker||defaultBkmk;
-
+   const odds=Number.isFinite(oddsNum)&&oddsNum>1&&oddsNum<=1000?oddsNum:null;
+   const bkmk=String(item.bookmaker||defaultBkmk);
    const pickData={
-    competition:comp,
-    date:date,
-    home:match?match.home:home,
-    away:match?match.away:away,
-    marketKey:item.marketKey,
-    odds:odds,
-    bookmaker:bkmk
+    competition:comp,date:date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date()),
+    home:match?match.home:home,away:match?match.away:away,marketKey:String(item.marketKey),
+    odds,bookmaker:bkmk,oddsSource:bkmk,oddsUpdatedAt:Number(item.oddsUpdatedAt||item.timestamp||payload.timestamp||Date.now()),
+    oddsImportedAt:Date.now(),oddsEventId:String(item.eventId||"")
    };
-
    const fKey=fixtureKey(pickData);
-   if(item.context&&typeof item.context==="object"){
-    contexts[fKey]={...(contexts[fKey]||{}),...item.context};
-    save(CONTEXT_KEY,contexts);
-   }
-   const existingIdx=picks.findIndex(p=>isSameMatch(p.home,p.away,pickData.home,pickData.away));
-   if(existingIdx>=0){
-    picks[existingIdx]={...picks[existingIdx],...pickData};
-   }else if(picks.length<15){
-    picks.push(pickData);
-   }
+   if(item.context&&typeof item.context==="object"){contexts[fKey]={...(contexts[fKey]||{}),...item.context};save(CONTEXT_KEY,contexts);}
+   const existingIdx=picks.findIndex(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===comp&&isSameMatch(p.home,p.away,pickData.home,pickData.away)&&p.marketKey===pickData.marketKey);
+   if(existingIdx>=0)picks[existingIdx]={...picks[existingIdx],...pickData};
+   else if(picks.length<30)picks.push(pickData);
+   else {skipped++;return;}
    count++;
   });
-
   if(count>0){
-   if(payload.stake&&Number(payload.stake)>=0.5){
-    currentStake=Number(payload.stake);
-    save(STAKE_KEY,currentStake);
-   }
-   writePicks();
-   slipExpanded=true;
-   setBetTab("create");
-   renderSlip();
-   updateSlipCalculations();
+   if(payload.stake&&Number(payload.stake)>=0.5){currentStake=Number(payload.stake);save(STAKE_KEY,currentStake);}
+   writePicks();slipExpanded=true;setBetTab("create");renderSlip();updateSlipCalculations();
    const statusLine=$("manualBuilderStatus");
-   if(statusLine){
-    statusLine.innerHTML='<span style="color:#c4f36a;font-weight:700;">📥 Importate '+count+' selezioni da '+esc(defaultBkmk)+' con quote.</span> Rivedi puntata ed EV, poi premi <i>Salva schedina</i>.';
-   }
-   if(window.history&&window.history.replaceState){
-    const clean=window.location.pathname+window.location.search.replace(/[?&]import=[^&]*/,"").replace(/^&/,"?");
-    window.history.replaceState(null,"",clean);
-   }
+   if(statusLine)statusLine.innerHTML='<span style="color:#c4f36a;font-weight:700;">Quote importate: '+count+' selezioni da '+esc(defaultBkmk)+'.</span> '+(skipped?skipped+' elementi ignorati. ':'')+'Le probabilità restano quelle del modello MatchMind; verifica sempre la quota prima di giocare.';
+   if(window.history&&window.history.replaceState)window.history.replaceState(null,"",window.location.pathname+window.location.search);
+  }else{
+   const statusLine=$("manualBuilderStatus");if(statusLine)statusLine.textContent="Nessuna selezione Sisal importabile. Controlla partita e mercato.";
   }
- }catch(err){
-  console.warn("MatchMind import error:",err);
- }
+ }catch(err){console.warn("MatchMind import error:",err);const statusLine=$("manualBuilderStatus");if(statusLine)statusLine.textContent="Importazione quote non riuscita: "+(err.message||"payload non valido");}
 }
 
 function initEvents(){
