@@ -13,11 +13,17 @@ const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("Sisal userscript compiles and reports the current version and installer URL", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.14\.0$/m);
+  assert.match(script, /^\/\/ @version\s+2\.15\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/);
 });
 
+test("Sisal odds import preserves source, timestamp and competition-specific event matching", () => {
+  assert.match(bets, /const catalog=Array\.isArray\(allData\?\.matches\)\?allData\.matches:fixtures/);
+  assert.match(bets, /oddsSource:bkmk,oddsUpdatedAt:/);
+  assert.match(bets, /p\.marketKey===pickData\.marketKey/);
+  assert.match(script, /const MATCHMIND_URL = "https:\/\/recovery-nba-mainline-202611\.matchmind-3te\.pages\.dev\/bets\.html"/);
+});
 test("empty-state message interpolates NBA and unavailable-model states instead of printing source code", () => {
   assert.doesNotMatch(script, /\\\$\{currentAnalysis\?\.sport/);
   assert.ok(script.includes('${currentAnalysis?.sport === "nba"'));
