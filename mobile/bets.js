@@ -438,9 +438,9 @@ function renderArchive(){
  target.innerHTML=bankrollCard+ticketsHtml;
 }
 function setBetTab(tab){
- const selected=["create","nba","live","archive"].includes(tab)?tab:"create";
+ const selected=["create","live","archive"].includes(tab)?tab:"create";
  document.querySelectorAll("[data-bets-tab]").forEach(button=>{const active=button.dataset.betsTab===selected;button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active));});
- ["create","nba","live","archive"].forEach(name=>{const panel=$("betsTab"+name[0].toUpperCase()+name.slice(1));if(panel)panel.hidden=name!==selected;});
+ ["create","live","archive"].forEach(name=>{const panel=$("betsTab"+name[0].toUpperCase()+name.slice(1));if(panel)panel.hidden=name!==selected;});
 }
 function saveCurrentSlip(){
  const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}

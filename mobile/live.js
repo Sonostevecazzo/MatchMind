@@ -148,10 +148,17 @@
   function kickoffTimestamp(match){const time=String(match.time||"").trim();return Date.parse(String(match.date||"")+(time?"T"+time+(time.length===5?":00":""):"T20:00:00"));}
   function localTime(value){if(!value||String(value).length===10)return "";const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});}
   function notifySnapshot(payload){const api=window.MMNotifications;if(!api)return;let prev={};try{prev=JSON.parse(localStorage.getItem("matchmind-live-snapshots-v1")||"{}")||{};}catch{}const next={...prev};(payload.matches||[]).forEach(m=>{const k=teamKey(m),old=prev[k],s=String(m.status||"").toUpperCase();const score=(m.goals.home??"")+"-"+(m.goals.away??"");if(old&&["NS","TBD"].includes(old.status)&&["1H","2H","ET","LIVE"].includes(s))api.notifyOnce("kickoff:"+k,"kickoff","Calcio d'inizio",m.home.name+" – "+m.away.name+" è iniziata.","live-"+k);if(old&&old.score&&old.score!==score)api.notifyOnce("score:"+k+":"+score,"goals","Punteggio aggiornato · "+m.home.name+" – "+m.away.name,m.home.name+" "+(m.goals.home??"—")+" – "+(m.goals.away??"—")+" "+m.away.name,"score-"+k);if(old&&old.status!=="HT"&&s==="HT")api.notifyOnce("half:"+k,"halftime","Intervallo",m.home.name+" "+(m.goals.home??"—")+" – "+(m.goals.away??"—")+" "+m.away.name,"live-"+k);if(old&&!["FT","AET","PEN"].includes(old.status)&&["FT","AET","PEN"].includes(s))api.notifyOnce("end:"+k,"fulltime","Fine partita",m.home.name+" "+(m.goals.home??"—")+" – "+(m.goals.away??"—")+" "+m.away.name,"live-"+k);next[k]={status:s,score,updatedAt:Date.now()};});try{localStorage.setItem("matchmind-live-snapshots-v1",JSON.stringify(Object.fromEntries(Object.entries(next).slice(-160))));}catch{}}
+  function liveStatusText(payload,count,detail=false){
+    const raw=String(payload?.source||payload?.sourceLabel||"").toLowerCase();
+    const source=raw.includes("espn")?"ESPN":raw.includes("api-football")||raw.includes("apifootball")?"API-Football":"non disponibile";
+    const time=new Date(payload?.updatedAt||Date.now()).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+    const message=detail?"Dettaglio partita aggiornato":count===0?"Nessuna partita in diretta":count+" "+(count===1?"partita":"partite")+" in diretta";
+    return message+" · Fonte "+source+" · aggiornato "+time;
+  }
   function renderList(payload,calendar){
     const liveMatches=Array.isArray(payload?.matches)?payload.matches:[];
     notifySnapshot(payload||{});
-    $("liveStatus").textContent=(payload?.sourceLabel||payload?.source||"Fonte live")+(payload?.fallbackReason?" · fallback: "+payload.fallbackReason:"")+" · "+liveMatches.length+" partite in diretta";
+    $("liveStatus").textContent=liveStatusText(payload,liveMatches.length);
     listMatchCount=liveMatches.length;
     $("liveListUpdated").textContent="Ultimo controllo "+new Date(payload?.updatedAt||Date.now()).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})+" · aggiornamento automatico";
     $("liveMatches").innerHTML=liveMatches.length?liveMatches.map(m=>'<a class="live-match-card" href="./live.html?fixture='+encodeURIComponent(m.id)+'&competition='+encodeURIComponent(competition)+'&source='+encodeURIComponent(payload.source==="ESPN"?"espn":"api-football")+'&date='+encodeURIComponent(String(m.date||"").slice(0,10))+'&home='+encodeURIComponent(m.home.name)+'&away='+encodeURIComponent(m.away.name)+'"><div class="live-match-meta"><span class="live-indicator"><i></i> LIVE</span><span>'+esc(m.league||"Calcio")+'</span><b>'+esc(minute(m))+'</b></div><div class="live-match-teams"><div>'+logo(m.home)+'<b>'+esc(m.home.name)+'</b></div><strong>'+esc(m.goals.home??"—")+' – '+esc(m.goals.away??"—")+'</strong><div>'+logo(m.away)+'<b>'+esc(m.away.name)+'</b></div></div><div class="live-match-footer">Apri centro partita <span>→</span></div></a>').join(""):'<div class="live-empty"><b>Nessuna partita in diretta</b><p>Le prossime partite sono riportate qui sotto. Punteggio e minutaggio appariranno al calcio d’inizio.</p></div>';
@@ -374,9 +381,7 @@
     const match = payload.fixture;
     if (!match) throw new Error("Partita non trovata.");
     lastDetail = payload;
-    const sourceLabel = payload.sourceLabel || payload.source || "Fonte live";
-    const fallbackInfo = payload.fallbackReason ? " · fallback: " + payload.fallbackReason : "";
-    $("liveStatus").textContent = sourceLabel + fallbackInfo + " · aggiornamento " + new Date(payload.updatedAt || Date.now()).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    $("liveStatus").textContent = liveStatusText(payload,1,true);
     const statusCode=String(match.status||"").toUpperCase();
     const statusLabel=["FT","AET","PEN"].includes(statusCode)?"PARTITA TERMINATA":statusCode==="HT"?"INTERVALLO":["1H","2H","ET","BT","P","LIVE"].includes(statusCode)?"IN DIRETTA":(match.statusLong||"STATO PARTITA").toUpperCase();
     $("liveScoreboard").innerHTML = '<div class="live-match-meta"><span class="live-state-pill '+(["1H","2H","ET","BT","P","LIVE"].includes(statusCode)?"is-live":"")+'">' + (["1H","2H","ET","BT","P","LIVE"].includes(statusCode)?'<i></i> ':"") + esc(statusLabel) + '</span><span>' + esc(match.league || "Calcio") + '</span><b class="live-clock">' + esc(minute(match)) + '</b></div><div class="live-score-teams"><div>' + logo(match.home) + '<b>' + esc(match.home.name) + '</b></div><strong>' + esc(match.goals.home ?? "—") + ' – ' + esc(match.goals.away ?? "—") + '</strong><div>' + logo(match.away) + '<b>' + esc(match.away.name) + '</b></div></div><small>' + esc(match.venue || "Stadio non comunicato") + '</small>';

@@ -1,9 +1,10 @@
-const CACHE='matchmind-pwa-v108-20261111-drawer-nations-stats';
+const CACHE='matchmind-pwa-v109-20261111-ux-cleanup';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
- './site.css','./mobile-readable.css','./analysis.css','./live.css','./site-core.js','./site-pages.js','./elo.js','./tipsaudit.js',
- './rounds.js','./ai-engine.js','./bets-engine.js','./sisal-bridge.js','./bets.js','./live.js','./notifications.js','./nba.js?v=20261111-builder-tab','./nba-builder.js?v=20261111-builder-tab','./nba.css?v=20261111-builder-tab','./nba-engine.mjs',
+ './site.css','./mobile-readable.css',
+ './mobile-readable.css?v=20261104-analysis','./mobile-readable.css?v=20261111-navigation-nba-builder','./mobile-readable.css?v=20261104-open-data','./mobile-readable.css?v=20261103-0117','./mobile-readable.css?v=20261104-live','./mobile-readable.css?v=20261104-navigation-cleanup','./mobile-readable.css?v=20261104-public','./analysis.css','./live.css','./site-core.js','./site-pages.js','./elo.js','./tipsaudit.js',
+ './rounds.js','./ai-engine.js','./bets-engine.js','./sisal-bridge.js','./bets.js','./live.js','./notifications.js','./nba.js?v=20261111-builder-tab','./nba-builder.js?v=20261111-builder-tab','./nba.css?v=20261111-ux-v2','./nba-engine.mjs',
  './fixtures-odds.json','./manifest.webmanifest','./icon.svg','./brand-full.svg','./scripts/sisal-matchmind.user.js'
 ];
 self.addEventListener('install',event=>{

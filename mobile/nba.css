@@ -40,3 +40,14 @@
 .nba-builder-financials input,.nba-odds-field input{width:100%;min-width:0;background:#101820;color:inherit;border:1px solid var(--line,#293640);border-radius:8px;padding:9px}
 .nba-odds-field{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;font-size:11px;color:var(--muted,#9eabb5);max-width:150px}
 @media(max-width:520px){.nba-filter-grid{grid-template-columns:1fr}.nba-slip-row{align-items:flex-start}}
+
+
+/* Mobile financial summary: one clear metric per row, no cramped label columns. */
+@media(max-width:520px){
+ .nba-builder-financials{grid-template-columns:minmax(0,1fr);gap:0;padding:10px 13px}
+ .nba-builder-financials>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line,#293640)}
+ .nba-builder-financials>div:last-child{border-bottom:0}
+ .nba-builder-financials>div small{min-width:0;font-size:12px;line-height:1.35}
+ .nba-builder-financials>div b{flex:0 0 auto;text-align:right;white-space:nowrap}
+ .nba-builder-financials>label{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,124px);align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line,#293640)}
+}

@@ -20,7 +20,9 @@ for name in required:
  if name!="index.html": assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "sisal-bridge.js" in html and "bets.js" in html
-  assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html and 'data-bets-tab="nba"' in html and 'id="betsTabNba"' in html
+  assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
+  assert 'data-bets-tab="nba"' not in html and 'id="betsTabNba"' not in html
+  assert "nba.js" not in html and "nba-builder.js" not in html and "nba.css" not in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
   assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
@@ -58,8 +60,11 @@ nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
 nba_engine=(ROOT/"nba-engine.mjs").read_text(encoding="utf-8")
 assert 'data-page="nba"' in nba_html and 'id="nbaSlip"' in nba_html
 assert "nba-builder.js" in nba_html and "nba.js" in nba_html
-assert 'data-bets-tab="nba"' in bets_html and "nba-builder.js?v=20261111-builder-tab" in bets_html and "nba.js?v=20261111-builder-tab" in bets_html
-assert "grid-template-columns:repeat(4,minmax(0,1fr))" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
+assert 'data-page="nba"' in nba_html and "nba-builder.js" in nba_html and "nba.js" in nba_html
+assert bets_html.index('id="betsTabCreate"') < bets_html.index('id="betsTabLive"') < bets_html.index('id="betsTabArchive"')
+assert nba_html.index('id="nbaList"') < nba_html.index('id="nbaSlip"')
+assert ".bets-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
+assert ".competition-select-trigger" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "matchmind-manual-selections-v1" in nba_core and "matchmind-slip-archive-v2" in nba_core
 assert "calculate" in nba_builder and "predictNba" in nba_engine
 assert "./nba.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
@@ -74,6 +79,8 @@ assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert core.index("['matches.html','matches','Calcio']") < core.index("['live.html','live','Live']")
 assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core
+assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
+assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
 assert "teams:'<svg" in core and "players:'<svg" in core
 assert "nationsLeagueStats" in (ROOT/"data.html").read_text(encoding="utf-8")
@@ -91,7 +98,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v108-20261111-drawer-nations-stats" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v109-20261111-ux-cleanup" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -132,7 +139,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v108-20261111-drawer-nations-stats" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v109-20261111-ux-cleanup" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")

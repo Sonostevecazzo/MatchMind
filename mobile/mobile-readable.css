@@ -421,7 +421,7 @@ body[data-page="bets"] .metric > small {
 }
 
 /* MatchMind bet manager: short workflow tabs, clear open/settled states. */
-.bets-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:5px;margin:0 0 16px;border:1px solid #26363c;border-radius:13px;background:#0e151a;position:relative;top:auto;z-index:1}
+.bets-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:5px;margin:0 0 16px;border:1px solid #26363c;border-radius:13px;background:#0e151a;position:relative;top:auto;z-index:1}
 .bets-tab{min-height:44px;border:0;border-radius:9px;background:transparent;color:#9baab1;font-size:14px;font-weight:850}
 .bets-tab.active{background:#c4f36a;color:#17210a}
 .bets-tab-panel[hidden]{display:none!important}
@@ -670,3 +670,19 @@ button,input,select,a{-webkit-tap-highlight-color:transparent}
  body[data-page] .mobile-nav .nav-icon,body[data-page] .mobile-nav .nav-icon svg{display:grid!important;place-items:center!important;width:24px!important;height:24px!important;flex:0 0 24px!important}
  body[data-page] .mobile-nav .nav-item.active{background:rgba(196,243,106,.12)!important;border-color:rgba(196,243,106,.24)!important;color:#d8f59b!important}
 }
+
+
+/* MatchMind competition selector: branded, accessible popover instead of Android's native purple menu. */
+.competition-picker{position:relative;z-index:35;min-width:0}
+.competition-select-trigger{display:flex;width:100%;min-height:50px;align-items:center;justify-content:space-between;gap:12px;padding:0 15px;border:1px solid #35434b;border-radius:13px;background:#111b21;color:#edf3f5;text-align:left;font:inherit;font-size:16px;font-weight:800;cursor:pointer}
+.competition-picker.is-open .competition-select-trigger{border-color:#c4f36a;box-shadow:0 0 0 3px rgba(196,243,106,.12)}
+.competition-select-chevron{color:#c4f36a;font-size:20px;line-height:1}
+.competition-picker-menu{position:absolute;top:calc(100% + 7px);left:0;right:0;z-index:150;display:grid;gap:3px;max-height:min(58vh,380px);overflow-y:auto;padding:8px;border:1px solid #3a454b;border-radius:15px;background:#171e24;box-shadow:0 16px 42px #000b;overscroll-behavior:contain}
+.competition-picker-menu[hidden]{display:none!important}
+.competition-picker-group{display:grid;gap:3px}
+.competition-picker-group-label{padding:9px 10px 5px;color:#89969e;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.competition-picker-group+.competition-picker-group{margin-top:5px;padding-top:5px;border-top:1px solid #344049}
+.competition-option{display:flex;min-height:46px;align-items:center;justify-content:space-between;padding:9px 11px;border:1px solid transparent;border-radius:10px;color:#e8edf0;font-size:15px;font-weight:650;cursor:pointer}
+.competition-option[aria-selected="true"]{border-color:rgba(196,243,106,.3);background:rgba(196,243,106,.12);color:#d9f59c}
+.competition-option[aria-selected="true"]::after{content:"✓";color:#c4f36a;font-weight:950}
+.competition-option:focus-visible{outline:2px solid #c4f36a;outline-offset:1px;background:#202b2e}

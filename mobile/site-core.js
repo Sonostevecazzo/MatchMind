@@ -587,16 +587,60 @@ function eventForecast(match,history){
     const pickerHost=intro||homeCopy;
     if(pickerHost&&!$('competitionSelect')&&['matches','live','league','match','mind','home'].includes(page)) {
       const field=document.createElement('div');field.className='field competition-picker'+(page==='home'?' home-competition-picker':'');
-      const label=document.createElement('label');label.htmlFor='competitionSelect';label.textContent='Competizione';
-      const select=document.createElement('select');select.id='competitionSelect';select.setAttribute('aria-label','Seleziona competizione');
+      const label=document.createElement('label');label.htmlFor='competitionPickerButton';label.textContent='Competizione';
+      const select=document.createElement('select');select.id='competitionSelect';select.hidden=true;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
       const clubGroup=document.createElement('optgroup');clubGroup.label='Competizioni per club';
       const nationalGroup=document.createElement('optgroup');nationalGroup.label='Nazionali';
       Object.values(COMPETITIONS).forEach(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;(item.kind==='national'?nationalGroup:clubGroup).appendChild(option);});
-      select.append(clubGroup,nationalGroup);
-      select.value=getSelectedCompetition();field.append(label,select);
+      select.append(clubGroup,nationalGroup);select.value=getSelectedCompetition();
+      const trigger=document.createElement('button');trigger.type='button';trigger.id='competitionPickerButton';trigger.className='competition-select-trigger';
+      trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls','competitionOptions');
+      trigger.innerHTML='<span data-competition-label></span><span class="competition-select-chevron" aria-hidden="true">⌄</span>';
+      const menu=document.createElement('div');menu.id='competitionOptions';menu.className='competition-picker-menu';menu.setAttribute('role','listbox');menu.setAttribute('aria-label','Seleziona competizione');menu.hidden=true;
+      const clubMenu=document.createElement('div');clubMenu.className='competition-picker-group';clubMenu.setAttribute('role','group');clubMenu.setAttribute('aria-label','Competizioni per club');
+      const nationalMenu=document.createElement('div');nationalMenu.className='competition-picker-group';nationalMenu.setAttribute('role','group');nationalMenu.setAttribute('aria-label','Nazionali');
+      const addGroupLabel=(host,value)=>{const heading=document.createElement('div');heading.className='competition-picker-group-label';heading.textContent=value;host.appendChild(heading);};
+      addGroupLabel(clubMenu,'Competizioni per club');addGroupLabel(nationalMenu,'Nazionali');
+      Object.values(COMPETITIONS).forEach(item=>{
+        const option=document.createElement('div');option.className='competition-option';option.dataset.competitionChoice=item.id;
+        option.setAttribute('role','option');option.tabIndex=0;option.textContent=item.name;
+        (item.kind==='national'?nationalMenu:clubMenu).appendChild(option);
+      });
+      menu.append(clubMenu,nationalMenu);
+      const choices=()=>Array.from(menu.querySelectorAll('[data-competition-choice]'));
+      const closePicker=(restoreFocus=false)=>{menu.hidden=true;field.classList.remove('is-open');trigger.setAttribute('aria-expanded','false');if(restoreFocus)trigger.focus();};
+      const syncPicker=()=>{
+        const selected=select.options[select.selectedIndex];
+        trigger.querySelector('[data-competition-label]').textContent=selected?.textContent||'Seleziona competizione';
+        choices().forEach(option=>option.setAttribute('aria-selected',String(option.dataset.competitionChoice===select.value)));
+      };
+      trigger.addEventListener('click',()=>{
+        const opening=menu.hidden;menu.hidden=!opening;field.classList.toggle('is-open',opening);trigger.setAttribute('aria-expanded',String(opening));
+        if(opening){const selected=choices().find(option=>option.dataset.competitionChoice===select.value);(selected||choices()[0])?.focus();}
+      });
+      menu.addEventListener('click',event=>{
+        const option=event.target.closest('[data-competition-choice]');if(!option)return;
+        select.value=option.dataset.competitionChoice;select.dispatchEvent(new Event('change',{bubbles:true}));
+      });
+      menu.addEventListener('keydown',event=>{
+        const list=choices(),index=list.indexOf(document.activeElement);
+        if(event.key==='Escape'){event.preventDefault();closePicker(true);return;}
+        if(event.key==='ArrowDown'||event.key==='ArrowUp'||event.key==='Home'||event.key==='End'){
+          event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?list.length-1:(index+(event.key==='ArrowDown'?1:-1)+list.length)%list.length;list[next]?.focus();return;
+        }
+        if(event.key==='Enter'||event.key===' '){const option=document.activeElement.closest('[data-competition-choice]');if(option){event.preventDefault();select.value=option.dataset.competitionChoice;select.dispatchEvent(new Event('change',{bubbles:true}));}}
+      });
+      document.addEventListener('click',event=>{if(!field.contains(event.target))closePicker(false);});
+      select.addEventListener('change',()=>{
+        syncPicker();closePicker(false);
+        try{localStorage.setItem('matchmind-competition-v1',select.value);}catch{}
+        const currentPage=document.body.dataset.page;
+        if(currentPage==='match'||currentPage==='team'){const target=currentPage==='match'?'matches.html':'explore.html';location.href=target+'?competition='+encodeURIComponent(select.value)+(currentPage==='match'?'#matchesSection':'');}
+        else{const url=new URL(location.href);url.searchParams.delete('import');url.searchParams.set('competition',select.value);location.href=url.toString();}
+      });
+      syncPicker();field.append(label,select,trigger,menu);
       const homeStatus=page==='home'&&$('homeStatus');
       if(homeStatus&&homeStatus.parentNode===pickerHost)pickerHost.insertBefore(field,homeStatus);else pickerHost.appendChild(field);
-      select.addEventListener('change',()=>{try{localStorage.setItem('matchmind-competition-v1',select.value);}catch{};const currentPage=document.body.dataset.page;if(currentPage==='match'||currentPage==='team'){const target=currentPage==='match'?'matches.html':'explore.html';location.href=target+'?competition='+encodeURIComponent(select.value)+(currentPage==='match'?'#matchesSection':'');}else{const url=new URL(location.href);url.searchParams.delete('import');url.searchParams.set('competition',select.value);location.href=url.toString();}});
     }
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);location.reload();}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
   }
