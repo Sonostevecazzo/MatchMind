@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.11.0
+// @version      2.12.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -23,7 +23,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.11.0";
+  const MM_SCRIPT_VERSION = "2.12.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2324,6 +2324,7 @@
       homeAbbr: x.homeAbbr || "",
       awayAbbr: x.awayAbbr || "",
       status: "pending",
+      autoAdd: true,
       sentAt: Number(incoming && incoming.sentAt) || Date.now()
     }));
     if (!items.length) return false;
@@ -2447,8 +2448,9 @@
           current.error = "";
           current.errorType = "";
         } else {
-          current.status = "clicked";
-          current.error = "Click inviato a Sisal, ma non posso verificare la riga nel biglietto. Controllala prima di proseguire.";
+          current.status = "error";
+          current.errorType = "notfound";
+          current.error = "Sisal ha ricevuto il click ma la selezione non compare nel biglietto. Controlla la pagina e premi Riprova.";
         }
         current.updatedAt = Date.now();
         writePlayQueue(latest);
@@ -2486,8 +2488,10 @@
 
   function autoPlayQueue(calculations) {
     const queue = readPlayQueue();
+    const autoAddIndexes = [];
     let changed = false;
-    for (const item of queue) {
+    for (let index = 0; index < queue.length; index++) {
+      const item = queue[index];
       if (item.status === "added") continue;
       if (item.sport === "nba" && nbaCartContains(item, { outcome: item.sisalOutcome })) {
         item.status = "added"; item.error = ""; item.errorType = ""; item.updatedAt = Date.now(); changed = true; continue;
@@ -2519,10 +2523,14 @@
         if (hit.btn && item.marketKey === hit.key) {
           markSelectedMarket(hit.btn, item, hit.odd);
         }
+        // L'utente ha già richiesto il trasferimento premendo "Apri Sisal con le selezioni".
+        // Se il mercato è stato identificato con certezza, aggiungilo al carrello; mai inviare la giocata.
+        if (item.autoAdd === true) autoAddIndexes.push(index);
       }
       item.updatedAt = Date.now(); changed = true;
     }
     if (changed) { writePlayQueue(queue); if (typeof syncCartState === "function") syncCartState(); }
+    autoAddIndexes.forEach(index => addQueuedSelection(index));
   }
 
   function renderPlayQueue(widget) {
