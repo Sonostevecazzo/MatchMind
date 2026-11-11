@@ -607,3 +607,34 @@ button,input,select,a{-webkit-tap-highlight-color:transparent}
 @media (min-width: 701px) {
   .mobile-menu-trigger, .mobile-nav-backdrop { display: none !important; }
 }
+
+
+/* MatchMind navigation hierarchy: four primary destinations, secondary tools in Altro. */
+.mobile-drawer-title{display:grid;gap:4px;padding:0 14px 12px;margin:0 0 4px;border-bottom:1px solid #ffffff14;color:#d7f59a;font-size:11px;font-weight:950;letter-spacing:1.4px}
+.mobile-drawer-title small{color:#91a0a8;font-size:11px;font-weight:550;letter-spacing:0}
+.mobile-primary-nav{display:none}
+@media(max-width:700px){
+ body[data-page] .mobile-primary-nav{
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:1000!important;
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;
+  min-height:calc(70px + env(safe-area-inset-bottom))!important;
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;
+  background:rgba(10,16,19,.98)!important;border-top:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 -8px 26px #0007!important;backdrop-filter:blur(20px);
+ }
+ body[data-page] .mobile-primary-nav .nav-item{
+  display:grid!important;justify-items:center!important;align-content:center!important;gap:4px!important;
+  min-width:0!important;min-height:52px!important;padding:4px 2px!important;border:1px solid transparent!important;
+  border-radius:12px!important;color:#9aa8ae!important;font-size:10px!important;font-weight:800!important;
+ }
+ body[data-page] .mobile-primary-nav .nav-icon,
+ body[data-page] .mobile-primary-nav .nav-icon svg{display:grid!important;place-items:center!important;width:22px!important;height:22px!important;flex:0 0 22px!important}
+ body[data-page] .mobile-primary-nav .nav-item.active{
+  background:rgba(196,243,106,.13)!important;border-color:rgba(196,243,106,.24)!important;color:#d8f59b!important;
+ }
+ body[data-page] .mobile-primary-nav .nav-item.active svg{stroke:#d8f59b!important}
+ body[data-page] .global-slip-dock{bottom:calc(78px + env(safe-area-inset-bottom))!important}
+ body[data-page] .page-wrap{padding-bottom:calc(165px + env(safe-area-inset-bottom))!important}
+ body[data-page] .mobile-nav{z-index:1002!important}
+}
+@media(min-width:701px){.mobile-primary-nav{display:none!important}}
