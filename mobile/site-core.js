@@ -538,6 +538,13 @@ function eventForecast(match,history){
   }
   function mountShell(active,title,subtitle){
     const header=$('siteHeader');if(header)header.innerHTML=nav(active);
+    const page=document.body.dataset.page||'home';
+    if(!['nba','explore','players','data','settings','team'].includes(page)&&!$('competitionTabs')){
+      const tabs=document.createElement('nav');tabs.id='competitionTabs';tabs.className='competition-tabs';tabs.setAttribute('aria-label','Seleziona competizione');
+      const selected=getSelectedCompetition(),currentPath=location.pathname.split('/').pop()||'matches.html';
+      tabs.innerHTML='<span class="competition-tabs-label">CALCIO</span>'+Object.values(COMPETITIONS).map(item=>'<a class="competition-tab '+(item.id===selected?'active':'')+'" href="./'+esc(currentPath)+'?competition='+encodeURIComponent(item.id)+'" '+(item.id===selected?'aria-current="page"':'')+'>'+esc(item.name)+'</a>').join('');
+      if(header)header.insertAdjacentElement('afterend',tabs);
+    }
     mountSlipDock();
     if(document.body.dataset.page==='match'){const back=document.createElement('button');back.className='detail-back';back.type='button';back.innerHTML='‹ <span>Torna alle partite</span>';back.addEventListener('click',()=>{if(history.length>1)history.back();else location.href='matches.html';});const main=document.querySelector('.page-wrap');if(main)main.prepend(back);}
     const titleEl=$('pageTitle');if(titleEl)titleEl.textContent=title||'MatchMind';
