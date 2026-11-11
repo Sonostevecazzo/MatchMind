@@ -1177,13 +1177,13 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .global-slip-count{display:inline-grid;place-items:center;min-width:27px;height:27px;padding:0 7px;border-radius:20px;background:#c4f36a;color:#17210a;font-size:12px;font-weight:900;}
 }
 
-.competition-tabs{position:sticky;top:60px;z-index:28;display:flex;align-items:center;gap:7px;min-height:48px;padding:7px max(16px,calc((100vw - 1120px)/2));overflow-x:auto;overscroll-behavior-x:contain;background:rgba(12,17,23,.96);border-bottom:1px solid #25313c;backdrop-filter:blur(16px);scrollbar-width:none}
+.competition-tabs{position:relative;top:auto;z-index:1;display:flex;align-items:center;gap:7px;min-height:48px;padding:7px max(16px,calc((100vw - 1120px)/2));overflow-x:auto;overscroll-behavior-x:contain;background:rgba(12,17,23,.96);border-bottom:1px solid #25313c;backdrop-filter:blur(16px);scrollbar-width:none}
 .competition-tabs::-webkit-scrollbar{display:none}
 .competition-tabs-label{flex:0 0 auto;margin-right:4px;color:#7f8d9a;font-size:9px;font-weight:900;letter-spacing:1.2px}
 .competition-tab{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-height:33px;padding:5px 13px;border:1px solid #2d3b47;border-radius:999px;background:#151f29;color:#b6c2cc;font-size:12px;font-weight:800;white-space:nowrap}
 .competition-tab.active{border-color:rgba(196,243,106,.55);background:rgba(196,243,106,.13);color:#d8f59b;box-shadow:inset 0 0 0 1px rgba(196,243,106,.08)}
 @media(max-width:700px){
- .competition-tabs{top:54px;min-height:46px;gap:6px;padding:6px 10px;}
+  .competition-tabs{top:auto;min-height:46px;gap:6px;padding:6px 10px;backdrop-filter:none;}
  .competition-tabs-label{font-size:8px;margin-right:1px}
  .competition-tab{min-height:34px;padding:5px 11px;font-size:11px}
 }
