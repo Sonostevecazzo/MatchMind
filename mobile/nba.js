@@ -56,12 +56,10 @@
   function renderSlip(){
     const box=$("nbaSlip"),rows=picks();
     if(!box)return;
+    if(document.body.dataset.page!=="nba"){box.hidden=true;return;}
+    box.hidden=false;
     const calc=window.MMNbaBuilder.calculate(rows,nbaStake);
     const list=rows.length?rows.map((x,i)=>'<div class="nba-slip-row"><span><b>'+esc(x.away)+' @ '+esc(x.home)+'</b><small>NBA · Vince: '+esc(x.team)+' · '+esc(when(x.start))+' · stima '+pct(x.probability)+'</small><label class="nba-odds-field">Quota verificata <input type="number" min="1.01" max="1000" step="0.01" placeholder="es. 1.90" value="'+(Number.isFinite(Number(x.odds))&&Number(x.odds)>1?esc(x.odds):'')+'" data-nba-odds="'+esc(x.id||x.eventId)+'"></label></span><button type="button" class="ghost" data-remove="'+i+'" aria-label="Rimuovi selezione">Rimuovi</button></div>').join(""):'<div class="empty-state">Nessuna selezione NBA. Scegli Vittoria casa o Vittoria trasferta nel calendario.</div>';
-    if(document.body.dataset.page!=="nba"){
-      box.innerHTML='<div class="section-head"><div><div class="eyebrow">SELEZIONI NBA</div><h2>NBA nella schedina condivisa · '+rows.length+'</h2><p>Le selezioni NBA vengono sommate alle partite di calcio nell’anteprima Schedina. Puntata, riepilogo e conferma si gestiscono nello stesso costruttore.</p></div></div>'+list;
-      return;
-    }
     box.innerHTML='<div class="section-head"><div><div class="eyebrow">NBA BET BUILDER</div><h2>Costruttore schedina NBA · '+rows.length+' eventi</h2><p>Selezioni multiple sul mercato vincente. Le probabilità provengono dal modello Elo; le quote vanno inserite da una fonte verificata.</p></div></div>'+list+
     '<div class="nba-builder-financials"><label>Puntata (€)<input id="nbaStake" type="number" min="0.5" max="100000" step="0.5" value="'+nbaStake+'"></label><div><small>Probabilità combinata stimata</small><b>'+(calc.probability===null?"—":pct(calc.probability))+'</b></div><div><small>Quota totale</small><b>'+(calc.totalOdds!==null?calc.totalOdds.toFixed(2):'Inserisci tutte le quote')+'</b></div><div><small>Incasso lordo potenziale</small><b>'+(calc.potentialWin!==null?calc.potentialWin.toFixed(2)+' €':'—')+'</b></div><div><small>EV stimato</small><b>'+(calc.expectedValue!==null?(calc.expectedValue>=0?'+':'')+(calc.expectedValue*100).toFixed(1)+'%':'—')+'</b></div></div>'+
     '<p class="nba-note">Il prodotto delle probabilità assume indipendenza tra partite. Non include mercati handicap o Over/Under: il modello attuale non dispone ancora di probabilità calibrate per questi mercati.</p>'+
