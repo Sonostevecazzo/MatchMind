@@ -75,35 +75,35 @@ test("Sisal transfer only highlights matching markets for manual selection", () 
 });
 
 test("shared navigation exposes football and live routes, with NBA as an in-page sport switch", () => {
-  assert.match(core, /\\['matches\\.html','matches','Calcio'\\]/);
-  assert.match(core, /\\['live\\.html','live','Live'\\]/);
-  assert.match(core, /\\['bets\\.html','bets','Schedina'\\]/);
-  assert.doesNotMatch(core, /\\['nba\\.html','nba','NBA'\\]/);
+  assert.ok(core.includes("['matches.html','matches','Calcio']"));
+  assert.ok(core.includes("['live.html','live','Live']"));
+  assert.ok(core.includes("['bets.html','bets','Schedina']"));
+  assert.equal(core.includes("['nba.html','nba','NBA']"), false);
   const sportSwitch = readFileSync(resolve(ROOT, "sports-switch.js"), "utf8");
-  assert.match(sportSwitch, /data-sport="football"/);
-  assert.match(sportSwitch, /data-sport="nba"/);
-  assert.match(sportSwitch, /matchmind-sport-v1/);
-  assert.match(sportSwitch, /nbaIntegratedView/);
-  assert.match(core, /global-slip-dock/);
-  assert.match(core, /mobile-primary-nav/);
-  assert.match(core, /mobile-drawer-title/);
-  assert.match(core, /competitionSelect/);
-  assert.match(core, /Apri schedina NBA/);
-  assert.match(core, /data-slip-confirm/);
-  assert.match(core, /_globalIndex:index/);
-  assert.match(core, /Schedina mista/);
+  assert.ok(sportSwitch.includes('data-sport="football"'));
+  assert.ok(sportSwitch.includes('data-sport="nba"'));
+  assert.ok(sportSwitch.includes("matchmind-sport-v1"));
+  assert.ok(sportSwitch.includes("nbaIntegratedView"));
+  assert.ok(core.includes("global-slip-dock"));
+  assert.ok(core.includes("mobile-primary-nav"));
+  assert.ok(core.includes("mobile-drawer-title"));
+  assert.ok(core.includes("competitionSelect"));
+  assert.ok(core.includes("Apri schedina NBA"));
+  assert.ok(core.includes("data-slip-confirm"));
+  assert.ok(core.includes("_globalIndex:index"));
+  assert.ok(core.includes("Schedina mista"));
 });
 
 test("mixed slip combines active football selections and shared NBA selections for Sisal", () => {
-  assert.match(bets, /const footballRows=picks\\.map/);
-  assert.match(bets, /const nbaRows=readPicks\\(\\)\\.filter\\(p=>p&&p\\.sport===\"nba\"/);
-  assert.match(bets, /return footballRows\\.concat\\(nbaRows\\)/);
-  assert.match(bets, /const allSelections=selectedRows\\(\\)\\.map/);
+  assert.ok(bets.includes("const footballRows=picks.map"));
+  assert.ok(bets.includes('const nbaRows=readPicks().filter(p=>p&&p.sport==="nba"'));
+  assert.ok(bets.includes("return footballRows.concat(nbaRows)"));
+  assert.ok(bets.includes("const allSelections=selectedRows().map"));
   assert.ok(bridge.includes('const competition = sport === "nba" ? "nba" : String(match.competition'));
   assert.ok(bridge.includes("sport, probability: validProbability"));
-  assert.match(bets, /row\\.sport===\"nba\"\\?\"NBA · \":\"Calcio · \"/);
-  assert.match(bets, /key\\.startsWith\\(\"nba\\|\"\\)/);
-  assert.match(script, /competition: String\\(x\\.competition/);
+  assert.ok(bets.includes('row.sport==="nba"?"NBA · ":"Calcio · "'));
+  assert.ok(bets.includes('key.startsWith("nba|")'));
+  assert.ok(script.includes("competition: String(x.competition"));
 });
 
 test("shared bottom drawer removes the original stored item, not its filtered display index", () => {
