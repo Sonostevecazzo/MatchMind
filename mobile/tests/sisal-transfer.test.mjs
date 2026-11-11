@@ -7,10 +7,13 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = readFileSync(resolve(ROOT, "scripts/sisal-matchmind.user.js"), "utf8");
 const nba = readFileSync(resolve(ROOT, "nba.js"), "utf8");
+const core = readFileSync(resolve(ROOT, "site-core.js"), "utf8");
+const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
+const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("Sisal userscript compiles and reports the current version and installer URL", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.10\.0$/m);
+  assert.match(script, /^\/\/ @version\s+2\.11\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/);
 });
@@ -64,4 +67,20 @@ test("quote clicks require an explicit user action and never submit a bet", () =
   assert.ok(autoStart >= 0 && autoEnd > autoStart);
   assert.doesNotMatch(script.slice(autoStart, autoEnd), /\.click\s*\(/);
   assert.doesNotMatch(script, /placeBet|submitBet|confirmBet/i);
+});
+
+test("persistent betslip navigation exposes football, live, NBA, slip and more", () => {
+  assert.match(core, /\['matches\.html','matches','Calcio'\]/);
+  assert.match(core, /\['live\.html','live','Live'\]/);
+  assert.match(core, /\['nba\.html','nba','NBA'\]/);
+  assert.match(core, /\['bets\.html','bets','Schedina'\]/);
+  assert.match(core, /global-slip-dock/);
+  assert.match(core, /Apri schedina calcio/);
+  assert.match(core, /Apri schedina NBA/);
+});
+
+test("football transfer reads every stored competition rather than the active filter only", () => {
+  assert.match(bets, /const allFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!=="nba"\)/);
+  assert.match(bridge, /competition, eventId, sport: "football"/);
+  assert.match(script, /competition: String\(x\.competition/);
 });
