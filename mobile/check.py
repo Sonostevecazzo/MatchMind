@@ -153,7 +153,7 @@ assert "combo-goals" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "combo-btts" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert 'id="saveManualSlip"' in (ROOT/"bets.html").read_text(encoding="utf-8")
 assert "saveCurrentSlip" in (ROOT/"bets.js").read_text(encoding="utf-8")
-assert "Conferma schedina" in (ROOT/"site-core.js").read_text(encoding="utf-8")
+assert "Invia a Sisal · calcio" in (ROOT/"site-core.js").read_text(encoding="utf-8") and "Apri schedina NBA" in (ROOT/"site-core.js").read_text(encoding="utf-8")
 
 assert "builderStrategyPills" in (ROOT/"bets.html").read_text(encoding="utf-8")
 assert "generateMotivation" in (ROOT/"bets.js").read_text(encoding="utf-8")
