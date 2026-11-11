@@ -2,7 +2,7 @@
 (function(){
   "use strict";
   const $=id=>document.getElementById(id),KEY="matchmind-manual-selections-v1",LEGACY="matchmind-nba-picks-v1",PAGE=20;
-  const state={view:"upcoming",query:"",date:"",shown:PAGE,data:null,loading:false};
+  const state={view:"upcoming",query:"",date:"",shown:PAGE,data:null,loading:false,proposal:[]};
   const ARCHIVE_KEY="matchmind-slip-archive-v2",STAKE_KEY="matchmind-slip-default-stake";
   let nbaStake=10;try{const saved=Number(JSON.parse(localStorage.getItem(STAKE_KEY)||"10"));if(Number.isFinite(saved)&&saved>=0.5&&saved<=100000)nbaStake=saved;}catch{}
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -106,6 +106,52 @@
     $("nbaList").innerHTML=rows.length?rows.slice(0,state.shown).map(card).join(""):'<div class="empty-state">Nessuna partita trovata con questi filtri.</div>';
     $("nbaMore").hidden=rows.length<=state.shown;
   }
+  function renderNbaProposal(result){
+    const box=$("nbaAutoProposal");if(!box)return;
+    if(!result?.available||!result.selections?.length){
+      box.innerHTML='<div class="empty-state">Nessuna proposta NBA con i criteri scelti. Riduci la probabilità minima o amplia il periodo.</div>';
+      return;
+    }
+    const joint=result.probability;
+    const list=result.selections.map((pick,index)=>
+      '<article class="nba-proposal-row">'+
+        '<div><small>EVENTO '+(index+1)+' · '+esc(when(pick.start))+'</small><b>'+esc(pick.away)+' @ '+esc(pick.home)+'</b>'+
+        '<span>'+esc(pick.side==="home"?"Vince casa":"Vince trasferta")+' · '+esc(pick.team)+'</span></div>'+
+        '<div class="nba-proposal-prob"><b>'+pct(pick.probability)+'</b><small>'+(pick.reliable?"Campione adeguato":"Campione ridotto")+'</small></div>'+
+      '</article>'
+    ).join("");
+    box.innerHTML='<div class="nba-proposal-summary"><div><small>EVENTI SELEZIONATI</small><b>'+result.selections.length+'</b></div><div><small>PROBABILITÀ COMBINATA</small><b>'+pct(joint)+'</b></div><div><small>SOGLIA SINGOLA</small><b>'+pct(result.threshold)+'</b></div></div>'+
+      list+
+      '<p class="nba-note">'+esc(result.warning)+' La probabilità combinata moltiplica le probabilità marginali e assume indipendenza tra eventi.</p>'+
+      '<button type="button" class="primary" id="addNbaProposalToSlip" style="width:100%">Aggiungi '+result.selections.length+' eventi alla schedina</button>';
+  }
+  function buildNbaProposal(){
+    if(!state.data){$("nbaAutoProposal").innerHTML='<div class="empty-state">Calendario NBA non ancora disponibile.</div>';return;}
+    const periodValue=$("nbaAutoPeriod")?.value||"7";
+    const result=window.MMNbaBuilder.buildProposal(state.data.games,{
+      minProbability:Number($("nbaAutoMinProbability")?.value||0.55),
+      maxSelections:Number($("nbaAutoMaxSelections")?.value||3),
+      periodDays:periodValue==="all"?"all":Number(periodValue),
+      query:state.query,date:state.date,now:Date.now()
+    });
+    state.proposal=result.available?result.selections:[];
+    renderNbaProposal(result);
+  }
+  function addNbaProposalToSlip(){
+    if(!state.proposal.length)return;
+    const existing=readAll();
+    const proposedIds=new Set(state.proposal.map(x=>String(x.id)));
+    const retained=existing.filter(x=>x&&!(x.sport==="nba"&&proposedIds.has(String(x.id||x.eventId))));
+    const rows=state.proposal.map(x=>({
+      sport:"nba",competition:"nba",id:String(x.id),eventId:String(x.id),
+      home:x.home,away:x.away,homeAbbr:x.homeAbbr,awayAbbr:x.awayAbbr,
+      start:x.start,date:x.date,side:x.side,team:x.team,marketKey:x.marketKey,
+      probability:x.probability,prob:x.probability,odds:null
+    }));
+    writeAll(retained.concat(rows));render();
+    $("globalStatus").textContent="Proposta NBA aggiunta alla schedina condivisa. Inserisci soltanto quote verificate prima del calcolo dell’EV.";
+    $("nbaAutoProposal").scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
   async function load(force=false){
     if(state.loading)return;state.loading=true;
     $("nbaSummary").textContent="Caricamento calendario e risultati ESPN…";
@@ -147,6 +193,8 @@
     });
     $("nbaMore").addEventListener("click",()=>{state.shown+=PAGE;render();});
     $("nbaRefresh").addEventListener("click",()=>load(true));
+    $("buildNbaProposal")?.addEventListener("click",buildNbaProposal);
+    $("nbaAutoProposal")?.addEventListener("click",event=>{if(event.target.closest("#addNbaProposalToSlip"))addNbaProposalToSlip();});
     window.addEventListener("matchmind:picks-updated",()=>{renderSlip();render();});
     window.addEventListener("storage",event=>{if(!event.key||event.key===KEY)renderSlip();});
     load();
