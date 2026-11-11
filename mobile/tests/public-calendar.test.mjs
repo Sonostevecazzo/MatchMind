@@ -36,6 +36,7 @@ test("public calendar merges club competitions and keyless ESPN Nations League f
   assert.equal(serieResult.hy, 2);
   assert.ok(body.matches.some(x => x.home === "Roma" && x.hg === null));
   assert.ok(body.matches.some(x => x.competition === "nations-league" && x.home === "Italy" && x.away === "France" && x.hg === 2));
+  assert.equal(body.matches.find(x => x.competition === "nations-league" && x.home === "Italy").time, "20:45");
   assert.ok(body.history.some(x => x.competition === "nations-league" && x.hg === 2));
   assert.ok(body.history.some(x => x.source === "openfootball · archivio storico" && x.hg === 2));
   assert.equal(JSON.stringify(body).includes("API_FOOTBALL_KEY"), false);
