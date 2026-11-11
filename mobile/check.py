@@ -20,7 +20,7 @@ for name in required:
  if name!="index.html": assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "sisal-bridge.js" in html and "bets.js" in html
-  assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
+  assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html and 'data-bets-tab="nba"' in html and 'id="betsTabNba"' in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
   assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
@@ -78,7 +78,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v103-20261111-forecast-quality" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v104-20261111-navigation-nba-builder" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -119,7 +119,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v103-20261111-forecast-quality" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v104-20261111-navigation-nba-builder" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
