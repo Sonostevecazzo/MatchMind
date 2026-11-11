@@ -506,3 +506,104 @@ body[data-page="bets"] .metric > small {
 /* Animation & App fluidity */
 @keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 button,input,select,a{-webkit-tap-highlight-color:transparent}
+
+
+/* Mobile navigation drawer: replaces the fixed bottom navigation bar. */
+@media (max-width: 700px) {
+  body[data-page] .mobile-menu-trigger {
+    display: inline-flex !important;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    margin-right: 5px;
+    padding: 0;
+    border: 1px solid #ffffff20;
+    border-radius: 11px;
+    background: #111a21;
+    color: #e8f0f3;
+  }
+  body[data-page] .mobile-menu-trigger span {
+    display: block;
+    width: 17px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+  }
+  body[data-page] .mobile-nav {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 1002 !important;
+    display: flex !important;
+    width: min(300px, 84vw) !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    padding: calc(82px + env(safe-area-inset-top)) 14px 22px !important;
+    overflow-y: auto !important;
+    background: #101820 !important;
+    border: 0 !important;
+    border-right: 1px solid #ffffff1c !important;
+    border-radius: 0 20px 20px 0 !important;
+    box-shadow: 18px 0 48px #0009 !important;
+    transform: translateX(-110%) !important;
+    transition: transform .22s ease !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  body[data-page] .mobile-nav.is-open {
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  body[data-page] .mobile-nav .nav-item {
+    display: flex !important;
+    min-height: 54px !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 14px !important;
+    padding: 0 15px !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    color: #c2cdd3 !important;
+    font-size: 14px !important;
+    font-weight: 750 !important;
+    text-align: left !important;
+  }
+  body[data-page] .mobile-nav .nav-item.active {
+    background: rgba(196,243,106,.13) !important;
+    border-color: rgba(196,243,106,.25) !important;
+    color: #d8f59b !important;
+  }
+  body[data-page] .mobile-nav .nav-icon,
+  body[data-page] .mobile-nav .nav-icon svg {
+    width: 23px !important;
+    height: 23px !important;
+    flex: 0 0 23px !important;
+  }
+  body[data-page] .mobile-nav-backdrop:not([hidden]) {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1001 !important;
+    display: block !important;
+    background: rgba(0,0,0,.62) !important;
+    backdrop-filter: blur(3px);
+  }
+  body[data-page] .mobile-nav-backdrop[hidden] { display: none !important; }
+  body[data-page].mobile-menu-open { overflow: hidden !important; }
+  body[data-page] .global-slip-dock {
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+  body[data-page] .page-wrap {
+    padding-bottom: calc(105px + env(safe-area-inset-bottom)) !important;
+  }
+}
+@media (min-width: 701px) {
+  .mobile-menu-trigger, .mobile-nav-backdrop { display: none !important; }
+}
