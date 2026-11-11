@@ -478,47 +478,42 @@ function eventForecast(match,history){
     const dock=document.createElement('section');
     dock.id='globalSlipDock';dock.className='global-slip-dock';dock.hidden=true;
     dock.setAttribute('aria-label','Schedina corrente');
-    dock.innerHTML='<div class="global-slip-head"><button type="button" class="global-slip-toggle" data-slip-toggle aria-expanded="false"><span class="global-slip-title-wrap"><b data-slip-title>La tua schedina</b><small data-slip-subtitle>Le selezioni raccolte</small></span><span class="global-slip-hint" data-slip-hint>Apri</span></button><span class="global-slip-count" data-slip-count>0</span></div><div class="global-slip-body" data-slip-body hidden></div>';
+    dock.innerHTML='<div class="global-slip-head"><button type="button" class="global-slip-toggle" data-slip-toggle aria-expanded="false"><span><b data-slip-title>Schedina</b><small data-slip-subtitle>Selezioni salvate</small></span><span class="global-slip-hint" data-slip-hint>Apri</span></button><a class="global-slip-open" data-slip-confirm href="./bets.html#saveManualSlip">Conferma</a></div><div class="global-slip-body" data-slip-body hidden></div>';
     document.body.appendChild(dock);
     const key='matchmind-manual-selections-v1';
     const read=()=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return[];}};
     const marketLabel=value=>{
-      const labels={home:'1',draw:'X',away:'2',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol','nbaMoneyline:home':'Vincente casa','nbaMoneyline:away':'Vincente trasferta'};
-      if(labels[value])return labels[value];
-      const match=String(value||'').match(/^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35|bttsYes|bttsNo)$/);
-      return match?marketLabel(match[1])+' + '+marketLabel(match[2]):String(value||'Mercato');
+      const labels={home:'1',draw:'X',away:'2',dc1X:'1X',dcX2:'X2',dc12:'12',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol','nbaMoneyline:home':'NBA · Vince casa','nbaMoneyline:away':'NBA · Vince trasferta'};
+      return labels[value]||String(value||'Mercato');
     };
-    const competitionLabel=value=>{
-      if(value==='nba')return 'NBA';
-      const labels={'serie-a':'Serie A','champions-league':'Champions League','europa-league':'Europa League','conference-league':'Conference League'};
-      return labels[value]||String(value||'Calcio').replace(/-/g,' ');
-    };
-    const identity=item=>[item.sport||'football',item.competition||'serie-a',item.date||item.start||'',norm(item.home),norm(item.away),item.marketKey||''].join('|');
     const render=()=>{
-      const all=read(),rows=all.map((item,index)=>({...item,_index:index}));
-      dock.hidden=rows.length===0;
-      if(!rows.length)return;
-      const football=rows.filter(x=>x.sport!=='nba'),basket=rows.filter(x=>x.sport==='nba');
-      const groups=[...new Set(football.map(x=>x.competition||'serie-a'))];
+      const all=read(),rows=all.map((item,index)=>({...item,_globalIndex:index}));
+      dock.hidden=!rows.length;
+      if(!rows.length){dock.classList.remove('is-expanded');return;}
+      const nba=rows.filter(x=>x.sport==='nba').length,football=rows.length-nba;
       dock.querySelector('[data-slip-title]').textContent='Schedina · '+rows.length+' '+(rows.length===1?'selezione':'selezioni');
-      dock.querySelector('[data-slip-subtitle]').textContent=[
-        football.length?football.length+' calcio':'',
-        basket.length?basket.length+' NBA':''
-      ].filter(Boolean).join(' · ')+' · '+groups.map(competitionLabel).join(', ');
-      dock.querySelector('[data-slip-count]').textContent=String(rows.length);
+      dock.querySelector('[data-slip-subtitle]').textContent=nba&&football?'Calcio e NBA · '+nba+' NBA':nba?'NBA · '+nba+' eventi':(new Set(rows.map(x=>x.competition||'serie-a')).size>1?'Più competizioni':'Calcio');
       const body=dock.querySelector('[data-slip-body]'),expanded=!body.hidden;
-      const list=rows.map(item=>'<div class="global-slip-row"><span><b>'+esc(item.home)+' – '+esc(item.away)+'</b><small>'+esc(competitionLabel(item.sport==='nba'?'nba':item.competition||'serie-a'))+' · '+esc(marketLabel(item.marketKey))+' · '+esc(item.date||'Data da definire')+'</small></span><button type="button" class="global-slip-remove" data-slip-remove="'+item._index+'" aria-label="Rimuovi '+esc(item.home)+' – '+esc(item.away)+'">×</button></div>').join('');
-      const actions=(football.length?'<a class="button-like primary" href="./bets.html#sendSelectionsToSisal">Invia a Sisal · calcio · '+football.length+'</a>':'')+(basket.length?'<a class="button-like secondary" href="./nba.html#nbaSlip">Apri schedina NBA · '+basket.length+'</a>':'');
-      body.innerHTML='<div class="global-slip-list">'+list+'</div><div class="global-slip-actions"><button type="button" class="secondary" data-slip-clear>Svuota</button>'+actions+'</div><small class="global-slip-note">La schedina raccoglie le selezioni di tutte le competizioni. Quote e conferma restano da verificare sul bookmaker.</small>';
+      body.innerHTML='<div class="global-slip-list">'+rows.map(item=>'<div class="global-slip-row"><span><b>'+esc(item.home)+' – '+esc(item.away)+'</b><small>'+esc(item.sport==='nba'?'NBA':(competitionInfo(item.competition).name||'Calcio'))+' · '+esc(marketLabel(item.marketKey))+' · '+esc(item.date||'Data da definire')+'</small></span><button type="button" class="global-slip-remove" data-slip-remove="'+item._globalIndex+'" aria-label="Rimuovi '+esc(item.home)+' – '+esc(item.away)+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-.8 13H6.8L6 7m4 3v6m4-6v6"/></svg></button></div>').join('')+'</div><div class="global-slip-actions"><button type="button" class="secondary" data-slip-clear>Svuota</button><a class="button-like primary" data-slip-confirm-body href="./bets.html#saveManualSlip">Apri schedina</a></div><small class="global-slip-note">Il trasferimento apre Sisal: controlla sempre evento, mercato e quota prima di confermare la giocata.</small>';
       body.hidden=!expanded;
-      dock.querySelector('[data-slip-toggle]').setAttribute('aria-expanded',String(expanded));
+      const toggle=dock.querySelector('[data-slip-toggle]');
+      toggle.setAttribute('aria-expanded',String(expanded));
+      dock.classList.toggle('is-expanded',expanded);
       dock.querySelector('[data-slip-hint]').textContent=expanded?'Chiudi':'Apri';
+      const onlyNba=nba===rows.length;
+      const href=onlyNba?'./nba.html#nbaSlip':'./bets.html#saveManualSlip';
+      dock.querySelectorAll('[data-slip-confirm]').forEach(link=>{link.href=href;link.textContent=onlyNba?'Apri schedina NBA':'Conferma';});
+      if(nba&&football){
+        dock.querySelector('[data-slip-subtitle]').textContent='Schedina mista · gestisci calcio e NBA separatamente';
+        dock.querySelector('[data-slip-confirm-body]').textContent='Apri schedina calcio';
+      }
     };
     dock.addEventListener('click',event=>{
       if(event.target.closest('[data-slip-toggle]')){
         const body=dock.querySelector('[data-slip-body]');body.hidden=!body.hidden;
         dock.querySelector('[data-slip-toggle]').setAttribute('aria-expanded',String(!body.hidden));
-        dock.querySelector('[data-slip-hint]').textContent=body.hidden?'Apri':'Chiudi';return;
+        dock.querySelector('[data-slip-hint]').textContent=body.hidden?'Apri':'Chiudi';
+        dock.classList.toggle('is-expanded',!body.hidden);return;
       }
       const remove=event.target.closest('[data-slip-remove]');
       if(remove){
