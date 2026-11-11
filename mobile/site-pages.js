@@ -101,6 +101,8 @@
    $('homeDot').classList.toggle('ok',d.source!=='cache');
    const homeTarget=$('homeNextMatches');
    if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,5).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';
+   window.addEventListener('matchmind:ai-updated',()=>{if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,5).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';},{once:true});
+   window.addEventListener('matchmind:odds-updated',()=>{if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,5).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';},{once:true});
    const favs=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]')}catch{return []}})();
    $('homeFavorites').innerHTML=favs.length?favs.map(n=>'<a class="team-tile" href="'+MM().teamUrl(n)+'">'+MM().badge(n)+'<b>'+esc(n)+'</b></a>').join(''):'<div class="empty-state" style="grid-column:1/-1">Non hai ancora salvato squadre. Apri Esplora e tocca la stella accanto a un club.</div>';
  }
@@ -134,6 +136,8 @@
     updateMatchSlipActions();
     $('moreMatches').hidden=activeMatches.length<=shownLimit;
    };
+   window.addEventListener('matchmind:ai-updated',render);
+   window.addEventListener('matchmind:odds-updated',render);
    ['matchSearch','matchDate','matchTeam','matchRound','matchSeason'].forEach(id=>$(id).addEventListener(id==='matchSearch'?'input':'change',()=>{shownLimit=12;render()}));
    $('clearMatchFilters').addEventListener('click',()=>{$('matchSearch').value='';$('matchDate').value='';teamSelect.value='';round.value='';$('matchSeason').value='current';strategyFilter='all';$('strategyFilters')?.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('active',i===0));shownLimit=45;render()});
     $('strategyFilters')?.querySelectorAll('[data-strategy]').forEach(b=>b.addEventListener('click',()=>{strategyFilter=b.dataset.strategy;$('strategyFilters').querySelectorAll('button').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});shownLimit=45;render();}));
@@ -264,6 +268,8 @@
   (done?'<div class="notice warning">Replay storico: questa stima viene ricostruita dai dati precedenti alla partita. Non esiste una previsione pre-partita congelata e registrata all’epoca.</div>':'<section class="section provider-section"><div class="section-head"><div><div class="eyebrow">CENTRO LIVE</div><h2>Segui la partita</h2><p>Risultato, eventi e statistiche live, se il provider restituisce dati per questo incontro.</p></div></div><a class="shortcut" href="live.html"><span class="shortcut-icon">◉</span><span><b>Apri MatchMind Live</b><small>Campo 2D, statistiche ed eventi</small></span></a><div class="notice">Il campo 2D è una simulazione tattica illustrativa. Non mostra il tracking reale dei calciatori.</div></section>')+
   '<section class="section"><div class="section-head"><div><div class="eyebrow">COPERTURA DATI</div><h2>Fonti e limiti</h2></div></div><div class="panel panel-pad"><div class="notice">Calendario e storico provengono da dataset pubblici. Formazioni ufficiali, indisponibili e statistiche giocatore non sono mostrate quando manca una fonte verificabile.</div><a class="text-link" href="data.html">Consulta le fonti e la copertura ↗</a></div></section>'+
   '<div style="margin-top:12px"><a class="text-link" href="analysis-lab.html">Apri Analisi del modello ↗</a></div>';
+  window.addEventListener('matchmind:ai-updated',()=>initMatch(d),{once:true});
+  window.addEventListener('matchmind:odds-updated',()=>initMatch(d),{once:true});
  }
  async function initSettings(){
   const status=$('globalStatus');
@@ -324,7 +330,9 @@ function backtestHTML(r,e){
  const next=()=>{const x=selected[i];try{const f=MM().forecast(x.m,d.history),v=window.MatchMindBets.marketProbability(f,x.p.marketKey);rows.push({m:x.m,label:names[x.p.marketKey]||x.p.marketKey,v,f})}catch(_){rows.push({m:x.m,label:names[x.p.marketKey]||x.p.marketKey,v:null,f:null})}
  i++;if(i<selected.length){target.innerHTML='<div class="loading-state">Analisi partita '+i+' di '+selected.length+'…</div>';setTimeout(next,0);return}
  const ok=rows.filter(x=>Number.isFinite(x.v)),total=ok.length===rows.length?ok.reduce((n,x)=>n*x.v,1):null;
- target.innerHTML='<div class="analysis-selected-summary"><div><span>Partite</span><b>'+rows.length+'</b></div><div><span>Probabilità combinata</span><b>'+(total===null?'—':fmt(total*100,1)+'%')+'</b></div></div>'+rows.map(x=>'<article class="panel panel-pad"><b>'+esc(x.m.home)+' – '+esc(x.m.away)+'</b><div class="data-row"><span>'+esc(x.label)+'</span><strong>'+(Number.isFinite(x.v)?fmt(x.v*100,1)+'%':'—')+'</strong></div><small>'+esc(MM().shortDate(x.m))+' · '+(x.f&&x.f.sampleEnough?'Campione sufficiente':'Campione limitato')+'</small></article>').join('')+'<p class="notice">La probabilità combinata deriva dalle singole selezioni e assume indipendenza tra partite.</p><a class="text-link" href="bets.html">Modifica selezioni ↗</a>'};
+ target.innerHTML='<div class="analysis-selected-summary"><div><span>Partite</span><b>'+rows.length+'</b></div><div><span>Probabilità combinata</span><b>'+(total===null?'—':fmt(total*100,1)+'%')+'</b></div></div>'+rows.map(x=>'<article class="panel panel-pad"><b>'+esc(x.m.home)+' – '+esc(x.m.away)+'</b><div class="data-row"><span>'+esc(x.label)+'</span><strong>'+(Number.isFinite(x.v)?fmt(x.v*100,1)+'%':'—')+'</strong></div><small>'+esc(MM().shortDate(x.m))+' · '+(x.f&&x.f.sampleEnough?'Campione sufficiente':'Campione limitato')+'</small></article>').join('')+'<p class="notice">La probabilità combinata deriva dalle singole selezioni e assume indipendenza tra partite.</p><a class="text-link" href="bets.html">Modifica selezioni ↗</a>';
+ window.addEventListener('matchmind:ai-updated',()=>initMind(d),{once:true});
+};
  setTimeout(next,0);
  }
  document.addEventListener('DOMContentLoaded',async()=>{
@@ -332,6 +340,13 @@ function backtestHTML(r,e){
   try{const d=MM().forCompetition(await MM().loadData());const retrieved=d.updatedAt?new Date(d.updatedAt).toLocaleString('it-IT'):'orario non disponibile';setStatus(d.source==='cache'?'Offline · dati salvati localmente.':'Fonti: '+(d.source||'fonti pubbliche')+' · scaricati '+retrieved,d.source==='cache'?'':'ok');
    const mindKicker=$('analysisCompetitionKicker');if(mindKicker)mindKicker.textContent='MATCHMIND · '+MM().competitionInfo(d.competition).name.toUpperCase()+' ANALYST';
    if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')setStatus('Statistiche individuali non integrate: non mostro dati giocatore privi di una fonte verificabile.');else if(page==='data')initData();else if(page==='settings')initSettings();else if(page==='mind')initMind(d);
+   if(page!=='data'&&page!=='settings'){
+    MM().loadOdds().then(()=>window.dispatchEvent(new Event('matchmind:odds-updated'))).catch(()=>{});
+    if(window.MatchMindAI&&d.history.length>=30){
+     const train=()=>MM().trainAvailableModels(d.history,d.competition).then(model=>{if(model)window.dispatchEvent(new Event('matchmind:ai-updated'));}).catch(()=>{});
+     if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(train,{timeout:12000});else setTimeout(train,1800);
+    }
+   }
   }catch(e){setStatus('Dati non disponibili: '+e.message,'err');if(page==='settings')initSettings();else if(page==='data')initData();else{const targets={home:'homeNextMatches',matches:'matchList',explore:'teamDirectory',league:'standingsBody',team:'teamContent',match:'matchDetail',mind:'mindFixtures'};const id=targets[page];if(id&&$(id))$(id).innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}}
  });
 })();
