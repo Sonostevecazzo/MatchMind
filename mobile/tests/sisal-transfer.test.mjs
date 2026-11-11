@@ -80,7 +80,7 @@ test("persistent betslip navigation exposes football, live, NBA, slip and more",
   assert.match(core, /\['nba\.html','nba','NBA'\]/);
   assert.match(core, /\['bets\.html','bets','Schedina'\]/);
   assert.match(core, /global-slip-dock/);
-  assert.match(core, /competitionTabs/);
+  assert.match(core, /mobile-primary-nav/);\n  assert.match(core, /mobile-drawer-title/);\n  assert.match(core, /competitionSelect/);
   assert.match(core, /Apri schedina NBA/);
   assert.match(core, /data-slip-confirm/);
   assert.match(core, /_globalIndex:index/);
