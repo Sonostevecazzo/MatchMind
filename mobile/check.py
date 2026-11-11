@@ -66,7 +66,8 @@ assert 'global-slip-chevron' not in core
 assert 'appearance:none!important' in (ROOT/"site.css").read_text(encoding="utf-8")
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
-assert core.index("['live.html','live','Live']") < core.index("['matches.html','matches','Partite']")
+assert core.index("['matches.html','matches','Calcio']") < core.index("['live.html','live','Live']")
+assert "competitionTabs" in core and "competition-tab" in core
 assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "page==='mind'?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
