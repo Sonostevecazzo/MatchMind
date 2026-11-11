@@ -77,13 +77,20 @@
     }catch(error){if(status)status.textContent=error.message;}
   }
   function openSisal(){
-    const rows=picks(),items=rows.map(x=>({sport:"nba",eventId:String(x.id||x.eventId),home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start,date:x.date,marketKey:x.marketKey,label:"Vincente incontro (supplementari inclusi): "+x.team,probability:Number.isFinite(Number(x.probability))&&Number(x.probability)>0&&Number(x.probability)<1?Number(x.probability):null}));
-    const base="https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba";
-    const url=items.length?base+"#mmplay="+encodeURIComponent(JSON.stringify({sentAt:Date.now(),items})):base;
-    let win=null;try{win=window.open(url,"_blank");if(win)win.opener=null;}catch{}
-    if(!win)window.location.href=url;
-    $("globalStatus").textContent=items.length?"Aperta la pagina NBA di Sisal. Controlla e aggiungi manualmente le selezioni.":"Apro il palinsesto NBA di Sisal.";
+    const rows=picks();
+    const bridge=window.MatchMindSisalBridge;
+    const result=bridge?bridge.createUrl(rows):null;
+    if(!result||!result.url){
+      $("globalStatus").textContent=!bridge?"Ponte Sisal non caricato: aggiorna la pagina.":"Nessuna selezione NBA trasferibile. Verifica partita e mercato.";
+      return;
+    }
+    let win=null;
+    try{win=window.open(result.url,"_blank");if(win)win.opener=null;}catch{}
+    if(!win)window.location.href=result.url;
+    const skipped=result.skipped? " · "+result.skipped+" selezioni escluse perché incomplete o non supportate":"";
+    $("globalStatus").textContent="Trasferite "+result.payload.items.length+" selezioni NBA alla coda MatchMind su Sisal. Aggiungile e verifica manualmente ogni quota."+skipped;
   }
+
   function render(){
     renderSlip();if(!state.data)return;
     if(state.view==="ranking"){renderRanking();return;}
