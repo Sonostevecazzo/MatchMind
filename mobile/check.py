@@ -105,7 +105,7 @@ assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").r
 assert "function backtest(rows)" in core
 assert "window.MatchMindAI.train" in core
 assert "trainAvailableModels(data.history)" not in core, "AI calibration must not run on the mobile UI thread"
-assert "AbortSignal.timeout(25000)" in core
+assert "AbortSignal.timeout(45000)" in core
 assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
