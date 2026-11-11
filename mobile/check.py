@@ -73,7 +73,9 @@ assert 'appearance:none!important' in (ROOT/"site.css").read_text(encoding="utf-
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert core.index("['matches.html','matches','Calcio']") < core.index("['live.html','live','Live']")
-assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core\nassert "mobile-drawer-title" in core\nassert "mobile-primary-nav" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
+assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core
+assert "mobile-drawer-title" in core
+assert "mobile-primary-nav" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "page==='mind'?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
