@@ -6,6 +6,8 @@
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
   const SISAL_URL = "https://www.sisal.it/scommesse";
+  const NBA_SISAL_URL = "https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba";
+  const NBA_MARKETS = new Set(["nbaMoneyline:home", "nbaMoneyline:away"]);
   const SUPPORTED_MARKETS = new Set([
     "home", "draw", "away", "dc1X", "dcX2", "dc12",
     "over15", "under15", "over25", "under25", "over35", "under35",
@@ -24,18 +26,28 @@
     const items = [];
     source.forEach(row => {
       const match = row && row.match ? row.match : row;
+      const sport = row && row.sport === "nba" ? "nba" : "football";
       const marketKey = String(row && row.marketKey || "");
       const home = String(match && match.home || "").trim();
       const away = String(match && match.away || "").trim();
-      if (!home || !away || !SUPPORTED_MARKETS.has(marketKey)) return;
+      const supported = sport === "nba" ? NBA_MARKETS.has(marketKey) : SUPPORTED_MARKETS.has(marketKey);
+      if (!home || !away || !supported) return;
       const rawDate = String(match.date || row.date || "").trim();
       const date = validDate(rawDate);
       const label = String(row.marketLabel || row.label || marketKey).trim() || marketKey;
       const probability = Number(row && row.probability);
       const validProbability = Number.isFinite(probability) && probability > 0 && probability < 1 ? probability : null;
-      const competition = String(match.competition || row.competition || "serie-a");
+      const competition = sport === "nba" ? "nba" : String(match.competition || row.competition || "serie-a");
       const eventId = String(match.id || row.eventId || row.id || "");
-      items.push({ home, away, marketKey, label, date, competition, eventId, sport: "football", probability: validProbability });
+      const item = { home, away, marketKey, label, date, competition, eventId, sport, probability: validProbability };
+      if (sport === "nba") {
+        item.start = String(match.start || row.start || "");
+        item.homeAbbr = String(match.homeAbbr || row.homeAbbr || "");
+        item.awayAbbr = String(match.awayAbbr || row.awayAbbr || "");
+        item.side = marketKey.endsWith(":home") ? "home" : "away";
+        item.team = String(row.team || (item.side === "home" ? home : away));
+      }
+      items.push(item);
     });
     const timestamp = Number(sentAt);
     const payload = {
@@ -49,7 +61,10 @@
     const result = prepare(rows, options && options.sentAt);
     if (!result.payload.items.length) return { ...result, url: null };
     const encoded = encodeURIComponent(JSON.stringify(result.payload));
-    return { ...result, url: SISAL_URL + "#mmplay=" + encoded };
+    const hasFootball = result.payload.items.some(item => item.sport !== "nba");
+    const hasNba = result.payload.items.some(item => item.sport === "nba");
+    const base = hasNba && !hasFootball ? NBA_SISAL_URL : SISAL_URL;
+    return { ...result, url: base + "#mmplay=" + encoded };
   }
 
   return { prepare, createUrl };
