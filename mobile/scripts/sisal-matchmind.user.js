@@ -2518,7 +2518,7 @@
         item.status = "error"; item.errorType = "notfound"; item.error = "Quota sospesa o non disponibile su Sisal.";
       } else {
         item.status = "manual"; item.errorType = "";
-        item.error = "Mercato individuato e contrassegnato. Premi «Aggiungi al biglietto» e verifica la quota.";
+        item.error = "Mercato individuato: inserimento automatico nel biglietto in corso. La conferma finale resta manuale.";
         item.sisalOdds = hit.odd; item.sisalOutcome = hit.outcome || null;
         if (hit.btn && item.marketKey === hit.key) {
           markSelectedMarket(hit.btn, item, hit.odd);
