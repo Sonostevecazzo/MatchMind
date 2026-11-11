@@ -59,4 +59,7 @@
     if(button)setSport(button.dataset.sport);
   });
   setSport(initial);
+  // site-core mounts the competition picker on DOMContentLoaded; reapply the
+  // selected sport after that shell step so NBA mode also hides the picker.
+  document.addEventListener("DOMContentLoaded",()=>setSport(initial),{once:true});
 })();
