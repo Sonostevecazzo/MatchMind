@@ -43,7 +43,10 @@ core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
 competition_calendar=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
 assert "./api/competition-calendar" in core and "open-matchday" in calendar
-assert all(key in core for key in ["serie-b","premier-league","la-liga","bundesliga","ligue-1","conference-league","coppa-italia","nations-league"])\nassert all(key in competition_calendar for key in ["ita.1","ita.2","eng.1","esp.1","ger.1","fra.1","uefa.champions","uefa.europa","uefa.europa.conf","ita.coppa_italia","uefa.nations"])\nassert "multi-competition-public" in competition_calendar\nassert "europa-league" in core and "UEFA_1_europa-league" in calendar
+assert all(key in core for key in ["serie-b","premier-league","la-liga","bundesliga","ligue-1","conference-league","coppa-italia","nations-league"])
+assert all(key in competition_calendar for key in ["ita.1","ita.2","eng.1","esp.1","ger.1","fra.1","uefa.champions","uefa.europa","uefa.europa.conf","ita.coppa_italia","uefa.nations"])
+assert "multi-competition-public" in competition_calendar
+assert "europa-league" in core and "UEFA_1_europa-league" in calendar
 assert '"europa-league": 3' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert '"europa-league": "uefa.europa"' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert '"nations-league": "uefa.nations"' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
