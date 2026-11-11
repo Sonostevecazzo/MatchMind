@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.10.0
+// @version      2.11.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -23,7 +23,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.10.0";
+  const MM_SCRIPT_VERSION = "2.11.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2317,6 +2317,7 @@
       odds: Number(x.odds) > 1 ? Number(x.odds) : null,
       probability: Number.isFinite(Number(x.probability)) && Number(x.probability) > 0 && Number(x.probability) < 1 ? Number(x.probability) : null,
       date: x.date || "",
+      competition: String(x.competition || (x.sport === "nba" ? "nba" : "serie-a")),
       sport: x.sport === "nba" ? "nba" : "football",
       eventId: String(x.eventId || ""),
       start: x.start || "",
@@ -2326,7 +2327,7 @@
       sentAt: Number(incoming && incoming.sentAt) || Date.now()
     }));
     if (!items.length) return false;
-    const key = q => q.sport + "|" + canonicalTeam(q.home) + "|" + canonicalTeam(q.away) + "|" + q.marketKey + "|" + (q.start || q.date || "");
+    const key = q => q.sport + "|" + (q.competition || "") + "|" + canonicalTeam(q.home) + "|" + canonicalTeam(q.away) + "|" + q.marketKey + "|" + (q.start || q.date || "");
     const previous = readPlayQueue();
     const next = incoming && incoming.retry
       ? previous.map(q => q.status === "added" ? q : (items.find(i => key(i) === key(q)) || q))
@@ -2549,7 +2550,7 @@
           '<button type="button" data-mm-add-queue="' + i + '" style="border:1px solid #36536a;background:#123047;color:#e0f2fe;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:800;white-space:nowrap;">' +
             (q.status === "manual" ? "Aggiungi al biglietto" : q.status === "error" ? "Riprova" : "Trova quota") + '</button>';
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #1e293b;">' +
-          '<span style="min-width:0;font-size:11px;">' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + '<br><b>' + escapeHtml(q.label) + '</b>' +
+          '<span style="min-width:0;font-size:11px;">' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + '<br><small>' + escapeHtml(q.competition || (q.sport === "nba" ? "NBA" : "Calcio")) + '</small><br><b>' + escapeHtml(q.label) + '</b>' +
           (Number.isFinite(Number(q.probability)) && Number(q.probability) > 0 && Number(q.probability) < 1 ? ' · ' + Math.round(Number(q.probability) * 100) + '%' : '') +
           (q.sisalOdds ? ' · @' + Number(q.sisalOdds).toFixed(2) : '') + '</span>' +
           '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">' +
