@@ -549,7 +549,6 @@ function eventForecast(match,history){
     if(document.body.dataset.page==='match'){const back=document.createElement('button');back.className='detail-back';back.type='button';back.innerHTML='‹ <span>Torna alle partite</span>';back.addEventListener('click',()=>{if(history.length>1)history.back();else location.href='matches.html';});const main=document.querySelector('.page-wrap');if(main)main.prepend(back);}
     const titleEl=$('pageTitle');if(titleEl)titleEl.textContent=title||'MatchMind';
     const subEl=$('pageSubtitle');if(subEl)subEl.textContent=subtitle||'';
-    const page=document.body.dataset.page||'home';
     const intro=document.querySelector('.page-intro');
     const homeCopy=page==='home'?document.querySelector('.home-hero-copy'):null;
     const pickerHost=intro||homeCopy;
