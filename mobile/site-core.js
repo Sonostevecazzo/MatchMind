@@ -487,7 +487,9 @@ function eventForecast(match,history){
       bets:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h5m-5 4h8"/></svg>',
       league:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z"/><path d="m4.5 8 7.5 4 7.5-4M12 12v8.5M8.5 5l3.5 4 3.5-4"/></svg>',
       more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
-      mind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><path d="M16 6h3v3"/></svg>',
+      teams:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20v-1.8A5.5 5.5 0 0 1 9 12.7a5.5 5.5 0 0 1 5.5 5.5V20M16 5.2a3.1 3.1 0 0 1 0 5.9M17 13a4.7 4.7 0 0 1 3.5 4.5V20"/></svg>',
+      players:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M4.5 21v-2.2a7.5 7.5 0 0 1 15 0V21M8.5 14.5l3.5 2 3.5-2"/></svg>',
+      mind:' viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><path d="M16 6h3v3"/></svg>',
       data:'<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
       settings:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.5.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.6-1.4-2.4 1.4-1.1a7 7 0 0 1 0-1.8l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.5-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.5.9l1.7-.6 1.4 2.4-1.4 1.1a7 7 0 0 1 0 1.8Z"/></svg>',
       refresh:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.7-2L20 12M4 12l2.7 5a7 7 0 0 0 11.7-2"/></svg>',
@@ -501,9 +503,9 @@ function eventForecast(match,history){
     ];
     const secondary=[
       ['league.html','league','Classifiche','league'],
-      ['explore.html','more','Squadre','explore'],
+      ['explore.html','teams','Squadre','explore'],
       ['analysis-lab.html','mind','Analisi','analysis-lab'],
-      ['players.html','more','Giocatori','players'],
+      ['players.html','players','Giocatori','players'],
       ['data.html','data','Dati','data'],
       ['settings.html','settings','Impostazioni','settings']
     ];
@@ -512,7 +514,7 @@ function eventForecast(match,history){
     const item=([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>';
     const drawer=secondary.map(([href,key,label,group])=>'<a class="nav-item '+(activeSecondary===group?'active':'')+'" href="'+href+'" '+(activeSecondary===group?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>').join('');
     const desktop=primary.map(([href,key,label])=>'<a class="'+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'>'+label+'</a>').join('');
-    return '<header class="site-header"><button class="mobile-menu-trigger" id="mobileMenuToggle" type="button" aria-label="Apri Altro" aria-controls="mobileNav" aria-expanded="false"><span></span><span></span><span></span></button><a class="brand-link" href="matches.html" aria-label="MatchMind Partite"><img class="brand-mark" src="./icon.svg" alt="" width="56" height="56"><span class="brand-copy"><b>MatchMind</b><small>SPORTS INTELLIGENCE</small></span></a><nav class="desktop-nav" aria-label="Navigazione principale">'+desktop+'</nav><div class="header-actions"><a class="header-more-link '+(active==='more'?'active':'')+'" href="explore.html">Altro</a><button class="refresh-data install-action" id="installApp" type="button" aria-label="Installa MatchMind" title="Installa MatchMind" hidden><span class="action-symbol">'+icons.install+'</span><span>Installa</span></button><button class="refresh-data refresh-action" id="globalRefresh" type="button" aria-label="Aggiorna dati" title="Aggiorna dati"><span class="action-symbol">'+icons.refresh+'</span><span>Aggiorna</span></button></div></header><nav class="mobile-primary-nav" aria-label="Navigazione principale mobile">'+primary.map(item).join('')+'</nav><div class="mobile-nav-backdrop" id="mobileNavBackdrop" hidden></div><nav class="mobile-nav" id="mobileNav" aria-label="Altro"><div class="mobile-drawer-title">ALTRO <small>Strumenti e approfondimenti</small></div>'+drawer+'</nav>';
+    return '<header class="site-header"><button class="mobile-menu-trigger" id="mobileMenuToggle" type="button" aria-label="Apri Altro" aria-controls="mobileNav" aria-expanded="false"><span></span><span></span><span></span></button><a class="brand-link" href="matches.html" aria-label="MatchMind Partite"><img class="brand-mark" src="./icon.svg" alt="" width="56" height="56"><span class="brand-copy"><b>MatchMind</b><small>SPORTS INTELLIGENCE</small></span></a><nav class="desktop-nav" aria-label="Navigazione principale">'+desktop+'</nav><div class="header-actions"><a class="header-more-link '+(active==='more'?'active':'')+'" href="explore.html">Altro</a><button class="refresh-data install-action" id="installApp" type="button" aria-label="Installa MatchMind" title="Installa MatchMind" hidden><span class="action-symbol">'+icons.install+'</span><span>Installa</span></button><button class="refresh-data refresh-action" id="globalRefresh" type="button" aria-label="Aggiorna dati" title="Aggiorna dati"><span class="action-symbol">'+icons.refresh+'</span><span>Aggiorna</span></button></div></header><nav class="mobile-primary-nav" aria-label="Navigazione principale mobile">'+primary.map(item).join('')+'</nav><div class="mobile-nav-backdrop" id="mobileNavBackdrop" hidden></div><nav class="mobile-nav" id="mobileNav" aria-label="Altro"><div class="mobile-drawer-title"><b>ESPLORA</b><small>Classifiche, squadre, analisi e dati</small></div>'+drawer+'</nav>';
   }
 
   function mountSlipDock(){
