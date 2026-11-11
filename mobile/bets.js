@@ -175,7 +175,7 @@ function selectedRows(){
   const side=p.side==="home"?"home":"away";
   const marketKey=p.marketKey||("nbaMoneyline:"+side);
   const label=side==="home"?"Vince casa":"Vince trasferta";
-  const match={id,home:String(p.home),away:String(p.away),date:String(p.date||String(p.start||"").slice(0,10)),time:"",competition:"nba",sport:"nba"};
+  const match={id,home:String(p.home),away:String(p.away),date:String(p.date||String(p.start||"").slice(0,10)),time:"",start:String(p.start||""),competition:"nba",sport:"nba"};
   const odds=Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
   return{match,marketKey,marketLabel:label,probability,forecast:null,odds,bookmaker:p.bookmaker||null,sport:"nba",removeKey:"nba|"+id,nbaPickId:id};
  }).filter(Boolean);
@@ -443,6 +443,10 @@ function saveCurrentSlip(){
    home:x.match.home,
    away:x.match.away,
    date:x.match.date,
+   eventId:x.sport==="nba"?(x.match.id||x.nbaPickId||null):null,
+   start:x.sport==="nba"?(x.match.start||null):null,
+   side:x.sport==="nba"?(String(x.marketKey).endsWith(":home")?"home":"away"):null,
+   team:x.sport==="nba"?(String(x.marketKey).endsWith(":home")?x.match.home:x.match.away):null,
    market:x.marketLabel,
    marketKey:x.marketKey,
    probability:x.probability,
