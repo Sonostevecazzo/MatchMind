@@ -26,7 +26,6 @@ for name in required:
   assert "nba.js" in html and "nba-builder.js" in html and "nba.css" in html and "sports-switch.js" in html
   assert 'id="sportSwitchMount"' in html and 'id="nbaIntegratedView"' in html
   assert 'id="footballBuilderView"' in html
-  assert 'id="footballBuilderView"' in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
   assert "sports-switch.js" in html and "nba.js" in html and 'id="sportSwitchMount"' in html
