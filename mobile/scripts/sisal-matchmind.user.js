@@ -2492,7 +2492,7 @@
     let changed = false;
     for (let index = 0; index < queue.length; index++) {
       const item = queue[index];
-      if (item.status === "added") continue;
+      if (item.status === "added" || item.status === "error") continue;
       if (item.sport === "nba" && nbaCartContains(item, { outcome: item.sisalOutcome })) {
         item.status = "added"; item.error = ""; item.errorType = ""; item.updatedAt = Date.now(); changed = true; continue;
       }
