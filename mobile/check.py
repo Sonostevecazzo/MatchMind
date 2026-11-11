@@ -48,6 +48,7 @@ assert "athleticNews" in (ROOT/"explore.html").read_text(encoding="utf-8")
 assert "api/athletic-news" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
+bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 nba_html=(ROOT/"nba.html").read_text(encoding="utf-8")
 nba_core=(ROOT/"nba.js").read_text(encoding="utf-8")
 nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
