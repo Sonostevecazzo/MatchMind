@@ -90,7 +90,7 @@ assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert all(token in sports_switch for token in ['data-sport="football"','data-sport="nba"',"matchmind-sport-v1","nbaIntegratedView"])
 assert "['nba.html','nba','NBA']" not in core
-assert "matchmind-pwa-v112-20261114-slip-dedupe" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v113-20261115-nba-controls" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
@@ -203,3 +203,13 @@ assert "proposal-variant-tabs" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "strategy-match-badge" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "strategyBanner" in (ROOT/"matches.html").read_text(encoding="utf-8")
 assert "fixtures-odds.json" in (ROOT/"sw.js").read_text(encoding="utf-8")
+
+site_core=(ROOT/"site-core.js").read_text(encoding="utf-8")
+assert "matchmind-multipage-cache-v8-competition-coverage" in site_core
+assert "cacheCoversSelected" in site_core
+assert 'selectedCompetition==="nations-league"' in site_core
+sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
+assert 'type="range" min="50" max="90" step="1"' in sports_switch
+assert 'id="nbaAutoMaxSelections" type="number" min="1" max="30"' in sports_switch
+nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
+assert "Math.min(30,Math.floor(Number(options.maxSelections)))" in nba_builder
