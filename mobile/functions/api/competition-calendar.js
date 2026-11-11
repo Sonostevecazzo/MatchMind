@@ -63,10 +63,10 @@ function parseCsv(input) {
     if(quoted){if(ch==='"'&&input[i+1]==='"'){field+='"';i++;}else if(ch==='"')quoted=false;else field+=ch;}
     else if(ch==='"')quoted=true;
     else if(ch===","){row.push(field);field="";}
-    else if(ch==="\\n"){row.push(field.replace(/\\r$/,""));if(row.some(value=>value!==""))rows.push(row);row=[];field="";}
+    else if(ch==="\n"){row.push(field.replace(/\r$/,""));if(row.some(value=>value!==""))rows.push(row);row=[];field="";}
     else field+=ch;
   }
-  if(field!==""||row.length){row.push(field.replace(/\\r$/,""));rows.push(row);}
+  if(field!==""||row.length){row.push(field.replace(/\r$/,""));rows.push(row);}
   if(!rows.length)return[];
   const headers=rows.shift();
   return rows.map(values=>Object.fromEntries(headers.map((key,index)=>[key,values[index]??""])));
@@ -91,7 +91,6 @@ async function fetchOpenMatchday(id,competition){
 }
 async function fetchCompetition(id, competition, startDate, endDate) {
   if (competition.feed) return fetchOpenMatchday(id, competition);
-  if(competition.feed) return fetchOpenMatchday(id,competition);
   const windows = [];
   for (let cursor = new Date(startDate); cursor <= endDate; ) {
     const from = new Date(cursor), to = new Date(cursor);
