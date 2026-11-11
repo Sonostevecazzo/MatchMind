@@ -20,7 +20,14 @@
   function readCache(){try{const own=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');return own&&Array.isArray(own.matches)?own:null;}catch{return null;}}
   let dataPromise=null,data={matches:[],history:[],season:seasonStart(),source:'openfootball',updatedAt:null};
   const forecastMemo=new Map();
-  function trainAvailableModels(history){if(!window.MatchMindAI)return;for(const competition of Object.keys(COMPETITIONS))window.MatchMindAI.train(history,(match,prior)=>forecast(match,prior,{__skipAI:true}),competition);}
+  function trainAvailableModels(history,competition=getSelectedCompetition()){
+    if(!window.MatchMindAI||typeof window.MatchMindAI.trainAsync!=="function")return Promise.resolve(null);
+    const key=COMPETITIONS[competition]?competition:"serie-a";
+    return window.MatchMindAI.trainAsync(history,(match,prior)=>forecast(match,prior,{__skipAI:true}),key).then(model=>{
+      forecastMemo.clear();
+      return model;
+    });
+  }
   const DATA_ROOT='https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/';
   const HISTORY_ROOT='https://raw.githubusercontent.com/openfootball/football.json/master/';
   const LEAGUE_SOURCES=[
@@ -561,62 +568,70 @@ function eventForecast(match,history){
   }
   document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=(page==='home'||page==='matches'||page==='match'||page==='league')?'matches':page==='live'?'live':page==='nba'?'nba':page==='mind'?'mind':page==='bets'?'bets':(['explore','players','data','settings','team'].includes(page)?'more':'home');mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});/* Forced periodic reload disabled: it interrupted scrolling and mobile navigation. Use the explicit refresh control. */});
   
-  let oddsList = [];
+  const ODDS_MAX_AGE_MS=24*60*60*1000;
+  let oddsList = [],oddsMeta={source:null,updatedAt:null,fresh:false,count:0,ageHours:null};
   let oddsPromise = null;
-  async function loadOdds() {
-    if (oddsPromise) return oddsPromise;
+  async function loadOdds(force=false) {
+    if (oddsPromise&&!force) return oddsPromise;
     oddsPromise = (async () => {
       try {
         const resp = await fetch('./fixtures-odds.json', { cache: 'no-cache', signal: AbortSignal.timeout(6000) });
         if (resp.ok) {
           const json = await resp.json();
-          oddsList = Array.isArray(json && json.matches) ? json.matches : [];
+          const timestamp=Date.parse(json&&json.updatedAt||"");
+          const ageMs=Date.now()-timestamp;
+          const fresh=Number.isFinite(timestamp)&&ageMs>=-5*60*1000&&ageMs<=ODDS_MAX_AGE_MS;
+          const rows=Array.isArray(json&&json.matches)?json.matches:[];
+          oddsMeta={source:json.source||null,updatedAt:Number.isFinite(timestamp)?new Date(timestamp).toISOString():null,fresh,count:rows.length,ageHours:Number.isFinite(ageMs)?Math.round(ageMs/360000)/10:null,reason:fresh?null:!Number.isFinite(timestamp)?"timestamp_missing":ageMs<0?"timestamp_in_future":"feed_expired"};
+          oddsList=fresh?rows:[];
           return oddsList;
         }
       } catch (_) {}
-      oddsList = [];
+      oddsList=[];
+      oddsMeta={source:null,updatedAt:null,fresh:false,count:0,ageHours:null,reason:"feed_unavailable"};
       return oddsList;
     })().catch(() => []);
     return oddsPromise;
   }
   let injuriesPromise = null, injuriesData = null;
   const INJURIES_CACHE_KEY = 'mm_injuries_data_v1';
+  const INJURIES_MAX_AGE_MS=36*60*60*1000;
+  function injuryDataFreshness(payload=injuriesData){
+    const timestamp=Date.parse(payload&&payload.last_updated||"");
+    const ageMs=Date.now()-timestamp;
+    const fresh=Boolean(payload&&payload.teams&&Number.isFinite(timestamp)&&ageMs>=-5*60*1000&&ageMs<=INJURIES_MAX_AGE_MS);
+    return {fresh,updatedAt:Number.isFinite(timestamp)?new Date(timestamp).toISOString():null,ageHours:Number.isFinite(ageMs)?Math.round(ageMs/360000)/10:null,reason:fresh?null:!Number.isFinite(timestamp)?"timestamp_missing":ageMs<0?"timestamp_in_future":"feed_expired"};
+  }
   async function loadInjuries(force = false) {
-    if (!force && injuriesData) return injuriesData;
+    if (!force && injuriesData && injuryDataFreshness().fresh) return injuriesData;
     if (!force && injuriesPromise) return injuriesPromise;
+    if(force)injuriesData=null;
     injuriesPromise = (async () => {
+      let cached=null;
       if (!force) {
         try {
-          const cached = localStorage.getItem(INJURIES_CACHE_KEY);
-          if (cached) {
-            injuriesData = JSON.parse(cached);
-            return injuriesData;
-          }
+          const raw=localStorage.getItem(INJURIES_CACHE_KEY);
+          if(raw){const parsed=JSON.parse(raw);if(injuryDataFreshness(parsed).fresh)cached=parsed;else localStorage.removeItem(INJURIES_CACHE_KEY);}
         } catch (_) {}
       }
+      if(cached)injuriesData=cached;
       try {
         const resp = await fetch('./injuries-data.json', { cache: 'no-cache', signal: AbortSignal.timeout(6000) });
         if (resp.ok) {
           const json = await resp.json();
-          if (json && json.teams) {
+          if (json && json.teams && injuryDataFreshness(json).fresh) {
             injuriesData = json;
             try { localStorage.setItem(INJURIES_CACHE_KEY, JSON.stringify(json)); } catch (_) {}
             return injuriesData;
           }
         }
       } catch (_) {}
-      if (!injuriesData) {
-        try {
-          const cached = localStorage.getItem(INJURIES_CACHE_KEY);
-          if (cached) injuriesData = JSON.parse(cached);
-        } catch (_) {}
-      }
-      return injuriesData;
-    })().catch(() => injuriesData);
+      return injuriesData&&injuryDataFreshness(injuriesData).fresh?injuriesData:null;
+    })().catch(() => injuriesData&&injuryDataFreshness(injuriesData).fresh?injuriesData:null);
     return injuriesPromise;
   }
   function findTeamInjuries(teamName) {
-    if (!teamName || !injuriesData || !injuriesData.teams) return null;
+    if (!teamName || !injuriesData || !injuryDataFreshness().fresh || !injuriesData.teams) return null;
     const teams = injuriesData.teams;
     if (teams[teamName]) return teams[teamName];
     for (const key of Object.keys(teams)) {
@@ -625,6 +640,8 @@ function eventForecast(match,history){
     return null;
   }
   function getMatchInjuries(homeName, awayName) {
+    const freshness=injuryDataFreshness();
+    if(!freshness.fresh)return {home:null,away:null,hasData:false,stale:true,freshness,autoContext:null};
     const home = findTeamInjuries(homeName);
     const away = findTeamInjuries(awayName);
     const attAbsH = Math.min(3, (home && home.assenze_attacco) || 0);
@@ -632,26 +649,25 @@ function eventForecast(match,history){
     const attAbsA = Math.min(3, (away && away.assenze_attacco) || 0);
     const defAbsA = Math.min(3, (away && away.assenze_difesa) || 0);
     return {
-      home,
-      away,
-      hasData: Boolean(home || away),
-      autoContext: {
-        attackingAbsencesHome: attAbsH,
-        defensiveAbsencesHome: defAbsH,
-        attackingAbsencesAway: attAbsA,
-        defensiveAbsencesAway: defAbsA,
-        motivationHome: 0,
-        motivationAway: 0
+      home,away,hasData:Boolean(home||away),stale:false,freshness,
+      autoContext:{
+        attackingAbsencesHome:attAbsH,defensiveAbsencesHome:defAbsH,
+        attackingAbsencesAway:attAbsA,defensiveAbsencesAway:defAbsA,
+        motivationHome:0,motivationAway:0
       }
     };
   }
 
   function matchOdds(m) {
-    if (!m || !oddsList || !oddsList.length) return null;
-    return oddsList.find(o =>
-      sameTeam(o.home, m.home) && sameTeam(o.away, m.away)
-    ) ? oddsList.find(o => sameTeam(o.home, m.home) && sameTeam(o.away, m.away)).odds : null;
+    if(!m||!Array.isArray(oddsList)||!oddsList.length||!oddsMeta.fresh||!m.date||!m.home||!m.away)return null;
+    const competition=m.competition||"serie-a";
+    const matches=oddsList.filter(o=>{
+      const rowCompetition=o.competition||(o.division==="I1"?"serie-a":o.division==="I2"?"serie-b":null);
+      return rowCompetition===competition&&o.date===m.date&&sameTeam(o.home,m.home)&&sameTeam(o.away,m.away);
+    });
+    if(matches.length!==1)return null;
+    return matches[0].odds&&typeof matches[0].odds==="object"?{...matches[0].odds,source:oddsMeta.source,sourceUpdatedAt:oddsMeta.updatedAt,sourceAgeHours:oddsMeta.ageHours,fixtureDate:matches[0].date}:null;
   }
 
-  window.MM={loadOdds,matchOdds,loadInjuries,getMatchInjuries,findTeamInjuries,$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
+  window.MM={loadOdds,matchOdds,getOddsMeta:()=>({...oddsMeta}),loadInjuries,getMatchInjuries,$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
 })();
