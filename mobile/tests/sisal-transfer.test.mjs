@@ -75,8 +75,10 @@ test("persistent betslip navigation exposes football, live, NBA, slip and more",
   assert.match(core, /\['nba\.html','nba','NBA'\]/);
   assert.match(core, /\['bets\.html','bets','Schedina'\]/);
   assert.match(core, /global-slip-dock/);
+  assert.match(core, /competitionTabs/);
   assert.match(core, /Invia a Sisal · calcio/);
   assert.match(core, /Apri schedina NBA/);
+  assert.match(core, /rows=all\.map\(\(item,index\)=>\(\{\.\.\.item,_index:index\}\)\)/);
 });
 
 test("football transfer reads every stored competition rather than the active filter only", () => {
