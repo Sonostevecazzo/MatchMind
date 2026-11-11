@@ -22,9 +22,11 @@ for name in required:
   assert "bets-engine.js" in html and "sisal-bridge.js" in html and "bets.js" in html
   assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
   assert 'data-bets-tab="nba"' not in html and 'id="betsTabNba"' not in html
-  assert "nba.js" not in html and "nba-builder.js" not in html and "nba.css" not in html
+  assert "nba.js" in html and "nba-builder.js" in html and "nba.css" in html and "sports-switch.js" in html
+  assert 'id="sportSwitchMount"' in html and 'id="nbaIntegratedView"' in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
+  assert "sports-switch.js" in html and "nba.js" in html and 'id="sportSwitchMount"' in html
   assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
  elif name not in ("index.html","nba.html"): assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
@@ -32,7 +34,7 @@ scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
 with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
-for filename in ["site-core.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","sisal-bridge.js","tipsaudit.js","bets.js","live.js","nba.js","nba-builder.js","elo.js","rounds.js","sw.js"]:
+for filename in ["site-core.js","sports-switch.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","sisal-bridge.js","tipsaudit.js","bets.js","live.js","nba.js","nba-builder.js","elo.js","rounds.js","sw.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
 subprocess.run(["node","--check",str(ROOT/"scripts"/"sisal-matchmind.user.js")],check=True)
 for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"competition-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js",ROOT/"functions"/"api"/"public"/"nba.js",ROOT/"nba-engine.mjs"]:
@@ -83,6 +85,10 @@ assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
 assert core.index("['matches.html','matches','Calcio']") < core.index("['live.html','live','Live']")
 assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core
+sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
+assert all(token in sports_switch for token in ['data-sport="football"','data-sport="nba"',"matchmind-sport-v1","nbaIntegratedView"])
+assert "['nba.html','nba','NBA']" not in core
+assert "matchmind-pwa-v110-20261112-integrated-sports" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
