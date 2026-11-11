@@ -33,7 +33,9 @@
       const label = String(row.marketLabel || row.label || marketKey).trim() || marketKey;
       const probability = Number(row && row.probability);
       const validProbability = Number.isFinite(probability) && probability > 0 && probability < 1 ? probability : null;
-      items.push({ home, away, marketKey, label, date, sport: "football", probability: validProbability });
+      const competition = String(match.competition || row.competition || "serie-a");
+      const eventId = String(match.id || row.eventId || row.id || "");
+      items.push({ home, away, marketKey, label, date, competition, eventId, sport: "football", probability: validProbability });
     });
     const timestamp = Number(sentAt);
     const payload = {
