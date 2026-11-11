@@ -8,7 +8,7 @@ try{const storedStake=Number(JSON.parse(localStorage.getItem(STAKE_KEY)||"10"));
 const curr=v=>Number.isFinite(v)?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—";
 const fmtOdds=v=>Number.isFinite(v)&&v>0?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
 const fmtEv=v=>Number.isFinite(v)?(v>=0?"+":"")+(v*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
-let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false;
+let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -108,7 +108,7 @@ function renderInjuriesCard(match) {
     '</div>' +
   '</details>';
 }
-function getForecast(match){return window.MM.forecast(match,data.history,getContext(match));}
+function getForecast(match){return window.MM.forecast(match,(allData||data).history,getContext(match));}
 function marketProbability(forecast,key){return ENGINE().marketProbability(forecast,key);}
 function readPicks(){const stored=read(PICKS_KEY,[]);return Array.isArray(stored)?stored:[];}
 function writePicks(){const stored=readPicks(),competition=window.MM.getSelectedCompetition(),retained=stored.filter(p=>p&&(p.sport==="nba"||(p.competition||"serie-a")!==competition)),current=picks.map(p=>({...p,competition:p.competition||competition}));save(PICKS_KEY,retained.concat(current));window.dispatchEvent(new Event("matchmind:picks-updated"));}
@@ -153,14 +153,17 @@ function marketLabel(key){
  return item?item.label:String(key||"Mercato");
 }
 function selectedRows(){
- const footballRows=picks.map(p=>{
-  let match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));
-  if(!match)match=fixtures.find(m=>isSameMatch(m.home,m.away,p.home,p.away));
+ const storedFootball=readPicks().filter(p=>p&&p.sport!=="nba");
+ const footballRows=storedFootball.map(p=>{
+  const competition=p.competition||"serie-a";
+  const sourceMatches=allData?.matches||fixtures;
+  let match=sourceMatches.find(m=>fixtureKey(m)===fixtureKey({...p,competition}));
+  if(!match)match=sourceMatches.find(m=>(m.competition||"serie-a")===competition&&isSameMatch(m.home,m.away,p.home,p.away));
   if(!match&&p.home&&p.away){
-   match={home:p.home,away:p.away,date:p.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date()),competition:p.competition||window.MM.getSelectedCompetition()||"serie-a"};
+   match={home:p.home,away:p.away,date:p.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date()),competition};
   }
   if(!match)return null;
-  const forecast=data&&data.history?getForecast(match):null;
+  const forecast=(allData?.history||data?.history)?.length?getForecast(match):null;
   const odds=p.odds!=null&&Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
   const prob=forecast?marketProbability(forecast,p.marketKey):(Number.isFinite(Number(p.probability))?Number(p.probability):null);
   return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:prob,forecast,odds,bookmaker:p.bookmaker||null,sport:"football",removeKey:fixtureKey(match)};
@@ -1020,7 +1023,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
  try{
   await window.MM.loadOdds?.();
   await window.MM.loadInjuries?.();
-  data=window.MM.forCompetition(await window.MM.loadData());
+  allData=await window.MM.loadData();data=window.MM.forCompetition(allData);
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   picks=readPicks().filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
   contexts=read(CONTEXT_KEY,{});
