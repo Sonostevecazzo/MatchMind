@@ -1,6 +1,6 @@
 # Fetch and convert Serie A & Serie B odds from football-data.co.uk
 from __future__ import annotations
-import urllib.request, csv, io, json, datetime
+import urllib.request, csv, io, json, datetime, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent # points to mobile/
