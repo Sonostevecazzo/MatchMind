@@ -100,6 +100,33 @@ test("falls back to ESPN when API-Football returns an error", async t => {
   assert.equal(calls, 2);
 });
 
+test("uses ESPN as the keyless Nations League live source", async t => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async url => {
+    assert.match(String(url), /site\\.api\\.espn\\.com\\/apis\\/site\\/v2\\/sports\\/soccer\\/uefa\\.nations\\/scoreboard/);
+    return new Response(JSON.stringify({ events: [{
+      id: "nl-live-1", date: "2026-11-11T18:45:00Z",
+      competitions: [{ status: { period: 2, displayClock: "62:00", type: { state: "in", name: "STATUS_IN_PROGRESS", shortDetail: "62'" } },
+        competitors: [
+          { homeAway: "home", score: "1", team: { id: "10", displayName: "Italy" } },
+          { homeAway: "away", score: "0", team: { id: "20", displayName: "France" } }
+        ] }]
+    }] }), { status: 200 });
+  };
+  const response = await onRequestGet({
+    request: new Request("https://matchmind.example/api/live-match?competition=nations-league"),
+    env: {}
+  });
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.source, "ESPN");
+  assert.equal(body.competition, "nations-league");
+  assert.equal(body.matches[0].league, "UEFA Nations League");
+  assert.equal(body.matches[0].home.name, "Italy");
+  assert.equal(body.matches[0].status, "2H");
+});
+
 test("normalizes ESPN live fixture and clock", () => {
   const result = normalizeEspnFixture({
     id: "espn-123",
