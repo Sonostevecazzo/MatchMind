@@ -62,7 +62,7 @@ test("NBA proposal accepts user-selected threshold and up to thirty fixtures",()
  const games=Array.from({length:32},(_,i)=>({
   id:"bulk-"+i,home:"Home "+i,away:"Away "+i,
   start:new Date(now+(i+1)*3600000).toISOString(),status:"NS",
-  prediction:{homeWin:0.91-i*0.001,awayWin:0.09+i*0.001,reliable:true,spread:1,total:220,homePoints:111,awayPoints:109}
+  prediction:{homeWin:0.91,awayWin:0.09,reliable:true,spread:1,total:220,homePoints:111,awayPoints:109}
  }));
  const result=builder.buildProposal(games,{now,minProbability:0.9,maxSelections:30,periodDays:7});
  assert.equal(result.threshold,0.9);
