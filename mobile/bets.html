@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080c11">
 <meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
-<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261111-navigation-nba-builder">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261112-integrated-sports"><link rel="stylesheet" href="./nba.css?v=20261112-integrated-sports">
 <title>MatchMind · Scommesse</title>
-<script defer src="./bets-engine.js"></script><script defer src="./site-core.js"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js"></script>
+<script defer src="./bets-engine.js"></script><script defer src="./site-core.js"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./sports-switch.js?v=20261112-integrated-sports"></script><script defer src="./nba-builder.js?v=20261111-builder-tab"></script><script defer src="./nba.js?v=20261112-integrated-sports"></script><script defer src="./bets.js"></script>
 </head>
 <body data-page="bets" data-title="Schedine" data-subtitle="Crea, monitora e archivia le tue schedine.">
 <div id="siteHeader"></div>
@@ -16,7 +16,7 @@
   <button type="button" class="bets-tab" role="tab" aria-selected="false" id="betsTabLiveButton" aria-controls="betsTabLive" data-bets-tab="live">In corso</button>
   <button type="button" class="bets-tab" role="tab" aria-selected="false" id="betsTabArchiveButton" aria-controls="betsTabArchive" data-bets-tab="archive">Archivio</button>
  </div>
- <div id="betsTabCreate" class="bets-tab-panel" role="tabpanel">
+ <div id="betsTabCreate" class="bets-tab-panel" role="tabpanel"><div id="sportSwitchMount"></div><div id="footballBuilderView">
  <section class="section panel panel-pad" id="automaticBuilder">
   <div class="section-head"><div><div class="eyebrow">ANALISI AUTOMATICA</div><h2>Costruttore probabilistico</h2><p>Genera e confronta combinazioni orientate alle quote e ai modelli Poisson/Elo. Seleziona la strategia tra massima probabilità o massimo valore (+EV), con spiegazione analitica per ciascuna scelta.</p></div></div>
   <div class="field">
@@ -61,6 +61,7 @@
   </div>
   <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
  </section>
+ </div><div id="nbaIntegratedView" hidden></div>
  </div>
  <section id="betsTabLive" class="bets-tab-panel" role="tabpanel" hidden>
   <section class="section panel panel-pad">
