@@ -147,7 +147,14 @@
   }
 
   async function loadData(force=false){
-    if(dataPromise&&!force)return dataPromise;
+    if(dataPromise&&!force){
+      const selected=getSelectedCompetition();
+      return dataPromise.then(async loaded=>{
+        if(Array.isArray(loaded&&loaded.matches)&&loaded.matches.some(match=>match&&match.competition===selected))return loaded;
+        dataPromise=null;
+        return loadData(true);
+      });
+    }
     dataPromise=(async()=>{
       const y=seasonStart(),cached=readCache();
       const selected=getSelectedCompetition();
