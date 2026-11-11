@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v107-20261111-nations-rome-time';
+const CACHE='matchmind-pwa-v108-20261111-drawer-nations-stats';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
