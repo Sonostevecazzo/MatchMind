@@ -13,7 +13,7 @@ const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("Sisal userscript compiles and reports the current version and installer URL", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.11\.0$/m);
+  assert.match(script, /^\/\/ @version\s+2\.12\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/);
 });
@@ -55,17 +55,18 @@ test("a matching event without a confirmed market stays pending instead of being
   assert.match(script, /function findQueuedSelection\(item\)/);
 });
 
-test("quote clicks require an explicit user action and never submit a bet", () => {
+test("explicit Sisal handoff adds matched selections to the slip but never submits a bet", () => {
   const start = script.indexOf("function addQueuedSelection(index)");
   const end = script.indexOf("function markSelectedMarket", start);
   assert.ok(start >= 0 && end > start);
   const action = script.slice(start, end);
   assert.match(action, /hit\.btn\.click\(\)/);
   assert.match(action, /item\.status = "clicked"/);
+  assert.match(script, /autoAdd: true/);
   const autoStart = script.indexOf("function autoPlayQueue(calculations)");
   const autoEnd = script.indexOf("function renderPlayQueue(widget)", autoStart);
   assert.ok(autoStart >= 0 && autoEnd > autoStart);
-  assert.doesNotMatch(script.slice(autoStart, autoEnd), /\.click\s*\(/);
+  assert.match(script.slice(autoStart, autoEnd), /autoAddIndexes\.forEach\(index => addQueuedSelection\(index\)\)/);
   assert.doesNotMatch(script, /placeBet|submitBet|confirmBet/i);
 });
 
