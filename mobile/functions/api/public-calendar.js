@@ -35,6 +35,13 @@ async function fetchText(url){
 async function fetchJson(url){return JSON.parse(await fetchText(url));}
 function seasonCode(year){return String(year).slice(-2)+String(year+1).slice(-2);}
 function seasonFolder(year){return String(year)+"-"+String(year+1).slice(-2);}
+function romeDateTime(value){
+ const date=new Date(value);
+ if(!Number.isFinite(date.getTime()))return null;
+ const parts=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).filter(part=>part.type!=="literal").map(part=>[part.type,part.value]));
+ return {date:parts.year+"-"+parts.month+"-"+parts.day,time:parts.hour+":"+parts.minute};
+}
+
 async function fetchNationsLeague(season){
  const from=String(season)+"0701",to=String(season+1)+"0630";
  const url="https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500";
@@ -44,12 +51,13 @@ async function fetchNationsLeague(season){
   const home=teams.find(team=>team?.homeAway==="home")||teams[0]||{},away=teams.find(team=>team?.homeAway==="away")||teams[1]||{};
   const homeName=home?.team?.displayName||home?.team?.name||home?.displayName||home?.name;
   const awayName=away?.team?.displayName||away?.team?.name||away?.displayName||away?.name;
-  const date=String(event?.date||competition?.date||"");
+  const rawDate=String(event?.date||competition?.date||""),localDateTime=romeDateTime(rawDate);
+  const date=localDateTime?.date||"";
   const status=competition?.status?.type||event?.status?.type||{};
   const done=Boolean(status.completed)||String(status.state||"").toLowerCase()==="post";
   const score=value=>value===null||value===undefined||value===""?null:number(value);
   if(!date||!homeName||!awayName)return null;
-  const row={id:String(event?.id||""),date:date.slice(0,10),time:date.length>=16?date.slice(11,16):"",round:null,stage:"UEFA Nations League",home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:"nations-league",source:"ESPN"};
+  const row={id:String(event?.id||""),date,time:localDateTime?.time||"",round:null,stage:"UEFA Nations League",home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:"nations-league",source:"ESPN"};
   return row;
  }).filter(Boolean);
 }
