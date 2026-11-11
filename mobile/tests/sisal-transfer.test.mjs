@@ -39,7 +39,8 @@ test("NBA selections transfer their probability and use the NBA-specific market 
   assert.match(script, /sport: x\.sport === "nba" \? "nba" : "football"/);
   assert.match(script, /function scanNbaSelections\(queue\)/);
   assert.match(script, /const isBasketballPage =/);
-  assert.match(script, /if \(hit\.btn && item\.marketKey === hit\.key\)\s*\{\s*markSelectedMarket/);
+  assert.match(script, /function findQueuedSelection\(item\) \{\s*const scanned = item\.sport === "nba" \? scanNbaSelections\(\[item\]\) : scanFootballSelections\(\[item\]\);/);
+  assert.match(script, /function addQueuedSelection\(index\) \{[\s\S]*?const hit = findQueuedSelection\(item\);[\s\S]*?markSelectedMarket\(hit\.btn, item, hit\.odd\)/);
 });
 
 test("football market resolver recognizes localized Over and Under outcome labels", () => {
