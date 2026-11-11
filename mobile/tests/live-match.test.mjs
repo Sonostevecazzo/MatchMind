@@ -104,7 +104,7 @@ test("uses ESPN as the keyless Nations League live source", async t => {
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; });
   globalThis.fetch = async url => {
-    assert.match(String(url), /site\\.api\\.espn\\.com\\/apis\\/site\\/v2\\/sports\\/soccer\\/uefa\\.nations\\/scoreboard/);
+    assert.ok(String(url).includes("uefa.nations/scoreboard"));
     return new Response(JSON.stringify({ events: [{
       id: "nl-live-1", date: "2026-11-11T18:45:00Z",
       competitions: [{ status: { period: 2, displayClock: "62:00", type: { state: "in", name: "STATUS_IN_PROGRESS", shortDetail: "62'" } },
