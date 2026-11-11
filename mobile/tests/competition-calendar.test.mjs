@@ -54,3 +54,31 @@ test("selected competition failure is reported instead of returning a false empt
   assert.equal(body.matches.length,0);
   assert.ok(body.errors.some(error=>error.includes("serie-b")));
 });
+
+
+test("a failed ESPN week does not discard fixtures from successful weeks", async t => {
+  const originalFetch=globalThis.fetch;
+  t.after(()=>{globalThis.fetch=originalFetch;});
+  let scoreboardCalls=0;
+  globalThis.fetch=async input=>{
+    const url=String(input);
+    if(url.includes("/scoreboard?")){
+      scoreboardCalls++;
+      if(scoreboardCalls===2)return new Response("temporary failure",{status:503});
+      return new Response(JSON.stringify({events:[{
+        id:"partial-"+scoreboardCalls,date:dateOffset(10),
+        competitions:[{status:{type:{state:"pre",completed:false}},competitors:[
+          {homeAway:"home",team:{displayName:"Home "+scoreboardCalls}},
+          {homeAway:"away",team:{displayName:"Away "+scoreboardCalls}}
+        ]}]
+      }]}),{status:200,headers:{"Content-Type":"application/json"}});
+    }
+    if(url.includes("/it.1.json"))return new Response(JSON.stringify({matches:[]}),{status:200});
+    return new Response("not found",{status:404});
+  };
+  const response=await onRequestGet({request:request("serie-a")});
+  const body=await response.json();
+  assert.equal(response.status,200);
+  assert.ok(scoreboardCalls>2);
+  assert.ok(body.matches.length>0);
+});
