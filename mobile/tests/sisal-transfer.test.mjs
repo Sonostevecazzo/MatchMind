@@ -75,7 +75,7 @@ test("persistent betslip navigation exposes football, live, NBA, slip and more",
   assert.match(core, /\['nba\.html','nba','NBA'\]/);
   assert.match(core, /\['bets\.html','bets','Schedina'\]/);
   assert.match(core, /global-slip-dock/);
-  assert.match(core, /Apri schedina calcio/);
+  assert.match(core, /Invia a Sisal · calcio/);
   assert.match(core, /Apri schedina NBA/);
 });
 
