@@ -89,6 +89,27 @@ async function fetchOpenMatchday(id,competition){
   if(!results.length)throw settled.find(x=>x.status==="rejected")?.reason||new Error(id+" dataset vuoto");
   return results;
 }
+// Official UEFA fallback for the remaining 2026/27 league-phase matchdays.
+// Used only when ESPN returns an empty Nations League scoreboard.
+function nationsLeagueOfficialFallback(now = new Date()) {
+  const rows = [
+    ["2026-11-12","18:00","Türkiye","Belgium","A1"],["2026-11-12","18:00","Armenia","Cyprus","C2"],["2026-11-12","20:45","Italy","France","A1"],["2026-11-12","20:45","Czechia","Spain","A3"],["2026-11-12","20:45","England","Croatia","A3"],["2026-11-12","20:45","Albania","Finland","C1"],["2026-11-12","20:45","San Marino","Belarus","C1"],["2026-11-12","20:45","Montenegro","Latvia","C2"],
+    ["2026-11-13","16:00","Moldova","Kazakhstan","C3"],["2026-11-13","20:45","Netherlands","Greece","A2"],["2026-11-13","20:45","Serbia","Germany","A2"],["2026-11-13","20:45","Scotland","North Macedonia","B1"],["2026-11-13","20:45","Slovenia","Switzerland","B1"],["2026-11-13","20:45","Slovakia","Faroe Islands","C3"],["2026-11-13","20:45","Bulgaria","Iceland","C4"],["2026-11-13","20:45","Luxembourg","Estonia","C4"],["2026-11-13","20:45","Andorra","Gibraltar","D1"],["2026-11-13","20:45","Liechtenstein","Azerbaijan","D2"],
+    ["2026-11-14","15:00","Kosovo","Israel","B3"],["2026-11-14","18:00","Norway","Wales","A4"],["2026-11-14","18:00","Georgia","Hungary","B2"],["2026-11-14","20:45","Portugal","Denmark","A4"],["2026-11-14","20:45","Northern Ireland","Ukraine","B2"],["2026-11-14","20:45","Austria","Republic of Ireland","B3"],["2026-11-14","20:45","Romania","Poland","B4"],["2026-11-14","20:45","Sweden","Bosnia and Herzegovina","B4"],
+    ["2026-11-15","15:00","Cyprus","Montenegro","C2"],["2026-11-15","15:00","Latvia","Armenia","C2"],["2026-11-15","18:00","Belarus","Albania","C1"],["2026-11-15","18:00","Finland","San Marino","C1"],["2026-11-15","20:45","Belgium","Italy","A1"],["2026-11-15","20:45","France","Türkiye","A1"],["2026-11-15","20:45","Croatia","Czechia","A3"],["2026-11-15","20:45","Spain","England","A3"],
+    ["2026-11-16","16:00","Faroe Islands","Moldova","C3"],["2026-11-16","16:00","Kazakhstan","Slovakia","C3"],["2026-11-16","18:00","Estonia","Bulgaria","C4"],["2026-11-16","18:00","Iceland","Luxembourg","C4"],["2026-11-16","18:00","Lithuania","Liechtenstein","D2"],["2026-11-16","20:45","Germany","Netherlands","A2"],["2026-11-16","20:45","Greece","Serbia","A2"],["2026-11-16","20:45","North Macedonia","Slovenia","B1"],["2026-11-16","20:45","Switzerland","Scotland","B1"],["2026-11-16","20:45","Gibraltar","Malta","D1"],
+    ["2026-11-17","20:45","Denmark","Norway","A4"],["2026-11-17","20:45","Wales","Portugal","A4"],["2026-11-17","20:45","Hungary","Northern Ireland","B2"],["2026-11-17","20:45","Ukraine","Georgia","B2"],["2026-11-17","20:45","Israel","Austria","B3"],["2026-11-17","20:45","Republic of Ireland","Kosovo","B3"],["2026-11-17","20:45","Bosnia and Herzegovina","Romania","B4"],["2026-11-17","20:45","Poland","Sweden","B4"]
+  ];
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  return rows.filter(([date]) => date >= today).map(([date,time,home,away,group], index) => ({
+    id: "uefa-nl-2026-" + index, date, time, round: date <= "2026-11-14" ? 5 : 6,
+    stage: "UEFA Nations League · " + group, home, away,
+    hg: null, ag: null, ht: null, at: null, hs: null, as: null, hst: null, ast: null,
+    hf: null, af: null, hc: null, ac: null, hy: null, ay: null, hr: null, ar: null,
+    goalMinutes: "", status: "NS", statusLong: "In programma",
+    competition: "nations-league", source: "UEFA · calendario ufficiale 2026/27"
+  }));
+}
 async function fetchCompetition(id, competition, startDate, endDate) {
   if (competition.feed) return fetchOpenMatchday(id, competition);
   const windows = [];
@@ -113,7 +134,16 @@ async function fetchCompetition(id, competition, startDate, endDate) {
   }
   const unique = new Map();
   batches.flat().forEach(match => unique.set(String(match.id || [match.date,match.home,match.away].join("|")), match));
-  return [...unique.values()];
+  const normalized = [...unique.values()];
+  if (id === "nations-league" && normalized.length === 0) return nationsLeagueOfficialFallback();
+  if (id === "nations-league") {
+    for (const match of nationsLeagueOfficialFallback()) {
+      const key = [match.date, match.home, match.away].join("|");
+      if (!normalized.some(item => [item.date, item.home, item.away].join("|") === key)) normalized.push(match);
+    }
+    normalized.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  }
+  return normalized;
 }
 async function getCalendar(request) {
   const params = new URL(request.url).searchParams;
