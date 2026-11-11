@@ -95,7 +95,8 @@ test("shared navigation exposes football and live routes, with NBA as an in-page
 });
 
 test("mixed slip combines active football selections and shared NBA selections for Sisal", () => {
-  assert.ok(bets.includes("const footballRows=picks.map"));
+  assert.ok(bets.includes('const storedFootball=readPicks().filter(p=>p&&p.sport!=="nba")'));
+  assert.ok(bets.includes("const sourceMatches=allData?.matches||fixtures"));
   assert.ok(bets.includes('const nbaRows=readPicks().filter(p=>p&&p.sport==="nba"'));
   assert.ok(bets.includes("return footballRows.concat(nbaRows)"));
   assert.ok(bets.includes("const allSelections=selectedRows().map"));
