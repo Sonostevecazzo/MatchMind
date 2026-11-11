@@ -84,7 +84,8 @@ test("persistent betslip navigation exposes football, live, NBA, slip and more",
 
 test("football transfer reads every stored competition rather than the active filter only", () => {
   assert.match(bets, /const allFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!=="nba"\)/);
-  assert.match(bridge, /const competition = sport === "nba" \? "nba" : String\(match\.competition/);\n  assert.match(bridge, /sport, probability: validProbability/);
+  assert.ok(bridge.includes('const competition = sport === "nba" ? "nba" : String(match.competition'));
+  assert.ok(bridge.includes("sport, probability: validProbability"));
   assert.match(script, /competition: String\(x\.competition/);
 });
 
