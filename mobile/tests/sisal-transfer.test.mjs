@@ -74,11 +74,16 @@ test("Sisal transfer only highlights matching markets for manual selection", () 
   assert.doesNotMatch(script, /placeBet|submitBet|confirmBet/i);
 });
 
-test("persistent betslip navigation exposes football, live, NBA, slip and more", () => {
-  assert.match(core, /\['matches\.html','matches','Calcio'\]/);
-  assert.match(core, /\['live\.html','live','Live'\]/);
-  assert.match(core, /\['nba\.html','nba','NBA'\]/);
-  assert.match(core, /\['bets\.html','bets','Schedina'\]/);
+test("shared navigation exposes football and live routes, with NBA as an in-page sport switch", () => {
+  assert.match(core, /\\['matches\\.html','matches','Calcio'\\]/);
+  assert.match(core, /\\['live\\.html','live','Live'\\]/);
+  assert.match(core, /\\['bets\\.html','bets','Schedina'\\]/);
+  assert.doesNotMatch(core, /\\['nba\\.html','nba','NBA'\\]/);
+  const sportSwitch = readFileSync(resolve(ROOT, "sports-switch.js"), "utf8");
+  assert.match(sportSwitch, /data-sport="football"/);
+  assert.match(sportSwitch, /data-sport="nba"/);
+  assert.match(sportSwitch, /matchmind-sport-v1/);
+  assert.match(sportSwitch, /nbaIntegratedView/);
   assert.match(core, /global-slip-dock/);
   assert.match(core, /mobile-primary-nav/);
   assert.match(core, /mobile-drawer-title/);
@@ -89,11 +94,16 @@ test("persistent betslip navigation exposes football, live, NBA, slip and more",
   assert.match(core, /Schedina mista/);
 });
 
-test("football transfer reads every stored competition rather than the active filter only", () => {
-  assert.match(bets, /const allFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!=="nba"\)/);
+test("mixed slip combines active football selections and shared NBA selections for Sisal", () => {
+  assert.match(bets, /const footballRows=picks\\.map/);
+  assert.match(bets, /const nbaRows=readPicks\\(\\)\\.filter\\(p=>p&&p\\.sport===\"nba\"/);
+  assert.match(bets, /return footballRows\\.concat\\(nbaRows\\)/);
+  assert.match(bets, /const allSelections=selectedRows\\(\\)\\.map/);
   assert.ok(bridge.includes('const competition = sport === "nba" ? "nba" : String(match.competition'));
   assert.ok(bridge.includes("sport, probability: validProbability"));
-  assert.match(script, /competition: String\(x\.competition/);
+  assert.match(bets, /row\\.sport===\"nba\"\\?\"NBA · \":\"Calcio · \"/);
+  assert.match(bets, /key\\.startsWith\\(\"nba\\|\"\\)/);
+  assert.match(script, /competition: String\\(x\\.competition/);
 });
 
 test("shared bottom drawer removes the original stored item, not its filtered display index", () => {
