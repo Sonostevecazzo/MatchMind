@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.12.0
+// @version      2.13.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -23,7 +23,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.12.0";
+  const MM_SCRIPT_VERSION = "2.13.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2385,17 +2385,16 @@
       canonicalTeam(c.away) === canonicalTeam(item.away)) || null;
   }
 
-  // Chiamata esclusivamente dal pulsante esplicito nella coda: seleziona una quota,
-  // ma non invia né conferma mai una scommessa.
+  // Assistenza manuale: non clicca mai quote o pulsanti Sisal.
   function addQueuedSelection(index) {
     const queue = readPlayQueue();
     const item = queue[Number(index)];
-    if (!item || item.status === "added" || item.status === "clicked") return;
+    if (!item) return;
     const hit = findQueuedSelection(item);
     if (!hit || !hit.btn) {
       item.status = "error";
       item.errorType = "notfound";
-      item.error = "Non trovo una quota compatibile nella pagina aperta. Apri l'evento e premi Riprova.";
+      item.error = "Non trovo ancora questo mercato nella pagina. Apri la partita o il mercato corretto e premi «Cerca quota».";
       item.updatedAt = Date.now();
       writePlayQueue(queue);
       renderWidget();
@@ -2404,67 +2403,24 @@
     if (hit.btn.disabled || hit.btn.getAttribute("aria-disabled") === "true") {
       item.status = "error";
       item.errorType = "notfound";
-      item.error = "Quota sospesa o non disponibile su Sisal.";
+      item.error = "Mercato individuato ma quota sospesa o non disponibile.";
       item.updatedAt = Date.now();
       writePlayQueue(queue);
       renderWidget();
       return;
     }
-    if ((item.sport === "nba" && nbaCartContains(item, hit)) ||
-        (item.sport !== "nba" && footballCartContains(item))) {
-      item.status = "added";
-      item.error = "";
-      item.errorType = "";
-      item.sisalOdds = hit.odd;
-      item.updatedAt = Date.now();
-      writePlayQueue(queue);
-      syncCartState();
-      renderWidget();
-      return;
-    }
-    try {
-      hit.btn.click();
-      item.status = "clicked";
-      item.errorType = "";
-      item.error = "Selezione cliccata. Verifica che partita, mercato ed esito siano presenti nel biglietto Sisal.";
-      item.sisalOdds = hit.odd;
-      item.sisalOutcome = hit.outcome || null;
-      item.clickedAt = Date.now();
-      item.updatedAt = Date.now();
-      writePlayQueue(queue);
-      syncCartState();
-      renderWidget();
-      setTimeout(() => {
-        const latest = readPlayQueue();
-        const currentIndex = latest.findIndex(q => q.sport === item.sport &&
-          canonicalTeam(q.home) === canonicalTeam(item.home) &&
-          canonicalTeam(q.away) === canonicalTeam(item.away) &&
-          q.marketKey === item.marketKey && (q.start || q.date || "") === (item.start || item.date || ""));
-        if (currentIndex < 0) return;
-        const current = latest[currentIndex];
-        const confirmed = current.sport === "nba" ? nbaCartContains(current, hit) : footballCartContains(current);
-        if (confirmed) {
-          current.status = "added";
-          current.error = "";
-          current.errorType = "";
-        } else {
-          current.status = "error";
-          current.errorType = "notfound";
-          current.error = "Sisal ha ricevuto il click ma la selezione non compare nel biglietto. Controlla la pagina e premi Riprova.";
-        }
-        current.updatedAt = Date.now();
-        writePlayQueue(latest);
-        syncCartState();
-        renderWidget();
-      }, 1200);
-    } catch (error) {
-      item.status = "error";
-      item.errorType = "failed";
-      item.error = "Sisal non ha accettato il click: " + String(error && error.message || error);
-      item.updatedAt = Date.now();
-      writePlayQueue(queue);
-      renderWidget();
-    }
+    item.status = "manual";
+    item.errorType = "";
+    item.error = "Quota evidenziata in verde. Selezionala manualmente su Sisal.";
+    item.sisalOdds = hit.odd;
+    item.sisalOutcome = hit.outcome || null;
+    item.updatedAt = Date.now();
+    writePlayQueue(queue);
+    markSelectedMarket(hit.btn, item, hit.odd);
+    hit.btn.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    hit.btn.classList.add("mm-highlight-pulse");
+    setTimeout(() => hit.btn?.classList?.remove("mm-highlight-pulse"), 1800);
+    renderWidget();
   }
 
   function markSelectedMarket(btn, item, odds) {
@@ -2488,7 +2444,6 @@
 
   function autoPlayQueue(calculations) {
     const queue = readPlayQueue();
-    const autoAddIndexes = [];
     let changed = false;
     for (let index = 0; index < queue.length; index++) {
       const item = queue[index];
@@ -2518,19 +2473,13 @@
         item.status = "error"; item.errorType = "notfound"; item.error = "Quota sospesa o non disponibile su Sisal.";
       } else {
         item.status = "manual"; item.errorType = "";
-        item.error = "Mercato individuato: inserimento automatico nel biglietto in corso. La conferma finale resta manuale.";
+        item.error = "Quota evidenziata in verde: selezionala manualmente su Sisal.";
         item.sisalOdds = hit.odd; item.sisalOutcome = hit.outcome || null;
-        if (hit.btn && item.marketKey === hit.key) {
-          markSelectedMarket(hit.btn, item, hit.odd);
-        }
-        // L'utente ha già richiesto il trasferimento premendo "Apri Sisal con le selezioni".
-        // Se il mercato è stato identificato con certezza, aggiungilo al carrello; mai inviare la giocata.
-        if (item.autoAdd === true) autoAddIndexes.push(index);
+        if (hit.btn && item.marketKey === hit.key) markSelectedMarket(hit.btn, item, hit.odd);
       }
       item.updatedAt = Date.now(); changed = true;
     }
     if (changed) { writePlayQueue(queue); if (typeof syncCartState === "function") syncCartState(); }
-    autoAddIndexes.forEach(index => addQueuedSelection(index));
   }
 
   function renderPlayQueue(widget) {
@@ -2542,21 +2491,21 @@
     const expanded = gmGet("mm_sisal_queue_expanded", "false") === "true";
     box.innerHTML =
       '<div style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:12px;margin-bottom:4px;">' +
-        '<span style="flex:1;min-width:0;">🎯 MatchMind: ' + done + '/' + queue.length + ' nel biglietto</span>' +
+        '<span style="flex:1;min-width:0;">🎯 MatchMind: ' + done + '/' + queue.length + ' selezionate</span>' +
         '<button type="button" id="mm-play-toggle" class="mm-icon-btn" aria-expanded="' + expanded + '">' + (expanded ? 'Nascondi' : 'Dettagli') + '</button>' +
         '<button type="button" id="mm-play-clear" class="mm-icon-btn" title="Svuota elenco">🗑</button>' +
       '</div>' +
       '<div id="mm-play-queue-items" style="display:' + (expanded ? 'block' : 'none') + ';">' +
-      '<div style="font-size:10px;color:#94a3b8;margin-bottom:5px;">Le quote si aggiungono solo dopo un tuo comando. Controlla sempre la schedina Sisal.</div>' +
+      '<div style="font-size:10px;color:#94a3b8;margin-bottom:5px;">Seleziona manualmente su Sisal le quote evidenziate in verde. MatchMind non clicca e non invia scommesse.</div>' +
       queue.map((q, i) => {
         const state = q.status === "added" ? "✓ nel biglietto" :
           q.status === "clicked" ? "click inviato · verifica" :
           q.status === "error" ? "⚠ da verificare" :
-          q.status === "manual" ? "quota individuata" : "in attesa";
-        const color = q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24";
-        const action = q.status === "added" || q.status === "clicked" ? "" :
+          q.status === "manual" ? "DA SELEZIONARE · evidenziata" : "in attesa";
+        const color = q.status === "added" || q.status === "manual" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24";
+        const action = q.status === "added" ? "" :
           '<button type="button" data-mm-add-queue="' + i + '" style="border:1px solid #36536a;background:#123047;color:#e0f2fe;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:800;white-space:nowrap;">' +
-            (q.status === "manual" ? "Aggiungi al biglietto" : q.status === "error" ? "Riprova" : "Trova quota") + '</button>';
+            (q.status === "manual" ? "Mostra quota" : q.status === "error" ? "Cerca quota" : "Cerca quota") + '</button>';
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #1e293b;">' +
           '<span style="min-width:0;font-size:11px;">' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + '<br><small>' + escapeHtml(q.competition || (q.sport === "nba" ? "NBA" : "Calcio")) + '</small><br><b>' + escapeHtml(q.label) + '</b>' +
           (Number.isFinite(Number(q.probability)) && Number(q.probability) > 0 && Number(q.probability) < 1 ? ' · ' + Math.round(Number(q.probability) * 100) + '%' : '') +
