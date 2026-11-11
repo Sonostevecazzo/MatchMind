@@ -538,11 +538,11 @@ function buildProposal(){
   const candidateKeys=overrideKey?[overrideKey]:(marketMode==='single'?[
    'home','draw','away','over15','under15','over25','under25','over35','under35','bttsYes','bttsNo'
   ]:marketMode==='combo-goals'?[
-   'home','away','over25','under25','combo:home+over25','combo:home+under25','combo:away+over25','combo:away+under25'
+   'home','away','over25','under25','combo:home:over25','combo:home:under25','combo:away:over25','combo:away:under25'
   ]:marketMode==='combo-btts'?[
-   'home','away','bttsYes','bttsNo','combo:home+bttsYes','combo:home+bttsNo','combo:away+bttsYes','combo:away+bttsNo'
+   'home','away','bttsYes','bttsNo','combo:home:bttsYes','combo:home:bttsNo','combo:away:bttsYes','combo:away:bttsNo'
   ]:[
-   'home','draw','away','over15','under15','over25','under25','bttsYes','bttsNo','combo:home+over25','combo:away+over25'
+   'home','draw','away','over15','under15','over25','under25','bttsYes','bttsNo','combo:home:over25','combo:away:over25'
   ]);
 
   candidateKeys.forEach(mKey=>{
