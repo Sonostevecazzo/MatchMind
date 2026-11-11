@@ -1,5 +1,5 @@
-// Unified public football calendar. ESPN supplies current fixtures/results for every
-// supported competition; historical Serie A data remains sourced from openfootball.
+// Unified public football calendar. Open Matchday supplies club competitions; ESPN supplies Nations League.
+// Historical Serie A data remains sourced from openfootball.
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer/";
 const HISTORY_ROOT = "https://raw.githubusercontent.com/openfootball/football.json/master/";
 const DATA_ROOT = "https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/";
@@ -90,6 +90,7 @@ async function fetchOpenMatchday(id,competition){
   return results;
 }
 async function fetchCompetition(id, competition, startDate, endDate) {
+  if (competition.feed) return fetchOpenMatchday(id, competition);
   if(competition.feed) return fetchOpenMatchday(id,competition);
   const windows = [];
   for (let cursor = new Date(startDate); cursor <= endDate; ) {
@@ -159,11 +160,11 @@ async function getCalendar(request) {
     else historyErrors.push("Archivio Serie A " + seasonFolder(year - 1 - index) + " non disponibile");
   });
   history.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-  if (!matches.length) return json({ configured: true, type: "calendar", matches: [], history: [], errors: entries.map(x => x.error).filter(Boolean), error: "Nessuna competizione ha restituito partite. Verificare il provider ESPN." }, 503);
+  if (!matches.length) return json({ configured: true, type: "calendar", matches: [], history: [], errors: entries.map(x => x.error).filter(Boolean), error: "Nessuna partita disponibile dalla fonte selezionata. Verificare il feed della competizione." }, 503);
   const counts = Object.fromEntries(entries.map(x => [x.id, x.matches.length]));
   return json({
     configured: true, type: "calendar", season: year, matches, history,
-    source: "ESPN public scoreboard + openfootball historical Serie A", sourceMode: "multi-competition-public",
+    source: "open-matchday CSV + ESPN Nations League + openfootball historical Serie A", sourceMode: "multi-competition-public",
     counts, errors: entries.filter(x => x.error).map(x => x.error).concat(historyErrors),
     updatedAt: new Date().toISOString(),
     note: "Calendari multi-competizione da ESPN; archivio storico Serie A da openfootball. Le statistiche avanzate, le quote e le formazioni non vengono inventate."
