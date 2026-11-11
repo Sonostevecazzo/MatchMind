@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v117-20261112-mobile-refresh';
+const CACHE='matchmind-pwa-v118-20261112-nav-fixed-icons';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
