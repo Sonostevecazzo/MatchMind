@@ -20,6 +20,8 @@ test("builds the exact Sisal userscript hash payload for supported selections", 
     marketKey: "home",
     label: "1",
     date: "2026-11-15",
+    competition: "serie-a",
+    eventId: "",
     sport: "football",
     probability: 0.74
   }]);
@@ -79,4 +81,17 @@ test("ignores malformed rows and invalid dates rather than creating invalid sele
   assert.equal(bridge.prepare([
     { match: { home: "Roma", away: "Lazio", date: "2026-99-90" }, marketKey: "home" }
   ], 1).payload.items[0].date, "");
+});
+
+test("preserves competition metadata for all football leagues in one Sisal handoff", () => {
+  const rows = [
+    { home: "Roma", away: "Lazio", competition: "serie-a", marketKey: "home", marketLabel: "1" },
+    { home: "Real Madrid", away: "Milan", competition: "champions-league", marketKey: "over25", marketLabel: "Over 2,5" },
+    { home: "Aston Villa", away: "Roma", competition: "europa-league", marketKey: "bttsYes", marketLabel: "Gol" },
+    { home: "Fiorentina", away: "Betis", competition: "conference-league", marketKey: "away", marketLabel: "2" }
+  ];
+  const result = bridge.prepare(rows, 10);
+  assert.equal(result.skipped, 0);
+  assert.deepEqual(result.payload.items.map(x => x.competition), ["serie-a", "champions-league", "europa-league", "conference-league"]);
+  assert.ok(result.payload.items.every(x => x.sport === "football"));
 });
