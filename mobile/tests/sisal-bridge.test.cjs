@@ -95,3 +95,31 @@ test("preserves competition metadata for all football leagues in one Sisal hando
   assert.deepEqual(result.payload.items.map(x => x.competition), ["serie-a", "champions-league", "europa-league", "conference-league"]);
   assert.ok(result.payload.items.every(x => x.sport === "football"));
 });
+
+test("transfers NBA moneyline selections with event identity to the NBA Sisal market", () => {
+  const result = bridge.createUrl([{
+    sport: "nba", id: "401810001", eventId: "401810001",
+    home: "Boston Celtics", away: "New York Knicks",
+    homeAbbr: "BOS", awayAbbr: "NYK", start: "2026-11-12T00:30:00Z",
+    date: "2026-11-12", side: "home", team: "Boston Celtics",
+    marketKey: "nbaMoneyline:home", probability: 0.68
+  }], { sentAt: 99 });
+  assert.equal(result.skipped, 0);
+  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse-matchpoint\/sport\/basket\/usa\/nba#mmplay=/);
+  assert.deepEqual(result.payload.items[0], {
+    home: "Boston Celtics", away: "New York Knicks",
+    marketKey: "nbaMoneyline:home", label: "nbaMoneyline:home",
+    date: "2026-11-12", competition: "nba", eventId: "401810001",
+    sport: "nba", probability: 0.68, start: "2026-11-12T00:30:00Z",
+    homeAbbr: "BOS", awayAbbr: "NYK", side: "home", team: "Boston Celtics"
+  });
+});
+
+test("does not misroute a mixed football and NBA handoff to a single sport-specific Sisal page", () => {
+  const result = bridge.createUrl([
+    { home: "Roma", away: "Lazio", competition: "serie-a", marketKey: "home" },
+    { sport: "nba", home: "Boston Celtics", away: "New York Knicks", marketKey: "nbaMoneyline:away" }
+  ], { sentAt: 7 });
+  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse#mmplay=/);
+  assert.equal(result.payload.items.length, 2);
+});
