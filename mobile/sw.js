@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v99-20261110-nba-recovery';
+const CACHE='matchmind-pwa-v100-20261111-sisal-navigation';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
