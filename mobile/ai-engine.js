@@ -88,6 +88,52 @@
     };
     all[key]=model;writeModels(all);return model;
   }
+  async function trainAsync(history,forecastFn,competition){
+    const key=competition||"serie-a",today=new Date().toISOString().slice(0,10),all=readModels(),previous=all[key];
+    const scoredFixtures=(history||[]).filter(m=>m&&m.date&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag))&&(m.competition||"serie-a")===key).slice().sort((a,b)=>a.date.localeCompare(b.date));
+    let fingerprint=2166136261;
+    for(const row of scoredFixtures){
+      const value=[row.date,row.home,row.away,row.hg,row.ag].join("|");
+      for(let i=0;i<value.length;i++){fingerprint^=value.charCodeAt(i);fingerprint=Math.imul(fingerprint,16777619)>>>0;}
+    }
+    const signature=[scoredFixtures.length,scoredFixtures[0]?.date,scoredFixtures.at(-1)?.date,fingerprint.toString(16)].join("|");
+    if(previous&&previous.version===VERSION&&previous.trainedDay===today&&previous.signature===signature)return previous;
+    const scored=[];
+    let prior=[],groupCount=0;
+    for(let i=0;i<scoredFixtures.length;){
+      const date=scoredFixtures[i].date;
+      let j=i;while(j<scoredFixtures.length&&scoredFixtures[j].date===date)j++;
+      if(prior.length>=30){
+        for(let k=i;k<j;k++){
+          const target=scoredFixtures[k],forecast=forecastFn(target,prior);
+          if(!forecast||!forecast.sampleEnough||!forecast.probabilities)continue;
+          const actual=Number(target.hg)>Number(target.ag)?"home":Number(target.hg)<Number(target.ag)?"away":"draw";
+          scored.push({date,p:normalize(forecast.probabilities),actual});
+        }
+      }
+      prior=prior.concat(scoredFixtures.slice(i,j));
+      i=j;groupCount++;
+      // Yield between date batches so first-time calibration does not freeze the mobile UI.
+      if(groupCount%8===0)await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    const split=Math.floor(scored.length*.7),training=scored.slice(0,split),validation=scored.slice(split);
+    const base=metrics(validation);
+    const fit=training.length?fitTemperature(training):{temperature:1,logLoss:Infinity,brier:Infinity};
+    const calibrated=validation.length?loss(validation,fit.temperature):{logLoss:Infinity,brier:Infinity};
+    const enough=scored.length>=MIN_SCORED&&validation.length>=MIN_VALIDATION;
+    const improvementLL=base.logLoss-calibrated.logLoss,improvementBrier=base.brier-calibrated.brier;
+    const approved=Boolean(enough&&fit.temperature!==1&&improvementLL>0.0005&&improvementBrier>0.0005);
+    const finalFit=approved?fitTemperature(scored):{temperature:1,logLoss:base.logLoss,brier:base.brier};
+    const model={
+      version:VERSION,competition:key,trainedDay:today,signature,trainedMatches:scoredFixtures.length,
+      scoredForecasts:scored.length,trainingCount:training.length,validationCount:validation.length,
+      temperature:approved?finalFit.temperature:1,approved,
+      status:approved?"approved":enough?"not_better_than_baseline":"insufficient_sample",
+      validation:{baselineLogLoss:base.logLoss,baselineBrier:base.brier,calibratedLogLoss:calibrated.logLoss,calibratedBrier:calibrated.brier,improvementLogLoss:improvementLL,improvementBrier:improvementBrier},
+      updatedAt:new Date().toISOString()
+    };
+    all[key]=model;writeModels(all);return model;
+  }
   function explain(match,forecast){
     const reasons=[];
     const home=forecast&&forecast.home,away=forecast&&forecast.away;
@@ -103,5 +149,5 @@
     if(!reasons.length)reasons.push("I dati disponibili non mostrano un fattore storico dominante.");
     return reasons;
   }
-  root.MatchMindAI={version:VERSION,train,modelFor,applyTemperature,fitTemperature,loss,metrics,explain,constants:{minimumScored:MIN_SCORED,minimumValidation:MIN_VALIDATION}};
+  root.MatchMindAI={version:VERSION,train,trainAsync,modelFor,applyTemperature,fitTemperature,loss,metrics,explain,constants:{minimumScored:MIN_SCORED,minimumValidation:MIN_VALIDATION}};
 })(window);
