@@ -76,13 +76,27 @@ test("persistent betslip navigation exposes football, live, NBA, slip and more",
   assert.match(core, /\['bets\.html','bets','Schedina'\]/);
   assert.match(core, /global-slip-dock/);
   assert.match(core, /competitionTabs/);
-  assert.match(core, /Invia a Sisal · calcio/);
   assert.match(core, /Apri schedina NBA/);
-  assert.match(core, /rows=all\.map\(\(item,index\)=>\(\{\.\.\.item,_index:index\}\)\)/);
+  assert.match(core, /data-slip-confirm/);
+  assert.match(core, /_globalIndex:index/);
+  assert.match(core, /Schedina mista/);
 });
 
 test("football transfer reads every stored competition rather than the active filter only", () => {
   assert.match(bets, /const allFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!=="nba"\)/);
   assert.match(bridge, /competition, eventId, sport: "football"/);
   assert.match(script, /competition: String\(x\.competition/);
+});
+
+test("shared bottom drawer removes the original stored item, not its filtered display index", () => {
+  assert.match(core, /_globalIndex:index/);
+  assert.match(core, /data-slip-remove/);
+  assert.match(core, /all\.splice\(index,1\)/);
+});
+
+test("NBA transfer uses the same tested bridge as football", () => {
+  assert.match(nba, /bridge\.createUrl\(rows\)/);
+  assert.match(nba, /result\.payload\.items\.length/);
+  assert.match(bridge, /NBA_MARKETS/);
+  assert.match(script, /sport: x\.sport === "nba" \? "nba" : "football"/);
 });
