@@ -1191,3 +1191,25 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 @media(max-width:700px){
  .header-more-link{display:none!important}
 }
+
+/* Sisal-inspired mobile navigation and persistent bottom betslip. */
+@media(max-width:700px){
+ .mobile-nav{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));}
+ .nav-item{min-height:48px;font-size:9px;gap:3px;}
+ .nav-icon svg{width:20px;height:20px;}
+ .global-slip-dock{bottom:calc(67px + env(safe-area-inset-bottom));width:calc(100% - 12px);max-width:560px;border-radius:17px 17px 13px 13px;transition:height .2s ease,transform .2s ease;box-shadow:0 10px 42px #000b;}
+ .global-slip-dock.is-expanded{bottom:calc(67px + env(safe-area-inset-bottom));max-height:72dvh;border-radius:18px 18px 12px 12px;}
+ .global-slip-dock.is-expanded .global-slip-body{display:block;max-height:calc(72dvh - 64px);overflow:auto;}
+ .global-slip-head{padding:6px 8px;}
+ .global-slip-toggle{min-height:45px;padding:8px 10px;}
+ .global-slip-toggle b{font-size:15px;}
+ .global-slip-open{min-height:43px;padding:0 15px;}
+ .global-slip-list{max-height:42dvh;}
+ .global-slip-row{padding:11px 2px;}
+ .global-slip-row b{font-size:13px;}
+ .global-slip-actions{grid-template-columns:.8fr 1.5fr;}
+}
+@media(min-width:701px){
+ .global-slip-dock.is-expanded{bottom:18px;max-height:75vh;}
+ .global-slip-dock.is-expanded .global-slip-body{display:block;max-height:calc(75vh - 64px);overflow:auto;}
+}
