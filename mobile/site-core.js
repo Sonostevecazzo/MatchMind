@@ -498,7 +498,6 @@ function eventForecast(match,history){
     const primary=[
       ['matches.html','matches','Calcio'],
       ['live.html','live','Live'],
-      ['nba.html','nba','NBA'],
       ['bets.html','bets','Schedina']
     ];
     const secondary=[
@@ -545,7 +544,7 @@ function eventForecast(match,history){
       dock.classList.toggle('is-expanded',expanded);
       dock.querySelector('[data-slip-hint]').textContent=expanded?'Chiudi':'Apri';
       const onlyNba=nba===rows.length;
-      const href=onlyNba?'./nba.html#nbaSlip':'./bets.html#saveManualSlip';
+      const href=onlyNba?'./bets.html?sport=nba#betsTabCreate':'./bets.html#saveManualSlip';
       dock.querySelectorAll('[data-slip-confirm]').forEach(link=>{link.href=href;link.textContent=onlyNba?'Apri schedina NBA':'Conferma';});
       if(nba&&football){
         dock.querySelector('[data-slip-subtitle]').textContent='Schedina mista · gestisci calcio e NBA separatamente';
@@ -585,7 +584,7 @@ function eventForecast(match,history){
     const intro=document.querySelector('.page-intro');
     const homeCopy=page==='home'?document.querySelector('.home-hero-copy'):null;
     const pickerHost=intro||homeCopy;
-    if(pickerHost&&!$('competitionSelect')&&['matches','live','league','match','mind','home'].includes(page)) {
+    if(pickerHost&&!$('competitionSelect')&&['matches','live','league','match','mind','home','bets'].includes(page)) {
       const field=document.createElement('div');field.className='field competition-picker'+(page==='home'?' home-competition-picker':'');
       const label=document.createElement('label');label.htmlFor='competitionPickerButton';label.textContent='Competizione';
       const select=document.createElement('select');select.id='competitionSelect';select.hidden=true;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
