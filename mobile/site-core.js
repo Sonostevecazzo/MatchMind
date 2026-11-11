@@ -531,10 +531,10 @@ function eventForecast(match,history){
   function toggleFavorite(name){const list=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]');}catch{return [];}})();const next=list.includes(name)?list.filter(x=>x!==name):[...list,name];saveCache('matchmind-favorites-v1',next);return next.includes(name);}
   function nav(active){
     const icons={
-      matches:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M7 2v4m10-4v4M3 9h18m-13 4h3m-3 4h6"/></svg>',
-      live:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h4l2.2-4.2 4.2 8.4 2.2-4.2h4.4"/><circle cx="18.5" cy="5.5" r="2.2" fill="#c4f36a" stroke="currentColor"/></svg>',
+      matches:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="m12 6.2 3.4 2.4-1.3 4h-4.2l-1.3-4L12 6.2Zm-3.4 6.4-3.1 2.2m9.9-2.2 3.1 2.2M9.9 20.1l1-7.5m3.2 7.5-1-7.5"/></svg>',
+      live:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 9.2a10 10 0 0 0 0 5.6M8.2 6a14.5 14.5 0 0 0 0 12M19.2 9.2a10 10 0 0 1 0 5.6M15.8 6a14.5 14.5 0 0 1 0 12"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="12" r=".7" fill="currentColor"/></svg>',
       nba:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3v18M5.6 5.6c4 2.4 8.8 10.4 12.8 12.8M18.4 5.6C14.4 8 9.6 16 5.6 18.4"/></svg>',
-      bets:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h5m-5 4h8"/></svg>',
+      bets:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.8h14a2 2 0 0 1 2 2v12.4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5.8a2 2 0 0 1 2-2Z"/><path d="M7.5 8h9m-9 4h5"/><path d="m8 16 2.2 2.1 5-5.1"/></svg>',
       league:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z"/><path d="m4.5 8 7.5 4 7.5-4M12 12v8.5M8.5 5l3.5 4 3.5-4"/></svg>',
       more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
       teams:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20v-1.8A5.5 5.5 0 0 1 9 12.7a5.5 5.5 0 0 1 5.5 5.5V20M16 5.2a3.1 3.1 0 0 1 0 5.9M17 13a4.7 4.7 0 0 1 3.5 4.5V20"/></svg>',
