@@ -191,6 +191,8 @@
     });
     $("nbaMore").addEventListener("click",()=>{state.shown+=PAGE;render();});
     $("nbaRefresh").addEventListener("click",()=>load(true));
+    const threshold=$("nbaAutoMinProbability"),thresholdValue=$("nbaAutoMinProbabilityValue");
+    threshold?.addEventListener("input",()=>{if(thresholdValue)thresholdValue.textContent=threshold.value+"%";});
     $("buildNbaProposal")?.addEventListener("click",buildNbaProposal);
     $("nbaAutoProposal")?.addEventListener("click",event=>{if(event.target.closest("#addNbaProposalToSlip"))addNbaProposalToSlip();});
     window.addEventListener("matchmind:picks-updated",()=>{renderSlip();render();});
