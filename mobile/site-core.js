@@ -552,7 +552,7 @@ function eventForecast(match,history){
     const intro=document.querySelector('.page-intro');
     const homeCopy=page==='home'?document.querySelector('.home-hero-copy'):null;
     const pickerHost=intro||homeCopy;
-    if(pickerHost&&!$('competitionSelect')){
+    if(pickerHost&&!$('competitionSelect')&&!$('competitionTabs')&&page!=='nba'){
       const field=document.createElement('div');field.className='field competition-picker'+(page==='home'?' home-competition-picker':'');
       const label=document.createElement('label');label.htmlFor='competitionSelect';label.textContent='Competizione';
       const select=document.createElement('select');select.id='competitionSelect';select.setAttribute('aria-label','Seleziona competizione');
