@@ -147,11 +147,13 @@ function renderFixtures(){
  const more=$("moreBetFixtures");if(more)more.hidden=rows.length<=visibleFixtureLimit;
 }
 function marketLabel(key){
+ if(key==="nbaMoneyline:home")return "NBA · Vince casa";
+ if(key==="nbaMoneyline:away")return "NBA · Vince trasferta";
  const item=ENGINE().marketCandidates("auto").find(x=>x.key===key);
  return item?item.label:String(key||"Mercato");
 }
 function selectedRows(){
-return picks.map(p=>{
+ const footballRows=picks.map(p=>{
   let match=fixtures.find(m=>fixtureKey(m)===fixtureKey(p));
   if(!match)match=fixtures.find(m=>isSameMatch(m.home,m.away,p.home,p.away));
   if(!match&&p.home&&p.away){
@@ -160,9 +162,21 @@ return picks.map(p=>{
   if(!match)return null;
   const forecast=data&&data.history?getForecast(match):null;
   const odds=p.odds!=null&&Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
-  const prob=forecast?marketProbability(forecast,p.marketKey):(Number.isFinite(p.probability)?p.probability:null);
-  return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:prob,forecast,odds,bookmaker:p.bookmaker||null};
+  const prob=forecast?marketProbability(forecast,p.marketKey):(Number.isFinite(Number(p.probability))?Number(p.probability):null);
+  return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:prob,forecast,odds,bookmaker:p.bookmaker||null,sport:"football",removeKey:fixtureKey(match)};
+ }).filter(row=>row&&Number.isFinite(row.probability)&&row.probability>0&&row.probability<1);
+ const nbaRows=readPicks().filter(p=>p&&p.sport==="nba"&&p.home&&p.away).map(p=>{
+  const id=String(p.id||p.eventId||"");
+  const probability=Number(p.probability??p.prob);
+  if(!id||!Number.isFinite(probability)||probability<=0||probability>=1)return null;
+  const side=p.side==="home"?"home":"away";
+  const marketKey=p.marketKey||("nbaMoneyline:"+side);
+  const label=side==="home"?"Vince casa":"Vince trasferta";
+  const match={id,home:String(p.home),away:String(p.away),date:String(p.date||String(p.start||"").slice(0,10)),time:"",competition:"nba",sport:"nba"};
+  const odds=Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
+  return{match,marketKey,marketLabel:label,probability,forecast:null,odds,bookmaker:p.bookmaker||null,sport:"nba",removeKey:"nba|"+id,nbaPickId:id};
  }).filter(Boolean);
+ return footballRows.concat(nbaRows);
 }
 function updateSlipCalculations(){
  const rows=selectedRows();if(!rows.length)return;
@@ -184,7 +198,7 @@ function updateSlipCalculations(){
  const evEl=$("slipEvVal");if(evEl){evEl.textContent=ev!=null?fmtEv(ev)+" · "+(evAmount>=0?"+":"")+curr(evAmount):"—";evEl.className="financial-value "+(ev!=null?(ev>=0?"ev-pos":"ev-neg"):"");}
 
  rows.forEach(row=>{
-  const fKey=fixtureKey(row.match);
+  const fKey=row.removeKey||fixtureKey(row.match);
   const singleEv=ENGINE().expectedValue(row.probability,row.odds);
   const pill=document.querySelector('[data-ev-for="'+CSS.escape(fKey)+'"]');
   if(pill){
@@ -198,12 +212,12 @@ function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
  const bridge=window.MatchMindSisalBridge;
- const allFootball=readPicks().filter(p=>p&&p.sport!=="nba").map(p=>({
-  ...p,match:{home:p.home,away:p.away,date:p.date,competition:p.competition||"serie-a",id:p.id||p.eventId},
+ const allSelections=readPicks().filter(Boolean).map(p=>({
+  ...p,match:{home:p.home,away:p.away,date:p.date||String(p.start||"").slice(0,10),competition:p.competition||(p.sport==="nba"?"nba":"serie-a"),id:p.id||p.eventId},
   marketLabel:marketLabel(p.marketKey),
-  probability:Number.isFinite(Number(p.probability))&&Number(p.probability)>0&&Number(p.probability)<1?Number(p.probability):null
+  probability:Number.isFinite(Number(p.probability??p.prob))&&Number(p.probability??p.prob)>0&&Number(p.probability??p.prob)<1?Number(p.probability??p.prob):null
  }));
- const result=bridge?bridge.createUrl(allFootball):null;
+ const result=bridge?bridge.createUrl(allSelections):null;
  if(!result||!result.url){
   link.removeAttribute("href");
   link.setAttribute("aria-disabled","true");
@@ -255,7 +269,7 @@ function renderSlip(){
   return '<div class="manual-selected-row" data-fixture="'+esc(fKey)+'">'+
    '<div class="manual-selected-row-main">'+
     '<span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b>'+
-    '<small>'+esc(row.marketLabel)+' · '+esc(row.match.date)+' · prob. '+pct(row.probability)+'</small></span>'+
+    '<small>'+(row.sport==="nba"?"NBA · ":"Calcio · ")+esc(row.marketLabel)+' · '+esc(row.match.date)+' · prob. '+pct(row.probability)+'</small></span>'+
     '<button type="button" class="manual-remove-button" data-remove="'+esc(fKey)+'" aria-label="Rimuovi selezione">×</button>'+
    '</div>'+
    '<div class="manual-selected-row-financials">'+
@@ -265,7 +279,7 @@ function renderSlip(){
     '<span class="financial-pill">Equa: <b>'+fmtOdds(fairOdds)+'</b></span>'+
     '<span class="financial-pill '+(singleEv!=null?evClass:'text-muted')+'" data-ev-for="'+esc(fKey)+'">'+(singleEv!=null?'EV: <b>'+fmtEv(singleEv)+'</b>':'EV: <i>inserisci quota</i>')+'</span>'+
    '</div>'+
-   renderInjuriesCard(row.match)+
+   (row.sport==="nba"?"":renderInjuriesCard(row.match)+
  '<details class="slip-context-drawer">'+
     '<summary class="slip-context-summary">'+
      '<span>⚙️ Correzione manuale contesto / assenze</span>'+
@@ -293,7 +307,7 @@ function renderSlip(){
       '<button type="button" class="slip-preset-btn btn-reset" data-context-preset="'+esc(fKey)+'" data-preset-type="reset">↺ Reset</button>'+
      '</div>'+
     '</div>'+
-   '</details>'+
+   '</details>')+
   '</div>';
  }).join("");
 
@@ -463,6 +477,7 @@ function saveCurrentSlip(){
   expectedValue:expectedValue!=null?Number(expectedValue.toFixed(4)):null,
   probability,
   selections:rows.map(x=>({
+   sport:x.sport||"football",
    home:x.match.home,
    away:x.match.away,
    date:x.match.date,
@@ -476,7 +491,7 @@ bookmaker:x.bookmaker||null,
    status:"Da giocare"
   }))
  };
- archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];writePicks();renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata con puntata e quote registrate.";setBetTab("live");
+ archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];save(PICKS_KEY,[]);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata con puntata e quote registrate.";setBetTab("live");
 }
 let currentBuilderStrategy='balanced';
 let proposalVariants={};
@@ -875,6 +890,7 @@ function initEvents(){
   const oddsInput=event.target.closest(".manual-odds-input");
   if(oddsInput){
    const fKey=oddsInput.dataset.oddsFor,val=Number(oddsInput.value);
+   if(fKey.startsWith("nba|")){const id=fKey.slice(4),all=readPicks(),pick=all.find(p=>p&&p.sport==="nba"&&String(p.id||p.eventId)===id);if(pick){pick.odds=(Number.isFinite(val)&&val>1&&val<=1000)?val:null;save(PICKS_KEY,all);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();}return;}
    const pick=picks.find(p=>fixtureKey(p)===fKey);
    if(pick){pick.odds=(Number.isFinite(val)&&val>1&&val<=1000)?val:null;writePicks();updateSlipCalculations();}
    return;
@@ -909,10 +925,10 @@ function initEvents(){
    renderFixtures();
    return;
   }
-  const remove=event.target.closest("[data-remove]");if(remove){picks=picks.filter(p=>fixtureKey(p)!==remove.dataset.remove);writePicks();renderSlip();return;}
+  const remove=event.target.closest("[data-remove]");if(remove){const key=remove.dataset.remove;if(key.startsWith("nba|")){const id=key.slice(4);save(PICKS_KEY,readPicks().filter(p=>!(p&&p.sport==="nba"&&String(p.id||p.eventId)===id)));window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();return;}picks=picks.filter(p=>fixtureKey(p)!==key);writePicks();renderSlip();return;}
   const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
-  if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;writePicks();renderSlip();}
+  if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;save(PICKS_KEY,[]);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();}
  });
  $("targetProbability").addEventListener("input",()=>{$("targetProbabilityLabel").textContent=$("targetProbability").value+"%";if(proposalGenerated)buildProposal();});
  $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
@@ -1047,7 +1063,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   await window.MM.loadInjuries?.();
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
-  picks=readPicks().filter(p=>(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
+  picks=readPicks().filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
   contexts=read(CONTEXT_KEY,{});
   archive=read(ARCHIVE_KEY,[]);
   if(!Array.isArray(archive))archive=[];
