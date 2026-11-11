@@ -908,7 +908,15 @@ function initEvents(){
    renderFixtures();
    return;
   }
-  const remove=event.target.closest("[data-remove]");if(remove){const key=remove.dataset.remove;if(key.startsWith("nba|")){const id=key.slice(4);save(PICKS_KEY,readPicks().filter(p=>!(p&&p.sport==="nba"&&String(p.id||p.eventId)===id)));window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();return;}picks=picks.filter(p=>fixtureKey(p)!==key);writePicks();renderSlip();return;}
+  const remove=event.target.closest("[data-remove]");if(remove){
+    const key=remove.dataset.remove,all=readPicks();
+    const remaining=key.startsWith("nba|")
+      ?all.filter(p=>!(p&&p.sport==="nba"&&String(p.id||p.eventId)===key.slice(4)))
+      :all.filter(p=>!(p&&p.sport!=="nba"&&fixtureKey({...p,competition:p.competition||"serie-a"})===key));
+    save(PICKS_KEY,remaining);
+    picks=remaining.filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
+    window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();return;
+   }
   const market=event.target.closest("[data-pick]");if(market){const fixture=fixtures.find(item=>fixtureKey(item)===market.dataset.pick);if(!fixture)return;const current=selectedFor(fixture);if(current&&current.marketKey===market.dataset.market)picks=picks.filter(item=>fixtureKey(item)!==fixtureKey(fixture));else if(current)current.marketKey=market.dataset.market;else if(picks.length<15)picks.push({competition:fixture.competition||window.MM.getSelectedCompetition(),date:fixture.date,home:fixture.home,away:fixture.away,marketKey:market.dataset.market});writePicks();renderFixtures();renderSlip();return;}
   if(event.target.closest("#archiveCurrentSlip"))saveCurrentSlip();
   if(event.target.closest("#clearCurrentSlip")){picks=[];slipExpanded=false;save(PICKS_KEY,[]);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();}
