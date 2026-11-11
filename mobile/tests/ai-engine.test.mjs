@@ -7,7 +7,7 @@ const source=await readFile(new URL("../ai-engine.js",import.meta.url),"utf8");
 function engine(){
   const store=new Map(),window={};
   const localStorage={getItem:key=>store.get(key)||null,setItem:(key,value)=>store.set(key,value)};
-  vm.runInNewContext(source,{window,localStorage,Date,Math,Number,String,Object,Array,JSON});
+  vm.runInNewContext(source,{window,localStorage,Date,Math,Number,String,Object,Array,JSON,setTimeout});
   return {api:window.MatchMindAI,store};
 }
 const outcome=(i)=>{
@@ -86,3 +86,21 @@ test("legacy Poisson calibration is never reused after switching the production 
  vm.runInNewContext(source,{window,localStorage,Date,Math,Number,String,Object,Array,JSON});
  assert.equal(window.MatchMindAI.modelFor("serie-a"),null);
 });
+
+
+test("background calibration yields between date batches and preserves strict chronology",async()=>{
+  const {api}=engine();
+  const history=Array.from({length:260},(_,i)=>({date:new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10),home:"Alpha FC",away:"Beta FC",hg:i%3===0?2:i%3===1?0:1,ag:i%3===0?0:i%3===1?2:1,competition:"serie-a"}));
+  let calls=0;
+  const promise=api.trainAsync(history,(target,prior)=>{
+   calls++;
+   assert.ok(prior.every(row=>row.date<target.date),"async training must exclude same-day and future results");
+   return {sampleEnough:true,probabilities:{home:.5,draw:.25,away:.25}};
+  },"serie-a");
+  let eventLoopRan=false;
+  setTimeout(()=>{eventLoopRan=true;},0);
+  const model=await promise;
+  assert.ok(calls>100);
+  assert.equal(model.competition,"serie-a");
+  assert.equal(eventLoopRan,true,"the mobile event loop should run while calibration is in progress");
+ });
