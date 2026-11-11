@@ -456,6 +456,7 @@ bookmaker:x.bookmaker||null,
  archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];save(PICKS_KEY,[]);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata con puntata e quote registrate.";setBetTab("live");
 }
 let currentBuilderStrategy='balanced';
+let proposalTarget=0.55,proposalPeriodLabel='prossima giornata';
 let proposalVariants={};
 let variantCycleIndex=0;
 
@@ -510,10 +511,20 @@ function resolveOddForMarket(oddsObj,marketKey,prob){
 
 function buildProposal(){
  proposalGenerated=true;
- const target=Number($("targetProbability").value)/100,maxLegs=Number($("maxLegs").value);
+ const target=Number($("targetProbability").value)/100,maxLegs=Math.max(1,Math.min(15,Number($("maxLegs").value)||5));
+ proposalTarget=target;
  const upcoming=fixtures.slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
- const first=upcoming[0];
- const candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+ const period=$("builderPeriod")?.value||"next-round";
+ const first=upcoming[0],today=new Date();today.setHours(0,0,0,0);
+ let candidateFixtures=upcoming;
+ if(period==="next-round"){
+  candidateFixtures=!first?[]:(first.round!==null&&first.round!==undefined?upcoming.filter(m=>String(m.round)===String(first.round)):upcoming.filter(m=>Math.abs(Date.parse(m.date+"T12:00:00")-Date.parse(first.date+"T12:00:00"))<=3*86400000));
+  proposalPeriodLabel="prossima giornata / turno";
+ }else if(period!=="all"){
+  const days=Math.max(1,Number(period)||7),end=today.getTime()+days*86400000;
+  candidateFixtures=upcoming.filter(m=>{const date=Date.parse(m.date+"T12:00:00");return Number.isFinite(date)&&date>=today.getTime()&&date<=end;});
+  proposalPeriodLabel="prossimi "+days+" giorni";
+ }else proposalPeriodLabel="tutte le partite future della competizione";
  const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
  const marketMode=$("marketMode")?.value||"auto";
 
@@ -590,17 +601,26 @@ function buildProposal(){
  const dblPool=accPool.filter(x=>x.odds>=1.20&&x.odds<=1.75).slice(0,2);
 
  const makeLegs=(pool,count,offset=0)=>{
-  if(!pool.length)return[];
+  if(!pool.length||!count)return[];
   const actualCount=Math.min(count,pool.length);
-  const start=offset%Math.max(1,pool.length-actualCount+1);
-  return pool.slice(start,start+actualCount);
+  const start=offset%pool.length;
+  const ordered=pool.slice(start).concat(pool.slice(0,start));
+  const picked=[];let joint=1;
+  for(const item of ordered){
+   if(picked.length>=actualCount)break;
+   const next=joint*item.probability;
+   if(picked.length&&next+1e-12<target)continue;
+   picked.push(item);joint=next;
+  }
+  if(!picked.length)picked.push(ordered[0]);
+  return picked;
  };
 
  proposalVariants={
-  balanced:makeLegs(balPool,Math.min(maxLegs,4),variantCycleIndex),
-  accuracy:makeLegs(accPool,Math.min(maxLegs,4),variantCycleIndex),
-  value:makeLegs(valPool,Math.min(maxLegs,4),variantCycleIndex),
-  double:dblPool.length===2?dblPool:makeLegs(accPool,2,variantCycleIndex)
+  balanced:makeLegs(balPool,maxLegs,variantCycleIndex),
+  accuracy:makeLegs(accPool,maxLegs,variantCycleIndex),
+  value:makeLegs(valPool,maxLegs,variantCycleIndex),
+  double:makeLegs(dblPool.length===2?dblPool:accPool,2,variantCycleIndex)
  };
 
  proposal=proposalVariants[currentBuilderStrategy]||proposalVariants.balanced;
@@ -624,7 +644,8 @@ function renderProposalUI(){
    '<button type="button" class="variant-tab'+(currentBuilderStrategy===key?' active':'')+'" data-switch-strategy="'+key+'">'+lbl+'</button>'
   ).join('')+'</div>';
 
- const summaryHtml='<section class="proposal-summary">'+
+ const thresholdHtml='<div class="proposal-target-status '+(jointProb+1e-12>=proposalTarget?'reached':'not-reached')+'">Obiettivo '+pct(proposalTarget)+' · '+(jointProb+1e-12>=proposalTarget?'raggiunto':'non raggiunto')+' · '+esc(proposalPeriodLabel)+'</div>';
+ const summaryHtml=thresholdHtml+'<section class="proposal-summary">'+
   '<div class="proposal-summary-head"><span class="eyebrow">RISULTATO DEL MODELLO</span><span class="proposal-state reached">'+(currentBuilderStrategy==='value'?'Focus Valore':currentBuilderStrategy==='accuracy'?'Focus Accuratezza':currentBuilderStrategy==='double'?'Obiettivo Raddoppio':'Combinazione Ottimale')+'</span></div>'+
   '<div class="proposal-total"><span>'+(allRealOdds?'Quota totale bookmaker':'Moltiplicatore indicativo')+'</span><b>@'+mult.toFixed(2)+'</b></div>'+
   '<div class="proposal-meta">'+
@@ -894,7 +915,7 @@ function initEvents(){
  });
  $("targetProbability").addEventListener("input",()=>{$("targetProbabilityLabel").textContent=$("targetProbability").value+"%";if(proposalGenerated)buildProposal();});
  $("maxLegs").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
- $("marketMode").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
+ $("marketMode").addEventListener("change",()=>{if(proposalGenerated)buildProposal();});\n $("builderPeriod")?.addEventListener("change",()=>{if(proposalGenerated)buildProposal();});
  $("buildTicket").addEventListener("click",buildProposal);
  $("ticketResults").addEventListener("click",event=>{
   const addAll=event.target.closest("#addProposal");
