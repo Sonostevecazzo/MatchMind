@@ -76,3 +76,7 @@
 .nba-proposal-prob>b{color:#c4f36a;font-size:1.05rem}
 .nba-proposal-prob>small{font-size:.65rem}
 @media(max-width:380px){.nba-proposal-summary{grid-template-columns:1fr 1fr}.nba-proposal-summary>div:last-child{grid-column:1/-1}}
+
+.nba-probability-control output{display:inline-block;min-width:3.2em;margin-left:5px;color:#c4f36a;font-weight:800;font-variant-numeric:tabular-nums}
+.nba-probability-control input[type="range"]{width:100%;min-height:36px;accent-color:#c4f36a;cursor:pointer}
+.nba-auto-controls input[type="number"]{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--line,#293744);border-radius:10px;background:var(--surface-1,#101922);color:inherit;font:inherit}
