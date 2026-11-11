@@ -35,7 +35,7 @@ test("Sisal queue is compact, expandable and remembers expansion across SPA resc
 });
 
 test("NBA selections transfer their probability and use the NBA-specific market scanner", () => {
-  assert.match(nba, /probability:Number\.isFinite\(Number\(x\.probability\)\)/);
+  assert.match(nba, /bridge\.createUrl\(rows\)/);
   assert.match(script, /sport: x\.sport === "nba" \? "nba" : "football"/);
   assert.match(script, /function scanNbaSelections\(queue\)/);
   assert.match(script, /const isBasketballPage =/);
@@ -84,7 +84,7 @@ test("persistent betslip navigation exposes football, live, NBA, slip and more",
 
 test("football transfer reads every stored competition rather than the active filter only", () => {
   assert.match(bets, /const allFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!=="nba"\)/);
-  assert.match(bridge, /competition, eventId, sport: "football"/);
+  assert.match(bridge, /const competition = sport === "nba" \? "nba" : String\(match\.competition/);\n  assert.match(bridge, /sport, probability: validProbability/);
   assert.match(script, /competition: String\(x\.competition/);
 });
 
