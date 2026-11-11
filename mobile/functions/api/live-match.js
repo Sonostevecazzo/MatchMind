@@ -384,7 +384,7 @@ async function espnFallback(competition, requestUrl, reason, configured) {
     });
   }
   const payload = await publicJson(espnUrl(competition), 60);
-  const leagueName = competition === "champions-league" ? "UEFA Champions League" : competition === "europa-league" ? "UEFA Europa League" : "Italian Serie A";
+  const leagueName = competitionLabel(competition);
   const matches = (payload.events || []).map(event => normalizeEspnFixture({ ...event, leagueName }, leagueName))
     .filter(match => ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"].includes(match.status) && match.id)
     .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
