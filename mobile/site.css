@@ -1146,3 +1146,33 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 
 /* NBA is a primary destination on the mobile navigation. */
 @media(max-width:760px){.mobile-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}.mobile-nav .nav-item{min-width:0}.mobile-nav .nav-item>span:last-child{font-size:10px}}
+
+/* Navigation and persistent betslip: Sisal-inspired, MatchMind-native */
+@media(max-width:700px){
+ .mobile-nav{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:6px 7px calc(6px + env(safe-area-inset-bottom));}
+ .nav-item{min-height:52px;gap:3px;font-size:10px;letter-spacing:.01em;}
+ .nav-icon{width:21px;height:21px;display:grid;place-items:center;font-size:20px;}
+ .nav-icon svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+ .nav-item.active{background:rgba(196,243,106,.13);color:#d6f88e;box-shadow:inset 0 0 0 1px rgba(196,243,106,.17);}
+ .global-slip-dock{bottom:calc(67px + env(safe-area-inset-bottom));width:calc(100% - 12px);border-radius:17px 17px 12px 12px;border-color:rgba(196,243,106,.52);box-shadow:0 8px 32px #000b;}
+ .global-slip-head{gap:8px;padding:7px 9px;}
+ .global-slip-title-wrap{display:grid;gap:2px;min-width:0;}
+ .global-slip-toggle{justify-content:flex-start;gap:10px;padding:5px 4px;min-height:44px;}
+ .global-slip-toggle b{font-size:14px;line-height:1.2;color:#d8f59b;}
+ .global-slip-toggle small{font-size:11px;line-height:1.25;}
+ .global-slip-hint{margin-left:auto;color:#d8f59b;font-size:11px;font-weight:800;}
+ .global-slip-count{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#c4f36a;color:#17210a;font-size:13px;font-weight:900;}
+ .global-slip-body{padding:0 10px 10px;}
+ .global-slip-list{max-height:34dvh;}
+ .global-slip-row{gap:8px;padding:9px 2px;}
+ .global-slip-row b{font-size:12px;}
+ .global-slip-row small{font-size:10px;}
+ .global-slip-actions{display:grid;grid-template-columns:.7fr 1.3fr;gap:7px;margin-top:9px;}
+ .global-slip-actions .button-like{min-width:0;white-space:normal;text-align:center;padding:7px 9px;font-size:12px;line-height:1.2;}
+ .global-slip-actions .button-like.secondary{background:#1b2b34;color:#e8f1f5;border:1px solid #465967;}
+ .global-slip-note{font-size:10px;}
+}
+@media(min-width:701px){
+ .global-slip-dock{bottom:16px;}
+ .global-slip-count{display:inline-grid;place-items:center;min-width:27px;height:27px;padding:0 7px;border-radius:20px;background:#c4f36a;color:#17210a;font-size:12px;font-weight:900;}
+}
