@@ -13,7 +13,7 @@ const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("Sisal userscript compiles and reports the current version and installer URL", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.13\.0$/m);
+  assert.match(script, /^\/\/ @version\s+2\.14\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/);
 });
@@ -24,14 +24,14 @@ test("empty-state message interpolates NBA and unavailable-model states instead 
   assert.ok(script.includes('currentAnalysis?.forecastUnavailable'));
 });
 
-test("Sisal queue is compact, expandable and remembers expansion across SPA rescans", () => {
-  assert.match(script, /const expanded = gmGet\("mm_sisal_queue_expanded", "false"\) === "true"/);
-  assert.match(script, /id="mm-play-toggle"/);
+test("legacy queue markup remains unreachable in minimal Sisal mode", () => {
+  assert.match(script, /document\.getElementById\("mm-widget"\)\?\.remove\(\)/);
+  assert.match(script, /document\.getElementById\("mm-floating-badge"\)\?\.remove\(\)/);
   assert.match(script, /id="mm-play-queue-items" style="display:'/);
-  assert.match(script, /q\.status === "manual" \? "Mostra quota"/);
-  assert.match(script, /gmSet\("mm_sisal_queue_expanded", String\(nextExpanded\)\)/);
-  assert.match(script, /max-height: 46dvh/);
-  assert.match(script, /overflow-y: auto/);
+  assert.match(script, /function updatePageBadges\(\) \{[\s\S]*?return;/);
+  assert.match(script, /markSelectedMarket\(hit\.btn, item, hit\.odd\)/);
+
+
 });
 
 test("NBA selections transfer their probability and use the NBA-specific market scanner", () => {
@@ -105,3 +105,5 @@ test("NBA transfer uses the same tested bridge as football", () => {
   assert.match(bridge, /NBA_MARKETS/);
   assert.match(script, /sport: x\.sport === "nba" \? "nba" : "football"/);
 });
+
+test("Sisal minimal mode removes overlays and disables generic badges", () => { const start = script.indexOf("function renderWidget()"); const end = script.indexOf("function pillStatusText", start); const body = script.slice(start, end); assert.match(body, /mm-widget.*remove/); assert.match(body, /mm-floating-badge.*remove/); assert.match(body, /return;/); assert.match(script, /function updatePageBadges\(\) \{[\s\S]*?return;/); });
