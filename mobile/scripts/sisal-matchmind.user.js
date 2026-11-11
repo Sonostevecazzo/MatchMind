@@ -2490,7 +2490,7 @@
     const expanded = gmGet("mm_sisal_queue_expanded", "false") === "true";
     box.innerHTML =
       '<div style="display:flex;align-items:center;gap:7px;font-weight:800;font-size:12px;margin-bottom:4px;">' +
-        '<span style="flex:1;min-width:0;">🎯 MatchMind: ' + done + '/' + queue.length + ' selezionate</span>' +
+        '<span style="flex:1;min-width:0;">🎯 MatchMind: ' + done + '/' + queue.length + ' nel biglietto</span>' +
         '<button type="button" id="mm-play-toggle" class="mm-icon-btn" aria-expanded="' + expanded + '">' + (expanded ? 'Nascondi' : 'Dettagli') + '</button>' +
         '<button type="button" id="mm-play-clear" class="mm-icon-btn" title="Svuota elenco">🗑</button>' +
       '</div>' +
