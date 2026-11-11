@@ -1187,3 +1187,7 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .competition-tabs-label{font-size:8px;margin-right:1px}
  .competition-tab{min-height:34px;padding:5px 11px;font-size:11px}
 }
+
+@media(max-width:700px){
+ .header-more-link{display:none!important}
+}
