@@ -878,8 +878,9 @@ function initEvents(){
   if(oddsInput){
    const fKey=oddsInput.dataset.oddsFor,val=Number(oddsInput.value);
    if(fKey.startsWith("nba|")){const id=fKey.slice(4),all=readPicks(),pick=all.find(p=>p&&p.sport==="nba"&&String(p.id||p.eventId)===id);if(pick){pick.odds=(Number.isFinite(val)&&val>1&&val<=1000)?val:null;save(PICKS_KEY,all);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();}return;}
-   const pick=picks.find(p=>fixtureKey(p)===fKey);
-   if(pick){pick.odds=(Number.isFinite(val)&&val>1&&val<=1000)?val:null;writePicks();updateSlipCalculations();}
+   const all=readPicks();
+   const pick=all.find(p=>p&&p.sport!=="nba"&&fixtureKey({...p,competition:p.competition||"serie-a"})===fKey);
+   if(pick){pick.odds=(Number.isFinite(val)&&val>1&&val<=1000)?val:null;save(PICKS_KEY,all);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();}
    return;
   }
   const stakeInput=event.target.closest("#slipStakeInput");
