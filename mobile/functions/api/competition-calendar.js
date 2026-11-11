@@ -63,13 +63,18 @@ async function fetchCompetition(id, competition, startDate, endDate) {
     windows.push([ymd(from), ymd(to)]);
     cursor = new Date(to); cursor.setUTCDate(cursor.getUTCDate()+1);
   }
-  const batches = await Promise.all(windows.map(async ([from,to]) => {
+  const settled = await Promise.allSettled(windows.map(async ([from,to]) => {
     const url = ESPN_BASE + competition.slug + "/scoreboard?dates=" + from + "-" + to + "&limit=500";
     const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(18000) });
     if (!response.ok) throw new Error(id + " ESPN HTTP " + response.status + " (" + from + "-" + to + ")");
     const payload = await response.json();
     return (Array.isArray(payload.events) ? payload.events : []).map(event => normalizeEvent(event, competition)).filter(Boolean);
   }));
+  const batches = settled.filter(result => result.status === "fulfilled").map(result => result.value);
+  if (!batches.length) {
+    const failure = settled.find(result => result.status === "rejected");
+    throw failure?.reason || new Error(id + " ESPN: tutte le finestre calendario non disponibili");
+  }
   const unique = new Map();
   batches.flat().forEach(match => unique.set(String(match.id || [match.date,match.home,match.away].join("|")), match));
   return [...unique.values()];
