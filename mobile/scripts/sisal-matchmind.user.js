@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.16.3
+// @version      2.16.4
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/*
@@ -24,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.16.3";
+  const MM_SCRIPT_VERSION = "2.16.4";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2585,8 +2585,8 @@
 
 
   // Osservatore leggero: nessuna querySelector o lettura di textContent per ogni nodo mutato.
-  const MIN_SCAN_INTERVAL = 1600;
-  const MUTATION_DEBOUNCE = 550;
+  const MIN_SCAN_INTERVAL = 2500;
+  const MUTATION_DEBOUNCE = 500;
   let lastScanTime = 0;
   let scanTimer = null;
 
@@ -2635,6 +2635,6 @@
   });
 
   // Fallback per le SPA che non notificano cambi DOM o cronologia.
-  setInterval(() => { if (!document.hidden) scheduleScan(0); }, 10000);
+  setInterval(() => { if (!document.hidden) scheduleScan(0); }, 12000);
   scheduleScan(900);
 })();
