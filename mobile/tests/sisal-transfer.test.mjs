@@ -15,7 +15,9 @@ test("Sisal userscript compiles and reports the current version and installer UR
   assert.doesNotThrow(() => new Function(script));
   assert.match(script, /^\/\/ @version\s+2\.16\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
-  assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/);\n  assert.match(script, /^\/\/ @match\\s+https:\/\/\\*\\.sisal\\.it\\/\\*$/m);\n  assert.doesNotMatch(script, /document\.getElementById\("mm-widget"\)\?\.remove\(\);\\s*return;/);
+  assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/ );
+  assert.match(script, /^\/\/ @match\\s+https:\/\/\\*\\.sisal\\.it\\/\\*$/m );
+  assert.doesNotMatch(script, /document\.getElementById\("mm-widget"\)\?\.remove\(\);\\s*return;/);
 });
 
 test("Sisal odds import preserves source, timestamp and competition-specific event matching", () => {
