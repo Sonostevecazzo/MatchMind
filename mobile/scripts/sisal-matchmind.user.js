@@ -2036,11 +2036,13 @@
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
       const mmProbs = forecast.probabilities;
       const foundOddsByMarket = new Map();
-      const oddButtons = Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
-        if (el.closest("#mm-widget")) return false;
-        const txt = el.innerText || el.textContent || "";
-        return /\b\d+[.,]\d{2}\b/.test(txt) && txt.length < 50;
-      });
+      const oddButtons = forecast.forecastAvailable
+        ? Array.from(document.querySelectorAll("button,[role='button'],[class*='odd' i],[class*='quota' i],[data-outcome]")).filter(el => {
+            if (el.closest("#mm-widget")) return false;
+            const txt = el.textContent || "";
+            return txt.length < 70 && /\b\d+[.,]\d{2}\b/.test(txt);
+          }).slice(0, 700)
+        : [];
 
       oddButtons.forEach(btn => {
         const resolved = resolveOddsButton(btn);
@@ -2073,13 +2075,14 @@
       let unavailableForecasts = 0;
       multiMatches.forEach(item => {
         const forecast = calculateMatchMindForecast(item.home, item.away);
-        if (!forecast.forecastAvailable) unavailableForecasts++;
+        if (!forecast.forecastAvailable) { unavailableForecasts++; continue; }
         const mmProbs = forecast.probabilities;
-        const oddButtons = Array.from(item.container.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")).filter(el => {
-          if (el.closest("#mm-widget")) return false;
-          const txt = el.innerText || el.textContent || "";
-          return /\b\d+[.,]\d{2}\b/.test(txt) && txt.length < 50;
-        });
+        const oddButtons = Array.from(item.container.querySelectorAll("button,[role='button'],[class*='odd' i],[class*='quota' i],[data-outcome]"))
+          .filter(el => {
+            if (el.closest("#mm-widget")) return false;
+            const txt = el.textContent || "";
+            return txt.length < 70 && /\b\d+[.,]\d{2}\b/.test(txt);
+          }).slice(0, 80);
         oddButtons.forEach(btn => {
           const resolved = resolveOddsButton(btn);
           if (!resolved) return;
@@ -2138,11 +2141,16 @@
 
     // Il testo degli antenati viene costruito una volta sola, non una volta per ogni giocata in coda.
     const candidates = [];
+    const contextCache = new WeakMap();
     for (const btn of buttons) {
       const contexts = [];
       let container = btn.parentElement;
       for (let depth = 0; depth < 8 && container && container !== document.body; depth++, container = container.parentElement) {
-        const text = spacedText(container);
+        let text = contextCache.get(container);
+        if (text === undefined) {
+          text = spacedText(container);
+          contextCache.set(container, text);
+        }
         if (text.length > 5000) break;
         contexts.push(text);
       }
