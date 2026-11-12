@@ -1996,6 +1996,22 @@
   }
 
   let lastCartSyncAt = 0;
+  let lastWidgetRenderSignature = "";
+  function renderWidgetIfChanged() {
+    const a = currentAnalysis || {};
+    const signature = JSON.stringify({
+      sport: a.sport, home: a.home, away: a.away, isMulti: a.isMulti, matchCount: a.matchCount,
+      calculations: (a.calculations || []).map(x => [x.home, x.away, x.key, x.odd, x.modelProb, x.evaluation?.type]),
+      markets: (a.allMarketsList || []).map(x => [x.home, x.away, x.key, x.odd, x.modelProb]),
+      queue: readPlayQueue().map(x => [x.home, x.away, x.marketKey, x.status, x.sisalOdds, x.error]),
+      view: currentView, strategy: currentStrategy, threshold: minProbThreshold,
+      hidden: isHidden, minimized: isMinimized
+    });
+    if (signature === lastWidgetRenderSignature) return;
+    lastWidgetRenderSignature = signature;
+    renderWidget();
+  }
+
   // Scansione principale della pagina Sisal
   function scanPage() {
     captureIncomingPlays();
@@ -2006,7 +2022,7 @@
       if (nbaQueue.length) autoPlayQueue(scanNbaSelections(nbaQueue));
       // Non eseguire mai il modello calcistico su eventi NBA, anche con coda vuota.
       currentAnalysis = { isMulti: true, sport: "nba", matchCount: nbaQueue.length, calculations: [], allMarketsList: [], forecastUnavailable: true };
-      renderWidget();
+      renderWidgetIfChanged();
       return;
     }
     if (nbaQueue.length) autoPlayQueue(scanNbaSelections(nbaQueue));
@@ -2083,7 +2099,7 @@
     const footballQueue = readPlayQueue().filter(q => q.sport !== "nba" && q.status !== "added");
     autoPlayQueue(footballQueue.length ? calculations.concat(scanFootballSelections(footballQueue)) : calculations);
     updatePageBadges();
-    renderWidget();
+    renderWidgetIfChanged();
   }
   // --- GIOCATE DA MATCHMIND → SISAL (v2.4.0) ---
   function pillStatusText(queued) {
