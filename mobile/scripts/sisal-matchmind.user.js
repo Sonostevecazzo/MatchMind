@@ -171,8 +171,8 @@
     if (exact) return exact;
 
     // Rimuove soltanto suffissi societari comuni; non usa match parziali ambigui.
-    const tokens = raw.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
-      .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\\s+/)
+    const tokens = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/)
       .filter(w => !["fc", "ac", "ss", "as", "cfc", "bc", "calcio", "spa", "sc", "us", "uc", "cf", "club"].includes(w));
     const cleaned = norm(tokens.join(" "));
     const cleanedMatch = TEAM_ALIAS_INDEX.get(cleaned);
@@ -182,7 +182,6 @@
     const padded = " " + tokens.join(" ") + " ";
     for (const [canon, aliases] of Object.entries(TEAM_ALIASES)) {
       for (const alias of aliases) {
-        const phrase = " " + norm(alias).replace(/([a-z0-9]+)/g, "$1") + " ";
         const words = String(alias).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
         if (words && padded.includes(" " + words + " ")) return canon;
       }
