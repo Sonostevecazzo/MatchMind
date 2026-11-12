@@ -13,7 +13,7 @@ const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("Sisal userscript compiles and reports the current version and installer URL", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.16\.0$/m);
+  assert.match(script, /^\/\/ @version\\s+2\\.16\\.2$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/ );
   assert.ok(script.includes("// @match        https://*.sisal.it/*"));
@@ -141,3 +141,10 @@ test("Sisal widget is visible by default and hidden only by explicit user prefer
   assert.match(body, /document\.createElement\("div"\)/);
   assert.doesNotMatch(body, /mm-widget.*remove/);
 })
+test("Sisal scanner is event-driven and avoids aggressive full-page polling", () => {
+  assert.match(script, /const MIN_SCAN_INTERVAL = 1800/);
+  assert.match(script, /const MUTATION_DEBOUNCE = 850/);
+  assert.match(script, /setInterval\(\(\) => \{[\s\S]*?\}, 15000\)/);
+  assert.doesNotMatch(script, /\}, 2500\)/);
+  assert.match(script, /isPotentialMarketMutation/);
+});
