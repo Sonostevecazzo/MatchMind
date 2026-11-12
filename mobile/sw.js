@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v119-20261112-sisal-script-2161-nav-fixed';
+const CACHE='matchmind-pwa-v120-20261112-sisal-script-2162-performance';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
