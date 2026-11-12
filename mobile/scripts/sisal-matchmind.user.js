@@ -2073,7 +2073,7 @@
       currentAnalysis = { isMulti: false, home: singleMatch.home, away: singleMatch.away, matchCount: 1, calculations, allMarketsList, forecastUnavailable: !forecast.forecastAvailable, forecastReason: forecast.reason };
     } else if (multiMatches.length > 0) {
       let unavailableForecasts = 0;
-      multiMatches.forEach(item => {
+      for (const item of multiMatches) {
         const forecast = calculateMatchMindForecast(item.home, item.away);
         if (!forecast.forecastAvailable) { unavailableForecasts++; continue; }
         const mmProbs = forecast.probabilities;
@@ -2094,7 +2094,7 @@
             calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
           }
         });
-      });
+      }
       currentAnalysis = { isMulti: true, matchCount: multiMatches.length, calculations, allMarketsList: calculations, forecastUnavailable: calculations.length === 0, forecastSkippedCount: unavailableForecasts };
     } else {
       currentAnalysis = { isMulti: false, home: "Partita", away: "In corso", matchCount: 0, calculations: [], allMarketsList: [] };
