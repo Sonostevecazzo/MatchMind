@@ -115,7 +115,7 @@
     nottinghamforest: ["nottingham forest", "nott forest"],
     everton: ["everton", "everton fc"],
     astonvilla: ["aston villa", "villa", "aston villa fc"],
-    real sociedad: ["real sociedad", "real sociedad de futbol"],
+    realsociedad: ["real sociedad", "real sociedad de futbol"],
     sevilla: ["sevilla", "sevilla fc"],
     valencia: ["valencia", "valencia cf"],
     villarreal: ["villarreal", "villarreal cf"],
