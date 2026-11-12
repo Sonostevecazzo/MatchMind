@@ -1995,6 +1995,7 @@
     } finally { isMutatingDOM = false; }
   }
 
+  let lastCartSyncAt = 0;
   // Scansione principale della pagina Sisal
   function scanPage() {
     captureIncomingPlays();
@@ -2009,7 +2010,7 @@
       return;
     }
     if (nbaQueue.length) autoPlayQueue(scanNbaSelections(nbaQueue));
-    syncCartState();
+    if (readPlayQueue().length && Date.now() - lastCartSyncAt > 4000) { syncCartState(); lastCartSyncAt = Date.now(); }
     const singleMatch = detectSingleMatch();
     const multiMatches = singleMatch ? [] : detectMultipleMatches();
     const calculations = [];
@@ -2108,26 +2109,41 @@
   }
   // Fallback calcio: se i contenitori palinsesto non riconoscono la partita, risale gli antenati di ogni quota.
   function scanFootballSelections(queue) {
-    const found = [];
     const todo = (queue || []).filter(q => q.sport !== "nba" && q.status !== "added");
-    if (!todo.length) return found;
-    const buttons = Array.from(new Set(Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection'], [data-outcome]"))
-      .map(b => b.closest('button,[role="button"]') || b)))
-      .filter(b => !b.closest("#mm-widget") && !b.closest(NBA_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 60 && /\b\d+[.,]\d{2}\b/.test(b.innerText || b.textContent || ""));
+    if (!todo.length) return [];
+    const selector = "button,[role='button'],[class*='odd' i],[class*='quota' i],[class*='selection' i],[data-outcome]";
+    const buttons = Array.from(new Set(Array.from(document.querySelectorAll(selector))
+      .map(node => node.closest("button,[role='button']") || node)))
+      .filter(btn => !btn.closest("#mm-widget") && !btn.closest(NBA_CART_SELECTOR) &&
+        btn.getClientRects().length && String(btn.textContent || "").length < 70 &&
+        /\b\d+[.,]\d{2}\b/.test(btn.textContent || ""))
+      .slice(0, 700);
+
+    // Il testo degli antenati viene costruito una volta sola, non una volta per ogni giocata in coda.
+    const candidates = [];
+    for (const btn of buttons) {
+      const contexts = [];
+      let container = btn.parentElement;
+      for (let depth = 0; depth < 8 && container && container !== document.body; depth++, container = container.parentElement) {
+        const text = spacedText(container);
+        if (text.length > 5000) break;
+        contexts.push(text);
+      }
+      if (contexts.length) candidates.push({ btn, contexts });
+    }
+
+    const found = [];
+    const matchedButtons = new Set();
     for (const item of todo) {
       let eventSeen = false;
-      for (const btn of buttons) {
-        let container = btn.parentElement;
-        for (let depth = 0; depth < 8 && container && container !== document.body; depth++, container = container.parentElement) {
-          if ((container.textContent || "").length > 5000 || container.querySelectorAll("button, [role='button']").length > 80) break;
-          const text = spacedText(container);
-          if (!footballTeamInText(text, item.home) || !footballTeamInText(text, item.away)) continue;
-          eventSeen = true;
-          const resolved = resolveOddsButton(btn);
-          if (resolved && resolved.key === item.marketKey && !found.some(c => c.btn === btn)) {
-            found.push({ ...resolved, btn, home: item.home, away: item.away, sport: "football", probability: item.probability, selectedByMatchMind: true, fallback: true });
-          }
-          break;
+      for (const candidate of candidates) {
+        if (!candidate.contexts.some(text => footballTeamInText(text, item.home) && footballTeamInText(text, item.away))) continue;
+        eventSeen = true;
+        const resolved = resolveOddsButton(candidate.btn);
+        if (resolved && resolved.key === item.marketKey && !matchedButtons.has(candidate.btn)) {
+          matchedButtons.add(candidate.btn);
+          found.push({ ...resolved, btn: candidate.btn, home: item.home, away: item.away,
+            sport: "football", probability: item.probability, selectedByMatchMind: true, fallback: true });
         }
       }
       if (eventSeen) found.push({ home: item.home, away: item.away, sport: "football", key: "event", btn: null });
@@ -2543,10 +2559,9 @@
   function escapeHtml(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 
-  // Scansione adattiva: una sola scansione per gruppo di modifiche reali della pagina.
-  // Il vecchio polling ogni 2,5 s eseguiva query sull'intero DOM anche quando Sisal era ferma.
-  const MIN_SCAN_INTERVAL = 1800;
-  const MUTATION_DEBOUNCE = 850;
+  // Osservatore leggero: nessuna querySelector o lettura di textContent per ogni nodo mutato.
+  const MIN_SCAN_INTERVAL = 1600;
+  const MUTATION_DEBOUNCE = 550;
   let lastScanTime = 0;
   let scanTimer = null;
 
@@ -2558,61 +2573,43 @@
       if (document.hidden) return;
       lastScanTime = Date.now();
       scanPage();
-    }, wait);
+    }, Math.max(0, wait));
   }
 
-  function isMatchMindMutationNode(node) {
-    if (!node || node.nodeType !== 1) return false;
-    if (node.id === "mm-widget" || node.closest?.("#mm-widget")) return true;
-    if (node.matches?.(".mm-prob-tag,.mm-badge-recommended,.mm-send-btn")) return true;
-    return false;
-  }
-
-  function isPotentialMarketMutation(node) {
-    if (!node || node.nodeType !== 1 || isMatchMindMutationNode(node)) return false;
-    const selector = [
-      'button', '[role="button"]', '[role="tab"]', '[data-outcome]',
-      '[class*="odd" i]', '[class*="quota" i]', '[class*="selection" i]',
-      '[class*="market" i]', '[class*="event" i]', '[class*="match" i]',
-      '[class*="competitor" i]', '[data-testid*="market" i]'
-    ].join(",");
-    if (node.matches?.(selector) || node.querySelector?.(selector)) return true;
-    const text = String(node.textContent || "");
-    return text.length < 1200 && /\b\d+[.,]\d{2}\b/.test(text);
-  }
-
-  const observer = new MutationObserver((mutations) => {
+  const observer = new MutationObserver(mutations => {
     if (isMutatingDOM || document.hidden) return;
     for (const mutation of mutations) {
       if (mutation.type !== "childList") continue;
-      const changed = [...mutation.addedNodes, ...mutation.removedNodes];
-      if (changed.some(isPotentialMarketMutation)) {
-        scheduleScan();
+      let relevant = false;
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        if (node.id === "mm-widget" || node.closest?.("#mm-widget")) continue;
+        if (/^(SCRIPT|STYLE|LINK|META)$/.test(node.tagName || "")) continue;
+        relevant = true;
         break;
       }
+      if (relevant) { scheduleScan(); break; }
     }
   });
-
   if (document.body) observer.observe(document.body, { childList: true, subtree: true });
 
-  // Click/tap sulle quote Sisal non intercettati: la selezione resta nativa e manuale.
-  captureIncomingPlays();
-  window.addEventListener("load", () => scheduleScan(500), { once: true });
+  // I cambi di menu, scheda o rotta anticipano la scansione; il click Sisal resta nativo.
+  document.addEventListener("click", event => {
+    if (event.target?.closest?.("#mm-widget")) return;
+    if (event.target?.closest?.("button,a,[role='button'],[role='tab']")) scheduleScan(350);
+  }, true);
+  window.addEventListener("popstate", () => scheduleScan(250));
   window.addEventListener("hashchange", () => {
     captureIncomingPlays();
-    scheduleScan(300);
+    scheduleScan(250);
   });
+  window.addEventListener("load", () => scheduleScan(500), { once: true });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) scheduleScan(300);
+    if (!document.hidden) scheduleScan(250);
     else if (scanTimer) { clearTimeout(scanTimer); scanTimer = null; }
   });
 
-  // Fallback lento per le transizioni SPA che non producono mutazioni DOM osservabili.
-  // Non è più un polling aggressivo: massimo una scansione ogni 15 secondi.
-  setInterval(() => {
-    if (!document.hidden) scheduleScan(0);
-  }, 15000);
-
+  // Fallback per le SPA che non notificano cambi DOM o cronologia.
+  setInterval(() => { if (!document.hidden) scheduleScan(0); }, 10000);
   scheduleScan(900);
-
 })();
