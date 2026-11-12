@@ -1315,7 +1315,8 @@
       "[data-qa*='event' i]", "[data-testid*='event' i]", "[data-event-id]",
       "[class*='event-card' i]", "[class*='match-row' i]", "[class*='match-item' i]",
       "[class*='single-event' i]", "[class*='eventItem' i]", "[class*='eventRow' i]",
-      "[class*='row-event' i]", "[class*='fixture' i]", "[class*='match-card' i]"
+      "[class*='row-event' i]", "[class*='fixture' i]", "[class*='match-card' i]",
+      "[class*='event' i]", "[data-testid*='match' i]", "[data-qa*='match' i]"
     ].join(",");
     const candidates = Array.from(document.querySelectorAll(selector)).slice(0, 180);
     const unique = new Map();
