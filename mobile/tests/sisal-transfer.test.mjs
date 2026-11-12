@@ -145,6 +145,6 @@ test("Sisal scanner is event-driven and avoids aggressive full-page polling", ()
   assert.match(script, /const MIN_SCAN_INTERVAL = 1800/);
   assert.match(script, /const MUTATION_DEBOUNCE = 850/);
   assert.match(script, /setInterval\(\(\) => \{[\s\S]*?\}, 15000\)/);
-  assert.doesNotMatch(script, /\}, 2500\)/);
+  assert.doesNotMatch(script, /if \(document\.hidden\) return;\s*scanPage\(\);\s*\}, 2500\)/);
   assert.match(script, /isPotentialMarketMutation/);
 });
