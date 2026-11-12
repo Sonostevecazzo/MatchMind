@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.16.2
+// @version      2.16.3
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/*
@@ -24,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.16.2";
+  const MM_SCRIPT_VERSION = "2.16.3";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -1262,80 +1262,81 @@
   }
 
   // Rilevamento partita singola con fallback su URL pathname, title e DOM
-  function detectSingleMatch() {
-    const teamSepRegex = /([A-Za-z0-9\s]{3,22})\s*(?:[-–—/]|[\r\n]+|\bvs\b|\bv\b|\bvs\.)\s*([A-Za-z0-9\s]{3,22})/i;
+  function parseSisalTeamPair(value) {
+    const text = String(value || "").replace(/\s+/g, " ").trim();
+    if (!text || text.length > 180) return null;
+    const match = text.match(/([\p{L}\p{N}][\p{L}\p{N}\s.'’&()_-]{1,38}?)\s*(?:[-–—/]|\bvs\.?\b|\bv\.?\b)\s*([\p{L}\p{N}][\p{L}\p{N}\s.'’&()_-]{1,38})/iu);
+    if (!match) return null;
+    const clean = value => String(value || "").replace(/^(quote|scommesse|partita|live)\s+/i, "").replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").trim();
+    const home = clean(match[1]), away = clean(match[2]);
+    if (home.length < 3 || away.length < 3 || canonicalTeam(home) === canonicalTeam(away)) return null;
+    return { home, away };
+  }
 
-    // 1. Fallback su pathname URL Sisal (es. /scommesse-matchpoint/.../roma-sassuolo o /roma-sassuolo-2026...)
+  function detectSingleMatch() {
+    // URL: riconosce soltanto slug formati da due squadre note, mai sezioni come "serie-a".
     try {
-      const path = (window.location.pathname || "").toLowerCase();
-      const segments = path.split("/").filter(Boolean);
+      const segments = String(location.pathname || "").toLowerCase().split("/").filter(Boolean);
       for (let i = segments.length - 1; i >= 0; i--) {
-        const seg = segments[i].replace(/-\d{6,}$/, "");
-        const parts = seg.split("-");
-        if (parts.length >= 2) {
-          const h = parts[0].trim();
-          const a = parts[1].trim();
-          if (h.length >= 3 && a.length >= 3 && h !== a && !h.includes("scommesse") && !h.includes("evento") && !h.includes("calcio")) {
-            return { home: h, away: a };
-          }
+        const words = segments[i].replace(/-\d{6,}$/, "").split("-").filter(Boolean);
+        for (let split = 1; split < words.length; split++) {
+          const home = words.slice(0, split).join(" ");
+          const away = words.slice(split).join(" ");
+          const h = canonicalTeam(home), a = canonicalTeam(away);
+          if (TEAM_ALIASES[h] && TEAM_ALIASES[a] && h !== a) return { home, away };
         }
       }
     } catch (e) {}
 
-    // 2. Title della pagina
-    const titleMatch = document.title.match(teamSepRegex);
-    if (titleMatch) {
-      let h = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
-      let a = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
+    const titlePair = parseSisalTeamPair(document.title);
+    if (titlePair) return titlePair;
+
+    const headingSelector = "h1,h2,h3,h4,[class*='match-name' i],[class*='scoreboard' i],[data-qa*='match' i],[data-testid*='match' i]";
+    for (const el of Array.from(document.querySelectorAll(headingSelector)).slice(0, 60)) {
+      const pair = parseSisalTeamPair(el.textContent);
+      if (pair) return pair;
     }
 
-    // 3. Headings e titoli evento
-    const headEls = document.querySelectorAll("h1, h2, [class*='title'], [class*='match-name'], [class*='scoreboard'], [data-qa*='match']");
-    for (const el of headEls) {
-      const txt = (el.innerText || "").trim();
-      const m = txt.match(teamSepRegex);
-      if (m) {
-        let h = m[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
-        let a = m[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
-      }
-    }
-
-    // 4. Selettori squadre concorrenti
-    const teamEls = Array.from(document.querySelectorAll("[class*='competitor'], [class*='team-name'], [class*='teamName'], [class*='participant']"));
+    const teamSelector = "[class*='competitor' i],[class*='team-name' i],[class*='teamName' i],[class*='participant' i],[data-qa*='competitor' i],[data-testid*='team' i]";
+    const teamEls = Array.from(document.querySelectorAll(teamSelector)).filter(el => {
+      if (el.closest("#mm-widget")) return false;
+      const text = String(el.textContent || "").trim();
+      return text.length >= 3 && text.length <= 45 && !/\d+[.,]\d{2}/.test(text);
+    }).slice(0, 12);
     if (teamEls.length >= 2) {
-      const h = (teamEls[0].innerText || "").trim();
-      const a = (teamEls[1].innerText || "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a) {
-        return { home: h, away: a };
-      }
+      const home = teamEls[0].textContent.trim(), away = teamEls[1].textContent.trim();
+      if (canonicalTeam(home) !== canonicalTeam(away)) return { home, away };
     }
-
     return null;
   }
 
-  // Rilevamento partite multiple (Palinsesto / Serie A / Coppe)
   function detectMultipleMatches() {
-    const containers = Array.from(document.querySelectorAll(`
-      [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
-      [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
-    `));
-
-    const matches = [];
-    containers.forEach(container => {
-      const text = container.innerText || "";
-      const m = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (m) {
-        const h = m[1].trim();
-        const a = m[2].trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a && !h.toLowerCase().includes("quote")) {
-          matches.push({ container, home: h, away: a });
-        }
+    const selector = [
+      "[data-qa*='event' i]", "[data-testid*='event' i]", "[data-event-id]",
+      "[class*='event-card' i]", "[class*='match-row' i]", "[class*='match-item' i]",
+      "[class*='single-event' i]", "[class*='eventItem' i]", "[class*='eventRow' i]",
+      "[class*='row-event' i]", "[class*='fixture' i]", "[class*='match-card' i]"
+    ].join(",");
+    const candidates = Array.from(document.querySelectorAll(selector)).slice(0, 180);
+    const unique = new Map();
+    const teamSelector = "[class*='competitor' i],[class*='team-name' i],[class*='teamName' i],[class*='participant' i]";
+    for (const container of candidates) {
+      if (container.closest("#mm-widget") || !container.getClientRects().length) continue;
+      const text = String(container.textContent || "").replace(/\s+/g, " ").trim();
+      if (text.length < 12 || text.length > 1800) continue;
+      let pair = parseSisalTeamPair(text);
+      if (!pair) {
+        const teams = Array.from(container.querySelectorAll(teamSelector)).slice(0, 4)
+          .map(el => String(el.textContent || "").trim())
+          .filter(v => v.length >= 3 && v.length <= 45 && !/\d+[.,]\d{2}/.test(v));
+        if (teams.length >= 2 && canonicalTeam(teams[0]) !== canonicalTeam(teams[1])) pair = { home: teams[0], away: teams[1] };
       }
-    });
-
-    return matches;
+      if (!pair) continue;
+      const key = canonicalTeam(pair.home) + "|" + canonicalTeam(pair.away);
+      const previous = unique.get(key);
+      if (!previous || text.length < previous.textLength) unique.set(key, { container, home: pair.home, away: pair.away, textLength: text.length });
+    }
+    return Array.from(unique.values()).slice(0, 40).map(({ container, home, away }) => ({ container, home, away }));
   }
 
   // Invia selezione singola a MatchMind
@@ -2010,7 +2011,7 @@
     if (nbaQueue.length) autoPlayQueue(scanNbaSelections(nbaQueue));
     syncCartState();
     const singleMatch = detectSingleMatch();
-    const multiMatches = detectMultipleMatches();
+    const multiMatches = singleMatch ? [] : detectMultipleMatches();
     const calculations = [];
 
     if (singleMatch) {
