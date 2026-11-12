@@ -90,12 +90,12 @@ assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert all(token in sports_switch for token in ['data-sport="football"','data-sport="nba"',"matchmind-sport-v1","nbaIntegratedView"])
 assert "['nba.html','nba','NBA']" not in core
-assert "matchmind-pwa-v120-20261112-sisal-script-2162-performance" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v121-20261112-sisal-script-2163-clean-scan" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
 assert "appendChild(node)" in core and "mobile-primary-nav" in core
-assert "2.16.2" in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
+assert "2.16.3" in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
 assert 'document.getElementById("mm-widget")?.remove();' not in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
 assert "fixed-nav-216" in (ROOT/"matches.html").read_text(encoding="utf-8")
 assert "teams:'<svg" in core and "players:'<svg" in core
@@ -121,7 +121,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v120-20261112-sisal-script-2162-performance" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v121-20261112-sisal-script-2163-clean-scan" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -162,7 +162,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v120-20261112-sisal-script-2162-performance" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v121-20261112-sisal-script-2163-clean-scan" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
