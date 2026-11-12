@@ -134,6 +134,7 @@
     fenerbahce: ["fenerbahce", "fenerbahce sk"],
     celtic: ["celtic", "celtic fc"],
     rangers: ["rangers", "glasgow rangers", "rangers fc"]
+  };
 
   // Nessun rating di squadra viene assunto come xG verificato: usare baseline neutra finché non esiste una fonte versionata e validata.
   const TEAM_RATINGS = {};
