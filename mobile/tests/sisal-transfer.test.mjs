@@ -142,9 +142,9 @@ test("Sisal widget is visible by default and hidden only by explicit user prefer
   assert.doesNotMatch(body, /mm-widget.*remove/);
 })
 test("Sisal scanner is event-driven and avoids aggressive full-page polling", () => {
-  assert.match(script, /const MIN_SCAN_INTERVAL = 1600/);
-  assert.match(script, /const MUTATION_DEBOUNCE = 550/);
-  assert.match(script, /setInterval\(\(\) => \{[\s\S]*?\}, 10000\)/);
+  assert.match(script, /const MIN_SCAN_INTERVAL = 2500/);
+  assert.match(script, /const MUTATION_DEBOUNCE = 500/);
+  assert.match(script, /setInterval\(\(\) => \{[\s\S]*?\}, 12000\)/);
   assert.doesNotMatch(script, /if \(document\.hidden\) return;\s*scanPage\(\);\s*\}, 2500\)/);
   assert.doesNotMatch(script, /function isPotentialMarketMutation/);
 });
@@ -158,9 +158,9 @@ test("Sisal match detection avoids duplicate full-page scans and recognizes loca
 });
 
 test("Sisal observer is lightweight and scans only after coalesced page changes", () => {
-  assert.match(script, /const MIN_SCAN_INTERVAL = 1600/);
-  assert.match(script, /const MUTATION_DEBOUNCE = 550/);
-  assert.match(script, /setInterval\(\(\) => \{ if \(!document\.hidden\) scheduleScan\(0\); \}, 10000\)/);
+  assert.match(script, /const MIN_SCAN_INTERVAL = 2500/);
+  assert.match(script, /const MUTATION_DEBOUNCE = 500/);
+  assert.match(script, /setInterval\(\(\) => \{ if \(!document\.hidden\) scheduleScan\(0\); \}, 12000\)/);
   assert.doesNotMatch(script, /function isPotentialMarketMutation/);
   assert.match(script, /function renderWidgetIfChanged\(\)/);
 });
