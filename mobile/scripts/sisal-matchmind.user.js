@@ -38,15 +38,14 @@
           localStorage.setItem("mm_sisal_play_status", raw);
           window.dispatchEvent(new CustomEvent("mm-sisal-status"));
         }
-        localStorage.setItem("mm_sisal_bridge_seen", String(Date.now()));
-        localStorage.setItem("mm_sisal_script_version", MM_SCRIPT_VERSION);
+        if (localStorage.getItem("mm_sisal_script_version") !== MM_SCRIPT_VERSION) localStorage.setItem("mm_sisal_script_version", MM_SCRIPT_VERSION);
         const seen = String(gmGet("mm_sisal_last_seen", "") || "");
         if (seen && localStorage.getItem("mm_sisal_seen_on_sisal") !== seen) localStorage.setItem("mm_sisal_seen_on_sisal", seen);
         const cart = String(gmGet("mm_sisal_cart", "") || "");
         if (cart && localStorage.getItem("mm_sisal_cart") !== cart) { localStorage.setItem("mm_sisal_cart", cart); window.dispatchEvent(new CustomEvent("mm-sisal-status")); }
       } catch (e) {}
     };
-    sync(); setInterval(sync, 2000);
+    sync(); setInterval(sync, 5000);
     return;
   }
 
@@ -2609,7 +2608,7 @@
 
   // Fallback lento per le transizioni SPA che non producono mutazioni DOM osservabili.
   // Non è più un polling aggressivo: massimo una scansione ogni 15 secondi.
-  const fallbackScanTimer = setInterval(() => {
+  setInterval(() => {
     if (!document.hidden) scheduleScan(0);
   }, 15000);
 
