@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.15.0
+// @version      2.16.0
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
-// @match        https://www.sisal.it/scommesse*
+// @match        https://www.sisal.it/*
+// @match        https://*.sisal.it/*
 // @match        https://www.sisal.it/scommesse-matchpoint*
 // @match        https://scommesse.sisal.it/*
 // @match        https://sonostevecazzo.github.io/MatchMind/*
@@ -23,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.15.0";
+  const MM_SCRIPT_VERSION = "2.16.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -1474,6 +1475,7 @@
   let currentStrategy = localStorage.getItem("mm_widget_strategy") || "balanced"; // balanced, accurate, value, doubling
   let isMinimized = localStorage.getItem("mm_widget_minimized") !== "false"; // Default minimizzato a pillola per non disturbare
   let isHidden = localStorage.getItem("mm_widget_hidden") === "true";
+  if (localStorage.getItem("mm_widget_version") !== MM_SCRIPT_VERSION) { isHidden = false; localStorage.setItem("mm_widget_hidden", "false"); localStorage.removeItem("mm_widget_pos"); localStorage.setItem("mm_widget_version", MM_SCRIPT_VERSION); }
   let minProbThreshold = parseInt(localStorage.getItem("mm_min_prob") || "50", 10);
   if (isNaN(minProbThreshold)) minProbThreshold = 50;
 
@@ -1653,12 +1655,6 @@
   }
 
   function renderWidget() {
-    // Modalità essenziale: nessun pannello o badge flottante su Sisal.
-    // La sincronizzazione resta attiva e vengono evidenziate solo le selezioni inviate da MatchMind.
-    document.getElementById("mm-widget")?.remove();
-    document.getElementById("mm-floating-badge")?.remove();
-    return;
-
     let widget = document.getElementById("mm-widget");
     let floatingBadge = document.getElementById("mm-floating-badge");
 
