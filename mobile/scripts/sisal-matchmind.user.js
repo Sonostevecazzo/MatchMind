@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.16.4
+// @version      2.16.5
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/*
@@ -24,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.16.4";
+  const MM_SCRIPT_VERSION = "2.16.5";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -54,13 +54,13 @@
   // Alias squadre (Serie A, Serie B, Coppe Europee)
   const TEAM_ALIASES = {
     // Serie A
-    inter: ["inter", "internazionale", "fc inter", "fc internazionale", "inter milan"],
-    milan: ["milan", "ac milan", "acmilan"],
+    inter: ["inter", "internazionale", "fc inter", "fc internazionale", "inter milan", "internazionale milano"],
+    milan: ["milan", "ac milan", "acmilan", "associazione calcio milan"],
     juventus: ["juventus", "juve", "juventus fc"],
-    roma: ["roma", "as roma"],
+    roma: ["roma", "as roma", "as roma calcio"],
     lazio: ["lazio", "ss lazio"],
     napoli: ["napoli", "ssc napoli"],
-    verona: ["verona", "hellas verona", "hellas"],
+    verona: ["verona", "hellas verona", "hellas", "hellas verona fc"],
     atalanta: ["atalanta", "atalanta bc"],
     fiorentina: ["fiorentina", "acf fiorentina"],
     bologna: ["bologna", "bologna fc"],
@@ -91,23 +91,49 @@
     modena: ["modena", "modena fc"],
     sudtirol: ["sudtirol", "fc sudtirol", "suedtirol"],
     // Top UEFA Champions / Europa
-    realmadrid: ["real madrid", "real", "madrid"],
-    mancity: ["manchester city", "man city", "city"],
-    bayern: ["bayern monaco", "bayern munich", "bayern", "fc bayern"],
-    psg: ["paris saint germain", "paris sg", "psg", "paris"],
+    realmadrid: ["real madrid", "real", "real madrid cf"],
+    mancity: ["manchester city", "man city", "man city fc", "city of manchester"],
+    bayern: ["bayern monaco", "bayern munich", "bayern", "fc bayern", "fc bayern munchen", "bayern munchen"],
+    psg: ["paris saint germain", "paris saint-germain", "paris sg", "psg", "paris"],
     arsenal: ["arsenal", "arsenal fc"],
     liverpool: ["liverpool", "liverpool fc"],
-    barcelona: ["barcellona", "barcelona", "fc barcelona", "barca"],
+    barcelona: ["barcellona", "barcelona", "fc barcelona", "barca", "fc barca"],
     leverkusen: ["bayer leverkusen", "leverkusen", "bayer 04"],
-    atleticomadrid: ["atletico madrid", "atletico", "atl madrid"],
+    atleticomadrid: ["atletico madrid", "atletico", "atl madrid", "atletico de madrid"],
     dortmund: ["borussia dortmund", "dortmund", "bvb"],
     astonvilla: ["aston villa", "villa"],
     benfica: ["benfica", "sl benfica"],
-    sporting: ["sporting lisbona", "sporting cp", "sporting"],
+    sporting: ["sporting lisbona", "sporting cp", "sporting clube de portugal", "sporting"],
     chelsea: ["chelsea", "chelsea fc"],
     tottenham: ["tottenham", "spurs", "tottenham hotspur"],
-    manunited: ["manchester united", "man utd", "united"]
-  };
+    manunited: ["manchester united", "man utd", "man united", "united", "manchester utd"],
+    // Altre denominazioni frequenti nei palinsesti internazionali
+    wolverhampton: ["wolverhampton", "wolverhampton wanderers", "wolves"],
+    newcastle: ["newcastle", "newcastle united"],
+    westham: ["west ham", "west ham united"],
+    brighton: ["brighton", "brighton and hove albion", "brighton hove albion"],
+    nottinghamforest: ["nottingham forest", "nott forest"],
+    everton: ["everton", "everton fc"],
+    astonvilla: ["aston villa", "villa", "aston villa fc"],
+    real sociedad: ["real sociedad", "real sociedad de futbol"],
+    sevilla: ["sevilla", "sevilla fc"],
+    valencia: ["valencia", "valencia cf"],
+    villarreal: ["villarreal", "villarreal cf"],
+    girona: ["girona", "girona fc"],
+    athleticbilbao: ["athletic bilbao", "athletic club", "bilbao"],
+    marseille: ["olympique marseille", "olympique de marseille", "marseille", "om"],
+    lyon: ["olympique lyon", "olympique lyonnais", "lyon"],
+    monaco: ["as monaco", "monaco"],
+    lille: ["lille", "losc lille"],
+    ajax: ["ajax", "afc ajax", "amsterdam"],
+    psv: ["psv", "psv eindhoven"],
+    feyenoord: ["feyenoord", "feyenoord rotterdam"],
+    porto: ["porto", "fc porto"],
+    benfica: ["benfica", "sl benfica", "sport lisboa benfica"],
+    galatasaray: ["galatasaray", "galatasaray sk"],
+    fenerbahce: ["fenerbahce", "fenerbahce sk"],
+    celtic: ["celtic", "celtic fc"],
+    rangers: ["rangers", "glasgow rangers", "rangers fc"]
 
   // Nessun rating di squadra viene assunto come xG verificato: usare baseline neutra finché non esiste una fonte versionata e validata.
   const TEAM_RATINGS = {};
@@ -126,15 +152,40 @@
 
   const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-  function canonicalTeam(name) {
-    const n = norm(name);
+  const TEAM_ALIAS_INDEX = (() => {
+    const index = new Map();
     for (const [canon, aliases] of Object.entries(TEAM_ALIASES)) {
-      if (canon === n || aliases.some(a => norm(a) === n)) return canon;
+      for (const alias of [canon, ...aliases]) {
+        const key = norm(alias);
+        if (key && !index.has(key)) index.set(key, canon);
+      }
     }
-    const clean = String(name || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
-    const words = clean.split(/\s+/).filter(w => !["fc", "ac", "ss", "as", "cfc", "bc", "1907", "calcio", "spa", "sc", "us", "uc"].includes(w));
+    return index;
+  })();
+
+  function canonicalTeam(name) {
+    const raw = String(name || "").trim();
+    const n = norm(raw);
+    if (!n) return "";
+    const exact = TEAM_ALIAS_INDEX.get(n);
+    if (exact) return exact;
+
+    // Rimuove soltanto suffissi societari comuni; non usa match parziali ambigui.
+    const tokens = raw.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\\s+/)
+      .filter(w => !["fc", "ac", "ss", "as", "cfc", "bc", "calcio", "spa", "sc", "us", "uc", "cf", "club"].includes(w));
+    const cleaned = norm(tokens.join(" "));
+    const cleanedMatch = TEAM_ALIAS_INDEX.get(cleaned);
+    if (cleanedMatch) return cleanedMatch;
+
+    // Fallback conservativo: alias multi-parola come sequenza completa di token.
+    const padded = " " + tokens.join(" ") + " ";
     for (const [canon, aliases] of Object.entries(TEAM_ALIASES)) {
-      if (words.includes(canon) || aliases.some(a => words.includes(a))) return canon;
+      for (const alias of aliases) {
+        const phrase = " " + norm(alias).replace(/([a-z0-9]+)/g, "$1") + " ";
+        const words = String(alias).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        if (words && padded.includes(" " + words + " ")) return canon;
+      }
     }
     return n;
   }
