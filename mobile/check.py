@@ -96,7 +96,7 @@ assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
 assert "appendChild(node)" in core and "mobile-primary-nav" in core
 assert "2.16.0" in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
-assert "mm-widget")?.remove();" not in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
+assert 'document.getElementById("mm-widget")?.remove();' not in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
 assert "fixed-nav-216" in (ROOT/"matches.html").read_text(encoding="utf-8")
 assert "teams:'<svg" in core and "players:'<svg" in core
 assert "nationsLeagueStats" in (ROOT/"data.html").read_text(encoding="utf-8")
