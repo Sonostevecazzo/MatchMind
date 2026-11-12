@@ -13,7 +13,7 @@ const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("Sisal userscript compiles and reports the current version and installer URL", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.16\.2$/m);
+  assert.match(script, /^\/\/ @version\s+2\.16\.3$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /https:\/\/www\.sisal\.it\/scommesse/ );
   assert.ok(script.includes("// @match        https://*.sisal.it/*"));
@@ -147,4 +147,20 @@ test("Sisal scanner is event-driven and avoids aggressive full-page polling", ()
   assert.match(script, /setInterval\(\(\) => \{[\s\S]*?\}, 15000\)/);
   assert.doesNotMatch(script, /if \(document\.hidden\) return;\s*scanPage\(\);\s*\}, 2500\)/);
   assert.match(script, /isPotentialMarketMutation/);
+});
+
+test("Sisal match detection avoids duplicate full-page scans and recognizes localized team labels", () => {
+  assert.match(script, /function parseSisalTeamPair\(value\)/);
+  assert.match(script, /const multiMatches = singleMatch \? \[\] : detectMultipleMatches\(\)/);
+  assert.match(script, /data-testid\*='event'/);
+  assert.match(script, /function scanFootballSelections\(queue\)/);
+  assert.match(script, /const candidates = \[\]/);
+});
+
+test("Sisal observer is lightweight and scans only after coalesced page changes", () => {
+  assert.match(script, /const MIN_SCAN_INTERVAL = 1600/);
+  assert.match(script, /const MUTATION_DEBOUNCE = 550/);
+  assert.match(script, /setInterval\(\(\) => \{ if \(!document\.hidden\) scheduleScan\(0\); \}, 10000\)/);
+  assert.doesNotMatch(script, /function isPotentialMarketMutation/);
+  assert.match(script, /function renderWidgetIfChanged\(\)/);
 });
