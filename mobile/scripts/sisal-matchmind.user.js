@@ -1263,11 +1263,11 @@
 
   // Rilevamento partita singola con fallback su URL pathname, title e DOM
   function parseSisalTeamPair(value) {
-    const text = String(value || "").replace(/\s+/g, " ").trim();
-    if (!text || text.length > 180) return null;
+    const text = String(value || "").replace(/\s+/g, " ").trim().slice(0, 360);
+    if (!text) return null;
     const match = text.match(/([\p{L}\p{N}][\p{L}\p{N}\s.'’&()_-]{1,38}?)\s*(?:[-–—/]|\bvs\.?\b|\bv\.?\b)\s*([\p{L}\p{N}][\p{L}\p{N}\s.'’&()_-]{1,38})/iu);
     if (!match) return null;
-    const clean = value => String(value || "").replace(/^(quote|scommesse|partita|live)\s+/i, "").replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").trim();
+    const clean = value => String(value || "").replace(/^(?:\d{1,2}:\d{2}\s+)?(quote|scommesse|partita|live)\s+/i, "").replace(/^\d{1,2}:\d{2}\s+/, "").replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").trim();
     const home = clean(match[1]), away = clean(match[2]);
     if (home.length < 3 || away.length < 3 || canonicalTeam(home) === canonicalTeam(away)) return null;
     return { home, away };
