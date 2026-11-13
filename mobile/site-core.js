@@ -353,7 +353,9 @@
     croatiannationalteam:'Croazia',denmark:'Danimarca',sweden:'Svezia',norway:'Norvegia',
     poland:'Polonia',czechrepublic:'Repubblica Ceca',romania:'Romania',sudtirol:'Südtirol',fcsudtirol:'Südtirol',
     republicofireland:'Irlanda',scotland:'Scozia',wales:'Galles',ukraine:'Ucraina',
-    serbia:'Serbia',albania:'Albania',turkey:'Turchia'
+    serbia:'Serbia',albania:'Albania',turkey:'Turchia',greece:'Grecia',northmacedonia:'Macedonia del Nord',
+    moldova:'Moldavia',kazakhstan:'Kazakistan',faroeislands:'Isole Faroe',
+    bosniaandherzegovina:'Bosnia-Erzegovina',montenegro:'Montenegro',luxembourg:'Lussemburgo',iceland:'Islanda'
   });
   const displayTeamName = name => {
     const raw = String(name || '').trim();
