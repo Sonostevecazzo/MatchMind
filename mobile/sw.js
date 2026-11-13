@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v130-20261114-match-center-audit';
+const CACHE='matchmind-pwa-v131-20261114-sisal-transfer';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
