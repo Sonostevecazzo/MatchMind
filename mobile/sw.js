@@ -7,10 +7,16 @@ const APP_SHELL=[
  './rounds.js','./sports-switch.js?v=20261116-espn-window','./ai-engine.js','./bets-engine.js','./sisal-bridge.js','./bets.js','./live.js','./notifications.js','./nba.js?v=20261116-espn-window','./nba-builder.js?v=20261116-espn-window','./nba.css?v=20261116-espn-window','./nba-engine.mjs',
  './fixtures-odds.json','./manifest.webmanifest','./icon.svg','./brand-full.svg','./scripts/sisal-matchmind.user.js'
 ];
+const CORE_SHELL=[
+ './','./index.html','./matches.html','./live.html','./bets.html',
+ './site.css','./mobile-readable.css','./site-core.js','./site-pages.js',
+ './bets-engine.js','./ai-engine.js','./sports-switch.js','./nba-builder.js','./nba.js',
+ './live.js','./bets.js','./sisal-bridge.js','./manifest.webmanifest','./icon.svg'
+];
 self.addEventListener('install',event=>{
  event.waitUntil(
   caches.open(CACHE)
-   .then(cache=>cache.addAll(APP_SHELL))
+   .then(cache=>cache.addAll(CORE_SHELL))
    .then(()=>self.skipWaiting())
  );
 });
