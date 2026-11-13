@@ -157,8 +157,8 @@ function selectedRows(){
  const storedFootball=readPicks().filter(p=>p&&p.sport!=="nba");
  const footballRows=storedFootball.map(p=>{
   const competition=p.competition||"serie-a";
-  const sourceMatches=allData?.matches||fixtures;
-  let match=sourceMatches.find(m=>fixtureKey(m)===fixtureKey({...p,competition}));
+  const sourceMatches=[...(allData?.matches||fixtures),...(allData?.history||[])];
+  let match=sourceMatches.find(m=>(m.competition||"serie-a")===competition&&m.date===p.date&&norm(m.home)===norm(p.home)&&norm(m.away)===norm(p.away));
   if(!match)match=sourceMatches.find(m=>(m.competition||"serie-a")===competition&&isSameMatch(m.home,m.away,p.home,p.away));
   if(!match&&p.home&&p.away){
    match={home:p.home,away:p.away,date:p.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date()),competition};
@@ -166,9 +166,12 @@ function selectedRows(){
   if(!match)return null;
   const forecast=(allData?.history||data?.history)?.length?getForecast(match):null;
   const odds=p.odds!=null&&Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
-  const prob=forecast?marketProbability(forecast,p.marketKey):(Number.isFinite(Number(p.probability))?Number(p.probability):null);
+  const modelProbability=forecast?marketProbability(forecast,p.marketKey):null;
+  const savedProbability=Number(p.probability);
+  const prob=Number.isFinite(modelProbability)&&modelProbability>0&&modelProbability<1?modelProbability:
+   (Number.isFinite(savedProbability)&&savedProbability>0&&savedProbability<1?savedProbability:null);
   return{match,marketKey:p.marketKey,marketLabel:marketLabel(p.marketKey),probability:prob,forecast,odds,bookmaker:p.bookmaker||null,sport:"football",removeKey:fixtureKey(match)};
- }).filter(row=>row&&Number.isFinite(row.probability)&&row.probability>0&&row.probability<1);
+ }).filter(Boolean);
  const nbaRows=readPicks().filter(p=>p&&p.sport==="nba"&&p.home&&p.away).map(p=>{
   const id=String(p.id||p.eventId||"");
   const probability=Number(p.probability??p.prob);
@@ -184,14 +187,15 @@ function selectedRows(){
 }
 function updateSlipCalculations(){
  const rows=selectedRows();if(!rows.length)return;
- const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
- const fairCombinedOdds=ENGINE().fairOdds(probability);
+ const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
+ const probability=hasAllProbabilities?rows.reduce((v,x)=>v*x.probability,1):null;
+ const fairCombinedOdds=probability!=null?ENGINE().fairOdds(probability):null;
  const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
  const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
  const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
  const totalOdds=Number.isFinite(computedOdds)?computedOdds:null;
  const potentialWin=totalOdds!=null?currentStake*totalOdds:null;
- const ev=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
+ const ev=totalOdds!=null&&probability!=null?ENGINE().expectedValue(probability,totalOdds):null;
  const evAmount=ev!=null?currentStake*ev:null;
  const summary= $("manualSlipSummary")?.querySelector("details > summary span");
  if(summary)summary.textContent="Anteprima schedina · "+rows.length+" "+(rows.length===1?"pronostico":"pronostici")+(potentialWin!=null?" · vincita "+curr(potentialWin):"");
@@ -245,19 +249,20 @@ function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
  updateSisalTransfer(rows);
  if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
- const probability=rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1);
- const fairCombinedOdds=ENGINE().fairOdds(probability);
+ const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
+ const probability=hasAllProbabilities?rows.reduce((v,x)=>v*x.probability,1):null;
+ const fairCombinedOdds=probability!=null?ENGINE().fairOdds(probability):null;
  const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
  const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
  const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
  const totalOdds=Number.isFinite(computedOdds)?computedOdds:null;
  const potentialWin=totalOdds!=null?currentStake*totalOdds:null;
- const ev=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
+ const ev=totalOdds!=null&&probability!=null?ENGINE().expectedValue(probability,totalOdds):null;
 
  const rowsHtml=rows.map(row=>{
   const fKey=row.removeKey||fixtureKey(row.match);
-  const fairOdds=ENGINE().fairOdds(row.probability);
-  const singleEv=ENGINE().expectedValue(row.probability,row.odds);
+  const fairOdds=Number.isFinite(row.probability)?ENGINE().fairOdds(row.probability):null;
+  const singleEv=Number.isFinite(row.probability)?ENGINE().expectedValue(row.probability,row.odds):null;
   const evClass=singleEv!=null?(singleEv>=0?"ev-pos":"ev-neg"):"";
   return '<div class="manual-selected-row" data-fixture="'+esc(fKey)+'">'+
    '<div class="manual-selected-row-main">'+
@@ -421,14 +426,15 @@ function setBetTab(tab){
 }
 function saveCurrentSlip(){
  const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
- const probability=rows.reduce((v,x)=>v*x.probability,1);
+ const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
+ const probability=hasAllProbabilities?rows.reduce((v,x)=>v*x.probability,1):null;
  const validOdds=rows.map(r=>r.odds).filter(o=>Number.isFinite(o)&&o>1);
  const hasAllOdds=validOdds.length===rows.length&&rows.length>0;
  const computedOdds=hasAllOdds?validOdds.reduce((acc,o)=>acc*o,1):null;
  const totalOdds=Number.isFinite(computedOdds)?computedOdds:null;
  const potentialWin=totalOdds!=null?currentStake*totalOdds:null;
  const netWin=potentialWin!=null?potentialWin-currentStake:null;
- const expectedValue=totalOdds!=null?ENGINE().expectedValue(probability,totalOdds):null;
+ const expectedValue=totalOdds!=null&&probability!=null?ENGINE().expectedValue(probability,totalOdds):null;
 
  const item={
   id:"slip-"+Date.now(),
