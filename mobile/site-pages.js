@@ -109,6 +109,18 @@
  let matchFilter='upcoming',shownLimit=12,activeMatches=[],strategyFilter='all';
  function initMatches(d){
    MM().loadOdds?.().then(()=>{render();});
+   const competitionTabs=$('competitionTabs'),competitionSelect=$('competitionSelect');
+   const renderCompetitionTabs=()=>{
+    if(!competitionTabs||!MM().getCompetitions)return;
+    const selected=MM().getSelectedCompetition();
+    competitionTabs.innerHTML=MM().getCompetitions().map(item=>'<button type="button" class="competition-tab'+(item.id===selected?' active':'')+'" data-competition-tab="'+esc(item.id)+'" aria-pressed="'+String(item.id===selected)+'">'+esc(item.name)+'</button>').join('');
+   };
+   renderCompetitionTabs();
+   competitionTabs?.addEventListener('click',event=>{
+    const button=event.target.closest('[data-competition-tab]');if(!button)return;
+    if(competitionSelect){competitionSelect.value=button.dataset.competitionTab;competitionSelect.dispatchEvent(new Event('change',{bubbles:true}));}
+    else location.href='matches.html?competition='+encodeURIComponent(button.dataset.competitionTab);
+   });
    const round=$('matchRound'),teamSelect=$('matchTeam');teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+MM().getTeams(d.matches).map(t=>'<option value="'+esc(t)+'">'+esc(MM().displayTeamName(t))+'</option>').join('');const rounds=[...new Set(d.matches.map(m=>Number(m.round)).filter(n=>Number.isInteger(n)&&n>0))].sort((a,b)=>a-b);
    round.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+n+'">Giornata '+n+'</option>').join('');
    const renderDateTabs=(base)=>{
