@@ -316,6 +316,49 @@
   function teamColor(name){let n=0;for(const c of String(name||''))n=(n*31+c.charCodeAt(0))|0;return 'hsl('+Math.abs(n)%360+' 35% 28%)';}
   // Club crests are presentation assets, independent from the retired API-Football data feed.
   const LOGO_ROOT='https://raw.githubusercontent.com/JoseArroyave/football-logos/main/logos/';
+  // Etichette italiane per le denominazioni inglesi restituite dai feed.
+  // I valori originali restano invariati nei dati e nelle chiavi di ricerca.
+  const TEAM_DISPLAY_NAMES = Object.freeze({
+    internazionale:'Inter',internazionalefc:'Inter',intermilan:'Inter',fcinter:'Inter',fcinternazionale:'Inter',
+    acmilan:'Milan',milanac:'Milan',associazionecalciomilan:'Milan',
+    hellasverona:'Verona',hellasveronafc:'Verona',asroma:'Roma',associazioneromacalcio:'Roma',
+    ssclazio:'Lazio',sscnapoli:'Napoli',atalantabc:'Atalanta',acffiorentina:'Fiorentina',
+    bolognafc:'Bologna',torinofc:'Torino',acmonza:'Monza',udinesecalcio:'Udinese',
+    uslecce:'Lecce',empolifc:'Empoli',cagliaricalcio:'Cagliari',genoacfc:'Genoa',
+    parmacalcio:'Parma',como1907:'Como',veneziafc:'Venezia',juventusfc:'Juventus',
+    ussassuolo:'Sassuolo',pisasc:'Pisa',ussalernitana:'Salernitana',ucsampdoria:'Sampdoria',
+    realmadridcf:'Real Madrid',barcelona:'Barcellona',fcbarcelona:'Barcellona',barca:'Barcellona',
+    atletidemadrid:'Atletico Madrid',atleticodemadrid:'Atletico Madrid',atleticomadrid:'Atletico Madrid',
+    athleticclub:'Athletic Bilbao',athleticclubbilbao:'Athletic Bilbao',athleticbilbao:'Athletic Bilbao',
+    realbetisbalompie:'Real Betis',realbetis:'Betis',brightonandhovealbion:'Brighton',
+    brightonhovealbion:'Brighton',wolverhamptonwanderers:'Wolverhampton',westhamunited:'West Ham',
+    tottenhamhotspur:'Tottenham',nottinghamforest:'Nottingham Forest',newcastleunited:'Newcastle',
+    leedsunited:'Leeds',manchesterunited:'Manchester United',manchesterutd:'Manchester United',
+    manchestercity:'Manchester City',bayernmunich:'Bayern Monaco',bayernmunchen:'Bayern Monaco',
+    bayernmonaco:'Bayern Monaco',borussiadortmund:'Borussia Dortmund',bayerleverkusen:'Bayer Leverkusen',
+    borussiamonchengladbach:"Borussia M'gladbach",monchengladbach:"Borussia M'gladbach",
+    eintrachtfrankfurt:'Eintracht Francoforte',scfreiburg:'Friburgo',fcstpauli:'St. Pauli',
+    unionberlin:'Union Berlino',werderbremen:'Werder Brema',rbleipzig:'RB Lipsia',
+    redbullsalzburg:'Salisburgo',olympiquedemarseille:'Marsiglia',olympiquelyonnais:'Lione',
+    asmonaco:'Monaco',rcstrasbourgalsace:'Strasburgo',sportingcp:'Sporting Lisbona',
+    sportingclubedeportugal:'Sporting Lisbona',fcporto:'Porto',slbenfica:'Benfica',
+    feyenoordrotterdam:'Feyenoord',afcajax:'Ajax',psveindhoven:'PSV Eindhoven',
+    fcutrecht:'Utrecht',krcgenk:'Genk',clubbrugge:'Club Brugge',
+    unionstgilloise:'Union Saint-Gilloise',
+    italy:'Italia',italynationalteam:'Italia',germany:'Germania',germannationalteam:'Germania',
+    france:'Francia',francenationalteam:'Francia',spain:'Spagna',spainnationalteam:'Spagna',
+    england:'Inghilterra',englandnationalteam:'Inghilterra',
+    netherlands:'Paesi Bassi',dutchnationalteam:'Paesi Bassi',belgium:'Belgio',
+    belgiumnationalteam:'Belgio',portugal:'Portogallo',croatia:'Croazia',
+    croatiannationalteam:'Croazia',denmark:'Danimarca',sweden:'Svezia',norway:'Norvegia',
+    poland:'Polonia',czechrepublic:'Repubblica Ceca',romania:'Romania',
+    republicofireland:'Irlanda',scotland:'Scozia',wales:'Galles',ukraine:'Ucraina',
+    serbia:'Serbia',albania:'Albania',turkey:'Turchia'
+  });
+  const displayTeamName = name => {
+    const raw = String(name || '').trim();
+    return TEAM_DISPLAY_NAMES[norm(raw)] || raw;
+  };
   const TEAM_LOGOS={
     internazionale:'italy/Inter.svg',inter:'italy/Inter.svg',intermilan:'italy/Inter.svg',
     monza:'italy/AC_Monza.svg',udinese:'italy/Udinese.svg',como:'italy/Como_1907.svg',como1907:'italy/Como_1907.svg',
@@ -384,7 +427,56 @@
     stadederennais:'france/Rennes.svg',tsghoffenheim:'germany/Hoffenheim.svg',
     viktoriaplzen:'czech-republic/Viktoria_Plzeň.svg'
   };
-  function teamLogoUrl(name){const path=TEAM_LOGOS[norm(name)];if(!path)return '';return /^https:\/\//i.test(path)?path:LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/');}
+  // Loghi aggiuntivi verificati nel catalogo football-logos.
+  Object.assign(TEAM_LOGOS, {
+    verona:'italy/Hellas_Verona.svg',hellas:'italy/Hellas_Verona.svg',hellasveronafc:'italy/Hellas_Verona.svg',
+    cremonese:'italy/Cremonese.svg',uscremonese:'italy/Cremonese.svg',
+    pisa:'italy/Pisa.svg',pisasc:'italy/Pisa.svg',empoli:'italy/Empoli.svg',empolifc:'italy/Empoli.svg',
+    salernitana:'italy/Salernitana.svg',ussalernitana:'italy/Salernitana.svg',
+    sampdoria:'italy/Sampdoria.svg',ucsampdoria:'italy/Sampdoria.svg',
+    palermo:'italy/Palermo.svg',palermofc:'italy/Palermo.svg',
+    spezia:'italy/Spezia.svg',speziacalcio:'italy/Spezia.svg',
+    brentford:'england/Brentford.svg',brighton:'england/Brighton.svg',brightonandhovealbion:'england/Brighton.svg',
+    burnley:'england/Burnley.svg',everton:'england/Everton.svg',fulham:'england/Fulham.svg',
+    leeds:'england/Leeds_United.svg',leedsunited:'england/Leeds_United.svg',
+    nottinghamforest:'england/Nottingham_Forest.svg',sunderland:'england/Sunderland.svg',
+    tottenham:'england/Tottenham.svg',tottenhamhotspur:'england/Tottenham.svg',
+    westham:'england/West_Ham.svg',westhamunited:'england/West_Ham.svg',
+    wolverhampton:'england/Wolverhampton_Wanderers.svg',wolverhamptonwanderers:'england/Wolverhampton_Wanderers.svg',
+    athleticclub:'spain/Athletic_Club_Bilbao.svg',athleticclubbilbao:'spain/Athletic_Club_Bilbao.svg',
+    athleticbilbao:'spain/Athletic_Club_Bilbao.svg',elche:'spain/Elche.svg',espanyol:'spain/Espanyol.svg',
+    getafe:'spain/Getafe.svg',girona:'spain/Girona.svg',osasuna:'spain/Osasuna.svg',
+    mallorca:'spain/Mallorca.svg',rayovallecano:'spain/Rayo_Vallecano.svg',rayo:'spain/Rayo_Vallecano.svg',
+    alaves:'spain/Deportivo_Alavés.svg',deportivoalaves:'spain/Deportivo_Alavés.svg',
+    oviedo:'spain/Oviedo.svg',realoviedo:'spain/Oviedo.svg',levante:'spain/Levante.svg',
+    augsburg:'germany/Augsburg.svg',eintrachtfrankfurt:'germany/Eintracht_Frankfurt.svg',
+    frankfurt:'germany/Eintracht_Frankfurt.svg',freiburg:'germany/Freiburg.svg',
+    heidenheim:'germany/FC_Heidenheim.svg',fcheidenheim:'germany/FC_Heidenheim.svg',
+    mainz:'germany/Mainz_05.svg',mainz05:'germany/Mainz_05.svg',
+    stpauli:'germany/St_Pauli.svg',fcstpauli:'germany/St_Pauli.svg',
+    unionberlin:'germany/Union_Berlin.svg',werderbremen:'germany/Werder_Bremen.svg',
+    wolfsburg:'germany/Wolfsburg.svg',gladbach:'germany/Borussia_Mönchengladbach.svg',
+    borussiamonchengladbach:'germany/Borussia_Mönchengladbach.svg',
+    hamburg:'germany/Hamburger_SV.svg',hamburgersv:'germany/Hamburger_SV.svg',
+    schalke:'germany/Schalke_04.svg',schalke04:'germany/Schalke_04.svg',
+    angers:'france/Angers.svg',auxerre:'france/Auxerre.svg',brest:'france/Brest.svg',
+    lorient:'france/Lorient_FC.svg',lorientfc:'france/Lorient_FC.svg',
+    nantes:'france/Nantes.svg',nice:'france/Nice.svg',parisfc:'france/Paris_FC.svg',
+    strasbourg:'france/RC_Strasbourg_Alsace.svg',rcstrasbourgalsace:'france/RC_Strasbourg_Alsace.svg',
+    toulouse:'france/Toulouse.svg',twente:'netherlands/Twente.svg',
+    fcutrecht:'netherlands/FC_Utrecht.svg',utrecht:'netherlands/FC_Utrecht.svg',
+    genk:'belgium/KRC_Genk.svg',krcgenk:'belgium/KRC_Genk.svg',
+    crvenazvezda:'serbia/Crvena_Zvezda.svg',redstarbelgrade:'serbia/Crvena_Zvezda.svg',
+    spartakmoscow:'russia/Spartak_Moscow.svg',zenit:'russia/Zenit.svg',
+    dutchnationalteam:'netherlands/Dutch_National_Team.svg'
+  });
+
+  function teamLogoUrl(name){
+    const key = norm(name), displayKey = norm(displayTeamName(name));
+    const path = TEAM_LOGOS[key] || TEAM_LOGOS[displayKey] || '';
+    if(!path)return '';
+    return /^https:\/\//i.test(path)?path:LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/');
+  }
   function badge(name){const fallback=esc(teamInitials(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(name)+'">'+(src?'<img class="team-logo" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove();if(this.nextElementSibling)this.nextElementSibling.style.display=\'inline-flex\'">':'')+'<span class="team-crest-fallback"'+(src?' style="display:none"':'')+'>'+fallback+'</span></span>';}
   function getTeams(rows){return [...new Set(rows.flatMap(m=>[m.home,m.away]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));}
   function groupByDate(rows){const map=new Map();rows.forEach(m=>{const k=m.date||'unknown';if(!map.has(k))map.set(k,[]);map.get(k).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
@@ -796,5 +888,5 @@ function eventForecast(match,history){
     return matches[0].odds&&typeof matches[0].odds==="object"?{...matches[0].odds,source:oddsMeta.source,sourceUpdatedAt:oddsMeta.updatedAt,sourceAgeHours:oddsMeta.ageHours,fixtureDate:matches[0].date}:null;
   }
 
-  window.MM={loadOdds,matchOdds,getOddsMeta:()=>({...oddsMeta}),trainAvailableModels,loadInjuries,getInjuryFeedStatus:()=>({...injuryDataFreshness()}),getMatchInjuries,findTeamInjuries,$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
+  window.MM={loadOdds,matchOdds,getOddsMeta:()=>({...oddsMeta}),trainAvailableModels,loadInjuries,getInjuryFeedStatus:()=>({...injuryDataFreshness()}),getMatchInjuries,findTeamInjuries,$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,displayTeamName,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
 })();
