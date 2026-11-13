@@ -216,6 +216,36 @@ function updateSlipCalculations(){
  });
 }
 
+function exportSisalPredictions(row){
+ if(row.sport==="nba"){
+  return Number.isFinite(row.probability)?[{
+   marketKey:row.marketKey,label:row.marketLabel,probability:row.probability,
+   sampleEnough:true,historyCount:0,model:"NBA Elo"
+  }]:[];
+ }
+ const forecast=row.forecast;
+ if(!forecast||!forecast.probabilities)return [];
+ const candidates=ENGINE().marketCandidates("auto");
+ const rows=candidates.map(item=>({
+  marketKey:item.key,label:item.label,
+  probability:marketProbability(forecast,item.key),
+  sampleEnough:forecast.sampleEnough===true,
+  historyCount:Number(forecast.historyCount)||0,
+  model:forecast.predictionMethod||"Poisson/Elo"
+ }));
+ const p=forecast.probabilities;
+ rows.push(
+  {marketKey:"dc1X",label:"Doppia chance 1X",probability:p.home+p.draw,sampleEnough:forecast.sampleEnough===true,historyCount:Number(forecast.historyCount)||0,model:forecast.predictionMethod||"Poisson/Elo"},
+  {marketKey:"dcX2",label:"Doppia chance X2",probability:p.draw+p.away,sampleEnough:forecast.sampleEnough===true,historyCount:Number(forecast.historyCount)||0,model:forecast.predictionMethod||"Poisson/Elo"},
+  {marketKey:"dc12",label:"Doppia chance 12",probability:p.home+p.away,sampleEnough:forecast.sampleEnough===true,historyCount:Number(forecast.historyCount)||0,model:forecast.predictionMethod||"Poisson/Elo"}
+ );
+ const unique=new Map();
+ rows.forEach(item=>{
+  if(Number.isFinite(item.probability)&&item.probability>=0&&item.probability<=1)unique.set(item.marketKey,item);
+ });
+ return Array.from(unique.values());
+}
+
 function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
@@ -223,7 +253,11 @@ function updateSisalTransfer(){
  const allSelections=selectedRows().map(row=>({
   ...row, sport:row.sport||"football",
   marketLabel:row.marketLabel,
-  probability:Number.isFinite(Number(row.probability))&&row.probability>0&&row.probability<1?row.probability:null
+  probability:Number.isFinite(Number(row.probability))?row.probability:null,
+  predictions:exportSisalPredictions(row),
+  sampleEnough:row.forecast?.sampleEnough===true,
+  historyCount:Number(row.forecast?.historyCount)||0,
+  predictionMethod:row.forecast?.predictionMethod||(row.sport==="nba"?"NBA Elo":"MatchMind")
  }));
  const result=bridge?bridge.createUrl(allSelections):null;
  if(!result||!result.url){
