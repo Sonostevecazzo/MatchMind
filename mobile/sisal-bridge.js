@@ -132,7 +132,8 @@
       ])
     };
     const encoded = encodeURIComponent(JSON.stringify(wire));
-    // Keep the transfer payload in the fragment: it is available to the userscript but is not sent to Sisal/Akamai as a long query string.\n    return { ...result, url: base + "?mmplay=" + encoded };
+    // Keep the transfer payload in a query parameter: the userscript reads it from location.search.
+    return { ...result, url: base + "?mmplay=" + encoded };
   }
 
   return { prepare, createUrl, supportedMarket, cleanPredictions };
