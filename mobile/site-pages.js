@@ -111,9 +111,40 @@
    MM().loadOdds?.().then(()=>{render();});
    const round=$('matchRound'),teamSelect=$('matchTeam');teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+MM().getTeams(d.matches).map(t=>'<option value="'+esc(t)+'">'+esc(MM().displayTeamName(t))+'</option>').join('');const rounds=[...new Set(d.matches.map(m=>Number(m.round)).filter(n=>Number.isInteger(n)&&n>0))].sort((a,b)=>a-b);
    round.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+n+'">Giornata '+n+'</option>').join('');
+   const renderDateTabs=(base)=>{
+    const target=$('matchDateTabs');if(!target)return;
+    let rows=(base||[]).filter(m=>m&&m.date);
+    if(matchFilter==='upcoming')rows=rows.filter(MM().upcoming);
+    else if(matchFilter==='finished')rows=rows.filter(MM().hasScore);
+    else if(matchFilter==='stale')rows=rows.filter(m=>!MM().hasScore(m)&&!MM().upcoming(m));
+    let dates=[...new Set(rows.map(m=>m.date))].sort();
+    if(matchFilter==='finished'||matchFilter==='stale')dates.reverse();
+    dates=dates.slice(0,7);
+    const selected=$('matchDate')?.value||'';
+    if(selected&&!dates.includes(selected))dates.unshift(selected);
+    const today=new Date();today.setHours(0,0,0,0);
+    const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
+    const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const label=value=>{
+      const date=new Date(value+'T12:00:00');
+      if(!Number.isFinite(date.getTime()))return value;
+      const key=iso(date),nowKey=iso(today),tomorrowKey=iso(tomorrow);
+      if(key===nowKey)return 'Oggi';
+      if(key===tomorrowKey)return 'Domani';
+      return date.toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short'}).replace('.','');
+    };
+    target.innerHTML='<button class="match-date-chip'+(!selected?' active':'')+'" data-match-date="" type="button" aria-pressed="'+String(!selected)+'">Tutte</button>'+
+      dates.map(date=>'<button class="match-date-chip'+(selected===date?' active':'')+'" data-match-date="'+esc(date)+'" type="button" aria-pressed="'+String(selected===date)+'">'+esc(label(date))+'</button>').join('');
+   };
+   $('matchDateTabs')?.addEventListener('click',event=>{
+    const button=event.target.closest('[data-match-date]');if(!button)return;
+    $('matchDate').value=button.dataset.matchDate||'';
+    $('matchDate').dispatchEvent(new Event('change',{bubbles:true}));
+   });
    const render=()=>{
     const q=MM().norm($('matchSearch').value),date=$('matchDate').value,team=teamSelect.value,gw=round.value,season=$('matchSeason').value;
     const previousStart=MM().seasonStart()-1,previousFrom=previousStart+'-07-01',previousTo=MM().seasonStart()+'-07-01';let base=season==='previous'?d.history.filter(m=>MM().hasScore(m)&&m.date>=previousFrom&&m.date<previousTo):d.matches;
+    renderDateTabs(base);
     activeMatches=base.filter(m=>(!q||MM().norm(m.home).includes(q)||MM().norm(MM().displayTeamName(m.home)).includes(q)||MM().norm(m.away).includes(q)||MM().norm(MM().displayTeamName(m.away)).includes(q))&&(!date||m.date===date)&&(!team||MM().norm(m.home)===MM().norm(team)||MM().norm(m.away)===MM().norm(team))&&(!gw||Number(m.round)===Number(gw)));
     if(matchFilter==='upcoming')activeMatches=activeMatches.filter(MM().upcoming);
     else if(matchFilter==='finished')activeMatches=activeMatches.filter(MM().hasScore);
