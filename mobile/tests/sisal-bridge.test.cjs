@@ -39,7 +39,8 @@ test("exports the selected match and every valid MatchMind market forecast", () 
     "home", "draw", "away", "bttsYes", "over25", "combo:home:over25"
   ]);
   assert.equal(item.predictions.find(x => x.marketKey === "bttsYes").probability, 0.522);
-  assert.equal(item.predictions[0].sampleEnough, false);
+  assert.equal(item.sampleEnough, false);
+  assert.equal(item.predictions[0].sampleEnough, undefined);
 
   const parsed = new URL(result.url);
   const decoded = JSON.parse(parsed.searchParams.get("mmplay"));
@@ -52,14 +53,14 @@ test("keeps an 11-match transfer compact without duplicating the payload", () =>
     home: "Home Team " + index, away: "Away Team " + index,
     date: "2026-11-13", competition: "serie-a", marketKey: "home", probability: 0.55,
     predictions: [
-      { marketKey: "home", probability: 0.55 },
-      { marketKey: "draw", probability: 0.25 },
-      { marketKey: "away", probability: 0.20 },
-      { marketKey: "over25", probability: 0.51 },
-      { marketKey: "under25", probability: 0.49 },
-      { marketKey: "bttsYes", probability: 0.52 },
-      { marketKey: "bttsNo", probability: 0.48 }
-    ]
+      "home", "draw", "away", "dc1X", "dcX2", "dc12",
+      "over15", "under15", "over25", "under25", "over35", "under35",
+      "bttsYes", "bttsNo"
+    ].map((marketKey, marketIndex) => ({
+      marketKey, label: "Long market label " + marketKey,
+      probability: 0.25 + marketIndex / 100,
+      sampleEnough: true, historyCount: 120, model: "Long model identifier"
+    }))
   }));
   const result = bridge.createUrl(rows, { sentAt: 12345 });
   assert.equal(result.payload.items.length, 11);
@@ -67,7 +68,9 @@ test("keeps an 11-match transfer compact without duplicating the payload", () =>
   assert.equal(parsed.searchParams.getAll("mmplay").length, 1);
   assert.equal(parsed.hash, "");
   assert.equal(JSON.parse(parsed.searchParams.get("mmplay")).items.length, 11);
-  assert.ok(result.url.length < 30000, "11-match URL should remain below 30 KB");
+  assert.ok(result.url.length < 18000, "11-match URL should remain compact after shared metadata is removed");
+  assert.equal(result.payload.items[0].predictions.length, 14);
+  assert.deepEqual(Object.keys(result.payload.items[0].predictions[0]).sort(), ["marketKey", "probability"]);
 });
 test("preserves an estimated forecast when the historical sample is limited", () => {
   const result = bridge.prepare([{
