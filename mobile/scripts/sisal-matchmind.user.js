@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.16.6
+// @version      2.16.7
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/*
@@ -24,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.16.6";
+  const MM_SCRIPT_VERSION = "2.16.7";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -91,22 +91,20 @@
     modena: ["modena", "modena fc"],
     sudtirol: ["sudtirol", "fc sudtirol", "suedtirol"],
     // Top UEFA Champions / Europa
-    realmadrid: ["real madrid", "real", "real madrid cf"],
+    realmadrid: ["real madrid", "real madrid cf"],
     mancity: ["manchester city", "man city", "man city fc", "city of manchester"],
     bayern: ["bayern monaco", "bayern munich", "bayern", "fc bayern", "fc bayern munchen", "bayern munchen"],
-    psg: ["paris saint germain", "paris saint-germain", "paris sg", "psg", "paris"],
+    psg: ["paris saint germain", "paris saint-germain", "paris sg", "psg"],
     arsenal: ["arsenal", "arsenal fc"],
     liverpool: ["liverpool", "liverpool fc"],
     barcelona: ["barcellona", "barcelona", "fc barcelona", "barca", "fc barca"],
     leverkusen: ["bayer leverkusen", "leverkusen", "bayer 04"],
     atleticomadrid: ["atletico madrid", "atletico", "atl madrid", "atletico de madrid"],
     dortmund: ["borussia dortmund", "dortmund", "bvb"],
-    astonvilla: ["aston villa", "villa"],
-    benfica: ["benfica", "sl benfica"],
-    sporting: ["sporting lisbona", "sporting cp", "sporting clube de portugal", "sporting"],
+    sporting: ["sporting lisbona", "sporting cp", "sporting clube de portugal"],
     chelsea: ["chelsea", "chelsea fc"],
     tottenham: ["tottenham", "spurs", "tottenham hotspur"],
-    manunited: ["manchester united", "man utd", "man united", "united", "manchester utd"],
+    manunited: ["manchester united", "man utd", "man united", "manchester utd"],
     // Altre denominazioni frequenti nei palinsesti internazionali
     wolverhampton: ["wolverhampton", "wolverhampton wanderers", "wolves"],
     newcastle: ["newcastle", "newcastle united"],
@@ -114,18 +112,18 @@
     brighton: ["brighton", "brighton and hove albion", "brighton hove albion"],
     nottinghamforest: ["nottingham forest", "nott forest"],
     everton: ["everton", "everton fc"],
-    astonvilla: ["aston villa", "villa", "aston villa fc"],
+    astonvilla: ["aston villa", "aston villa fc"],
     realsociedad: ["real sociedad", "real sociedad de futbol"],
     sevilla: ["sevilla", "sevilla fc"],
     valencia: ["valencia", "valencia cf"],
     villarreal: ["villarreal", "villarreal cf"],
     girona: ["girona", "girona fc"],
     athleticbilbao: ["athletic bilbao", "athletic club", "bilbao"],
-    marseille: ["olympique marseille", "olympique de marseille", "marseille", "om"],
+    marseille: ["olympique marseille", "olympique de marseille", "marseille"],
     lyon: ["olympique lyon", "olympique lyonnais", "lyon"],
     monaco: ["as monaco", "monaco"],
     lille: ["lille", "losc lille"],
-    ajax: ["ajax", "afc ajax", "amsterdam"],
+    ajax: ["ajax", "afc ajax"],
     psv: ["psv", "psv eindhoven"],
     feyenoord: ["feyenoord", "feyenoord rotterdam"],
     porto: ["porto", "fc porto"],
@@ -133,7 +131,30 @@
     galatasaray: ["galatasaray", "galatasaray sk"],
     fenerbahce: ["fenerbahce", "fenerbahce sk"],
     celtic: ["celtic", "celtic fc"],
-    rangers: ["rangers", "glasgow rangers", "rangers fc"]
+    rangers: ["rangers", "glasgow rangers", "rangers fc"],
+    // Nazionali UEFA: alias IT/EN per il trasferimento app → Sisal.
+    italy: ["italy", "italia", "italia nazionale", "italy national team"],
+    germany: ["germany", "germania", "deutschland", "germany national team"],
+    france: ["france", "francia", "france national team"],
+    spain: ["spain", "spagna", "espana", "spain national team"],
+    england: ["england", "inghilterra", "england national team"],
+    netherlands: ["netherlands", "paesi bassi", "holland", "olanda", "dutch national team"],
+    belgium: ["belgium", "belgio", "belgium national team"],
+    portugal: ["portugal", "portogallo", "portuguese national team"],
+    croatia: ["croatia", "croazia", "croatia national team"],
+    denmark: ["denmark", "danimarca", "denmark national team"],
+    sweden: ["sweden", "svezia", "sweden national team"],
+    norway: ["norway", "norvegia", "norway national team"],
+    poland: ["poland", "polonia", "poland national team"],
+    czechrepublic: ["czech republic", "repubblica ceca", "czech republic national team"],
+    romania: ["romania", "romania national team"],
+    ireland: ["republic of ireland", "ireland", "irlanda", "republic of ireland national team"],
+    scotland: ["scotland", "scozia", "scotland national team"],
+    wales: ["wales", "galles", "wales national team"],
+    ukraine: ["ukraine", "ucraina", "ukraine national team"],
+    serbia: ["serbia", "serbia national team"],
+    albania: ["albania", "albania national team"],
+    turkey: ["turkey", "turchia", "türkiye", "turkey national team"]
   };
 
   // Nessun rating di squadra viene assunto come xG verificato: usare baseline neutra finché non esiste una fonte versionata e validata.
