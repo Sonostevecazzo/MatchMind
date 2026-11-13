@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Predictions
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.3
+// @version      3.0.4
 // @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.0.3";
+  const VERSION = "3.0.4";
   const APP_URL = "https://recovery-nba-mainline-202611.matchmind-3te.pages.dev/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
@@ -390,9 +390,13 @@
 
   function getActionButtons() {
     const selector = "button,[role='button'],a[role='button'],[data-outcome],[data-selection-name]";
-    return Array.from(document.querySelectorAll(selector)).filter((button, index, all) => {
+    const viewportHeight = Math.max(window.innerHeight || document.documentElement.clientHeight || 700, 480);
+    const margin = Math.min(720, Math.max(240, viewportHeight * 0.65));
+    return Array.from(document.querySelectorAll(selector)).filter(button => {
       if (button.closest("#"+ROOT_ID) || button.closest("[data-mm-sisal-ui]")) return false;
       if (!button.getClientRects().length) return false;
+      const rect = button.getBoundingClientRect();
+      if (rect.bottom < -margin || rect.top > viewportHeight + margin) return false;
       const text = buttonText(button);
       if (!text || text.length > 140) return false;
       const hasOdds = /\b\d+[.,]\d{1,3}\b/.test(text);
@@ -409,14 +413,20 @@
     return attributes.concat([button.innerText || button.textContent || ""]).join(" ").trim();
   }
 
-  function eventRootCandidates(button) {
+  function eventRootCandidates(button, rootCache) {
     const roots = [];
     let current = button.parentElement;
     for (let depth = 0; depth < 10 && current && current !== document.body; depth++, current = current.parentElement) {
-      const text = current.innerText || current.textContent || "";
-      if (!text || text.length > 6000) continue;
-      const count = current.querySelectorAll("button,[role='button'],a[role='button'],[data-outcome]").length;
-      if (count > 0 && count <= 55) roots.push({ root: current, text });
+      let metrics = rootCache.get(current);
+      if (!metrics) {
+        metrics = {
+          text: current.innerText || current.textContent || "",
+          count: current.querySelectorAll("button,[role='button'],a[role='button'],[data-outcome]").length
+        };
+        rootCache.set(current, metrics);
+      }
+      if (!metrics.text || metrics.text.length > 6000) continue;
+      if (metrics.count > 0 && metrics.count <= 55) roots.push({ root: current, text: metrics.text });
     }
     return roots;
   }
@@ -549,21 +559,40 @@
     }
     lastScan = now;
 
-    const queue = readStored();
+    const queue = readStored().filter(item => item && item.predictions && Object.keys(item.predictions).length);
+    if (!queue.length) {
+      document.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
+      document.querySelectorAll("[data-mm-prediction]").forEach(node => node.removeAttribute("data-mm-prediction"));
+      matchedMatches = 0;
+      matchedMarkets = 0;
+      setStatus();
+      return;
+    }
+
     const buttons = getActionButtons();
-    const snapshots = buttons.map(button => ({ button, roots: eventRootCandidates(button) }));
-    document.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
-    document.querySelectorAll("[data-mm-prediction]").forEach(node => node.removeAttribute("data-mm-prediction"));
+    const rootCache = new WeakMap();
+    const snapshots = buttons.map(button => ({ button, roots: eventRootCandidates(button, rootCache) }));
+    buttons.forEach(button => {
+      button.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
+      button.removeAttribute("data-mm-prediction");
+    });
+    const eventMatchCache = new WeakMap();
+    const rootMatches = (root, text, item) => {
+      let cache = eventMatchCache.get(root);
+      if (!cache) { cache = new Map(); eventMatchCache.set(root, cache); }
+      const key = eventKey(item);
+      if (!cache.has(key)) cache.set(key, sameEvent(text, item));
+      return cache.get(key);
+    };
 
     let matchesSeen = 0;
     let marketsSeen = 0;
     queue.forEach(item => {
       const predictions = item.predictions || {};
-      if (!Object.keys(predictions).length) return;
       let eventSeen = false;
       const found = [];
       snapshots.forEach(snapshot => {
-        const candidate = snapshot.roots.find(entry => sameEvent(entry.text, item));
+        const candidate = snapshot.roots.find(entry => rootMatches(entry.root, entry.text, item));
         if (!candidate) return;
         eventSeen = true;
         const key = marketKeyFor(snapshot.button, candidate.root);
@@ -638,6 +667,15 @@
 
   document.addEventListener("click", event => {
     if (event.target.closest && event.target.closest("button,[role='button'],a")) scheduleScan(500);
+  }, { passive: true });
+  let scrollScanQueued = false;
+  window.addEventListener("scroll", () => {
+    if (scrollScanQueued || document.hidden) return;
+    scrollScanQueued = true;
+    window.setTimeout(() => {
+      scrollScanQueued = false;
+      scheduleScan(280);
+    }, 220);
   }, { passive: true });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) scheduleScan(250);
