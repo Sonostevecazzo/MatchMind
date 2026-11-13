@@ -114,7 +114,7 @@ assert "return footballRows.concat(nbaRows)" in (ROOT/"bets.js").read_text(encod
 assert "buildProposal" in nba_builder and "nbaAutoProposal" in (ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert "buildNbaProposal" in (ROOT/"nba.js").read_text(encoding="utf-8")
 assert 'if(document.body.dataset.page!=="nba"){box.hidden=true;return;}' in (ROOT/"nba.js").read_text(encoding="utf-8")
-assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "page==='mind'?'mind'" in core
+assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "(page==='mind'||page==='analysis-lab')?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
 assert "window.MatchMindAI.train" in core
