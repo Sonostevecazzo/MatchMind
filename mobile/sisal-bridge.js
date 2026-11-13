@@ -5,20 +5,67 @@
   if (root) root.MatchMindSisalBridge = bridge;
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
+
   const SISAL_URL = "https://www.sisal.it/scommesse";
   const NBA_SISAL_URL = "https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba";
   const NBA_MARKETS = new Set(["nbaMoneyline:home", "nbaMoneyline:away"]);
-  const SUPPORTED_MARKETS = new Set([
+  const FOOTBALL_MARKETS = new Set([
     "home", "draw", "away", "dc1X", "dcX2", "dc12",
     "over15", "under15", "over25", "under25", "over35", "under35",
     "bttsYes", "bttsNo"
   ]);
+  const COMBO_MARKET = /^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35|bttsYes|bttsNo)$/;
 
   function validDate(value) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
     if (!match) return "";
     const date = new Date(value + "T00:00:00.000Z");
     return Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== value ? "" : value;
+  }
+
+  function probability(value) {
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 && number <= 1 ? number : null;
+  }
+
+  function supportedMarket(key, sport) {
+    const value = String(key || "");
+    return sport === "nba" ? NBA_MARKETS.has(value) :
+      FOOTBALL_MARKETS.has(value) || COMBO_MARKET.test(value);
+  }
+
+  function cleanPredictions(row, sport) {
+    const entries = Array.isArray(row && row.predictions) ? row.predictions : [];
+    const result = [];
+    const seen = new Set();
+    entries.forEach(entry => {
+      if (!entry) return;
+      const marketKey = String(entry.marketKey || entry.key || "");
+      const value = probability(entry.probability);
+      if (!supportedMarket(marketKey, sport) || value === null || seen.has(marketKey)) return;
+      seen.add(marketKey);
+      result.push({
+        marketKey,
+        label: String(entry.label || marketKey).trim() || marketKey,
+        probability: value,
+        sampleEnough: entry.sampleEnough === true,
+        historyCount: Number.isFinite(Number(entry.historyCount)) ? Math.max(0, Number(entry.historyCount)) : 0,
+        model: String(entry.model || row.predictionMethod || (sport === "nba" ? "NBA Elo" : "MatchMind"))
+      });
+    });
+    const selectedKey = String(row && row.marketKey || "");
+    const selectedProbability = probability(row && row.probability);
+    if (selectedKey && supportedMarket(selectedKey, sport) && selectedProbability !== null && !seen.has(selectedKey)) {
+      result.push({
+        marketKey: selectedKey,
+        label: String(row.marketLabel || row.label || selectedKey),
+        probability: selectedProbability,
+        sampleEnough: row.sampleEnough === true,
+        historyCount: Number.isFinite(Number(row.historyCount)) ? Math.max(0, Number(row.historyCount)) : 0,
+        model: String(row.predictionMethod || (sport === "nba" ? "NBA Elo" : "MatchMind"))
+      });
+    }
+    return result;
   }
 
   function prepare(rows, sentAt) {
@@ -30,16 +77,26 @@
       const marketKey = String(row && row.marketKey || "");
       const home = String(match && match.home || "").trim();
       const away = String(match && match.away || "").trim();
-      const supported = sport === "nba" ? NBA_MARKETS.has(marketKey) : SUPPORTED_MARKETS.has(marketKey);
-      if (!home || !away || !supported) return;
+      if (!home || !away || !supportedMarket(marketKey, sport)) return;
       const rawDate = String(match.date || row.date || "").trim();
       const date = validDate(rawDate);
-      const label = String(row.marketLabel || row.label || marketKey).trim() || marketKey;
-      const probability = Number(row && row.probability);
-      const validProbability = Number.isFinite(probability) && probability > 0 && probability < 1 ? probability : null;
+      const selectedProbability = probability(row && row.probability);
+      const predictions = cleanPredictions(row, sport);
+      const selected = predictions.find(entry => entry.marketKey === marketKey);
+      const label = String(row.marketLabel || row.label || selected?.label || marketKey).trim() || marketKey;
       const competition = sport === "nba" ? "nba" : String(match.competition || row.competition || "serie-a");
       const eventId = String(match.id || row.eventId || row.id || "");
-      const item = { home, away, marketKey, label, date, competition, eventId, sport, probability: validProbability };
+      const sampleEnough = row.sampleEnough === true || Boolean(row.forecast && row.forecast.sampleEnough);
+      const historyCount = Number.isFinite(Number(row.historyCount)) ? Number(row.historyCount) :
+        Number(row.forecast && row.forecast.historyCount) || 0;
+      const item = {
+        home, away, marketKey, label, date, competition, eventId, sport,
+        probability: selected ? selected.probability : selectedProbability,
+        predictions,
+        sampleEnough,
+        historyCount: Math.max(0, historyCount),
+        predictionMethod: String(row.predictionMethod || (row.forecast && row.forecast.predictionMethod) || (sport === "nba" ? "NBA Elo" : "MatchMind"))
+      };
       if (sport === "nba") {
         item.start = String(match.start || row.start || "");
         item.homeAbbr = String(match.homeAbbr || row.homeAbbr || "");
@@ -51,6 +108,7 @@
     });
     const timestamp = Number(sentAt);
     const payload = {
+      version: 3,
       sentAt: Number.isFinite(timestamp) && timestamp > 0 ? timestamp : Date.now(),
       items
     };
@@ -60,12 +118,12 @@
   function createUrl(rows, options) {
     const result = prepare(rows, options && options.sentAt);
     if (!result.payload.items.length) return { ...result, url: null };
-    const encoded = encodeURIComponent(JSON.stringify(result.payload));
     const hasFootball = result.payload.items.some(item => item.sport !== "nba");
     const hasNba = result.payload.items.some(item => item.sport === "nba");
     const base = hasNba && !hasFootball ? NBA_SISAL_URL : SISAL_URL;
+    const encoded = encodeURIComponent(JSON.stringify(result.payload));
     return { ...result, url: base + "#mmplay=" + encoded };
   }
 
-  return { prepare, createUrl };
+  return { prepare, createUrl, supportedMarket, cleanPredictions };
 });
