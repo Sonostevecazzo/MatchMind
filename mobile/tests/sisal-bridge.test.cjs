@@ -81,7 +81,8 @@ test("preserves an estimated forecast when the historical sample is limited", ()
   }], 1);
   assert.equal(result.skipped, 0);
   assert.equal(result.payload.items[0].predictions[0].probability, 0.522);
-  assert.equal(result.payload.items[0].predictions[0].sampleEnough, false);
+  assert.equal(result.payload.items[0].sampleEnough, false);
+  assert.equal(result.payload.items[0].historyCount, 7);
 });
 
 test("supports standard markets, double chance and supported same-match combinations", () => {
