@@ -553,7 +553,7 @@
     if(!path)return '';
     return /^https:\/\//i.test(path)?path:LOGO_ROOT+path.split('/').map(encodeURIComponent).join('/');
   }
-  function badge(name){const fallback=esc(teamInitials(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(name)+'">'+(src?'<img class="team-logo" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove();if(this.nextElementSibling)this.nextElementSibling.style.display=\'inline-flex\'">':'')+'<span class="team-crest-fallback"'+(src?' style="display:none"':'')+'>'+fallback+'</span></span>';}
+  function badge(name){const fallback=esc(teamInitials(name)),flag=Boolean(nationalFlagCode(name)),src=teamLogoUrl(name);return '<span class="team-crest" aria-label="'+esc(displayTeamName(name))+'">'+(src?'<img class="team-logo'+(flag?' national-flag':'')+'" src="'+src+'" alt="" loading="lazy" decoding="async" onerror="this.remove();if(this.nextElementSibling)this.nextElementSibling.style.display=\'inline-flex\'">':'')+'<span class="team-crest-fallback"'+(src?' style="display:none"':'')+'>'+fallback+'</span></span>';}
   function getTeams(rows){return [...new Set(rows.flatMap(m=>[m.home,m.away]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));}
   function groupByDate(rows){const map=new Map();rows.forEach(m=>{const k=m.date||'unknown';if(!map.has(k))map.set(k,[]);map.get(k).push(m);});return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0]));}
   function standings(rows){
