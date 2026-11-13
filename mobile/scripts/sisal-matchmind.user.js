@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Predictions
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.0
+// @version      3.0.1
 // @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.0.0";
+  const VERSION = "3.0.1";
   const APP_URL = "https://recovery-nba-mainline-202611.matchmind-3te.pages.dev/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
