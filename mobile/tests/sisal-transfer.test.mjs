@@ -55,7 +55,7 @@ test("Sisal can display 1X2, double chance, goals and both-teams-to-score foreca
 });
 
 test("Sisal displays limited-sample model estimates without relabelling them as calibrated", () => {
-  assert.match(script, /data-mm-limited/);
+  assert.match(script, /badge\.dataset\.mmLimited/);
   assert.match(script, /prediction\.sampleEnough/);
   assert.match(script, /Stima MatchMind/);
   assert.doesNotMatch(script, /TEAM_RATINGS|isCalibratedTeamRating|forecastUnavailable/);
@@ -92,7 +92,7 @@ test("bridge preserves all predictions and sample metadata in version 3 payload"
   assert.match(bridge, /sampleEnough/);
   assert.match(bridge, /historyCount/);
   assert.match(bridge, /COMBO_MARKET/);
-  assert.match(bridge, /probability >= 0 && number <= 1/);
+  assert.match(bridge, /number >= 0 && number <= 1/);
 });
 
 test("national-team presentation uses Italian Sisal labels and national flags", () => {
