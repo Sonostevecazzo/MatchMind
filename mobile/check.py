@@ -85,12 +85,12 @@ assert 'global-slip-chevron' not in core
 assert 'appearance:none!important' in (ROOT/"site.css").read_text(encoding="utf-8")
 assert "bets.html" in core and "Schedina" in core
 assert "live.html" in core and "Live" in core
-assert core.index("['matches.html','matches','Calcio']") < core.index("['live.html','live','Live']")
+assert core.index("['matches.html','matches','Home']") < core.index("['live.html','live','Live']")
 assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert all(token in sports_switch for token in ['data-sport="football"','data-sport="nba"',"matchmind-sport-v1","nbaIntegratedView"])
 assert "['nba.html','nba','NBA']" not in core
-assert "matchmind-pwa-v123-20261113-sisal-predictions-v3" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v124-20261113-brand-navigation" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
