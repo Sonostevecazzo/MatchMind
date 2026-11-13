@@ -1,4 +1,4 @@
-:root{color-scheme:dark;--bg:#090c11;--panel:#121923;--panel2:#182330;--line:#273442;--text:#f2f5f8;--muted:#91a0ae;--mint:#8de3c4;--mint2:#b8f2dc;--blue:#8dbaff;--amber:#ffd27a;--red:#ff8796;--radius:15px;font-synthesis:none}
+:root{color-scheme:dark;--bg:#090c11;--panel:#121923;--panel2:#182330;--line:#273442;--text:#f2f5f8;--muted:#91a0ae;--mint:#c4f36a;--mint2:#ddff9a;--blue:#55a7ff;--amber:#ffd27a;--red:#ff8796;--radius:15px;font-synthesis:none}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:90px}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;padding:0 0 calc(82px + env(safe-area-inset-bottom))}
@@ -1294,5 +1294,28 @@ body[data-page="bets"] .archive-ticket{padding:15px}
   .mobile-nav-backdrop{inset:54px 0 calc(80px + env(safe-area-inset-bottom))!important}
 }
 @media (prefers-reduced-motion:reduce){
+  .mobile-primary-nav .nav-item{transition:none!important}
+}
+
+
+/* MatchMind navigation refresh: four stable destinations on mobile. */
+@media (max-width:700px){
+  .mobile-primary-nav{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    min-height:78px!important;
+    padding:7px 10px calc(7px + env(safe-area-inset-bottom))!important;
+    gap:5px!important;
+  }
+  .mobile-primary-nav .nav-item{min-width:0!important;min-height:58px!important;padding:5px 2px!important;font-size:11px!important;gap:4px!important}
+  .mobile-primary-nav .nav-item.active{background:linear-gradient(145deg,rgba(196,243,106,.19),rgba(61,133,255,.10))!important;color:#ddff9a!important;box-shadow:inset 0 0 0 1px rgba(196,243,106,.28)!important}
+  .mobile-primary-nav .nav-icon{width:29px!important;height:29px!important;border-radius:10px!important;background:rgba(255,255,255,.045)!important}
+  .mobile-primary-nav .nav-icon svg{width:24px!important;height:24px!important}
+  body{padding-bottom:calc(98px + env(safe-area-inset-bottom))!important}
+  .global-slip-dock{bottom:calc(88px + env(safe-area-inset-bottom))!important}
+  .global-slip-dock.is-expanded{bottom:calc(88px + env(safe-area-inset-bottom))!important}
+  .mobile-nav{bottom:calc(84px + env(safe-area-inset-bottom))!important}
+  .mobile-nav-backdrop{inset:54px 0 calc(80px + env(safe-area-inset-bottom))!important}
+}
+@media(prefers-reduced-motion:reduce){
   .mobile-primary-nav .nav-item{transition:none!important}
 }

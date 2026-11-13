@@ -1,19 +1,25 @@
 {
-  "name": "MatchMind — Serie A Intelligence",
+  "name": "MatchMind — Sports Intelligence",
   "short_name": "MatchMind",
-  "description": "Centro Serie A, risultati e analisi statistiche",
+  "description": "Partite, statistiche, analisi e schedine per calcio e NBA",
   "lang": "it-IT",
   "start_url": "./matches.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#090d11",
-  "theme_color": "#090d11",
+  "background_color": "#050a25",
+  "theme_color": "#050a25",
   "icons": [
     {
       "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
