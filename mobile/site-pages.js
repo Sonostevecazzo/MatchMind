@@ -369,10 +369,17 @@ function backtestHTML(r,e){
    if(page==='home')initHome(d);else if(page==='matches')initMatches(d);else if(page==='explore')initExplore(d);else if(page==='league')initLeague(d);else if(page==='team')initTeam(d);else if(page==='match')await initMatch(d);else if(page==='players')setStatus('Statistiche individuali non integrate: non mostro dati giocatore privi di una fonte verificabile.');else if(page==='data')initData();else if(page==='settings')initSettings();else if(page==='mind')initMind(d);
    if(page!=='data'&&page!=='settings'){
     MM().loadOdds().then(()=>window.dispatchEvent(new Event('matchmind:odds-updated'))).catch(()=>{});
-    if(window.MatchMindAI&&d.history.length>=30){
-     const train=()=>MM().trainAvailableModels(d.history,d.competition).then(model=>{if(model)window.dispatchEvent(new Event('matchmind:ai-updated'));}).catch(()=>{});
-     if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(train,{timeout:12000});else setTimeout(train,1800);
-    }
+   }
+   // Calibration is CPU-intensive: keep normal navigation, live scores and bet-slip use responsive.
+   if(page==='mind'&&window.MatchMindAI&&d.history.length>=30){
+    const train=()=>{
+     if(document.hidden)return;
+     MM().trainAvailableModels(d.history,d.competition)
+      .then(model=>{if(model)window.dispatchEvent(new Event('matchmind:ai-updated'));})
+      .catch(()=>{});
+    };
+    if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(train,{timeout:20000});
+    else setTimeout(train,7000);
    }
   }catch(e){setStatus('Dati non disponibili: '+e.message,'err');if(page==='settings')initSettings();else if(page==='data')initData();else{const targets={home:'homeNextMatches',matches:'matchList',explore:'teamDirectory',league:'standingsBody',team:'teamContent',match:'matchDetail',mind:'mindFixtures'};const id=targets[page];if(id&&$(id))$(id).innerHTML='<div class="notice warning">'+esc(e.message)+'</div>';}}
  });
