@@ -6,7 +6,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  const SISAL_URL = "https://www.sisal.it/scommesse";
+  const SISAL_URL = "https://www.sisal.it/scommesse-matchpoint/sport/calcio";
   const NBA_SISAL_URL = "https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba";
   const NBA_MARKETS = new Set(["nbaMoneyline:home", "nbaMoneyline:away"]);
   const FOOTBALL_MARKETS = new Set([
@@ -123,7 +123,7 @@
     const hasNba = result.payload.items.some(item => item.sport === "nba");
     const base = hasNba && !hasFootball ? NBA_SISAL_URL : SISAL_URL;
     const encoded = encodeURIComponent(JSON.stringify(result.payload));
-    return { ...result, url: base + "#mmplay=" + encoded };
+    return { ...result, url: base + "?mmplay=" + encoded + "#mmplay=" + encoded };
   }
 
   return { prepare, createUrl, supportedMarket, cleanPredictions };
