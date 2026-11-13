@@ -90,7 +90,7 @@ assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert all(token in sports_switch for token in ['data-sport="football"','data-sport="nba"',"matchmind-sport-v1","nbaIntegratedView"])
 assert "['nba.html','nba','NBA']" not in core
-assert "matchmind-pwa-v125-20261113-crash-recovery" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert re.search(r"const CACHE='matchmind-pwa-v\d+[^']*'", (ROOT/"sw.js").read_text(encoding="utf-8"))
 assert "cache.addAll(CORE_SHELL)" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
@@ -101,7 +101,7 @@ sisal_meta=re.search(r"^// @version\s+([^\r\n]+)",sisal_script,re.M)
 sisal_code=re.search(r'const VERSION = "([^"]+)"',sisal_script)
 assert sisal_meta and sisal_code and sisal_meta.group(1)==sisal_code.group(1), "Sisal userscript metadata and runtime version must match"
 assert 'document.getElementById("mm-widget")?.remove();' not in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
-assert "fixed-nav-216" in (ROOT/"matches.html").read_text(encoding="utf-8")
+assert "mobile-readable.css?v=20261113-compact-nav-1" in (ROOT/"matches.html").read_text(encoding="utf-8")
 assert "teams:'<svg" in core and "players:'<svg" in core
 assert "nationsLeagueStats" in (ROOT/"data.html").read_text(encoding="utf-8")
 assert "Squadre più prolifiche" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
@@ -125,7 +125,7 @@ assert "ai-engine.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v125-20261113-crash-recovery" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert re.search(r"const CACHE='matchmind-pwa-v\d+[^']*'", (ROOT/"sw.js").read_text(encoding="utf-8"))
 assert 'omonia:' in core and "assets.footylogos.com/logos/ac-omonia-nicosia/" in core
 assert "hapoelbeersheva" in core and "assets.footylogos.com/logos/hapoel-beer-sheva/" in core
 assert "teamLogoUrl" in core and "https://assets.footylogos.com/logos/" in core
@@ -166,7 +166,7 @@ assert "shownLimit+=12" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "forecastMemo" in core and "memoKey&&forecastMemo.has(memoKey)" in core
 assert "caches.default" in calendar and "cache.put(cacheKey" in calendar
 assert "s-maxage=900" in (ROOT/"functions"/"_middleware.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v125-20261113-crash-recovery" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert re.search(r"const CACHE='matchmind-pwa-v\d+[^']*'", (ROOT/"sw.js").read_text(encoding="utf-8"))
 
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
@@ -210,6 +210,18 @@ assert "generateMotivation" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "proposal-variant-tabs" in (ROOT/"bets.js").read_text(encoding="utf-8")
 assert "strategy-match-badge" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "strategyBanner" in (ROOT/"matches.html").read_text(encoding="utf-8")
+
+matches_html=(ROOT/"matches.html").read_text(encoding="utf-8")
+matches_js=(ROOT/"site-pages.js").read_text(encoding="utf-8")
+site_core=(ROOT/"site-core.js").read_text(encoding="utf-8")
+service_worker=(ROOT/"sw.js").read_text(encoding="utf-8")
+assert 'id="competitionTabs"' in matches_html and 'id="matchDateTabs"' in matches_html
+assert "matches-redesign.css?v=20261114-bullet-center-1" in matches_html
+assert "site-pages.js?v=20261114-bullet-center-1" in matches_html
+assert "renderCompetitionTabs" in matches_js and "renderDateTabs" in matches_js
+assert "getCompetitions:()=>Object.values(COMPETITIONS)" in site_core
+assert "./matches-redesign.css?v=20261114-bullet-center-1" in service_worker
+assert "./site-pages.js?v=20261114-bullet-center-1" in service_worker
 assert "fixtures-odds.json" in (ROOT/"sw.js").read_text(encoding="utf-8")
 
 site_core=(ROOT/"site-core.js").read_text(encoding="utf-8")
