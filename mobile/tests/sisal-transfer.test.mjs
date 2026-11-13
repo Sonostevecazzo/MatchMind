@@ -36,6 +36,7 @@ test("Sisal consumes prediction arrays from the app and supports Italian team al
   assert.match(script, /function normalizePredictions\(row\)/);
   assert.match(script, /new URLSearchParams\(location.search/);
   assert.match(script, /query.get\("mmplay"\)/);
+  assert.match(script, /hash.get\("mmplay"\)/);
   assert.match(script, /row\.predictions/);
   assert.match(script, /netherlands: \["netherlands", "holland", "the netherlands", "olanda", "paesi bassi", "nederland"\]/);
   assert.match(script, /greece: \["greece", "grecia", "hellas"\]/);
