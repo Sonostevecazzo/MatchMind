@@ -45,7 +45,15 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   const parsed = new URL(result.url);
   const decoded = JSON.parse(parsed.searchParams.get("mmplay"));
   assert.equal(parsed.hash, "");
-  assert.deepEqual(decoded, result.payload);
+  assert.equal(decoded.v, 3);
+  assert.equal(decoded.t, result.payload.sentAt);
+  assert.equal(decoded.i.length, 1);
+  assert.equal(decoded.i[0][0], item.home);
+  assert.equal(decoded.i[0][1], item.away);
+  assert.equal(decoded.i[0][2], item.marketKey);
+  assert.deepEqual(decoded.i[0][9], item.predictions.map(entry => [entry.marketKey, entry.probability]));
+  assert.equal(decoded.i[0][10], 0);
+  assert.equal(decoded.i[0][11], item.historyCount);
 });
 
 test("keeps an 11-match transfer compact without duplicating the payload", () => {
