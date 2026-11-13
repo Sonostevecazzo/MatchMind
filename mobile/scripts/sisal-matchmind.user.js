@@ -340,7 +340,11 @@
     style.textContent = [
       "#"+ROOT_ID+"{position:fixed;right:10px;bottom:92px;z-index:2147483000;display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid rgba(16,185,129,.55);border-radius:999px;background:rgba(8,24,24,.94);color:#b7f7d8;font:700 11px/1.1 system-ui,-apple-system,sans-serif;box-shadow:0 2px 9px rgba(0,0,0,.2);text-decoration:none;opacity:.92;}",
       "#"+ROOT_ID+" .mm-dot{width:6px;height:6px;border-radius:50%;background:#19c784;box-shadow:0 0 0 3px rgba(25,199,132,.13)}",
-      "."+BADGE_CLASS+"{display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;margin:2px 0 0 4px!important;padding:2px 5px!important;border:1px solid #72d65d!important;border-radius:5px!important;background:#12351f!important;color:#d7ff8b!important;font:800 10px/1.15 system-ui,-apple-system,sans-serif!important;letter-spacing:.1px!important;white-space:nowrap!important;pointer-events:none!important;box-shadow:none!important;}",
+      "."+BADGE_CLASS+"{display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;margin:2px 0 0 4px!important;padding:2px 5px!important;border:1px solid #64748b!important;border-radius:5px!important;background:#1e293b!important;color:#f8fafc!important;font:800 10px/1.15 system-ui,-apple-system,sans-serif!important;letter-spacing:.1px!important;white-space:nowrap!important;pointer-events:none!important;box-shadow:none!important;}",
+      "."+BADGE_CLASS+".mm-picked{outline:2px solid #facc15!important;outline-offset:1px!important;}",
+      "."+BADGE_CLASS+".mm-best{border-color:#16a34a!important;background:#dcfce7!important;color:#166534!important;}",
+      "."+BADGE_CLASS+".mm-value{border-color:#2563eb!important;background:#dbeafe!important;color:#1d4ed8!important;}",
+      "."+BADGE_CLASS+".mm-avoid{border-color:#dc2626!important;background:#fee2e2!important;color:#991b1b!important;}",
       "."+BADGE_CLASS+".mm-picked{border-color:#b8f36b!important;background:#1e4d24!important;color:#efffc3!important;}",
       "."+BADGE_CLASS+"[data-mm-limited='true']{border-style:dashed!important;}",
       "@media(max-width:600px){#"+ROOT_ID+"{right:8px;bottom:88px;padding:4px 8px;font-size:10px;}}"
