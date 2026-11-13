@@ -528,6 +528,7 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
 /* Team and competition identity assets */
 .team-crest{position:relative;overflow:hidden;isolation:isolate}
 .team-crest .team-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:0;z-index:2;background:transparent}
+.team-crest .team-logo.national-flag{object-fit:cover;border-radius:50%;}
 .team-crest-fallback{position:relative;z-index:1}
 .competition-badge{position:relative;overflow:hidden}
 .competition-badge .competition-logo{width:100%;height:100%;object-fit:contain;padding:5px}
