@@ -123,7 +123,7 @@
     const hasNba = result.payload.items.some(item => item.sport === "nba");
     const base = hasNba && !hasFootball ? NBA_SISAL_URL : SISAL_URL;
     const encoded = encodeURIComponent(JSON.stringify(result.payload));
-    return { ...result, url: base + "?mmplay=" + encoded + "#mmplay=" + encoded };
+    return { ...result, url: base + "?mmplay=" + encoded };
   }
 
   return { prepare, createUrl, supportedMarket, cleanPredictions };
