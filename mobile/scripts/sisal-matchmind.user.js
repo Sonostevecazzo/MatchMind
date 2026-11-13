@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.16.5
+// @version      2.16.6
 // @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/*
@@ -24,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.16.5";
+  const MM_SCRIPT_VERSION = "2.16.6";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -556,7 +556,7 @@
       gap: 6px !important;
       animation: mmSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
       box-sizing: border-box !important;
-      backdrop-filter: blur(14px) !important;
+      backdrop-filter: none !important;
     }
 
     @keyframes mmSlideUp {
@@ -742,25 +742,30 @@
       background: rgba(16,185,129,0.12) !important;
     }
     .mm-selected-from-app {
-      outline: 3px solid #c4f36a !important;
+      position: relative !important;
+      outline: 2px solid #a3e635 !important;
       outline-offset: 1px !important;
-      background: rgba(132,204,22,.18) !important;
-      box-shadow: 0 0 0 3px rgba(132,204,22,.16) !important;
+      background: rgba(132,204,22,.12) !important;
+      box-shadow: 0 0 0 2px rgba(132,204,22,.14) !important;
     }
     .mm-selected-app-tag {
-      display: block !important;
-      width: fit-content !important;
-      max-width: 100% !important;
-      margin: 3px auto 0 !important;
-      padding: 2px 6px !important;
-      border-radius: 5px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-width: 34px !important;
+      min-height: 20px !important;
+      margin: 2px auto 0 !important;
+      padding: 2px 7px !important;
+      border-radius: 999px !important;
       background: #365314 !important;
       border: 1px solid #a3e635 !important;
       color: #ecfccb !important;
-      font-size: 10px !important;
-      line-height: 1.25 !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
       font-weight: 900 !important;
+      letter-spacing: .15px !important;
       pointer-events: none !important;
+      white-space: nowrap !important;
     }
 
     .mm-send-btn {
@@ -808,7 +813,7 @@
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       box-sizing: border-box;
-      backdrop-filter: blur(10px);
+      backdrop-filter: none;
     }
 
     @media (max-width: 600px) {
@@ -862,13 +867,16 @@
       user-select: none;
     }
 
+    #mm-widget-min-bar { touch-action: none !important; cursor: move !important; }
+
     #mm-widget-head {
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
       font-weight: 800 !important;
       color: #38bdf8 !important;
-      cursor: move !important;
+      cursor: grab !important;
+      touch-action: none !important;
       padding-bottom: 5px !important;
       border-bottom: 1px solid #1e293b !important;
       user-select: none !important;
@@ -1184,14 +1192,18 @@
       curr = curr.parentElement;
     }
 
-    const attrText = (btn.getAttribute("aria-label") || "") + " " + (btn.getAttribute("title") || "") + " " + (btn.getAttribute("data-qa") || "");
+    const attrText = ["aria-label", "title", "data-qa", "data-market", "data-market-name",
+      "data-selection-name", "data-outcome"].map(key => btn.getAttribute(key) || "").join(" ");
     return { marketTitle, lineInfo, attrText };
   }
 
   // Risolve quota numerica e tipologia mercato Sisal per un bottone
   function resolveOddsButton(btn) {
-    let label = "";
-    let val = null;
+    const attr = key => btn.getAttribute(key) || "";
+    let label = ["data-outcome", "data-selection-name", "data-name", "aria-label", "title"]
+      .map(attr).find(value => value && value.length < 40) || "";
+    let val = parseOddsValue(["data-odd", "data-price", "data-value", "data-odds", "aria-label", "title"]
+      .map(attr).join(" "));
 
     // 1. Cerca nei nodi figli diretti (escludendo badge MM)
     const children = Array.from(btn.children).filter(el => !el.classList.contains("mm-prob-tag") && !el.classList.contains("mm-badge-recommended"));
@@ -1533,116 +1545,86 @@
 
   let isMutatingDOM = false;
 
-  // Gestione Drag & Drop universale pulita
+  // Trascinamento limitato all'intestazione: il corpo del widget resta scorrevole.
   function initDraggable(widgetEl, handleEl) {
-    try {
-      const savedPos = JSON.parse(localStorage.getItem("mm_widget_pos") || "null");
-      if (savedPos && savedPos.left && savedPos.top) {
-        // Valida che sia all'interno dello schermo corrente
-        const numTop = parseFloat(savedPos.top);
-        const numLeft = parseFloat(savedPos.left);
-        if (numTop >= 0 && numTop < window.innerHeight - 50 && numLeft >= 0 && numLeft < window.innerWidth - 60) {
-          widgetEl.style.removeProperty("bottom");
-          widgetEl.style.removeProperty("right");
-          widgetEl.style.bottom = "auto";
-          widgetEl.style.right = "auto";
-          widgetEl.style.left = savedPos.left;
-          widgetEl.style.top = savedPos.top;
-        }
-      }
-    } catch(e) {}
-
-    if (widgetEl.__mm_drag_initialized) return;
+    if (!widgetEl || widgetEl.__mm_drag_initialized) return;
     widgetEl.__mm_drag_initialized = true;
 
-    let isDragging = false;
-    let hasMoved = false;
-    let startX = 0;
-    let startY = 0;
-    let initialLeft = 0;
-    let initialTop = 0;
+    const clamp = (value, min, max) => Math.max(min, Math.min(value, Math.max(min, max)));
+    const restorePosition = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("mm_widget_pos") || "null");
+        if (!saved || !Number.isFinite(parseFloat(saved.left)) || !Number.isFinite(parseFloat(saved.top))) return;
+        const width = widgetEl.offsetWidth || 335;
+        const height = widgetEl.offsetHeight || 50;
+        const left = clamp(parseFloat(saved.left), 6, window.innerWidth - width - 6);
+        const top = clamp(parseFloat(saved.top), 6, window.innerHeight - height - 6);
+        widgetEl.style.right = "auto";
+        widgetEl.style.bottom = "auto";
+        widgetEl.style.left = left + "px";
+        widgetEl.style.top = top + "px";
+      } catch (_) {}
+    };
 
-    function onDragStart(clientX, clientY) {
-      isDragging = true;
-      hasMoved = false;
+    restorePosition();
+    if (!window.__mm_widget_resize_bound) {
+      window.__mm_widget_resize_bound = true;
+      window.addEventListener("resize", () => {
+        const active = document.getElementById("mm-widget");
+        if (!active || !active.style.left || !active.style.top) return;
+        const width = active.offsetWidth || 335, height = active.offsetHeight || 50;
+        const left = clamp(parseFloat(active.style.left) || 0, 6, window.innerWidth - width - 6);
+        const top = clamp(parseFloat(active.style.top) || 0, 6, window.innerHeight - height - 6);
+        active.style.left = left + "px";
+        active.style.top = top + "px";
+        try { localStorage.setItem("mm_widget_pos", JSON.stringify({ left: active.style.left, top: active.style.top })); } catch (_) {}
+      }, { passive: true });
+    }
+
+    let drag = null;
+    const excluded = "button, a, input, select, textarea, summary, [role='button']";
+    widgetEl.addEventListener("pointerdown", event => {
+      if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+      const handle = event.target.closest("#mm-widget-head, #mm-widget-min-bar");
+      if (!handle || !widgetEl.contains(handle) || event.target.closest(excluded)) return;
       const rect = widgetEl.getBoundingClientRect();
-      startX = clientX;
-      startY = clientY;
-      initialLeft = rect.left;
-      initialTop = rect.top;
-      widgetEl.style.removeProperty("bottom");
-      widgetEl.style.removeProperty("right");
-      widgetEl.style.bottom = "auto";
-      widgetEl.style.right = "auto";
-      widgetEl.style.left = `${initialLeft}px`;
-      widgetEl.style.top = `${initialTop}px`;
-    }
-
-    function onDragMove(clientX, clientY, e) {
-      if (!isDragging) return;
-      const dx = clientX - startX;
-      const dy = clientY - startY;
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) hasMoved = true;
-
-      let newLeft = initialLeft + dx;
-      let newTop = initialTop + dy;
-
-      const maxLeft = Math.max(10, window.innerWidth - widgetEl.offsetWidth - 6);
-      const maxTop = Math.max(10, window.innerHeight - widgetEl.offsetHeight - 6);
-      newLeft = Math.max(6, Math.min(newLeft, maxLeft));
-      newTop = Math.max(6, Math.min(newTop, maxTop));
-
-      widgetEl.style.left = `${newLeft}px`;
-      widgetEl.style.top = `${newTop}px`;
-
-      if (e && e.cancelable) e.preventDefault();
-    }
-
-    function onDragEnd() {
-      if (!isDragging) return;
-      isDragging = false;
-      if (hasMoved) {
-        try {
-          localStorage.setItem("mm_widget_pos", JSON.stringify({
-            left: widgetEl.style.left,
-            top: widgetEl.style.top
-          }));
-        } catch(err) {}
-      }
-    }
-
-    // Touch
-    widgetEl.addEventListener("touchstart", (e) => {
-      if (e.target.closest("button, input, a, select")) return;
-      if (e.touches.length === 1) {
-        onDragStart(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    }, { passive: false });
-
-    window.addEventListener("touchmove", (e) => {
-      if (!isDragging || e.touches.length !== 1) return;
-      onDragMove(e.touches[0].clientX, e.touches[0].clientY, e);
-    }, { passive: false });
-
-    window.addEventListener("touchend", onDragEnd);
-    window.addEventListener("touchcancel", onDragEnd);
-
-    // Mouse
-    widgetEl.addEventListener("mousedown", (e) => {
-      if (e.target.closest("button, input, a, select")) return;
-      onDragStart(e.clientX, e.clientY);
-
-      const onMouseMove = (ev) => onDragMove(ev.clientX, ev.clientY, ev);
-      const onMouseUp = () => {
-        onDragEnd();
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      };
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
+      drag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
+        left: rect.left, top: rect.top, moved: false };
+      try { widgetEl.setPointerCapture(event.pointerId); } catch (_) {}
     });
 
-    return () => hasMoved;
+    widgetEl.addEventListener("pointermove", event => {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      const dx = event.clientX - drag.startX, dy = event.clientY - drag.startY;
+      if (!drag.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      drag.moved = true;
+      const left = clamp(drag.left + dx, 6, window.innerWidth - widgetEl.offsetWidth - 6);
+      const top = clamp(drag.top + dy, 6, window.innerHeight - widgetEl.offsetHeight - 6);
+      widgetEl.style.right = "auto";
+      widgetEl.style.bottom = "auto";
+      widgetEl.style.left = left + "px";
+      widgetEl.style.top = top + "px";
+      if (event.cancelable) event.preventDefault();
+    });
+
+    const finishDrag = event => {
+      if (!drag || (event && event.pointerId !== drag.pointerId)) return;
+      const moved = drag.moved;
+      drag = null;
+      if (!moved) return;
+      try {
+        localStorage.setItem("mm_widget_pos", JSON.stringify({
+          left: widgetEl.style.left, top: widgetEl.style.top
+        }));
+      } catch (_) {}
+      widgetEl.__mm_suppress_click_until = Date.now() + 350;
+      if (event && widgetEl.hasPointerCapture?.(event.pointerId)) {
+        try { widgetEl.releasePointerCapture(event.pointerId); } catch (_) {}
+      }
+    };
+    widgetEl.addEventListener("pointerup", finishDrag);
+    widgetEl.addEventListener("pointercancel", finishDrag);
+    widgetEl.addEventListener("lostpointercapture", finishDrag);
   }
 
   function setStrategy(strat) {
@@ -1761,6 +1743,7 @@
 
       initDraggable(widget, widget);
       widget.onclick = (e) => {
+        if (Date.now() < (widget.__mm_suppress_click_until || 0)) { e.preventDefault(); return; }
         if (e.target.id === "mm-min-hide-btn") {
           e.stopPropagation();
           setHidden(true);
@@ -2433,6 +2416,7 @@
     writePlayQueue(next);
     isHidden = false;
     isMinimized = false;
+    gmSet("mm_sisal_queue_expanded", "true");
     gmSet("mm_sisal_last_import", String(Date.now()));
     try { history.replaceState(null, "", location.pathname + location.search); } catch (error) {}
     return true;
@@ -2529,12 +2513,13 @@
       tag.className = "mm-selected-app-tag";
       btn.appendChild(tag);
     }
-    tag.textContent = hasProbability
-      ? "SELEZIONA · MatchMind " + Math.round(probability * 100) + "%"
-      : "SELEZIONA · MatchMind";
-    tag.title = "Mercato selezionato nell'app MatchMind" +
-      (hasProbability ? " · probabilità stimata " + (probability * 100).toFixed(1) + "%" : "") +
-      (Number(odds) > 1 ? " · quota Sisal " + Number(odds).toFixed(2) : "");
+    if (!hasProbability) {
+      tag.remove();
+      return;
+    }
+    tag.textContent = Math.round(probability * 100) + "%";
+    tag.title = "Probabilità MatchMind: " + (probability * 100).toFixed(1) + "%";
+    tag.setAttribute("aria-label", "Probabilità selezionata " + Math.round(probability * 100) + " percento");
   }
 
   function autoPlayQueue(calculations) {
@@ -2636,8 +2621,8 @@
 
 
   // Osservatore leggero: nessuna querySelector o lettura di textContent per ogni nodo mutato.
-  const MIN_SCAN_INTERVAL = 2500;
-  const MUTATION_DEBOUNCE = 500;
+  const MIN_SCAN_INTERVAL = 4500;
+  const MUTATION_DEBOUNCE = 750;
   let lastScanTime = 0;
   let scanTimer = null;
 
@@ -2654,17 +2639,26 @@
 
   const observer = new MutationObserver(mutations => {
     if (isMutatingDOM || document.hidden) return;
+    const relevantSelector = "[data-event-id],[data-outcome],[data-qa*='event' i],[data-testid*='event' i]," +
+      "[class*='event-card' i],[class*='match-row' i],[class*='match-card' i],[class*='fixture' i]," +
+      "[class*='market' i],[class*='odd' i],[class*='quota' i],[class*='selection' i]," +
+      "[class*='competitor' i],[class*='participant' i]";
     for (const mutation of mutations) {
       if (mutation.type !== "childList") continue;
-      let relevant = false;
       for (const node of mutation.addedNodes) {
-        if (node.nodeType !== 1) continue;
-        if (node.id === "mm-widget" || node.closest?.("#mm-widget")) continue;
+        if (node.nodeType !== 1 || node.id === "mm-widget" || node.closest?.("#mm-widget")) continue;
         if (/^(SCRIPT|STYLE|LINK|META)$/.test(node.tagName || "")) continue;
-        relevant = true;
-        break;
+        const identity = [node.id, typeof node.className === "string" ? node.className : "",
+          node.getAttribute?.("data-qa"), node.getAttribute?.("data-testid")].join(" ");
+        if (relevantSelector && (node.matches?.(relevantSelector) || relevantSelector && /(?:event|match|fixture|market|odd|quota|selection|competitor|participant)/i.test(identity))) {
+          scheduleScan();
+          return;
+        }
+        if (node.matches?.("button,[role='button']") && /\b\d+[.,]\d{2}\b/.test(node.textContent || "")) {
+          scheduleScan();
+          return;
+        }
       }
-      if (relevant) { scheduleScan(); break; }
     }
   });
   if (document.body) observer.observe(document.body, { childList: true, subtree: true });
@@ -2686,6 +2680,6 @@
   });
 
   // Fallback per le SPA che non notificano cambi DOM o cronologia.
-  setInterval(() => { if (!document.hidden) scheduleScan(0); }, 12000);
+  setInterval(() => { if (!document.hidden) scheduleScan(0); }, 20000);
   scheduleScan(900);
 })();
