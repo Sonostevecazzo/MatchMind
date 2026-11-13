@@ -26,7 +26,7 @@ test("limited samples remain visible but are clearly identified in the badge tit
   assert.match(script, /prediction\.sampleEnough/);
   assert.match(script, /campione adeguato/);
   assert.match(script, /campione limitato/);
-  assert.match(bridge, /sampleEnough: entry\.sampleEnough === true/);
+  assert.match(bridge, /const sampleEnough = row\.sampleEnough === true/);
 });
 
 test("probability transfer permits exact zero or one only when the app algorithm supplies it", () => {
