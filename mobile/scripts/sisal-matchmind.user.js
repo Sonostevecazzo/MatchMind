@@ -286,6 +286,30 @@
       let payload;
       try { payload = JSON.parse(encoded); }
       catch (_) { payload = JSON.parse(decodeURIComponent(encoded)); }
+      // Inflate compact v3 tuple payloads; retain support for older object payloads.
+      if (payload && payload.v === 3 && Array.isArray(payload.i)) {
+        payload = {
+          version: 3,
+          sentAt: Number(payload.t) || Date.now(),
+          items: payload.i.map(tuple => {
+            if (!Array.isArray(tuple)) return null;
+            const [
+              home, away, marketKey, label, date, competition, eventId, sport,
+              selectedProbability, compactPredictions, sampleEnough, historyCount,
+              predictionMethod, start, homeAbbr, awayAbbr, side, team
+            ] = tuple;
+            return {
+              home, away, marketKey, label, date, competition, eventId, sport,
+              probability: selectedProbability,
+              predictions: (Array.isArray(compactPredictions) ? compactPredictions : [])
+                .filter(pair => Array.isArray(pair) && pair.length >= 2)
+                .map(pair => ({ marketKey: pair[0], probability: pair[1] })),
+              sampleEnough: sampleEnough === 1,
+              historyCount, predictionMethod, start, homeAbbr, awayAbbr, side, team
+            };
+          }).filter(Boolean)
+        };
+      }
       const source = Array.isArray(payload) ? payload : (Array.isArray(payload.items) ? payload.items : []);
       const incoming = source.filter(row => row && row.home && row.away).map(row => ({
         home: String(row.home),
