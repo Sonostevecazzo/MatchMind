@@ -395,16 +395,16 @@
     return attributes.concat([button.innerText || button.textContent || ""]).join(" ").trim();
   }
 
-  function visibleEventRoot(button, item) {
+  function eventRootCandidates(button) {
+    const roots = [];
     let current = button.parentElement;
     for (let depth = 0; depth < 10 && current && current !== document.body; depth++, current = current.parentElement) {
       const text = current.innerText || current.textContent || "";
-      if (text.length > 6000) continue;
-      if (!sameEvent(text, item)) continue;
+      if (!text || text.length > 6000) continue;
       const count = current.querySelectorAll("button,[role='button'],a[role='button'],[data-outcome]").length;
-      if (count > 0 && count <= 55) return current;
+      if (count > 0 && count <= 55) roots.push({ root: current, text });
     }
-    return null;
+    return roots;
   }
 
   function isMarketHeading(text) {
@@ -532,6 +532,7 @@
 
     const queue = readStored();
     const buttons = getActionButtons();
+    const snapshots = buttons.map(button => ({ button, roots: eventRootCandidates(button) }));
     document.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
     document.querySelectorAll("[data-mm-prediction]").forEach(node => node.removeAttribute("data-mm-prediction"));
 
@@ -539,18 +540,17 @@
     let marketsSeen = 0;
     queue.forEach(item => {
       const predictions = item.predictions || {};
-      const predictionsKeys = Object.keys(predictions);
-      if (!predictionsKeys.length) return;
+      if (!Object.keys(predictions).length) return;
       let eventSeen = false;
-      buttons.forEach(button => {
-        const root = visibleEventRoot(button, item);
-        if (!root) return;
+      snapshots.forEach(snapshot => {
+        const candidate = snapshot.roots.find(entry => sameEvent(entry.text, item));
+        if (!candidate) return;
         eventSeen = true;
-        const key = marketKeyFor(button, root);
+        const key = marketKeyFor(snapshot.button, candidate.root);
         const prediction = predictions[key];
         if (!prediction) return;
         const selected = key === item.marketKey;
-        addPredictionBadge(button, { ...prediction, marketKey: key }, selected);
+        addPredictionBadge(snapshot.button, { ...prediction, marketKey: key }, selected);
         marketsSeen++;
       });
       if (eventSeen) matchesSeen++;
