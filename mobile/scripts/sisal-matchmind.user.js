@@ -511,24 +511,29 @@
     return (value * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
   }
 
-  function addPredictionBadge(button, prediction, selected) {
-    let badge = button.querySelector(":scope > ." + BADGE_CLASS);
-    if (!badge) {
-      badge = document.createElement("span");
-      badge.className = BADGE_CLASS;
-      badge.setAttribute("data-mm-sisal-ui", "true");
-      button.appendChild(badge);
-    }
+  function oddsFromButton(button) {
+    const values = (buttonText(button).match(/[0-9]+(?:[.,][0-9]+)?/g) || []).map(value => Number(value.replace(',', '.')));
+    return values.find(value => Number.isFinite(value) && value > 1 && value < 1000) || null;
+  }
+  function marketFamily(key) {
+    if (['home', 'draw', 'away'].includes(key)) return '1x2';
+    if (['dc1X', 'dcX2', 'dc12'].includes(key)) return 'double-chance';
+    if (/^(over|under)(15|25|35)$/.test(key)) return key.slice(-2);
+    if (['bttsYes', 'bttsNo'].includes(key)) return 'btts';
+    return key;
+  }
+  function addPredictionBadge(button, prediction, selected, classification) {
+    let badge = button.querySelector(':scope > .' + BADGE_CLASS);
+    if (!badge) { badge = document.createElement('span'); badge.className = BADGE_CLASS; badge.setAttribute('data-mm-sisal-ui', 'true'); button.appendChild(badge); }
     badge.textContent = formatPercent(prediction.probability);
     badge.dataset.mmLimited = String(!prediction.sampleEnough);
-    badge.title = "Stima MatchMind · " +
-      (prediction.sampleEnough ? "campione adeguato" : "campione limitato") +
-      (prediction.historyCount ? " · " + prediction.historyCount + " risultati storici" : "") +
-      " · " + prediction.model;
-    badge.classList.toggle("mm-picked", Boolean(selected));
-    button.setAttribute("data-mm-prediction", prediction.marketKey || "");
+    badge.title = classification.title + ' - ' + (prediction.sampleEnough ? 'adequate sample' : 'limited sample') + (prediction.historyCount ? ' - ' + prediction.historyCount + ' historical results' : '') + ' - ' + prediction.model;
+    badge.classList.toggle('mm-picked', Boolean(selected));
+    badge.classList.toggle('mm-best', classification.type === 'best');
+    badge.classList.toggle('mm-value', classification.type === 'value');
+    badge.classList.toggle('mm-avoid', classification.type === 'avoid');
+    button.setAttribute('data-mm-prediction', prediction.marketKey || '');
   }
-
   function scan() {
     scheduled = false;
     scanTimer = null;
