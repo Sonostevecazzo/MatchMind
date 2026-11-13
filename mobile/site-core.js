@@ -363,7 +363,7 @@
     internazionale:'italy/Inter.svg',inter:'italy/Inter.svg',intermilan:'italy/Inter.svg',
     monza:'italy/AC_Monza.svg',udinese:'italy/Udinese.svg',como:'italy/Como_1907.svg',como1907:'italy/Como_1907.svg',
     genoa:'italy/Genoa.svg',napoli:'italy/Napoli.svg',parma:'italy/Parma.svg',cagliari:'italy/Cagliari.svg',
-    frosinone:'italy/Frosinone_Calcio.svg',juventus:'italy/Juventus.svg',juventusturin:'italy/Juventus.svg',juve:'italy/Juventus.svg',juventusturin:'italy/Juventus.svg',venezia:'italy/Venezia.svg',
+    frosinone:'italy/Frosinone_Calcio.svg',juventus:'italy/Juventus.svg',juventusturin:'italy/Juventus.svg',juve:'italy/Juventus.svg',venezia:'italy/Venezia.svg',
     lecce:'italy/Lecce.svg',atalanta:'italy/Atalanta.svg',sassuolo:'italy/Sassuolo.svg',
     torino:'italy/Torino.svg',milan:'italy/Milan.svg',fiorentina:'italy/Fiorentina.svg',
     bologna:'italy/Bologna.svg',lazio:'italy/Lazio.svg',roma:'italy/Roma.svg',hellasverona:'italy/Hellas_Verona.svg',
@@ -387,7 +387,6 @@
     aek:'greece/AEK_Athens.svg',aekathens:'greece/AEK_Athens.svg',
     clubbrugge:'belgium/Club_Brugge.svg',shakhtar:'ukraine/Shakhtar.svg',shakhtardonetsk:'ukraine/Shakhtar.svg',
     slaviapraha:'czech-republic/SK_Slavia_Praha.svg',slaviaprague:'czech-republic/SK_Slavia_Praha.svg',
-    milan:'italy/Milan.svg',juventus:'italy/Juventus.svg',
     crystalpalace:'england/Crystal_Palace.svg',sunderland:'england/Sunderland.svg',bournemouth:'england/Bournemouth.svg',
     lyon:'france/Olympique_Lyonnais.svg',marseille:'france/Marseille.svg',rennes:'france/Rennes.svg',
     leverkusen:'germany/Bayer_Leverkusen.svg',hoffenheim:'germany/Hoffenheim.svg',
@@ -419,13 +418,12 @@
     celticfc:'scotland/Celtic.svg',beiktas:'turkey/Beşiktaş.svg',
     fcaararatarmenia:'armenia/Ararat-Armenia.svg',ferencvarostc:'hungary/Ferencváros.svg',
     gnkdinamozagreb:'croatia/GNK_Dinamo_Zagreb.svg',
-    jagielloniabialystok:'poland/Jagiellonia_Białystok.svg',lechpoznan:'poland/Lech_Poznań.svg',
+    jagielloniabialystok:'poland/Jagiellonia_Białystok.svg',
     lillestrmsk:'norway/Lillestrøm.svg',oficretefc:'greece/OFI.svg',
     olympiacosfc:'greece/Olympiacos.svg',olympiquedemarseille:'france/Marseille.svg',
     olympiquelyonnais:'france/Olympique_Lyonnais.svg',redbullsalzburg:'austria/Salzburg.svg',
     rscanderlecht:'belgium/RSC_Anderlecht.svg',acspartapraha:'czech-republic/AC_Sparta_Praha.svg',
     stadederennais:'france/Rennes.svg',tsghoffenheim:'germany/Hoffenheim.svg',
-    viktoriaplzen:'czech-republic/Viktoria_Plzeň.svg'
   };
   // Loghi aggiuntivi verificati nel catalogo football-logos.
   Object.assign(TEAM_LOGOS, {
@@ -480,7 +478,7 @@
     reggiana:'italy/Reggiana.svg',acreggiana:'italy/Reggiana.svg',
     modena:'italy/Modena.svg',modenafc:'italy/Modena.svg',
     chelsea:'england/Chelsea.svg',chelseafc:'england/Chelsea.svg',
-    atletico:'spain/Atletico_Madrid.svg',atleticodemadrid:'spain/Atletico_Madrid.svg',
+    atletico:'spain/Atletico_Madrid.svg',atleticodemadrid:'spain/Atletico_Madrid.svg',atleticomadrid:'spain/Atletico_Madrid.svg',
     atletidemadrid:'spain/Atletico_Madrid.svg',sevilla:'spain/Sevilla.svg',sevillafc:'spain/Sevilla.svg',
     valencia:'spain/Valencia.svg',valenciacf:'spain/Valencia.svg',
     monaco:'france/AS_Monaco.svg',asmonaco:'france/AS_Monaco.svg',
@@ -504,8 +502,8 @@
     scotland:'scotland/Scotland_National_Team.svg',scotlandnationalteam:'scotland/Scotland_National_Team.svg',scozia:'scotland/Scotland_National_Team.svg',
     wales:'wales/Wales_National_Team.svg',walesnationalteam:'wales/Wales_National_Team.svg',galles:'wales/Wales_National_Team.svg',
     ukraine:'ukraine/Ukraine_National_Team.svg',ukrainenationalteam:'ukraine/Ukraine_National_Team.svg',ucraina:'ukraine/Ukraine_National_Team.svg',
-    serbia:'serbia/Serbia_National_Team.svg',serbianationalteam:'serbia/Serbia_National_Team.svg',serbia:'serbia/Serbia_National_Team.svg',
-    albania:'albania/Albania_National_Team.svg',albanianationalteam:'albania/Albania_National_Team.svg',albania:'albania/Albania_National_Team.svg',
+    serbia:'serbia/Serbia_National_Team.svg',serbianationalteam:'serbia/Serbia_National_Team.svg',
+    albania:'albania/Albania_National_Team.svg',albanianationalteam:'albania/Albania_National_Team.svg',
     turkey:'turkey/Turkey_National_Team.svg',turkeynationalteam:'turkey/Turkey_National_Team.svg',turchia:'turkey/Turkey_National_Team.svg'
   });
   function teamLogoUrl(name){
