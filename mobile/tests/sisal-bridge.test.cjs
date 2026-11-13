@@ -26,7 +26,7 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.equal(result.total, 1);
   assert.equal(result.payload.version, 3);
   assert.equal(result.payload.sentAt, 12345);
-  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse#mmplay=/);
+  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse-matchpoint\/sport\/calcio\\?mmplay=/);
   const item = result.payload.items[0];
   assert.equal(item.home, "Netherlands");
   assert.equal(item.away, "Greece");
@@ -111,7 +111,7 @@ test("keeps NBA moneyline on the NBA Sisal destination", () => {
     predictions: [{ marketKey: "nbaMoneyline:home", label: "Vince casa", probability: 0.68 }]
   }], { sentAt: 99 });
   assert.equal(result.skipped, 0);
-  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse-matchpoint\/sport\/basket\/usa\/nba#mmplay=/);
+  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse-matchpoint\/sport\/basket\/usa\/nba\\?mmplay=/);
   assert.equal(result.payload.items[0].predictions[0].probability, 0.68);
 });
 
@@ -120,7 +120,7 @@ test("does not route mixed football and NBA handoffs to a single sport-specific 
     { home: "Roma", away: "Lazio", competition: "serie-a", marketKey: "home", probability: 0.6 },
     { sport: "nba", home: "Boston Celtics", away: "New York Knicks", marketKey: "nbaMoneyline:away", probability: 0.41 }
   ], { sentAt: 7 });
-  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse#mmplay=/);
+  assert.match(result.url, /^https:\/\/www\.sisal\.it\/scommesse-matchpoint\/sport\/calcio\\?mmplay=/);
   assert.equal(result.payload.items.length, 2);
 });
 
