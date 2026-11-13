@@ -255,8 +255,10 @@
       result[String(entry.marketKey)] = {
         probability,
         label: String(entry.label || entry.marketKey),
-        sampleEnough: entry.sampleEnough === true,
-        historyCount: Number.isFinite(Number(entry.historyCount)) ? Number(entry.historyCount) : 0,
+        sampleEnough: entry.sampleEnough === true || row.sampleEnough === true,
+        historyCount: Number.isFinite(Number(entry.historyCount)) && entry.historyCount !== null
+          ? Number(entry.historyCount)
+          : (Number.isFinite(Number(row.historyCount)) ? Number(row.historyCount) : 0),
         model: String(entry.model || row.predictionMethod || "MatchMind")
       };
     });
