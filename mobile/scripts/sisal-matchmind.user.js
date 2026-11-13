@@ -531,7 +531,7 @@
     if (!badge) { badge = document.createElement('span'); badge.className = BADGE_CLASS; badge.setAttribute('data-mm-sisal-ui', 'true'); button.appendChild(badge); }
     badge.textContent = formatPercent(prediction.probability);
     badge.dataset.mmLimited = String(!prediction.sampleEnough);
-    badge.title = classification.title + ' - ' + (prediction.sampleEnough ? 'adequate sample' : 'limited sample') + (prediction.historyCount ? ' - ' + prediction.historyCount + ' historical results' : '') + ' - ' + prediction.model;
+    badge.title = classification.title + ' - ' + (prediction.sampleEnough ? 'campione adeguato' : 'campione limitato') + (prediction.historyCount ? ' · ' + prediction.historyCount + ' risultati storici' : '') + ' - ' + prediction.model;
     badge.classList.toggle('mm-picked', Boolean(selected));
     badge.classList.toggle('mm-best', classification.type === 'best');
     badge.classList.toggle('mm-value', classification.type === 'value');
