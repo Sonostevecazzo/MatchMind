@@ -38,7 +38,7 @@ test("Sisal consumes prediction arrays from the app and supports Italian team al
   assert.match(script, /netherlands: \["netherlands", "holland", "the netherlands", "olanda", "paesi bassi", "nederland"\]/);
   assert.match(script, /greece: \["greece", "grecia", "hellas"\]/);
   assert.match(script, /function includesTeam\(text, name\)/);
-  assert.match(script, /function visibleEventRoot\(button, item\)/);
+  assert.match(script, /function eventRootCandidates\(button\)/);
 });
 
 test("Sisal can display 1X2, double chance, goals and both-teams-to-score forecasts", () => {
