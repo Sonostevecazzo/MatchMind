@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Predictions
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.1
+// @version      3.0.2
 // @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.0.1";
+  const VERSION = "3.0.2";
   const APP_URL = "https://recovery-nba-mainline-202611.matchmind-3te.pages.dev/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
@@ -276,12 +276,14 @@
   }
 
   function decodeIncomingHash() {
-    const raw = String(location.hash || "");
-    const match = raw.match(/(?:^#|[&#])mmplay=([^&]+)/);
-    if (!match) return false;
+    const query = new URLSearchParams(location.search || "");
+    const hash = new URLSearchParams(String(location.hash || "").replace(/^#/, ""));
+    const encoded = query.get("mmplay") || hash.get("mmplay");
+    if (!encoded) return false;
     try {
-      const decoded = decodeURIComponent(match[1]);
-      const payload = JSON.parse(decoded);
+      let payload;
+      try { payload = JSON.parse(encoded); }
+      catch (_) { payload = JSON.parse(decodeURIComponent(encoded)); }
       const source = Array.isArray(payload) ? payload : (Array.isArray(payload.items) ? payload.items : []);
       const incoming = source.filter(row => row && row.home && row.away).map(row => ({
         home: String(row.home),
@@ -306,7 +308,12 @@
         });
         writeStored(Array.from(merged.values()).slice(-40));
       }
-      try { history.replaceState(null, "", location.pathname + location.search); } catch (_) {}
+      try {
+        const cleanUrl = new URL(location.href);
+        cleanUrl.searchParams.delete("mmplay");
+        cleanUrl.hash = "";
+        history.replaceState(null, "", cleanUrl.pathname + cleanUrl.search);
+      } catch (_) {}
       return incoming.length > 0;
     } catch (_) {
       return false;
