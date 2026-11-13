@@ -27,7 +27,7 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.equal(result.payload.version, 3);
   assert.equal(result.payload.sentAt, 12345);
   assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio?mmplay="));
-  assert.ok(result.url.includes("#mmplay="));
+  assert.ok(!result.url.includes("#mmplay="));
   const item = result.payload.items[0];
   assert.equal(item.home, "Netherlands");
   assert.equal(item.away, "Greece");
@@ -47,6 +47,28 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.deepEqual(decoded, result.payload);
 });
 
+test("keeps an 11-match transfer compact without duplicating the payload", () => {
+  const rows = Array.from({ length: 11 }, (_, index) => ({
+    home: "Home Team " + index, away: "Away Team " + index,
+    date: "2026-11-13", competition: "serie-a", marketKey: "home", probability: 0.55,
+    predictions: [
+      { marketKey: "home", probability: 0.55 },
+      { marketKey: "draw", probability: 0.25 },
+      { marketKey: "away", probability: 0.20 },
+      { marketKey: "over25", probability: 0.51 },
+      { marketKey: "under25", probability: 0.49 },
+      { marketKey: "bttsYes", probability: 0.52 },
+      { marketKey: "bttsNo", probability: 0.48 }
+    ]
+  }));
+  const result = bridge.createUrl(rows, { sentAt: 12345 });
+  assert.equal(result.payload.items.length, 11);
+  const parsed = new URL(result.url);
+  assert.equal(parsed.searchParams.getAll("mmplay").length, 1);
+  assert.equal(parsed.hash, "");
+  assert.equal(JSON.parse(parsed.searchParams.get("mmplay")).items.length, 11);
+  assert.ok(result.url.length < 30000, "11-match URL should remain below 30 KB");
+});
 test("preserves an estimated forecast when the historical sample is limited", () => {
   const result = bridge.prepare([{
     home: "Netherlands", away: "Greece", date: "2026-11-13",
