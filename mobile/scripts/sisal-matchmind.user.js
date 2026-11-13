@@ -345,7 +345,6 @@
       "."+BADGE_CLASS+".mm-best{border-color:#16a34a!important;background:#dcfce7!important;color:#166534!important;}",
       "."+BADGE_CLASS+".mm-value{border-color:#2563eb!important;background:#dbeafe!important;color:#1d4ed8!important;}",
       "."+BADGE_CLASS+".mm-avoid{border-color:#dc2626!important;background:#fee2e2!important;color:#991b1b!important;}",
-      "."+BADGE_CLASS+".mm-picked{border-color:#b8f36b!important;background:#1e4d24!important;color:#efffc3!important;}",
       "."+BADGE_CLASS+"[data-mm-limited='true']{border-style:dashed!important;}",
       "@media(max-width:600px){#"+ROOT_ID+"{right:8px;bottom:88px;padding:4px 8px;font-size:10px;}}"
     ].join("");
