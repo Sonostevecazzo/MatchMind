@@ -1200,7 +1200,7 @@
   // Risolve quota numerica e tipologia mercato Sisal per un bottone
   function resolveOddsButton(btn) {
     const attr = key => btn.getAttribute(key) || "";
-    let label = ["data-outcome", "data-selection-name", "data-name", "aria-label", "title"]
+    let label = ["data-outcome", "data-selection-name", "data-name"]
       .map(attr).find(value => value && value.length < 40) || "";
     let val = parseOddsValue(["data-odd", "data-price", "data-value", "data-odds", "aria-label", "title"]
       .map(attr).join(" "));
@@ -2490,7 +2490,7 @@
     }
     item.status = "manual";
     item.errorType = "";
-    item.error = "Quota evidenziata in verde. Selezionala manualmente su Sisal.";
+    item.error = Number(item.probability) > 0 && Number(item.probability) < 1 ? "Percentuale evidenziata. Seleziona manualmente la quota su Sisal." : "Quota trovata; percentuale non disponibile per questa selezione. Verifica manualmente.";
     item.sisalOdds = hit.odd;
     item.sisalOutcome = hit.outcome || null;
     item.updatedAt = Date.now();
@@ -2506,16 +2506,17 @@
     if (!btn || !document.body.contains(btn)) return;
     const probability = Number(item && item.probability);
     const hasProbability = Number.isFinite(probability) && probability > 0 && probability < 1;
-    btn.classList.add("mm-highlight-btn", "mm-selected-from-app");
     let tag = btn.querySelector(":scope > .mm-selected-app-tag");
+    if (!hasProbability) {
+      btn.classList.remove("mm-highlight-btn", "mm-selected-from-app");
+      tag?.remove();
+      return;
+    }
+    btn.classList.add("mm-highlight-btn", "mm-selected-from-app");
     if (!tag) {
       tag = document.createElement("span");
       tag.className = "mm-selected-app-tag";
       btn.appendChild(tag);
-    }
-    if (!hasProbability) {
-      tag.remove();
-      return;
     }
     tag.textContent = Math.round(probability * 100) + "%";
     tag.title = "Probabilità MatchMind: " + (probability * 100).toFixed(1) + "%";
@@ -2553,7 +2554,7 @@
         item.status = "error"; item.errorType = "notfound"; item.error = "Quota sospesa o non disponibile su Sisal.";
       } else {
         item.status = "manual"; item.errorType = "";
-        item.error = "Quota evidenziata in verde: selezionala manualmente su Sisal.";
+        item.error = Number(item.probability) > 0 && Number(item.probability) < 1 ? "Percentuale evidenziata: seleziona manualmente la quota su Sisal." : "Quota trovata; percentuale non disponibile. Verifica manualmente la selezione su Sisal.";
         item.sisalOdds = hit.odd; item.sisalOutcome = hit.outcome || null;
         if (hit.btn && item.marketKey === hit.key) markSelectedMarket(hit.btn, item, hit.odd);
       }
