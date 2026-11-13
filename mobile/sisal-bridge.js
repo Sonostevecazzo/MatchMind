@@ -45,14 +45,9 @@
       const value = probability(entry.probability);
       if (!supportedMarket(marketKey, sport) || value === null || seen.has(marketKey)) return;
       seen.add(marketKey);
-      result.push({
-        marketKey,
-        label: String(entry.label || marketKey).trim() || marketKey,
-        probability: value,
-        sampleEnough: entry.sampleEnough === true,
-        historyCount: Number.isFinite(Number(entry.historyCount)) ? Math.max(0, Number(entry.historyCount)) : 0,
-        model: String(entry.model || row.predictionMethod || (sport === "nba" ? "NBA Elo" : "MatchMind"))
-      });
+      // Per-market metadata is inherited from the match item. Repeating it
+      // for every market multiplies the handoff URL for multi-match slips.
+      result.push({ marketKey, probability: value });
     });
     const selectedKey = String(row && row.marketKey || "");
     const selectedProbability = probability(row && row.probability);
