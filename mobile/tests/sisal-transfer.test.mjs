@@ -13,7 +13,7 @@ const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.0\.1$/m);
+  assert.match(script, /^\/\/ @version\s+3\.0\.2$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
@@ -34,6 +34,8 @@ test("Sisal script is an inline percentage overlay, not a floating widget", () =
 
 test("Sisal consumes prediction arrays from the app and supports Italian team aliases", () => {
   assert.match(script, /function normalizePredictions\(row\)/);
+  assert.match(script, /new URLSearchParams\(location.search/);
+  assert.match(script, /query.get\("mmplay"\)/);
   assert.match(script, /row\.predictions/);
   assert.match(script, /netherlands: \["netherlands", "holland", "the netherlands", "olanda", "paesi bassi", "nederland"\]/);
   assert.match(script, /greece: \["greece", "grecia", "hellas"\]/);
