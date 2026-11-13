@@ -347,9 +347,11 @@ function backtestHTML(r,e){
  }
  async function initMind(d){
  const target=$('analysisOverview');if(!target)return;
- let saved=[];try{saved=JSON.parse(localStorage.getItem('matchmind-manual-selections-v1')||'[]')}catch(_){}
+ let saved=[];
+ try{const parsed=JSON.parse(localStorage.getItem('matchmind-manual-selections-v1')||'[]');if(Array.isArray(parsed))saved=parsed.slice(-100);}catch(_){}
  const key=m=>[(m.competition||'serie-a'),m.date,MM().norm(m.home),MM().norm(m.away)].join('|');
- const all=[...(d.matches||[]),...(d.history||[])],selected=saved.map(p=>({p,m:all.find(x=>key(x)===key(p))})).filter(x=>x.m);
+ const all=[...(d.matches||[]),...(d.history||[])],matchIndex=new Map(all.map(match=>[key(match),match]));
+ const seen=new Set(),selected=saved.map(p=>({p,m:matchIndex.get(key(p))})).filter(x=>{if(!x.m)return false;const token=key(x.p)+'|'+String(x.p.marketKey||'');if(seen.has(token))return false;seen.add(token);return true;});
  if(!selected.length){target.innerHTML='<div class="empty-state">Scegli prima i pronostici nella sezione Scommesse. Qui analizzerò soltanto quelli.</div>';return}
  const names={home:'1',draw:'X',away:'2',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol'},rows=[];let i=0;
  target.innerHTML='<div class="loading-state">Analisi in corso…</div>';
