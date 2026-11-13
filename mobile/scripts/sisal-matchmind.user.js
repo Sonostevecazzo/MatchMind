@@ -557,18 +557,36 @@
       const predictions = item.predictions || {};
       if (!Object.keys(predictions).length) return;
       let eventSeen = false;
+      const found = [];
       snapshots.forEach(snapshot => {
         const candidate = snapshot.roots.find(entry => sameEvent(entry.text, item));
         if (!candidate) return;
         eventSeen = true;
         const key = marketKeyFor(snapshot.button, candidate.root);
         const prediction = predictions[key];
-        if (!prediction) return;
-        const selected = key === item.marketKey;
-        addPredictionBadge(snapshot.button, { ...prediction, marketKey: key }, selected);
-        marketsSeen++;
+        if (prediction) found.push({ button: snapshot.button, key, prediction, odds: oddsFromButton(snapshot.button) });
       });
       if (eventSeen) matchesSeen++;
+      const families = new Map();
+      found.forEach(entry => { const family = marketFamily(entry.key); if (!families.has(family)) families.set(family, []); families.get(family).push(entry); });
+      found.forEach(entry => {
+        const group = families.get(marketFamily(entry.key));
+        let classification = { type: 'neutral', title: 'MatchMind estimate' };
+        if (group.length > 1) {
+          const maxP = Math.max(...group.map(value => value.prediction.probability));
+          const minP = Math.min(...group.map(value => value.prediction.probability));
+          const odds = group.filter(value => value.odds !== null);
+          const maxOdds = odds.length > 1 ? Math.max(...odds.map(value => value.odds)) : null;
+          const isBest = Math.abs(entry.prediction.probability - maxP) < 1e-9;
+          const isAvoid = Math.abs(entry.prediction.probability - minP) < 1e-9;
+          const isValue = maxOdds !== null && entry.odds !== null && Math.abs(entry.odds - maxOdds) < 1e-9;
+          if (isValue) classification = { type: 'value', title: 'Highest bookmaker odds among comparable outcomes' };
+          else if (isBest && !isAvoid) classification = { type: 'best', title: 'Highest probability among comparable outcomes' };
+          else if (isAvoid && !isBest) classification = { type: 'avoid', title: 'Lowest probability among comparable outcomes' };
+        }
+        addPredictionBadge(entry.button, { ...entry.prediction, marketKey: entry.key }, entry.key === item.marketKey, classification);
+        marketsSeen++;
+      });
     });
     matchedMatches = matchesSeen;
     matchedMarkets = marketsSeen;
