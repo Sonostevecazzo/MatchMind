@@ -67,8 +67,12 @@ test("keeps an 11-match transfer compact without duplicating the payload", () =>
   const parsed = new URL(result.url);
   assert.equal(parsed.searchParams.getAll("mmplay").length, 1);
   assert.equal(parsed.hash, "");
-  assert.equal(JSON.parse(parsed.searchParams.get("mmplay")).items.length, 11);
-  assert.ok(result.url.length < 18000, "11-match URL should remain compact after shared metadata is removed");
+  const wire = JSON.parse(parsed.searchParams.get("mmplay"));
+  assert.equal(wire.v, 3);
+  assert.equal(wire.i.length, 11);
+  assert.equal(wire.i[0][9].length, 14);
+  assert.ok(wire.i.every(item => item[9].every(pair => pair.length === 2)));
+  assert.ok(result.url.length < 9000, "11-match tuple transfer should stay below 9KB");
   assert.equal(result.payload.items[0].predictions.length, 14);
   assert.deepEqual(Object.keys(result.payload.items[0].predictions[0]).sort(), ["marketKey", "probability"]);
 });
