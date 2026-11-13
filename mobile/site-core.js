@@ -471,6 +471,43 @@
     dutchnationalteam:'netherlands/Dutch_National_Team.svg'
   });
 
+
+  // Serie B, club europei e nazionali usate nelle competizioni già presenti nell'app.
+  Object.assign(TEAM_LOGOS, {
+    bari:'italy/Bari.svg',sscbari:'italy/Bari.svg',
+    cesena:'italy/Cesena_FC.svg',cesenafc:'italy/Cesena_FC.svg',
+    catanzaro:'italy/Catanzaro.svg',uscatanzaro:'italy/Catanzaro.svg',
+    reggiana:'italy/Reggiana.svg',acreggiana:'italy/Reggiana.svg',
+    modena:'italy/Modena.svg',modenafc:'italy/Modena.svg',
+    chelsea:'england/Chelsea.svg',chelseafc:'england/Chelsea.svg',
+    atletico:'spain/Atletico_Madrid.svg',atleticodemadrid:'spain/Atletico_Madrid.svg',
+    atletidemadrid:'spain/Atletico_Madrid.svg',sevilla:'spain/Sevilla.svg',sevillafc:'spain/Sevilla.svg',
+    valencia:'spain/Valencia.svg',valenciacf:'spain/Valencia.svg',
+    monaco:'france/AS_Monaco.svg',asmonaco:'france/AS_Monaco.svg',
+    ajax:'netherlands/Ajax.svg',afcajax:'netherlands/Ajax.svg',
+    rangers:'scotland/Rangers.svg',glasgowrangers:'scotland/Rangers.svg',
+    italy:'italy/Italy_National_Team.svg',italianationalteam:'italy/Italy_National_Team.svg',italia:'italy/Italy_National_Team.svg',
+    france:'france/France_National_Team.svg',francenationalteam:'france/France_National_Team.svg',francia:'france/France_National_Team.svg',
+    germany:'germany/Germany_National_Team.svg',germannationalteam:'germany/Germany_National_Team.svg',germania:'germany/Germany_National_Team.svg',
+    spain:'spain/Spain_National_Team.svg',spainnationalteam:'spain/Spain_National_Team.svg',spagna:'spain/Spain_National_Team.svg',
+    england:'england/England_National_Team.svg',englandnationalteam:'england/England_National_Team.svg',inghilterra:'england/England_National_Team.svg',
+    netherlands:'netherlands/Dutch_National_Team.svg',dutchnationalteam:'netherlands/Dutch_National_Team.svg',paesibassi:'netherlands/Dutch_National_Team.svg',
+    belgium:'belgium/Belgium_National_Team.svg',belgiumnationalteam:'belgium/Belgium_National_Team.svg',belgio:'belgium/Belgium_National_Team.svg',
+    croatia:'croatia/Croatia_National_Team.svg',croatiannationalteam:'croatia/Croatia_National_Team.svg',croazia:'croatia/Croatia_National_Team.svg',
+    denmark:'denmark/Denmark_National_Team.svg',denmarknationalteam:'denmark/Denmark_National_Team.svg',danimarca:'denmark/Denmark_National_Team.svg',
+    sweden:'sweden/Sweden_National_Team.svg',swedennationalteam:'sweden/Sweden_National_Team.svg',svezia:'sweden/Sweden_National_Team.svg',
+    norway:'norway/Norway_National_Team.svg',norwaynationalteam:'norway/Norway_National_Team.svg',norvegia:'norway/Norway_National_Team.svg',
+    poland:'poland/Poland_National_Team.svg',polandnationalteam:'poland/Poland_National_Team.svg',polonia:'poland/Poland_National_Team.svg',
+    czechrepublic:'czech-republic/Czech_Republic_National_Team.svg',czechrepublicnationalteam:'czech-republic/Czech_Republic_National_Team.svg',repubblicaceca:'czech-republic/Czech_Republic_National_Team.svg',
+    romania:'romania/Romania_National_Team.svg',romanianationalteam:'romania/Romania_National_Team.svg',
+    republicofireland:'republic-of-ireland/Republic_of_Ireland_National_Team.svg',republicofirelandnationalteam:'republic-of-ireland/Republic_of_Ireland_National_Team.svg',irlanda:'republic-of-ireland/Republic_of_Ireland_National_Team.svg',
+    scotland:'scotland/Scotland_National_Team.svg',scotlandnationalteam:'scotland/Scotland_National_Team.svg',scozia:'scotland/Scotland_National_Team.svg',
+    wales:'wales/Wales_National_Team.svg',walesnationalteam:'wales/Wales_National_Team.svg',galles:'wales/Wales_National_Team.svg',
+    ukraine:'ukraine/Ukraine_National_Team.svg',ukrainenationalteam:'ukraine/Ukraine_National_Team.svg',ucraina:'ukraine/Ukraine_National_Team.svg',
+    serbia:'serbia/Serbia_National_Team.svg',serbianationalteam:'serbia/Serbia_National_Team.svg',serbia:'serbia/Serbia_National_Team.svg',
+    albania:'albania/Albania_National_Team.svg',albanianationalteam:'albania/Albania_National_Team.svg',albania:'albania/Albania_National_Team.svg',
+    turkey:'turkey/Turkey_National_Team.svg',turkeynationalteam:'turkey/Turkey_National_Team.svg',turchia:'turkey/Turkey_National_Team.svg'
+  });
   function teamLogoUrl(name){
     const key = norm(name), displayKey = norm(displayTeamName(name));
     const path = TEAM_LOGOS[key] || TEAM_LOGOS[displayKey] || '';
