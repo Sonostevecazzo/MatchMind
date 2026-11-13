@@ -117,7 +117,21 @@
     const hasFootball = result.payload.items.some(item => item.sport !== "nba");
     const hasNba = result.payload.items.some(item => item.sport === "nba");
     const base = hasNba && !hasFootball ? NBA_SISAL_URL : SISAL_URL;
-    const encoded = encodeURIComponent(JSON.stringify(result.payload));
+    // Tuple-based wire format avoids repeating verbose JSON property names
+    // across every event and market in a multi-selection slip.
+    const wire = {
+      v: 3,
+      t: result.payload.sentAt,
+      i: result.payload.items.map(item => [
+        item.home, item.away, item.marketKey, item.label, item.date,
+        item.competition, item.eventId, item.sport, item.probability,
+        item.predictions.map(prediction => [prediction.marketKey, prediction.probability]),
+        item.sampleEnough ? 1 : 0, item.historyCount, item.predictionMethod,
+        item.start || "", item.homeAbbr || "", item.awayAbbr || "",
+        item.side || "", item.team || ""
+      ])
+    };
+    const encoded = encodeURIComponent(JSON.stringify(wire));
     return { ...result, url: base + "?mmplay=" + encoded };
   }
 
