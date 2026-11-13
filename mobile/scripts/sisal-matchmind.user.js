@@ -25,6 +25,11 @@
   const ROOT_ID = "mm-sisal-status-v3";
   const BADGE_CLASS = "mm-sisal-prediction-v3";
   const LEGACY_STYLE_ID = "mm-sisal-legacy-cleanup-v3";
+  const KNOWN_MARKET_KEYS = new Set([
+    "home", "draw", "away", "dc1X", "dcX2", "dc12",
+    "over15", "under15", "over25", "under25", "over35", "under35",
+    "bttsYes", "bttsNo"
+  ]);
 
   if (window.top !== window.self || !document.documentElement) return;
   if (document.getElementById(ROOT_ID)) return;
@@ -351,6 +356,7 @@
     statusRoot.target = "_blank";
     statusRoot.rel = "noopener noreferrer";
     statusRoot.setAttribute("aria-label", "MatchMind attivo. Apri il costruttore delle schedine.");
+    statusRoot.setAttribute("data-mm-sisal-ui", "true");
     statusRoot.innerHTML = '<span class="mm-dot"></span><span>MM attivo</span>';
     (document.body || document.documentElement).appendChild(statusRoot);
   }
@@ -453,7 +459,7 @@
       button.getAttribute("data-market") || button.getAttribute("data-market-type");
     if (dataKey) {
       const compactKey = String(dataKey).replace(/\s+/g, "");
-      if (compactKey) return compactKey;
+      if (KNOWN_MARKET_KEYS.has(compactKey) || /^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35|bttsYes|bttsNo)$/.test(compactKey)) return compactKey;
     }
 
     if (all.includes("doppia chance") || /^(1x|x2|12)$/.test(compactKeyLabel(normalizedLabel))) {
@@ -469,7 +475,7 @@
 
     if (all.includes("under over") || all.includes("over under") || all.includes("underover") ||
         /\bover\b|\bunder\b/.test(all)) {
-      const line = all.includes("1 5") || all.includes("1 5") ? "15" :
+      const line = all.includes("1 5") ? "15" :
         all.includes("3 5") ? "35" : all.includes("2 5") ? "25" : "";
       const isOver = /\bover\b|oltre|piu di|piu'.*di/.test(all);
       const isUnder = /\bunder\b|meno di/.test(all);
