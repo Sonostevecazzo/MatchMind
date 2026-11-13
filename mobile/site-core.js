@@ -345,17 +345,23 @@
     feyenoordrotterdam:'Feyenoord',afcajax:'Ajax',psveindhoven:'PSV Eindhoven',
     fcutrecht:'Utrecht',krcgenk:'Genk',clubbrugge:'Club Brugge',
     unionstgilloise:'Union Saint-Gilloise',
-    italy:'Italia',italynationalteam:'Italia',germany:'Germania',germannationalteam:'Germania',
-    france:'Francia',francenationalteam:'Francia',spain:'Spagna',spainnationalteam:'Spagna',
+    italy:'Italia',italynationalteam:'Italia',italia:'Italia',
+    germany:'Germania',germannationalteam:'Germania',deutschland:'Germania',
+    france:'Francia',francenationalteam:'Francia',spain:'Spagna',spainnationalteam:'Spagna',espana:'Spagna',
     england:'Inghilterra',englandnationalteam:'Inghilterra',
-    netherlands:'Paesi Bassi',dutchnationalteam:'Paesi Bassi',belgium:'Belgio',
-    belgiumnationalteam:'Belgio',portugal:'Portogallo',croatia:'Croazia',
-    croatiannationalteam:'Croazia',denmark:'Danimarca',sweden:'Svezia',norway:'Norvegia',
-    poland:'Polonia',czechrepublic:'Repubblica Ceca',romania:'Romania',sudtirol:'Südtirol',fcsudtirol:'Südtirol',
-    republicofireland:'Irlanda',scotland:'Scozia',wales:'Galles',ukraine:'Ucraina',
-    serbia:'Serbia',albania:'Albania',turkey:'Turchia',greece:'Grecia',northmacedonia:'Macedonia del Nord',
+    netherlands:'Olanda',dutchnationalteam:'Olanda',holland:'Olanda',paesibassi:'Olanda',
+    belgium:'Belgio',belgiumnationalteam:'Belgio',portugal:'Portogallo',
+    croatia:'Croazia',croatiannationalteam:'Croazia',denmark:'Danimarca',
+    sweden:'Svezia',norway:'Norvegia',poland:'Polonia',czechrepublic:'Repubblica Ceca',
+    romania:'Romania',sudtirol:'Südtirol',fcsudtirol:'Südtirol',
+    republicofireland:'Irlanda',ireland:'Irlanda',scotland:'Scozia',wales:'Galles',
+    ukraine:'Ucraina',serbia:'Serbia',albania:'Albania',turkey:'Turchia',
+    greece:'Grecia',northmacedonia:'Macedonia del Nord',macedoniadelnord:'Macedonia del Nord',
     moldova:'Moldavia',kazakhstan:'Kazakistan',faroeislands:'Isole Faroe',
-    bosniaandherzegovina:'Bosnia-Erzegovina',montenegro:'Montenegro',luxembourg:'Lussemburgo',iceland:'Islanda'
+    bosniaandherzegovina:'Bosnia-Erzegovina',montenegro:'Montenegro',
+    luxembourg:'Lussemburgo',iceland:'Islanda',slovenia:'Slovenia',
+    switzerland:'Svizzera',slovakia:'Slovacchia',andorra:'Andorra',gibraltar:'Gibilterra',
+    finland:'Finlandia',israel:'Israele',estonia:'Estonia',latvia:'Lettonia',lithuania:'Lituania'
   });
   const displayTeamName = name => {
     const raw = String(name || '').trim();
@@ -510,7 +516,38 @@
     bayernmonaco:'germany/Bayern_München.svg',fcbayernmunich:'germany/Bayern_Munich.svg',fcbayernmunchen:'germany/Bayern_München.svg',
     sudtirol:'italy/Suditrol.svg',fcsudtirol:'italy/Suditrol.svg'
   });
+  // Per le nazionali usa le bandiere, come nella presentazione Sisal; i club mantengono gli stemmi.
+  const NATIONAL_TEAM_FLAGS = Object.freeze({
+    italy:'it',italia:'it',italynationalteam:'it',
+    france:'fr',francia:'fr',francenationalteam:'fr',
+    germany:'de',germania:'de',germannationalteam:'de',deutschland:'de',
+    spain:'es',spagna:'es',spainnationalteam:'es',espana:'es',
+    england:'gb-eng',inghilterra:'gb-eng',englandnationalteam:'gb-eng',
+    netherlands:'nl',holland:'nl',olanda:'nl',paesibassi:'nl',dutchnationalteam:'nl',
+    greece:'gr',grecia:'gr',hellas:'gr',
+    belgium:'be',belgio:'be',belgiumnationalteam:'be',
+    portugal:'pt',portogallo:'pt',portuguesefootballfederation:'pt',
+    croatia:'hr',croazia:'hr',croatiannationalteam:'hr',
+    denmark:'dk',danimarca:'dk',sweden:'se',svezia:'se',norway:'no',norvegia:'no',
+    poland:'pl',polonia:'pl',czechrepublic:'cz',repubblicaceca:'cz',romania:'ro',
+    republicofireland:'ie',ireland:'ie',irlanda:'ie',
+    scotland:'gb-sct',scozia:'gb-sct',wales:'gb-wls',galles:'gb-wls',
+    ukraine:'ua',ucraina:'ua',serbia:'rs',albania:'al',turkey:'tr',turchia:'tr',
+    slovenia:'si',svizzera:'ch',switzerland:'ch',slovacchia:'sk',slovakia:'sk',
+    northmacedonia:'mk',macedoniadelnord:'mk',moldova:'md',moldavia:'md',
+    kazakhstan:'kz',kazakistan:'kz',faroeislands:'fo',isolefaroe:'fo',
+    andorra:'ad',gibraltar:'gi',montenegro:'me',bosniaandherzegovina:'ba',
+    bosniaerzegovina:'ba',bosnia:'ba',luxembourg:'lu',lussemburgo:'lu',
+    iceland:'is',islanda:'is',finland:'fi',finlandia:'fi',israel:'il',israele:'il',
+    estonia:'ee',latvia:'lv',lituania:'lt',lithuania:'lt'
+  });
+  function nationalFlagCode(name){
+    const key=norm(name),displayKey=norm(displayTeamName(name));
+    return NATIONAL_TEAM_FLAGS[key]||NATIONAL_TEAM_FLAGS[displayKey]||'';
+  }
   function teamLogoUrl(name){
+    const flag=nationalFlagCode(name);
+    if(flag)return 'https://flagcdn.com/w80/'+flag+'.png';
     const key = norm(name), displayKey = norm(displayTeamName(name));
     const path = TEAM_LOGOS[key] || TEAM_LOGOS[displayKey] || '';
     if(!path)return '';
