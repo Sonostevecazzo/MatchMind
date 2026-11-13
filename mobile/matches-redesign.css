@@ -293,3 +293,9 @@ body[data-page="matches"] .match-competition-tabs .competition-tab:focus-visible
   body[data-page="matches"] .match-competition-tabs{margin:0 0 9px;padding-bottom:5px}
   body[data-page="matches"] .match-competition-tabs .competition-tab{min-height:34px;padding:6px 10px;font-size:10px!important}
 }
+
+/* Keep the heading compact after moving the competition picker into its own tab row. */
+body[data-page="matches"] .match-page-intro{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:2px 0 10px;
+}
+body[data-page="matches"] .match-page-title{display:block}
