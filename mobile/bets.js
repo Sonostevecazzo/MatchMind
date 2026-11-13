@@ -12,6 +12,7 @@ let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
+const displayTeam=name=>window.MM.displayTeamName?window.MM.displayTeamName(name):String(name||"");
 const TEAM_ALIASES = {
   inter: ["inter", "internazionale", "fc inter", "fc internazionale"],
   milan: ["milan", "ac milan", "acmilan"],
@@ -90,16 +91,16 @@ function renderInjuriesCard(match) {
 
   return '<details class="injury-auto-drawer">' +
     '<summary class="injury-auto-summary">' +
-      '<span>🏥 <b>Infermeria & Assenze ufficiali</b>: ' + esc(match.home) + ' (' + hTot + ') vs ' + esc(match.away) + ' (' + aTot + ')</span>' +
+      '<span>🏥 <b>Infermeria & Assenze ufficiali</b>: ' + esc(displayTeam(match.home)) + ' (' + hTot + ') vs ' + esc(displayTeam(match.away)) + ' (' + aTot + ')</span>' +
       '<small class="injury-toggle-btn">Bollettino ▾</small>' +
     '</summary>' +
     '<div class="injury-auto-body">' +
       '<div class="injury-team-col">' +
-        '<h6>' + esc(match.home) + ' (' + hTot + ' assenti)</h6>' +
+        '<h6>' + esc(displayTeam(match.home)) + ' (' + hTot + ' assenti)</h6>' +
         '<ul class="injury-player-list">' + formatList(h) + '</ul>' +
       '</div>' +
       '<div class="injury-team-col">' +
-        '<h6>' + esc(match.away) + ' (' + aTot + ' assenti)</h6>' +
+        '<h6>' + esc(displayTeam(match.away)) + ' (' + aTot + ' assenti)</h6>' +
         '<ul class="injury-player-list">' + formatList(a) + '</ul>' +
       '</div>' +
       '<div class="injury-auto-footer">' +
@@ -130,17 +131,17 @@ function renderFixture(match){
   ["defensiveAbsencesAway","Difensori titolari assenti · "+match.away,ctx.defensiveAbsencesAway]
  ];
  const absenceHtml=fields.map(([key,label,value])=>'<label class="context-field">'+esc(label)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="'+key+'">'+selectOptions(value)+'</select></label>').join("");
- const motivationHtml='<div class="context-motivation"><label class="context-field">Motivazione '+esc(match.home)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationHome">'+motivationOptions(ctx.motivationHome)+'</select></label><label class="context-field">Motivazione '+esc(match.away)+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationAway">'+motivationOptions(ctx.motivationAway)+'</select></label></div>';
- return '<article class="manual-fixture-card"><div class="manual-fixture-heading"><div><b>'+esc(match.home)+' – '+esc(match.away)+'</b><small>'+esc(window.MM.shortDate(match))+(match.time?' · '+esc(match.time):'')+' · confidenza '+esc(f.confidence)+'</small></div>'+(selected?'<span class="manual-picked-label">'+esc(marketLabel(selected.marketKey))+'</span>':'')+'</div>'+
+ const motivationHtml='<div class="context-motivation"><label class="context-field">Motivazione '+esc(displayTeam(match.home))+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationHome">'+motivationOptions(ctx.motivationHome)+'</select></label><label class="context-field">Motivazione '+esc(displayTeam(match.away))+'<select data-context="'+esc(fixtureKey(match))+'" data-context-field="motivationAway">'+motivationOptions(ctx.motivationAway)+'</select></label></div>';
+ return '<article class="manual-fixture-card"><div class="manual-fixture-heading"><div><b>'+esc(displayTeam(match.home))+' – '+esc(displayTeam(match.away))+'</b><small>'+esc(window.MM.shortDate(match))+(match.time?' · '+esc(match.time):'')+' · confidenza '+esc(f.confidence)+'</small></div>'+(selected?'<span class="manual-picked-label">'+esc(marketLabel(selected.marketKey))+'</span>':'')+'</div>'+
  '<div class="fixture-forecast-strip"><span>1 <b>'+pct(p.home)+'</b></span><span>X <b>'+pct(p.draw)+'</b></span><span>2 <b>'+pct(p.away)+'</b></span><span>xG <b>'+f.homeXg.toFixed(2)+' – '+f.awayXg.toFixed(2)+'</b></span></div>'+
- '<div class="fixture-form-context"><span>'+esc(match.home)+' forma: <b>'+esc(form(f.home))+'</b></span><span>'+esc(match.away)+' forma: <b>'+esc(form(f.away))+'</b></span><span>'+esc(stand(f.standings.home))+'</span><span>'+esc(stand(f.standings.away))+'</span></div>'+
+ '<div class="fixture-form-context"><span>'+esc(displayTeam(match.home))+' forma: <b>'+esc(form(f.home))+'</b></span><span>'+esc(displayTeam(match.away))+' forma: <b>'+esc(form(f.away))+'</b></span><span>'+esc(stand(f.standings.home))+'</span><span>'+esc(stand(f.standings.away))+'</span></div>'+
  renderInjuriesCard(match)+
  '<div class="fixture-market-options">'+buttons+'</div><details class="manual-other-markets"><summary>Contesto squadra: assenze, infortuni e motivazione</summary><div class="context-controls"><div class="context-grid">'+absenceHtml+'</div>'+motivationHtml+'<small>Inserisci solo titolari realmente indisponibili. Le assenze sono una correzione indicativa, non una valutazione del valore individuale del giocatore. La motivazione automatica deriva dalla classifica; l’impostazione manuale è una tua valutazione.</small></div></details></article>';
 }
 function renderFixtures(){
  const target=$("manualFixtures");if(!target)return;
  const query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
- const rows=fixtures.filter(m=>(!query||norm(m.home).includes(query)||norm(m.away).includes(query))&&(!date||m.date===date)&&(!team||norm(m.home)===norm(team)||norm(m.away)===norm(team))&&(!round||String(m.round||"")===round));
+ const rows=fixtures.filter(m=>(!query||norm(m.home).includes(query)||norm(displayTeam(m.home)).includes(query)||norm(m.away).includes(query)||norm(displayTeam(m.away)).includes(query))&&(!date||m.date===date)&&(!team||norm(m.home)===norm(team)||norm(m.away)===norm(team))&&(!round||String(m.round||"")===round));
  const visible=rows.slice(0,visibleFixtureLimit);
  target.innerHTML=visible.length?visible.map(renderFixture).join(""):'<div class="empty-state">Nessuna partita corrisponde ai filtri. Modifica la ricerca.</div>';
  const count=$("betsFixtureCount");if(count)count.textContent=rows.length+" partite trovate · visualizzate "+visible.length;
@@ -260,7 +261,7 @@ function renderSlip(){
   const evClass=singleEv!=null?(singleEv>=0?"ev-pos":"ev-neg"):"";
   return '<div class="manual-selected-row" data-fixture="'+esc(fKey)+'">'+
    '<div class="manual-selected-row-main">'+
-    '<span><b>'+esc(row.match.home)+' – '+esc(row.match.away)+'</b>'+
+    '<span><b>'+esc(displayTeam(row.match.home))+' – '+esc(displayTeam(row.match.away))+'</b>'+
     '<small>'+(row.sport==="nba"?"NBA · ":"Calcio · ")+esc(row.marketLabel)+' · '+esc(row.match.date)+' · prob. '+pct(row.probability)+'</small></span>'+
     '<button type="button" class="manual-remove-button" data-remove="'+esc(fKey)+'" aria-label="Rimuovi selezione">×</button>'+
    '</div>'+
@@ -474,14 +475,14 @@ function generateMotivation(match,marketKey,marketLabel,prob,oddsVal,forecast){
  const oddsRef=oddsVal?' @'+oddsVal.toFixed(2)+evText:'';
  if(marketKey==='home'){
   const ppg=Number(h.pointsPerGame||1.3).toFixed(1);
-  return esc(match.home)+' solida nel rendimento interno (media '+ppg+' pt/gara, '+hXg.toFixed(1)+' xG attesi). Il modello Poisson/Elo stima il '+pPct+'% di vittoria interna'+oddsRef+'.';
+  return esc(displayTeam(match.home))+' solida nel rendimento interno (media '+ppg+' pt/gara, '+hXg.toFixed(1)+' xG attesi). Il modello Poisson/Elo stima il '+pPct+'% di vittoria interna'+oddsRef+'.';
  }
  if(marketKey==='away'){
   const ppg=Number(a.pointsPerGame||1.2).toFixed(1);
-  return esc(match.away)+' superiore nelle metriche esterne ('+ppg+' pt/gara). MatchMind stima il '+pPct+'% per il successo ospite'+oddsRef+'.';
+  return esc(displayTeam(match.away))+' superiore nelle metriche esterne ('+ppg+' pt/gara). MatchMind stima il '+pPct+'% per il successo ospite'+oddsRef+'.';
  }
  if(marketKey==='draw'){
-  return 'Elevato equilibrio tattico tra '+esc(match.home)+' e '+esc(match.away)+' (xG attesi '+hXg.toFixed(1)+' vs '+aXg.toFixed(1)+'). Probabilità pareggio stimata al '+pPct+'%'+oddsRef+'.';
+  return 'Elevato equilibrio tattico tra '+esc(displayTeam(match.home))+' e '+esc(displayTeam(match.away))+' (xG attesi '+hXg.toFixed(1)+' vs '+aXg.toFixed(1)+'). Probabilità pareggio stimata al '+pPct+'%'+oddsRef+'.';
  }
  if(marketKey==='over25'||marketKey==='over15'||marketKey==='over35'){
   return 'Indice offensivo combinato elevato ('+totXg.toFixed(1)+' xG attesi complessivi). La distribuzione Poisson assegna il '+pPct+'% a '+esc(marketLabel)+oddsRef+'.';
@@ -666,7 +667,7 @@ function renderProposalUI(){
   const evPill=x.isRealOdd?'<span class="pill-ev '+(x.ev>=0?'ev-pos':'ev-neg')+'">'+(x.ev>=0?'+':'')+Math.round(x.ev*100)+'% EV</span>':'<span class="pill-ev" style="background:#1b2430;color:#94a3b8">Quota equa</span>';
   return '<article class="proposal-leg" data-leg-index="'+i+'">'+
    '<div class="proposal-leg-top"><span class="proposal-leg-number">PARTITA '+(i+1)+'</span><time>'+esc(proposalDate(x.match.date))+(x.match.time?' · '+esc(x.match.time):'')+'</time></div>'+
-   '<div class="proposal-leg-match">'+esc(x.match.home)+' <span>–</span> '+esc(x.match.away)+'</div>'+
+   '<div class="proposal-leg-match">'+esc(displayTeam(x.match.home))+' <span>–</span> '+esc(displayTeam(x.match.away))+'</div>'+
    '<div class="proposal-leg-bottom">'+
     '<div class="proposal-leg-pick"><small>ESITO PROPOSTO</small><b>'+esc(x.marketLabel)+'</b><div class="proposal-leg-odds">Quota <b>@'+Number(x.odds).toFixed(2)+'</b> ('+esc(x.bookmaker)+') '+evPill+'</div></div>'+
     '<div class="proposal-leg-prob"><small>STIMA MM</small><b>'+pct(x.probability)+'</b></div>'+
@@ -1044,7 +1045,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
     }
   }
   const teamSelect=$("betsTeam"),roundSelect=$("betsRound");
-  if(teamSelect)teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+window.MM.getTeams(fixtures).map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join("");
+  if(teamSelect)teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+window.MM.getTeams(fixtures).map(t=>'<option value="'+esc(t)+'">'+esc(displayTeam(t))+'</option>').join("");
   if(roundSelect){const rounds=[...new Set(fixtures.map(m=>String(m.round||"")).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));roundSelect.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+esc(n)+'">Giornata '+esc(n)+'</option>').join("");}
   renderFixtures();renderSlip();renderOpenTickets();renderArchive();
   handleUrlImport();
