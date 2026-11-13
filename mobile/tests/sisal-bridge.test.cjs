@@ -43,7 +43,7 @@ test("exports the selected match and every valid MatchMind market forecast", () 
 
   const parsed = new URL(result.url);
   const decoded = JSON.parse(parsed.searchParams.get("mmplay"));
-  assert.deepEqual(JSON.parse(decodeURIComponent(parsed.hash.slice("#mmplay=".length))), result.payload);
+  assert.equal(parsed.hash, "");
   assert.deepEqual(decoded, result.payload);
 });
 
@@ -136,7 +136,7 @@ test("keeps NBA moneyline on the NBA Sisal destination", () => {
   }], { sentAt: 99 });
   assert.equal(result.skipped, 0);
   assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba?mmplay="));
-  assert.ok(result.url.includes("#mmplay="));
+  assert.ok(!result.url.includes("#mmplay="));
   assert.equal(result.payload.items[0].predictions[0].probability, 0.68);
 });
 
