@@ -2,53 +2,34 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const vm = require("node:vm");
 
-const source = fs.readFileSync(
-  path.join(__dirname, "../scripts/sisal-matchmind.user.js"),
-  "utf8"
-);
-const match = source.match(/function isCalibratedTeamRating\(rating\) \{[\s\S]*?\n  \}/);
-assert.ok(match, "the fail-closed rating validator must exist");
-const isCalibratedTeamRating = vm.runInNewContext("(" + match[0] + ")");
+const root = path.join(__dirname, "..");
+const script = fs.readFileSync(path.join(root, "scripts/sisal-matchmind.user.js"), "utf8");
+const bridge = fs.readFileSync(path.join(root, "sisal-bridge.js"), "utf8");
 
-test("rejects absent or unverified team ratings", () => {
-  assert.equal(isCalibratedTeamRating(null), false);
-  assert.equal(isCalibratedTeamRating({ att: 1.1, def: 1.0, homeBoost: 0.1 }), false);
-  assert.equal(isCalibratedTeamRating({
-    validated: true, att: 1.1, def: 1.0, homeBoost: 0.1,
-    source: "dataset", datasetVersion: "v1"
-  }), true);
+test("Sisal userscript does not run its own football forecast model", () => {
+  assert.doesNotMatch(script, /TEAM_RATINGS|isCalibratedTeamRating|forecastUnavailable/);
+  assert.doesNotMatch(script, /function poisson\(|function forecast\(/);
+  assert.match(script, /function normalizePredictions\(row\)/);
+  assert.match(script, /row\.predictions/);
 });
 
-test("rejects incomplete or implausible rating data", () => {
-  const base = {
-    validated: true, att: 1.1, def: 1.0, homeBoost: 0.1,
-    source: "dataset", datasetVersion: "v1"
-  };
-  assert.equal(isCalibratedTeamRating({ ...base, att: null }), false);
-  assert.equal(isCalibratedTeamRating({ ...base, def: 0 }), false);
-  assert.equal(isCalibratedTeamRating({ ...base, homeBoost: 0.8 }), false);
-  assert.equal(isCalibratedTeamRating({ ...base, source: "" }), false);
-  assert.equal(isCalibratedTeamRating({ ...base, datasetVersion: "" }), false);
+test("Sisal only displays probabilities explicitly delivered by MatchMind", () => {
+  assert.match(script, /const probability = validProbability\(entry\.probability\)/);
+  assert.match(script, /if \(probability === null\) return/);
+  assert.match(script, /badge\.textContent = formatPercent\(prediction\.probability\)/);
+  assert.doesNotMatch(script, /0\.5\s*\*\s*100|probability\s*=\s*0\.5/);
 });
 
-test("does not fall back to synthetic neutral ratings or probabilities", () => {
-  assert.match(source, /if \(!isCalibratedTeamRating\(h\) \|\| !isCalibratedTeamRating\(a\)\)/);
-  assert.match(source, /forecastAvailable: false/);
-  assert.doesNotMatch(source, /TEAM_RATINGS\[hKey\] \|\| \{ att:/);
-  assert.doesNotMatch(source, /TEAM_RATINGS\[aKey\] \|\| \{ att:/);
+test("limited samples remain visible but are clearly identified in the badge title", () => {
+  assert.match(script, /sampleEnough: entry\.sampleEnough === true/);
+  assert.match(script, /prediction\.sampleEnough/);
+  assert.match(script, /campione adeguato/);
+  assert.match(script, /campione limitato/);
+  assert.match(bridge, /sampleEnough: entry\.sampleEnough === true/);
 });
 
-test("basketball routes bypass the football forecast engine", () => {
-  assert.match(source, /if \(isBasketballPage\) \{[\s\S]*?sport: "nba"[\s\S]*?renderWidget\(\);\s*return;/);
-  assert.match(source, /const isBasketballPage =/);
-});
-
-test("transfers and highlights the selected app probability on the matching Sisal market", () => {
-  assert.match(source, /probability: Number\.isFinite\(Number\(x\.probability\)\)/);
-  assert.match(source, /function markSelectedMarket\(btn, item, odds\)/);
-  assert.match(source, /Math\.round\(probability \* 100\)/);
-  assert.match(source, /mm-selected-from-app/);
-  assert.match(source, /resolved\.key === item\.marketKey/);
+test("probability transfer permits exact zero or one only when the app algorithm supplies it", () => {
+  assert.match(bridge, /number >= 0 && number <= 1/);
+  assert.match(script, /Number\.isFinite\(number\) && number >= 0 && number <= 1/);
 });
