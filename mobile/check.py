@@ -96,7 +96,7 @@ assert "fallbackReason" not in (ROOT/"live.js").read_text(encoding="utf-8")
 assert "mobile-drawer-title" in core
 assert "appendChild(node)" in core and "mobile-primary-nav" in core
 sisal_script=(ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
-sisal_meta=re.search(r"^// @version\\s+([^\\r\\n]+)",sisal_script,re.M)
+sisal_meta=re.search(r"^// @version\s+([^\r\n]+)",sisal_script,re.M)
 sisal_code=re.search(r'const VERSION = "([^"]+)"',sisal_script)
 assert sisal_meta and sisal_code and sisal_meta.group(1)==sisal_code.group(1), "Sisal userscript metadata and runtime version must match"
 assert 'document.getElementById("mm-widget")?.remove();' not in (ROOT/"scripts/sisal-matchmind.user.js").read_text(encoding="utf-8")
