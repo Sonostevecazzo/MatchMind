@@ -351,7 +351,7 @@
     netherlands:'Paesi Bassi',dutchnationalteam:'Paesi Bassi',belgium:'Belgio',
     belgiumnationalteam:'Belgio',portugal:'Portogallo',croatia:'Croazia',
     croatiannationalteam:'Croazia',denmark:'Danimarca',sweden:'Svezia',norway:'Norvegia',
-    poland:'Polonia',czechrepublic:'Repubblica Ceca',romania:'Romania',
+    poland:'Polonia',czechrepublic:'Repubblica Ceca',romania:'Romania',sudtirol:'Südtirol',fcsudtirol:'Südtirol',
     republicofireland:'Irlanda',scotland:'Scozia',wales:'Galles',ukraine:'Ucraina',
     serbia:'Serbia',albania:'Albania',turkey:'Turchia'
   });
@@ -504,7 +504,9 @@
     ukraine:'ukraine/Ukraine_National_Team.svg',ukrainenationalteam:'ukraine/Ukraine_National_Team.svg',ucraina:'ukraine/Ukraine_National_Team.svg',
     serbia:'serbia/Serbia_National_Team.svg',serbianationalteam:'serbia/Serbia_National_Team.svg',
     albania:'albania/Albania_National_Team.svg',albanianationalteam:'albania/Albania_National_Team.svg',
-    turkey:'turkey/Turkey_National_Team.svg',turkeynationalteam:'turkey/Turkey_National_Team.svg',turchia:'turkey/Turkey_National_Team.svg'
+    turkey:'turkey/Turkey_National_Team.svg',turkeynationalteam:'turkey/Turkey_National_Team.svg',turchia:'turkey/Turkey_National_Team.svg',
+    bayernmonaco:'germany/Bayern_München.svg',fcbayernmunich:'germany/Bayern_Munich.svg',fcbayernmunchen:'germany/Bayern_München.svg',
+    sudtirol:'italy/Suditrol.svg',fcsudtirol:'italy/Suditrol.svg'
   });
   function teamLogoUrl(name){
     const key = norm(name), displayKey = norm(displayTeamName(name));
