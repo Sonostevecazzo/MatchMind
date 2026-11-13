@@ -13,7 +13,7 @@ const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.0\.3$/m);
+  assert.match(script, /^\/\/ @version\s+3\.0\.4$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
@@ -41,9 +41,15 @@ test("Sisal consumes prediction arrays from the app and supports Italian team al
   assert.match(script, /netherlands: \["netherlands", "holland", "the netherlands", "olanda", "paesi bassi", "nederland"\]/);
   assert.match(script, /greece: \["greece", "grecia", "hellas"\]/);
   assert.match(script, /function includesTeam\(text, name\)/);
-  assert.match(script, /function eventRootCandidates\(button\)/);
+  assert.match(script, /function eventRootCandidates\(button, rootCache\)/);
 });
 
+test("Sisal scanner is scoped to the visible area and rescans on scroll", () => {
+  assert.match(script, /getBoundingClientRect\(\)/);
+  assert.match(script, /rect\.bottom < -margin \|\| rect\.top > viewportHeight \+ margin/);
+  assert.match(script, /new WeakMap\(\)/);
+  assert.match(script, /window\.addEventListener\("scroll"/);
+});
 test("Sisal can display 1X2, double chance, goals and both-teams-to-score forecasts", () => {
   assert.match(script, /function marketKeyFor\(button, eventRoot\)/);
   assert.match(script, /return "bttsYes"/);
