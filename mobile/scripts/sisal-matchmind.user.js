@@ -360,6 +360,7 @@
     statusRoot.setAttribute("data-mm-sisal-ui", "true");
     statusRoot.innerHTML = '<span class="mm-dot"></span><span>MM attivo</span>';
     (document.body || document.documentElement).appendChild(statusRoot);
+    setStatus();
   }
 
   function setStatus() {
@@ -368,8 +369,10 @@
     const title = matchedMarkets
       ? "MatchMind attivo · " + matchedMarkets + " percentuali mostrate su " + matchedMatches + " partite riconosciute."
       : imported
-        ? "MatchMind attivo · " + imported + " partite importate. Apri la partita o il mercato corrispondente per mostrare le percentuali."
-        : "MatchMind attivo · apri il costruttore per trasferire le previsioni.";
+        ? "MatchMind attivo · " + imported + " partite importate, ma nessun mercato riconosciuto su questa schermata."
+        : "MatchMind attivo, ma non ha ricevuto previsioni dall'app. Trasferisci la schedina da MatchMind.";
+    const label = matchedMarkets ? "MM · " + matchedMarkets + " %" : imported ? "MM · " + imported + " partite" : "MM · trasferisci";
+    statusRoot.querySelector("span:last-child").textContent = label;
     statusRoot.title = title;
     statusRoot.setAttribute("aria-label", title + " Apri il costruttore MatchMind.");
   }
