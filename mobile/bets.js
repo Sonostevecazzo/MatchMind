@@ -164,7 +164,7 @@ function selectedRows(){
    match={home:p.home,away:p.away,date:p.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome"}).format(new Date()),competition};
   }
   if(!match)return null;
-  const forecast=(allData?.history||data?.history)?.length?getForecast(match):null;
+  const forecast=getForecast(match);
   const odds=p.odds!=null&&Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
   const modelProbability=forecast?marketProbability(forecast,p.marketKey):null;
   const savedProbability=Number(p.probability);
