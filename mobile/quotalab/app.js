@@ -1,14 +1,22 @@
-import { normalizeName, parseCSV, validateHistory, forecastFixture, buildMarketOffers, priceOffers, buildSuggestions, calculateTicket, backtestHistory } from "./engine.js";
+import { normalizeName, normalizeDate, currentSeasonCode, parseCSV, validateHistory, forecastFixture, buildMarketOffers, priceOffers, buildSuggestions, calculateTicket, backtestHistory } from "./engine.js";
 
 const KEY = "quotalab.store.v1";
 const $ = id => document.getElementById(id);
 const titles = { overview:"Panoramica", analysis:"Analisi partite", builder:"Costruttore", archive:"Archivio", data:"Dati e metodo" };
-const leagues = [{id:"serie-a",label:"Serie A"},{id:"champions-league",label:"Champions League"},{id:"europa-league",label:"Europa League"}];
+const leagues = [
+  {id:"serie-a",label:"Serie A",folder:"ITA_1_serie-a"},
+  {id:"champions-league",label:"Champions League",folder:"UEFA_1_champions-league"},
+  {id:"europa-league",label:"Europa League",folder:"UEFA_1_europa-league"}
+];
+const OPEN_MATCHDAY_BASES = [
+  "https://cdn.jsdelivr.net/gh/oladeeayo/open-matchday@master/data",
+  "https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data"
+];
 const categories = [
   ["auto","Tutti i mercati"],["1x2","1X2"],["double","Doppia chance"],["goals","Over / Under"],
   ["btts","Gol / No Gol"],["combo-goals","1X2 + Over / Under"],["combo-btts","1X2 + Gol / No Gol"]
 ];
-const s = { view:"overview", fixtureId:null, history:[], fixtures:[], tickets:[], slip:[], stake:5, editing:null, drawer:false, result:null, backtest:null, backtestCompetition:"serie-a", settings:{category:"auto",minEv:0.03,maxLegs:3} };
+const s = { view:"overview", fixtureId:null, history:[], fixtures:[], tickets:[], slip:[], stake:5, editing:null, drawer:false, result:null, backtest:null, backtestCompetition:"serie-a", syncing:false, settings:{category:"auto",minEv:0.03,maxLegs:3} };
 
 function read(value, fallback) { try { const parsed=JSON.parse(value); return parsed && typeof parsed==="object" ? parsed : fallback; } catch { return fallback; } }
 function load() {
@@ -166,11 +174,104 @@ function backtestPanel() {
     '<div class="builder-form backtest-controls"><label>Competizione<select id="backtest-competition">'+options(leagues.map(x=>[x.id,x.label]),s.backtestCompetition)+'</select></label><button class="button button-primary" data-action="run-backtest" '+(s.history.length?"":"disabled")+'>Esegui backtest ↗</button></div>'+body+'</section>';
 }
 
+
+async function fetchOpenMatchdayCsv(relativePath) {
+  const failures=[];
+  for(const base of OPEN_MATCHDAY_BASES) {
+    try {
+      const response=await fetch(base+"/"+relativePath,{mode:"cors",credentials:"omit",cache:"no-store"});
+      if(!response.ok) { failures.push("HTTP "+response.status); continue; }
+      const content=await response.text();
+      if(content.trim()) return content;
+      failures.push("file CSV vuoto");
+    } catch(error) {
+      failures.push(error?.message||"errore di rete/CORS");
+    }
+  }
+  throw new Error("Fonte CSV non raggiungibile ("+failures.join(" / ")+"). Puoi importare lo stesso dataset manualmente.");
+}
+function currentSeasonLabel() {
+  const code=currentSeasonCode();
+  return "20"+code.slice(0,2)+"/20"+code.slice(2);
+}
+function matchKey(match) {
+  return [match.competition,match.date,normalizeName(match.home),normalizeName(match.away)].join("|");
+}
+async function syncCompetitionFromOpenMatchday(competition) {
+  const league=leagues.find(item=>item.id===competition);
+  if(!league) throw new Error("Competizione non supportata.");
+  const season=currentSeasonCode();
+  const base=league.folder+"/";
+  const [resultsText,fixturesText]=await Promise.all([
+    fetchOpenMatchdayCsv(base+"results_"+season+".csv"),
+    fetchOpenMatchdayCsv(base+"fixtures_"+season+".csv")
+  ]);
+  const resultRows=parseCSV(resultsText);
+  const fixtureRows=parseCSV(fixturesText);
+  const resultHeaders=Object.keys(resultRows[0]||{});
+  const fixtureHeaders=Object.keys(fixtureRows[0]||{});
+  if(!["date","home","away","ft_home","ft_away"].every(key=>resultHeaders.includes(key))||
+     !["date","home","away"].every(key=>fixtureHeaders.includes(key))) {
+    throw new Error("Formato CSV upstream non riconosciuto: nessun dato è stato modificato.");
+  }
+  const validated=validateHistory(resultRows,competition);
+  const historyMap=new Map(s.history.map(match=>[matchKey(match),match]));
+  let addedResults=0,updatedResults=0;
+  for(const match of validated.matches) {
+    const key=matchKey(match),prior=historyMap.get(key);
+    if(!prior) addedResults+=1;
+    else if(prior.homeGoals!==match.homeGoals||prior.awayGoals!==match.awayGoals) updatedResults+=1;
+    historyMap.set(key,match);
+  }
+  s.history=Array.from(historyMap.values()).sort((a,b)=>a.date.localeCompare(b.date));
+
+  const fixtureMap=new Map(s.fixtures.filter(item=>item.competition===competition).map(item=>[matchKey(item),item]));
+  const refreshed=[];
+  for(const row of fixtureRows) {
+    const date=normalizeDate(row.date),home=String(row.home||"").trim(),away=String(row.away||"").trim();
+    if(!date||!home||!away||normalizeName(home)===normalizeName(away)) continue;
+    const key=matchKey({competition,date,home,away});
+    const prior=fixtureMap.get(key);
+    refreshed.push({
+      ...(prior||{}),id:prior?.id||id(),competition,date,home,away,
+      odds:prior?.odds||{},source:"open-matchday",
+      gameweek:String(row.gw||""),kickoffTime:String(row.time||"")
+    });
+  }
+  if(refreshed.length) {
+    const refreshedKeys=new Set(refreshed.map(matchKey));
+    s.fixtures=s.fixtures.filter(item=>item.competition!==competition||
+      (item.source!=="open-matchday"&&!refreshedKeys.has(matchKey(item)))).concat(refreshed);
+    s.fixtures.sort((a,b)=>a.date.localeCompare(b.date));
+  }
+  return {
+    competition:league.label,addedResults,updatedResults,rejectedResults:validated.rejected.length,
+    fixtures:refreshed.length,season
+  };
+}
+async function syncOpenMatchday() {
+  if(s.syncing)return;
+  s.syncing=true;render();
+  const outcomes=[];
+  for(const league of leagues) {
+    try { outcomes.push({ok:true,...await syncCompetitionFromOpenMatchday(league.id)}); }
+    catch(error) { outcomes.push({ok:false,competition:league.label,error:error?.message||"Errore di rete"}); }
+  }
+  s.syncing=false;
+  save();render();
+  const success=outcomes.filter(item=>item.ok);
+  const failures=outcomes.filter(item=>!item.ok);
+  const details=success.map(item=>item.competition+": +"+item.addedResults+" risultati, "+item.updatedResults+" corretti, "+item.fixtures+" partite a calendario").join(" · ");
+  if(success.length&&!failures.length) notify("Sincronizzazione completata. "+details,"success");
+  else if(success.length) notify("Sincronizzazione parziale. "+details+". Non raggiunte: "+failures.map(item=>item.competition+" ("+item.error+")").join("; "),"info");
+  else notify("Aggiornamento non riuscito: "+failures.map(item=>item.competition+" ("+item.error+")").join("; ")+". Nessuna quota o previsione è stata inventata.","error");
+}
+
 function dataView() {
   const comps=new Set(s.history.map(x=>x.competition)).size;
   return '<div class="page-intro"><div><span class="kicker">DATA GOVERNANCE</span><h2>La qualità parte dalla fonte.</h2><p>QuotaLab non presenta dati simulati come reali e non scarica informazioni da fonti non verificate.</p></div><span class="tag tag-warning">IMPORT MANUALE</span></div>'+
   '<div class="data-grid"><section class="panel">'+panelHead("INPUT STORICO","Importa risultati CSV",'<span class="step-number">01</span>')+
-  '<div class="drop-zone"><div class="upload-symbol">↑</div><strong>Carica il tuo archivio risultati</strong><p>Colonne: date, home, away, home_goals, away_goals, competition. Compatibili anche gli header football-data.co.uk: Date, Div, HomeTeam, AwayTeam, FTHG, FTAG.</p><button class="button button-primary" data-action="import-csv">Seleziona CSV</button></div><div class="data-foot"><strong>Risultato più recente</strong><span>'+(s.history.length?dateText(s.history[s.history.length-1].date):"—")+'</span></div></section>'+
+  '<div class="drop-zone"><div class="upload-symbol">↻</div><strong>Aggiorna risultati e calendario</strong><p>Scarica il dataset '+currentSeasonLabel()+' pubblicato da Open Matchday per Serie A, Champions League ed Europa League. È aggiornato giornalmente, non in tempo reale.</p><button class="button button-primary" data-action="sync-open-matchday" '+(s.syncing?'disabled':'')+'>'+(s.syncing?'Sincronizzazione…':'Aggiorna da Open Matchday')+'</button><p class="small">Fonte: <a href="https://github.com/oladeeayo/open-matchday" target="_blank" rel="noopener">open-matchday</a>. Uso personale e non commerciale con attribuzione. Se il browser blocca la richiesta esterna, puoi usare l’import CSV qui sotto.</p><div class="sync-divider">oppure importa uno storico esterno</div><div class="upload-symbol">↑</div><strong>Carica un archivio risultati CSV</strong><p>CSV storico: date, home, away, home_goals, away_goals, competition. Compatibili anche gli header football-data.co.uk: Date, Div, HomeTeam, AwayTeam, FTHG, FTAG. Puoi caricare più stagioni se disponibili nella tua fonte.</p><button class="button button-primary" data-action="import-csv">Seleziona CSV</button></div><div class="data-foot"><strong>Risultato più recente</strong><span>'+(s.history.length?dateText(s.history[s.history.length-1].date):"—")+'</span></div></section>'+
   '<section class="panel">'+panelHead("PORTABILITÀ","Backup e ripristino",'<span class="step-number">02</span>')+
   '<div class="action-row"><div><strong>Esporta backup completo</strong><small>Storico, partite, schedine e impostazioni.</small></div><button class="button button-secondary" data-action="export">Esporta JSON</button></div>'+
   '<div class="action-row"><div><strong>Ripristina backup</strong><small>Sostituisce i dati locali correnti.</small></div><button class="button button-secondary" data-action="restore">Importa JSON</button></div>'+
@@ -310,6 +411,7 @@ document.addEventListener("click",event=>{
   else if(act==="save-ticket")saveTicket();
   else if(act==="edit-ticket")editTicket(ref);
   else if(act==="settle")settle(ref,button.dataset.status);
+  else if(act==="sync-open-matchday")syncOpenMatchday();
   else if(act==="import-csv")$("history-file").click();
   else if(act==="restore")$("backup-file").click();
   else if(act==="export"){download("quotalab-backup.json",JSON.stringify({app:"QuotaLab",version:1,exportedAt:new Date().toISOString(),history:s.history,fixtures:s.fixtures,tickets:s.tickets,slip:s.slip,stake:s.stake,editing:s.editing,settings:s.settings},null,2),"application/json");}

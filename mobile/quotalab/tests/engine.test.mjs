@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeDate, parseCSV, validateHistory, forecastFixture, buildMarketOffers, priceOffers, buildSuggestions, calculateTicket, scoreMatrix, backtestHistory } from "../engine.js";
+import { normalizeDate, currentSeasonCode, parseCSV, validateHistory, forecastFixture, buildMarketOffers, priceOffers, buildSuggestions, calculateTicket, scoreMatrix, backtestHistory } from "../engine.js";
 
 function historyFixture() {
   const rows = [];
@@ -20,6 +20,14 @@ test("normalizza date ISO e italiane senza accettare date impossibili", () => {
   assert.equal(normalizeDate("2025-02-28"), "2025-02-28");
   assert.equal(normalizeDate("28/02/2025"), "2025-02-28");
   assert.equal(normalizeDate("31/02/2025"), null);
+});
+
+test("calcola il codice stagione europeo rispettando il cambio a luglio", () => {
+  assert.equal(currentSeasonCode("2026-11-14T12:00:00Z"), "2627");
+  assert.equal(currentSeasonCode("2026-01-14T12:00:00Z"), "2526");
+  assert.equal(currentSeasonCode("2026-06-30T12:00:00Z"), "2526");
+  assert.equal(currentSeasonCode("2026-07-01T00:00:00Z"), "2627");
+  assert.throws(() => currentSeasonCode("invalid-date"));
 });
 
 test("il parser CSV gestisce virgole quotate, separatore ; e virgolette doppie", () => {
