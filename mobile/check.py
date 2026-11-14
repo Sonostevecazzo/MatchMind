@@ -180,7 +180,7 @@ assert "function setBetWorkspaceTab" in bets_script and "betWorkspacePickCount" 
 assert "location.hash.includes(\"manualBuilder\")" in bets_script
 assert "bet-sisal-details" in bets_page and "main/mobile/scripts/sisal-matchmind.user.js" in bets_page
 assert "Salvare registra la schedina in MatchMind" in bets_page
-assert "bets.js?v=20261116-integrated-slip" in bets_page
+assert "bets.js?v=20261116-integrated-slip-2" in bets_page
 assert "bets.js?v=20261116-integrated-slip" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert (ROOT/"notifications.js").is_file()
 assert "upcomingMatches" in (ROOT/"live.html").read_text(encoding="utf-8")
