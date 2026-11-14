@@ -8,7 +8,7 @@ try{const storedStake=Number(JSON.parse(localStorage.getItem(STAKE_KEY)||"10"));
 const curr=v=>Number.isFinite(v)?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—";
 const fmtOdds=v=>Number.isFinite(v)&&v>0?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
 const fmtEv=v=>Number.isFinite(v)?(v>=0?"+":"")+(v*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
-let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false;
+let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false,editingTicketId=null;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -246,25 +246,15 @@ function exportSisalPredictions(row){
  return Array.from(unique.values());
 }
 
-function updateSisalTransfer(){
+function updateSisalTransfer(rows){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
  const bridge=window.MatchMindSisalBridge;
- // Export the loaded upcoming calendar, not only manually selected picks.
- // The v3 compact payload is tested for 11 fixtures and mobile URL limits.
- const calendarRows=(Array.isArray(fixtures)?fixtures:[])
-  .filter(match=>match&&match.home&&match.away&&match.date&&(!match.status||!["FT","AET","PEN","CANC","POSTP"].includes(String(match.status).toUpperCase())))
-  .slice(0,11)
-  .map(match=>{
-   const forecast=getForecast(match);
-   if(!forecast||!forecast.probabilities)return null;
-   return {match,marketKey:"home",marketLabel:"Esito 1",probability:forecast.probabilities.home,forecast,odds:null,sport:"football"};
-  }).filter(Boolean);
- const rowsByKey=new Map(calendarRows.map(row=>[fixtureKey(row.match),row]));
- selectedRows().forEach(row=>rowsByKey.set(fixtureKey(row.match),row));
- const allSelections=Array.from(rowsByKey.values()).map(row=>({
+ // Transfer only selections currently inside the slip. Each selected event
+ // carries its supported model markets for recognition on the Sisal page.
+ const allSelections=(Array.isArray(rows)?rows:[]).map(row=>({
   ...row,sport:row.sport||"football",
-  marketLabel:row.marketLabel||"Esito 1",
+  marketLabel:row.marketLabel||"Selezione",
   probability:Number.isFinite(Number(row.probability))?row.probability:null,
   predictions:exportSisalPredictions(row),
   sampleEnough:row.forecast?.sampleEnough===true,
@@ -390,6 +380,8 @@ function renderOpenTickets(){
     return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+
    '<div class="settings-actions">' +
+    '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica schedina</button>' +
+    '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica schedina</button>' +
     '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
     '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
     '<button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button>' +
@@ -483,6 +475,36 @@ function setBetWorkspaceTab(tab){
  if(builder)builder.hidden=selected!=="builder";
  if(slip)slip.hidden=selected!=="slip";
 }
+function startEditTicket(ticketId){
+ const ticket=archive.find(item=>item.id===ticketId);
+ if(!ticket||!Array.isArray(ticket.selections)||!ticket.selections.length)return;
+ editingTicketId=ticket.id;
+ currentStake=Number(ticket.stake)>=0.5?Number(ticket.stake):10;
+ save(STAKE_KEY,currentStake);
+ picks=ticket.selections.map(selection=>selection.sport==="nba"||selection.competition==="nba"?({
+  sport:"nba",id:selection.eventId,eventId:selection.eventId,home:selection.home,away:selection.away,
+  date:selection.date,start:selection.start||"",side:selection.side||"away",
+  marketKey:selection.marketKey||("nbaMoneyline:"+(selection.side||"away")),probability:selection.probability,
+  odds:selection.odds,bookmaker:selection.bookmaker,competition:"nba"
+ }):({
+  sport:"football",competition:selection.competition||"serie-a",date:selection.date,
+  home:selection.home,away:selection.away,marketKey:selection.marketKey,
+  probability:selection.probability,odds:selection.odds,bookmaker:selection.bookmaker
+ }));
+ save(PICKS_KEY,picks);
+ const saveButton=$("saveManualSlip");if(saveButton)saveButton.textContent="Salva modifiche";
+ const cancelButton=$("cancelEditTicket");if(cancelButton)cancelButton.hidden=false;
+ setBetTab("create");setBetWorkspaceTab("slip");slipExpanded=true;renderSlip();updateSlipCalculations();
+ $("manualBuilderStatus").textContent="Modifica schedina: aggiorna selezioni, quote e puntata, poi salva le modifiche.";
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+function cancelEditTicket(){
+ editingTicketId=null;picks=[];save(PICKS_KEY,[]);
+ const saveButton=$("saveManualSlip");if(saveButton)saveButton.textContent="Salva schedina";
+ const cancelButton=$("cancelEditTicket");if(cancelButton)cancelButton.hidden=true;
+ window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();
+ $("manualBuilderStatus").textContent="Modifica annullata. La schedina originale è rimasta invariata.";
+}
 function saveCurrentSlip(){
  const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
  const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
@@ -495,9 +517,12 @@ function saveCurrentSlip(){
  const netWin=potentialWin!=null?potentialWin-currentStake:null;
  const expectedValue=totalOdds!=null&&probability!=null?ENGINE().expectedValue(probability,totalOdds):null;
 
+ const previous=editingTicketId?archive.find(ticket=>ticket.id===editingTicketId):null;
+ const previousByKey=new Map((previous?.selections||[]).map(selection=>[[selection.sport||"football",selection.eventId||selection.date,selection.home,selection.away,selection.marketKey].join("|"),selection]));
  const item={
-  id:"slip-"+Date.now(),
-  createdAt:new Date().toISOString(),
+  id:editingTicketId||("slip-"+Date.now()),
+  createdAt:previous?.createdAt||new Date().toISOString(),
+  updatedAt:previous?new Date().toISOString():null,
   stake:currentStake,
   totalOdds:totalOdds!=null?Number(totalOdds.toFixed(2)):null,
   potentialWin:potentialWin!=null&&Number.isFinite(potentialWin)?Number(potentialWin.toFixed(2)):null,
@@ -520,10 +545,18 @@ function saveCurrentSlip(){
    fairOdds:ENGINE().fairOdds(x.probability),
 bookmaker:x.bookmaker||null,
    competition:x.match.competition||window.MM.getSelectedCompetition(),
-   status:"Da giocare"
+   status:(previousByKey.get([(x.sport||"football"),(x.sport==="nba"?(x.match.id||x.nbaPickId||""):x.match.date),x.match.home,x.match.away,x.marketKey].join("|"))||{}).status||"Da giocare",
+   result:(previousByKey.get([(x.sport||"football"),(x.sport==="nba"?(x.match.id||x.nbaPickId||""):x.match.date),x.match.home,x.match.away,x.marketKey].join("|"))||{}).result||null
   }))
  };
- archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];save(PICKS_KEY,[]);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata con puntata e quote registrate.";setBetTab("live");
+ if(editingTicketId){const index=archive.findIndex(ticket=>ticket.id===editingTicketId);if(index>=0)archive[index]=item;else archive.unshift(item);}
+ else archive.unshift(item);
+ archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);
+ editingTicketId=null;picks=[];save(PICKS_KEY,[]);window.dispatchEvent(new Event("matchmind:picks-updated"));
+ const saveButton=$("saveManualSlip");if(saveButton)saveButton.textContent="Salva schedina";
+ const cancelButton=$("cancelEditTicket");if(cancelButton)cancelButton.hidden=true;
+ renderSlip();renderOpenTickets();renderArchive();
+ $("manualBuilderStatus").textContent=previous?"Modifiche salvate nella schedina esistente.":"Schedina salvata con puntata e quote registrate.";setBetTab("live");
 }
 let currentBuilderStrategy='balanced';
 let proposalTarget=0.55,proposalPeriodLabel='prossima giornata';
@@ -896,6 +929,7 @@ function initEvents(){
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  document.querySelectorAll("[data-bet-workspace-tab]").forEach(button=>button.addEventListener("click",()=>setBetWorkspaceTab(button.dataset.betWorkspaceTab)));
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
+ $("cancelEditTicket")?.addEventListener("click",cancelEditTicket);
  const handleContextChange=event=>{
   const select=event.target.closest("[data-context-field]");
   if(select){
@@ -1038,6 +1072,7 @@ function initEvents(){
  });
  $("refreshArchive").addEventListener("click",updateArchive);
  ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
+  const edit=event.target.closest("[data-edit-ticket]");if(edit){startEditTicket(edit.dataset.editTicket);return;}
   const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();return;}
   const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);return;}
   const winBtn=event.target.closest("[data-settle-win]");if(winBtn){
