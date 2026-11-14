@@ -20,6 +20,11 @@ assert '"serie-a"' in api and '"nations-league"' in api
 assert 'slug: "uefa.nations"' in api
 assert "fetchDirectNationsLeague" in core and "fetchCompetitionFromEspn" in api and "slug: \"uefa.nations\"" in api
 assert "matchmind-multipage-cache-v14-nations-uefa-fallback" in core
+# The GitHub Pages data path must retain an official Nations League fallback.
+assert "function nationsLeagueOfficialFallback" in core
+assert 'const official=nationsLeagueOfficialFallback()' in core
+assert "Calendario futuro: fallback ufficiale UEFA" in core
+
 assert "football-only interface" in (ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert "nbaIntegratedView" not in (ROOT/"matches.html").read_text(encoding="utf-8")
 assert "nbaIntegratedView" not in (ROOT/"live.html").read_text(encoding="utf-8")
