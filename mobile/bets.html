@@ -164,6 +164,46 @@
 .injury-player-list li{margin-bottom:4px}
 .injury-role-badge{display:inline-block;padding:1px 5px;border-radius:3px;background:#19323c;color:#76c3dc;font-size:.68rem;font-weight:600;margin-right:3px}
 .injury-auto-footer{margin-top:2px;padding-top:6px;border-top:1px dashed #1a3a34;color:#789c94;font-size:.72rem}
+
+/* Integrated Bet Center: one workspace, one shared slip. */
+body[data-page="bets"] .bet-workspace-tabs{
+ display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:12px 0 14px;padding:4px;
+ border:1px solid #263640;border-radius:14px;background:#101920;
+}
+body[data-page="bets"] .bet-workspace-tab{
+ display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:9px 12px;
+ border:1px solid transparent;border-radius:10px;background:transparent;color:#aab8bd;
+ font-size:13px;font-weight:800;cursor:pointer;
+}
+body[data-page="bets"] .bet-workspace-tab.active{
+ border-color:rgba(196,243,106,.55);background:rgba(196,243,106,.14);color:#d8ff91;
+ box-shadow:inset 0 0 0 1px rgba(196,243,106,.08);
+}
+body[data-page="bets"] .bet-workspace-tab span{
+ display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;
+ border-radius:20px;background:#27343a;color:#d8ff91;font-size:11px;font-weight:900;
+}
+body[data-page="bets"] .bet-workspace-tab.active span{background:#c4f36a;color:#17210a}
+body[data-page="bets"] .bet-workspace-panel[hidden]{display:none!important}
+body[data-page="bets"] #automaticBuilder{margin-top:0}
+body[data-page="bets"] #automaticBuilder .section-head p{max-width:62ch}
+body[data-page="bets"] #manualBuilder{margin-top:0}
+body[data-page="bets"] #manualBuilder .section-head{margin-bottom:10px}
+body[data-page="bets"] .bet-slip-helper{margin:8px 0 0;color:#91a0a8;font-size:11px;line-height:1.45}
+body[data-page="bets"] #saveManualSlip:disabled{opacity:.42;filter:saturate(.4);cursor:not-allowed}
+body[data-page="bets"] .bet-sisal-details{margin-top:12px}
+body[data-page="bets"] .bet-sisal-details>summary{
+ display:flex;flex-direction:column;gap:4px;cursor:pointer;list-style:none;font-weight:800;color:#d8e3e8;
+}
+body[data-page="bets"] .bet-sisal-details>summary::-webkit-details-marker{display:none}
+body[data-page="bets"] .bet-sisal-details>summary small{font-size:11px;font-weight:500;color:#94a5ad}
+body[data-page="bets"] .bet-sisal-details[open]>summary{padding-bottom:12px;border-bottom:1px solid #293740;margin-bottom:12px}
+@media(max-width:560px){
+ body[data-page="bets"] .bet-workspace-tabs{position:sticky;top:6px;z-index:15;box-shadow:0 8px 22px #0005}
+ body[data-page="bets"] .bet-workspace-tab{min-height:42px;padding:8px 6px;font-size:12px}
+ body[data-page="bets"] .bet-sisal-details{padding:13px}
+}
+
 </style></main>
 </body>
 </html>
