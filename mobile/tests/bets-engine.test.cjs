@@ -176,6 +176,18 @@ test("builds a ticket using the selected combined-market format", () => {
 });
 
 
+test("market filters return only the family explicitly selected by the user", () => {
+  assert.deepEqual(bets.marketCandidates("1x2").map(item => item.key), ["home", "draw", "away"]);
+  assert.deepEqual(bets.marketCandidates("goals").map(item => item.key), [
+    "over15", "under15", "over25", "under25", "over35", "under35"
+  ]);
+  assert.deepEqual(bets.marketCandidates("btts").map(item => item.key), ["bttsYes", "bttsNo"]);
+  assert.ok(bets.marketCandidates("combo-goals").length > 0);
+  assert.ok(bets.marketCandidates("combo-goals").every(item => item.key.startsWith("combo:") && /:(over|under)/.test(item.key)));
+  assert.ok(bets.marketCandidates("combo-btts").length > 0);
+  assert.ok(bets.marketCandidates("combo-btts").every(item => item.key.startsWith("combo:") && /:btts(Yes|No)$/.test(item.key)));
+});
+
 test("fair odds and expected value use decimal odds and reject invalid inputs", () => {
   assert.equal(bets.fairOdds(0.5), 2);
   assert.equal(bets.fairOdds(0), null);
