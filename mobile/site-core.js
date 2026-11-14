@@ -826,6 +826,7 @@ function eventForecast(match,history){
     ];
     const secondary=[
       ['league.html','league','Classifiche','league'],
+      ['nba.html','nba','NBA','nba'],
       ['explore.html','teams','Squadre','explore'],
       ['players.html','players','Giocatori','players'],
       ['data.html','data','Dati','data'],
