@@ -1,6 +1,6 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v9-fixture-fallback';
+  const CACHE_KEY='matchmind-multipage-cache-v10-serie-a-verified';
   const COMPETITIONS = {
     "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false }
   };
