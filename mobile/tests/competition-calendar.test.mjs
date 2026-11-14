@@ -60,8 +60,8 @@ test("75 Open Matchday competitions are registered and calendar-year leagues req
  const seen=[];
  globalThis.fetch=async input=>{
   const url=String(input);seen.push(url);
-  if(url.endsWith("results_2026.csv"))return new Response(["date,gw,home,away,ft_home,ft_away","2026-02-01,1,Flamengo,Palmeiras,2,1"].join("\\n"),{status:200});
-  if(url.endsWith("fixtures_2026.csv"))return new Response(["date,gw,home,away","2026-11-20,2,Santos,Corinthians"].join("\\n"),{status:200});
+  if(url.endsWith("results_2026.csv"))return new Response(["date,gw,home,away,ft_home,ft_away","2026-02-01,1,Flamengo,Palmeiras,2,1"].join("\n"),{status:200});
+  if(url.endsWith("fixtures_2026.csv"))return new Response(["date,gw,home,away","2026-11-20,2,Santos,Corinthians"].join("\n"),{status:200});
   return new Response("not found",{status:404});
  };
  const response=await onRequestGet({request:request("bra-1-serie-a")}),body=await response.json();
