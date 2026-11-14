@@ -91,7 +91,9 @@ test("app exports all calculated markets for each selected football match", () =
   assert.match(bets, /marketKey:"dc1X"/);
   assert.match(bets, /marketKey:"dcX2"/);
   assert.match(bets, /marketKey:"dc12"/);
-  assert.match(bets, /const calendarRows=\(Array\.isArray\(fixtures\)\?fixtures:\[\]\)/);\n  assert.match(bets, /\.slice\(0,11\)/);\n  assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
+  assert.match(bets, /const calendarRows=\(Array\.isArray\(fixtures\)\?fixtures:\[\]\)/);
+  assert.match(bets, /\.slice\(0,11\)/);
+  assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
   assert.match(bets, /predictionMethod:row\.forecast\?\.predictionMethod/);
 });
 
