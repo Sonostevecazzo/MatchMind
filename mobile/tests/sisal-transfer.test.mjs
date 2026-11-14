@@ -88,17 +88,17 @@ test("Sisal scanner is event-driven and has no polling loop", () => {
 });
 
 test("app transfers only the market explicitly selected in MatchMind", () => {
-  assert.match(bets, /function exportSisalPredictions\\(row\\)/);
-  assert.match(bets, /const probability=Number\\(row\\.probability\\)/);
-  assert.match(bets, /marketKey:row\\.marketKey,label:row\\.marketLabel/);
-  assert.doesNotMatch(bets, /const candidates=ENGINE\\(\\)\\.marketCandidates\\("auto"\\)/);
-  assert.match(bets, /const allSelections=selectedRows\\(\\)\\.map/);
-  assert.match(bets, /predictions:exportSisalPredictions\\(row\\)/);
+  assert.match(bets, /function exportSisalPredictions\(row\)/);
+  assert.match(bets, /const probability=Number\(row\.probability\)/);
+  assert.match(bets, /marketKey:row\.marketKey,label:row\.marketLabel/);
+  assert.doesNotMatch(bets, /const candidates=ENGINE\(\)\.marketCandidates\("auto"\)/);
+  assert.match(bets, /const allSelections=selectedRows\(\)\.map/);
+  assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
 });
 
 test("the automatic builder treats the chosen market family as a hard filter", () => {
-  assert.match(bets, /const allowedMarkets=ENGINE\\(\\)\\.marketCandidates\\(marketMode\\)/);
-  assert.match(bets, /const candidateKeys=allowedMarkets\\.map\\(item=>item\\.key\\)/);
+  assert.match(bets, /const allowedMarkets=ENGINE\(\)\.marketCandidates\(marketMode\)/);
+  assert.match(bets, /const candidateKeys=allowedMarkets\.map\(item=>item\.key\)/);
   assert.doesNotMatch(bets, /const overrides=/);
   for (const mode of ["1x2", "goals", "btts", "single", "combo-goals", "combo-btts"]) {
     assert.ok(betsHtml.includes('value="' + mode + '"'), "Missing market option " + mode);
@@ -106,10 +106,10 @@ test("the automatic builder treats the chosen market family as a hard filter", (
 });
 
 test("Sisal highlights the exact selected market, including combined markets", () => {
-  assert.match(script, /const comboTotal = compactOutcome\\.match/);
-  assert.match(script, /const comboBtts = compactOutcome\\.match/);
-  assert.match(script, /return "combo:" \\+ resultKey \\+ ":" \\+ comboTotal\\[2\\] \\+ comboTotal\\[3\\]/);
-  assert.match(script, /badge\\.textContent = selected \\? "MM ✓ " \\+ formatPercent/);
+  assert.match(script, /const comboTotal = compactOutcome\.match/);
+  assert.match(script, /const comboBtts = compactOutcome\.match/);
+  assert.match(script, /return "combo:" \+ resultKey \+ ":" \+ comboTotal\[2\] \+ comboTotal\[3\]/);
+  assert.match(script, /badge\.textContent = selected \? "MM ✓ " \+ formatPercent/);
   assert.match(script, /matchedSelections = selectionsSeen/);
   assert.match(script, /mercati selezionati riconosciuti/);
 });
