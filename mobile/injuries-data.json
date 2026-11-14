@@ -1,6 +1,6 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-14T13:54:34Z",
+  "last_updated": "2026-11-14T19:39:39Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
@@ -92,14 +92,14 @@
           "role": "Difesa"
         },
         {
-          "player": "Felici",
-          "detail": "il centrocampista KO il 7 settembre contro il Lecce in casa vittima della rottura del legamento crociato anteriore. Verrà operato e costretto a un lungo stop (ipotizziamo un rientro da marzo).",
-          "role": "Centrocampo"
-        },
-        {
           "player": "Mina",
           "detail": "il colombiano condizionato da una vecchia ferita alla gamba (microlesione muscolare al bicipite femorale), out nel turno precedente contro il Frosinone. Da valutare durante la sosta per le Nazionali in vista della ripresa del campionato contro il Como.",
           "role": "Altro"
+        },
+        {
+          "player": "Felici",
+          "detail": "il centrocampista KO il 7 settembre contro il Lecce in casa vittima della rottura del legamento crociato anteriore. Verrà operato e costretto a un lungo stop (ipotizziamo un rientro da marzo).",
+          "role": "Centrocampo"
         }
       ],
       "squalificati": [
