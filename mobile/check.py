@@ -18,7 +18,7 @@ api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8
 assert '"serie-a"' in core and '"nations-league"' in core
 assert '"serie-a"' in api and '"nations-league"' in api
 assert 'slug: "uefa.nations"' in api
-assert "fetchDirectNationsLeague" in core and "uefa.nations/scoreboard" in api
+assert "fetchDirectNationsLeague" in core and "fetchCompetitionFromEspn" in api and "slug: \"uefa.nations\"" in api
 assert "matchmind-multipage-cache-v11-serie-a-nations-20261114" in core
 assert "football-only interface" in (ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert "nbaIntegratedView" not in (ROOT/"matches.html").read_text(encoding="utf-8")
