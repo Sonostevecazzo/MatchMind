@@ -491,6 +491,8 @@ function renderArchive(){
     const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
     return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+'<div class="settings-actions">' +
+    '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica</button>' +
+    '<button type="button" class="secondary" data-transfer-ticket="'+esc(ticket.id)+'">Apri su Sisal</button>' +
     '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
     '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
     '<button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button>' +
