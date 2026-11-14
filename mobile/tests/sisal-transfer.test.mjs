@@ -86,17 +86,26 @@ test("Sisal scanner is event-driven and has no polling loop", () => {
   assert.doesNotMatch(script, /setInterval\(\(\) => scanPage/);
 });
 
-test("app exports all calculated markets for each selected football match", () => {
-  assert.match(bets, /function exportSisalPredictions\(row\)/);
-  assert.match(bets, /ENGINE\(\)\.marketCandidates\("auto"\)/);
-  assert.match(bets, /marketProbability\(forecast,item\.key\)/);
+test("app exports model forecasts only for the current selected slip", () => {
+  assert.match(bets, /function exportSisalPredictions\\(row\\)/);
+  assert.match(bets, /ENGINE\\(\\)\\.marketCandidates\\("auto"\\)/);
+  assert.match(bets, /marketProbability\\(forecast,item\\.key\\)/);
   assert.match(bets, /marketKey:"dc1X"/);
   assert.match(bets, /marketKey:"dcX2"/);
   assert.match(bets, /marketKey:"dc12"/);
-  assert.match(bets, /const calendarRows=\(Array\.isArray\(fixtures\)\?fixtures:\[\]\)/);
-  assert.match(bets, /\.slice\(0,11\)/);
-  assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
-  assert.match(bets, /predictionMethod:row\.forecast\?\.predictionMethod/);
+  assert.match(bets, /const allSelections=selectedRows\\(\\)\\.map/);
+  assert.doesNotMatch(bets, /const calendarRows=/);
+  assert.match(bets, /predictions:exportSisalPredictions\\(row\\)/);
+  assert.match(bets, /sampleEnough:row\\.sampleEnough===true\\|\\|row\\.forecast\\?\\.sampleEnough===true/);
+  assert.match(bets, /predictionMethod:row\\.predictionMethod\\|\\|row\\.forecast\\?\\.predictionMethod/);
+});
+
+test("archived tickets retain real sample quality when reopened and transferred", () => {
+  assert.match(bets, /sampleEnough:s\\.sampleEnough===true/);
+  assert.match(bets, /sampleEnough:x\\.sport==="nba"\\?\\(x\\.sampleEnough===true\\)/);
+  assert.match(bets, /sampleEnough:selection\\.sampleEnough===true/);
+  assert.match(bets, /historyCount:Number\\(selection\\.historyCount\\)\\|\\|0/);
+  assert.doesNotMatch(bets, /sampleEnough:true,historyCount:0/);
 });
 
 test("bridge uses a URL fragment for Sisal handoff", () => {
