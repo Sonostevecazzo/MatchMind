@@ -1,7 +1,7 @@
 const DAY_MS = 86400000;
 const HALF_LIFE_DAYS = 540;
 const PRIOR_MATCHES = 5;
-const MAX_GOALS = 12;
+const MAX_GOALS = 20;
 
 export function normalizeName(value) {
   return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -233,7 +233,7 @@ export function buildMarketOffers(forecast) {
   return offers.filter(item=>Number.isFinite(item.probability)&&item.probability>=0&&item.probability<=1);
 }
 const GROUPS = {
-  "1x2":["1x2_home","1x2_draw","1x2_away"], double:["dc_1x","dc_12","dc_x2"],
+  "1x2":["1x2_home","1x2_draw","1x2_away"],
   btts:["btts_yes","btts_no"], ou15:["ou_over15","ou_under15"], ou25:["ou_over25","ou_under25"], ou35:["ou_over35","ou_under35"]
 };
 export function priceOffers(offers, odds = {}) {

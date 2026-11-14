@@ -54,6 +54,8 @@ test("la matrice Poisson è finita e normalizzata; input fuori intervallo rifiut
   assert.ok(result.omittedTailMass >= 0 && result.omittedTailMass < 1e-6);
   assert.throws(() => scoreMatrix(-1, 1));
   assert.throws(() => scoreMatrix(9, 1));
+  const highExpectation = scoreMatrix(5.5, 5.5);
+  assert.ok(highExpectation.omittedTailMass < 1e-6);
 });
 
 test("mercati coerenti e combinazioni calcolate con probabilità congiunte", () => {
@@ -82,6 +84,12 @@ test("il margine è normalizzato solo per mercati completi", () => {
   const incomplete = priceOffers(offers, { "1x2_home": 2.2 });
   assert.equal(incomplete[0].fairMarketProbability, null);
   assert.equal(incomplete[1].odds, null);
+  const doubleChance = priceOffers([
+    { key: "dc_1x", category: "double", group: "double", probability: .7, label: "1X" },
+    { key: "dc_12", category: "double", group: "double", probability: .8, label: "12" },
+    { key: "dc_x2", category: "double", group: "double", probability: .6, label: "X2" }
+  ], { "dc_1x": 1.4, "dc_12": 1.3, "dc_x2": 1.6 });
+  assert.ok(doubleChance.every(item => item.fairMarketProbability === null && item.overround === null));
 });
 
 test("il costruttore rispetta il mercato selezionato senza riempire candidati mancanti", () => {

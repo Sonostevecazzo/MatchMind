@@ -18,10 +18,11 @@ function load() {
   s.tickets=Array.isArray(data.tickets)?data.tickets:[];
   s.slip=Array.isArray(data.slip)?data.slip:[];
   s.stake=Number(data.stake)>0?Number(data.stake):5;
+  s.editing=typeof data.editing==="string"&&s.tickets.some(ticket=>ticket.id===data.editing&&ticket.status==="open")?data.editing:null;
   s.settings={...s.settings,...(data.settings||{})};
   s.slip=s.slip.filter(x=>x && x.fixtureId && Number(x.odds)>1);
 }
-function save() { localStorage.setItem(KEY,JSON.stringify({version:1,history:s.history,fixtures:s.fixtures,tickets:s.tickets,slip:s.slip,stake:s.stake,settings:s.settings})); }
+function save() { localStorage.setItem(KEY,JSON.stringify({version:1,history:s.history,fixtures:s.fixtures,tickets:s.tickets,slip:s.slip,stake:s.stake,editing:s.editing,settings:s.settings})); }
 function esc(value) { return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function id() { return crypto.randomUUID ? crypto.randomUUID() : "ql-"+Date.now()+"-"+Math.random().toString(36).slice(2); }
 function eur(value) { return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"}).format(Number(value||0)); }
@@ -111,7 +112,7 @@ function matchAnalysis(f) {
   '<div class="probability-grid">'+probCard("1",prob.home)+probCard("X",prob.draw)+probCard("2",prob.away)+probCard("OVER 2,5",prob.over25)+probCard("UNDER 2,5",prob.under25)+probCard("GOL",prob.bttsYes)+'</div>'+
   '<div class="model-note"><strong>Metodo:</strong> '+esc(p.method)+'. '+esc(p.caveat)+'<span>Probabilità indipendenti dalle quote.</span></div>'+
   '<div class="market-table-head"><div><span class="kicker">VALUTAZIONE DEL PREZZO</span><h4>Mercati disponibili</h4></div><span class="subtle">Quote manuali</span></div>'+
-  '<div class="market-table">'+oddsRows+'</div><p class="footnote">EV = probabilità modello × quota − 1. Il margine viene rimosso solo se sono inseriti tutti gli esiti dello stesso mercato. EV positivo non garantisce redditività.</p>';
+  '<div class="market-table">'+oddsRows+'</div><p class="footnote">EV = probabilità modello × quota − 1. Il de-vig si applica solo a mercati completi con esiti mutuamente esclusivi; per la doppia chance si mostra il confronto con la probabilità implicita grezza. EV positivo non garantisce redditività.</p>';
 }
 function builderView() {
   const result=s.result;
@@ -137,8 +138,8 @@ function ticketCard(t) {
   '<div class="ticket-bottom"><span>Puntata <strong>'+eur(t.stake)+'</strong> · '+(t.status==="open"?"Ritorno "+eur(t.grossReturn):"Risultato "+eur(t.netResult))+'</span><div class="ticket-actions">'+actions+'</div></div></article>';
 }
 function archiveView() {
-  const open=s.tickets.filter(t=>t.status==="open"),done=s.tickets.filter(t=>t.status==="won"||t.status==="lost");
-  const staked=done.reduce((n,t)=>n+Number(t.stake||0),0),net=done.reduce((n,t)=>n+Number(t.netResult||0),0);
+  const open=s.tickets.filter(t=>t.status==="open"),done=s.tickets.filter(t=>t.status!=="open"),regulated=done.filter(t=>t.status==="won"||t.status==="lost");
+  const staked=regulated.reduce((n,t)=>n+Number(t.stake||0),0),net=regulated.reduce((n,t)=>n+Number(t.netResult||0),0);
   return '<div class="page-intro"><div><span class="kicker">TICKET JOURNAL</span><h2>Misura, non ricordare a memoria.</h2><p>Modifica le schedine aperte, registra l&#39;esito e controlla il rendimento storico.</p></div></div>'+
   '<div class="metric-grid">'+metric("Schedine aperte",open.length,"da regolare")+metric("Schedine regolate",done.length,"vittorie e sconfitte")+metric("Risultato netto",eur(net),"su "+eur(staked),net>=0?"positive":"negative")+metric("ROI registrato",staked?percent(net/staked):"—","solo ticket regolati",net>=0?"positive":"negative")+'</div>'+
   '<section class="panel">'+panelHead("APERTE","Schedine da seguire",'<span class="count-badge">'+open.length+'</span>')+(open.length?open.map(ticketCard).join(""):empty("Nessuna schedina aperta","Aggiungi una selezione dall'analisi o dal costruttore.","go-analysis","Apri analisi"))+'</section>'+
@@ -237,7 +238,11 @@ function addBuilder() {
 }
 function saveTicket() {
   try{
-    const calc=calculateTicket(s.slip,s.stake),t={id:s.editing||id(),createdAt:new Date().toISOString(),status:"open",legs:s.slip.map(x=>({...x})),stake:calc.stake,combinedOdds:calc.combinedOdds,jointProbability:calc.jointProbability,grossReturn:calc.grossReturn,theoreticalExpectedValue:calc.theoreticalExpectedValue};
+    const calc=calculateTicket(s.slip,s.stake);
+    const ticketId=s.editing||id();
+    const previous=s.tickets.find(x=>x.id===ticketId);
+    const now=new Date().toISOString();
+    const t={id:ticketId,createdAt:previous?.createdAt||now,updatedAt:now,status:"open",legs:s.slip.map(x=>({...x})),stake:calc.stake,combinedOdds:calc.combinedOdds,jointProbability:calc.jointProbability,grossReturn:calc.grossReturn,theoreticalExpectedValue:calc.theoreticalExpectedValue};
     const index=s.tickets.findIndex(x=>x.id===t.id);
     if(index>=0){if(s.tickets[index].status!=="open"){notify("Un ticket regolato non è modificabile.","error");return;}s.tickets[index]=t;}else s.tickets.unshift(t);
     s.slip=[];s.editing=null;s.drawer=false;save();render();notify("Schedina salvata. Nessuna puntata è stata inviata al bookmaker.","success");
@@ -279,12 +284,12 @@ function importBackup(file) {
     const data=read(String(reader.result||""),null);
     if(!data||data.app!=="QuotaLab"||data.version!==1||!Array.isArray(data.history)||!Array.isArray(data.fixtures)||!Array.isArray(data.tickets)){notify("Backup non riconosciuto.","error");return;}
     if(!confirm("Il ripristino sostituirà i dati locali correnti. Continuare?"))return;
-    s.history=data.history;s.fixtures=data.fixtures;s.tickets=data.tickets;s.backtest=null;s.slip=[];s.editing=null;s.settings={...s.settings,...(data.settings||{})};save();render();notify("Backup ripristinato.","success");
+    s.history=data.history;s.fixtures=data.fixtures;s.tickets=data.tickets;s.backtest=null;s.slip=Array.isArray(data.slip)?data.slip:[];s.stake=Number(data.stake)>0?Number(data.stake):5;s.editing=typeof data.editing==="string"&&s.tickets.some(ticket=>ticket.id===data.editing&&ticket.status==="open")?data.editing:null;s.settings={...s.settings,...(data.settings||{})};save();render();notify("Backup ripristinato.","success");
   };reader.onerror=()=>notify("Lettura backup non riuscita.","error");reader.readAsText(file);
 }
 function clearData() {
   if(!confirm("Cancellare tutti i risultati, le partite e le schedine locali?"))return;
-  s.history=[];s.fixtures=[];s.tickets=[];s.backtest=null;s.slip=[];s.result=null;s.fixtureId=null;save();render();notify("Workspace azzerato.","success");
+  s.history=[];s.fixtures=[];s.tickets=[];s.backtest=null;s.slip=[];s.editing=null;s.result=null;s.fixtureId=null;save();render();notify("Workspace azzerato.","success");
 }
 document.addEventListener("click",event=>{
   const nav=event.target.closest("[data-view]");if(nav){s.view=nav.dataset.view;s.drawer=false;render();return;}
@@ -307,7 +312,7 @@ document.addEventListener("click",event=>{
   else if(act==="settle")settle(ref,button.dataset.status);
   else if(act==="import-csv")$("history-file").click();
   else if(act==="restore")$("backup-file").click();
-  else if(act==="export"){download("quotalab-backup.json",JSON.stringify({app:"QuotaLab",version:1,exportedAt:new Date().toISOString(),history:s.history,fixtures:s.fixtures,tickets:s.tickets,settings:s.settings},null,2),"application/json");}
+  else if(act==="export"){download("quotalab-backup.json",JSON.stringify({app:"QuotaLab",version:1,exportedAt:new Date().toISOString(),history:s.history,fixtures:s.fixtures,tickets:s.tickets,slip:s.slip,stake:s.stake,editing:s.editing,settings:s.settings},null,2),"application/json");}
   else if(act==="export-csv"){const rows=[["date","competition","home","away","home_goals","away_goals"],...s.history.map(x=>[x.date,x.competition,x.home,x.away,x.homeGoals,x.awayGoals])];download("quotalab-history.csv",rows.map(row=>row.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(",")).join("\r\n"),"text/csv;charset=utf-8");}
   else if(act==="clear")clearData();
 });
