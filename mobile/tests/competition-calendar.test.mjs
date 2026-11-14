@@ -50,3 +50,23 @@ test("a missing selected competition feed returns a clear error instead of fake 
  assert.equal(body.matches.length,0);
  assert.ok(body.errors.some(error=>error.includes("serie-b")));
 });
+
+
+test("75 Open Matchday competitions are registered and calendar-year leagues request the correct dataset", async t=>{
+ const originalFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=originalFetch;});
+ const source=await (await import("node:fs/promises")).readFile(new URL("../functions/api/competition-calendar.js",import.meta.url),"utf8");
+ const feedCount=[...source.matchAll(/feed: "[A-Z0-9_]+"/g)].length;
+ assert.equal(feedCount,75,"all 75 competitions in the upstream 2026/27 index must have a feed");
+ const seen=[];
+ globalThis.fetch=async input=>{
+  const url=String(input);seen.push(url);
+  if(url.endsWith("results_2026.csv"))return new Response("date,gw,home,away,ft_home,ft_away\\n2026-02-01,1,Flamengo,Palmeiras,2,1",{status:200});
+  if(url.endsWith("fixtures_2026.csv"))return new Response("date,gw,home,away\\n2026-11-20,2,Santos,Corinthians",{status:200});
+  return new Response("not found",{status:404});
+ };
+ const response=await onRequestGet({request:request("bra-1-serie-a")}),body=await response.json();
+ assert.equal(response.status,200);
+ assert.ok(seen.some(url=>url.endsWith("BRA_1_serie-a/results_2026.csv")));
+ assert.equal(body.historyScope,"current-season-only");
+ assert.equal(body.coverage.completed,1);
+});
