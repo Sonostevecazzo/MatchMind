@@ -13,7 +13,7 @@ const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.0\.8$/m);
+  assert.match(script, /^\/\/ @version\s+3\.0\.9$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
@@ -86,18 +86,22 @@ test("Sisal scanner is event-driven and has no polling loop", () => {
   assert.doesNotMatch(script, /setInterval\(\(\) => scanPage/);
 });
 
-test("app exports model forecasts only for the current selected slip", () => {
-  assert.match(bets, /function exportSisalPredictions\(row\)/);
-  assert.match(bets, /ENGINE\(\)\.marketCandidates\("auto"\)/);
-  assert.match(bets, /marketProbability\(forecast,item\.key\)/);
-  assert.match(bets, /marketKey:"dc1X"/);
-  assert.match(bets, /marketKey:"dcX2"/);
-  assert.match(bets, /marketKey:"dc12"/);
-  assert.match(bets, /const allSelections=selectedRows\(\)\.map/);
-  assert.doesNotMatch(bets, /const calendarRows=/);
-  assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
-  assert.match(bets, /sampleEnough:row\.sampleEnough===true\|\|row\.forecast\?\.sampleEnough===true/);
-  assert.match(bets, /predictionMethod:row\.predictionMethod\|\|row\.forecast\?\.predictionMethod/);
+test("app transfers only the market explicitly selected in MatchMind", () => {
+  assert.match(bets, /function exportSisalPredictions\\(row\\)/);
+  assert.match(bets, /const probability=Number\\(row\\.probability\\)/);
+  assert.match(bets, /marketKey:row\\.marketKey,label:row\\.marketLabel/);
+  assert.doesNotMatch(bets, /const candidates=ENGINE\\(\\)\\.marketCandidates\\("auto"\\)/);
+  assert.match(bets, /const allSelections=selectedRows\\(\\)\\.map/);
+  assert.match(bets, /predictions:exportSisalPredictions\\(row\\)/);
+});
+
+test("Sisal highlights the exact selected market, including combined markets", () => {
+  assert.match(script, /const comboTotal = compactOutcome\\.match/);
+  assert.match(script, /const comboBtts = compactOutcome\\.match/);
+  assert.match(script, /return "combo:" \\+ resultKey \\+ ":" \\+ comboTotal\\[2\\] \\+ comboTotal\\[3\\]/);
+  assert.match(script, /badge\\.textContent = selected \\? "MM ✓ " \\+ formatPercent/);
+  assert.match(script, /matchedSelections = selectionsSeen/);
+  assert.match(script, /mercati selezionati riconosciuti/);
 });
 
 test("archived tickets retain real sample quality when reopened and transferred", () => {
