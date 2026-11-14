@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Predictions
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.8
+// @version      3.0.9
 // @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.0.8";
+  const VERSION = "3.0.9";
   const APP_URL = "https://sonostevecazzo.github.io/MatchMind/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
@@ -405,6 +405,7 @@
   let scanTimer = null;
   let matchedMatches = 0;
   let matchedMarkets = 0;
+  let matchedSelections = 0;
 
   function createStatus() {
     statusRoot = document.getElementById(ROOT_ID);
@@ -424,12 +425,12 @@
   function setStatus() {
     if (!statusRoot) return;
     const imported = readStored().length;
-    const title = matchedMarkets
-      ? "MatchMind attivo · " + matchedMarkets + " percentuali mostrate su " + matchedMatches + " partite riconosciute."
+    const title = matchedSelections
+      ? "MatchMind attivo · " + matchedSelections + " mercati selezionati riconosciuti su " + matchedMatches + " partite."
       : imported
-        ? "MatchMind attivo · " + imported + " partite importate, ma nessun mercato riconosciuto su questa schermata."
+        ? "MatchMind attivo · " + imported + " partite importate, ma nessun mercato selezionato riconosciuto su questa schermata."
         : "MatchMind attivo, ma non ha ricevuto previsioni dall'app. Trasferisci la schedina da MatchMind.";
-    const label = matchedMarkets ? "MM · " + matchedMarkets + " %" : imported ? "MM · " + imported + " partite" : "MM · trasferisci";
+    const label = matchedSelections ? "MM · " + matchedSelections + " selezionati" : imported ? "MM · " + imported + " partite" : "MM · trasferisci";
     statusRoot.querySelector("span:last-child").textContent = label;
     statusRoot.title = title;
     statusRoot.setAttribute("aria-label", title + " Apri il costruttore MatchMind.");
@@ -534,6 +535,21 @@
       if (KNOWN_MARKET_KEYS.has(compactKey) || /^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35|bttsYes|bttsNo)$/.test(compactKey)) return compactKey;
     }
 
+    // Sisal can expose a combined selection as one outcome button, e.g.
+    // "1 + Over 2,5" or "X + No Gol". Match that exact selection key.
+    const compactOutcome = compactKeyLabel(normalizedLabel);
+    const comboTotal = compactOutcome.match(/^([1x2])(over|under)(15|25|35)$/);
+    if (comboTotal) {
+      const resultKey = ({ "1": "home", x: "draw", "2": "away" })[comboTotal[1]];
+      return "combo:" + resultKey + ":" + comboTotal[2] + comboTotal[3];
+    }
+    const comboBtts = compactOutcome.match(/^([1x2])(nogol|nogoal|gol|goal)$/);
+    if (comboBtts) {
+      const resultKey = ({ "1": "home", x: "draw", "2": "away" })[comboBtts[1]];
+      const secondaryKey = /^(nogol|nogoal)$/.test(comboBtts[2]) ? "bttsNo" : "bttsYes";
+      return "combo:" + resultKey + ":" + secondaryKey;
+    }
+
     if (all.includes("doppia chance") || /^(1x|x2|12)$/.test(compactKeyLabel(normalizedLabel))) {
       if (normalizedLabel === "1x" || normalizedLabel === "1 x") return "dc1X";
       if (normalizedLabel === "x2" || normalizedLabel === "x 2") return "dcX2";
@@ -586,7 +602,7 @@
   function addPredictionBadge(button, prediction, selected, classification) {
     let badge = button.querySelector(':scope > .' + BADGE_CLASS);
     if (!badge) { badge = document.createElement('span'); badge.className = BADGE_CLASS; badge.setAttribute('data-mm-sisal-ui', 'true'); button.appendChild(badge); }
-    badge.textContent = formatPercent(prediction.probability);
+    badge.textContent = selected ? "MM ✓ " + formatPercent(prediction.probability) : formatPercent(prediction.probability);
     badge.dataset.mmLimited = String(!prediction.sampleEnough);
     badge.title = classification.title + ' - ' + (prediction.sampleEnough ? 'campione adeguato' : 'campione limitato') + (prediction.historyCount ? ' · ' + prediction.historyCount + ' risultati storici' : '') + ' - ' + prediction.model;
     badge.classList.toggle('mm-picked', Boolean(selected));
@@ -612,6 +628,7 @@
       document.querySelectorAll("[data-mm-prediction]").forEach(node => node.removeAttribute("data-mm-prediction"));
       matchedMatches = 0;
       matchedMarkets = 0;
+      matchedSelections = 0;
       setStatus();
       return;
     }
@@ -634,6 +651,7 @@
 
     let matchesSeen = 0;
     let marketsSeen = 0;
+    let selectionsSeen = 0;
     queue.forEach(item => {
       const predictions = item.predictions || {};
       let eventSeen = false;
@@ -664,12 +682,15 @@
           else if (isBest && !isAvoid) classification = { type: 'best', title: 'Stima MatchMind · probabilità più alta tra le alternative confrontabili' };
           else if (isAvoid && !isBest) classification = { type: 'avoid', title: 'Stima MatchMind · probabilità più bassa tra le alternative confrontabili' };
         }
-        addPredictionBadge(entry.button, { ...entry.prediction, marketKey: entry.key }, entry.key === item.marketKey, classification);
+        const selected = entry.key === item.marketKey;
+        addPredictionBadge(entry.button, { ...entry.prediction, marketKey: entry.key }, selected, classification);
+        if (selected) selectionsSeen++;
         marketsSeen++;
       });
     });
     matchedMatches = matchesSeen;
     matchedMarkets = marketsSeen;
+    matchedSelections = selectionsSeen;
     setStatus();
   }
 
