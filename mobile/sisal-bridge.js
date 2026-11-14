@@ -132,8 +132,8 @@
       ])
     };
     const encoded = encodeURIComponent(JSON.stringify(wire));
-    // Keep the transfer payload in a query parameter: the userscript reads it from location.search.
-    return { ...result, url: base + "?mmplay=" + encoded };
+    // Use the URL fragment to avoid long query-string redirects through Sisal.
+    return { ...result, url: base + "#mmplay=" + encoded };
   }
 
   return { prepare, createUrl, supportedMarket, cleanPredictions };
