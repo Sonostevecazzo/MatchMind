@@ -1,6 +1,6 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v14-nations-uefa-fallback';
+  const CACHE_KEY='matchmind-multipage-cache-v15-nations-current-season';
   const COMPETITIONS = {
     "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false },
     "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, calendarYear: true }
