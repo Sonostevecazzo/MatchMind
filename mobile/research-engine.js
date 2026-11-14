@@ -1,6 +1,6 @@
 (function(root){
  "use strict";
- const finite=value=>Number.isFinite(Number(value))?Number(value):null;
+ const finite=value=>value===null||value===undefined||value===""?null:Number.isFinite(Number(value))?Number(value):null;
  const scored=row=>row&&row.date&&finite(row.hg)!==null&&finite(row.ag)!==null;
  const normalize=value=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
  function sameTeam(a,b){return root.MM&&typeof root.MM.sameTeam==="function"?root.MM.sameTeam(a,b):normalize(a)===normalize(b);}
