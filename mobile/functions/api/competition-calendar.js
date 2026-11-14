@@ -6,16 +6,81 @@ const DATA_ROOT = "https://raw.githubusercontent.com/oladeeayo/open-matchday/mas
 const seasonCode = year => String(year).slice(-2) + String(year + 1).slice(-2);
 const seasonFolder = year => String(year) + "-" + String(year + 1).slice(-2);
 const COMPETITIONS = {
-  "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football" },
-  "serie-b": { name: "Serie B", slug: "ita.2", feed: "ITA_2_serie-b", sport: "football" },
-  "premier-league": { name: "Premier League", slug: "eng.1", feed: "ENG_1_premier-league", sport: "football" },
-  "la-liga": { name: "La Liga", slug: "esp.1", feed: "ESP_1_la-liga", sport: "football" },
-  "bundesliga": { name: "Bundesliga", slug: "ger.1", feed: "GER_1_bundesliga", sport: "football" },
-  "ligue-1": { name: "Ligue 1", slug: "fra.1", feed: "FRA_1_ligue-1", sport: "football" },
-  "champions-league": { name: "Champions League", slug: "uefa.champions", feed: "UEFA_1_champions-league", sport: "football" },
-  "europa-league": { name: "Europa League", slug: "uefa.europa", feed: "UEFA_1_europa-league", sport: "football" },
-  "conference-league": { name: "Conference League", slug: "uefa.europa.conf", feed: "UEFA_1_conference-league", sport: "football" },
-  "coppa-italia": { name: "Coppa Italia", slug: "ita.coppa_italia", feed: "ITA_CUP_coppa-italia", sport: "football" },
+  "premier-league": { name: "Premier League", slug: "eng.1", feed: "ENG_1_premier-league", sport: "football", calendarYear: false },
+  "la-liga": { name: "La Liga", slug: "esp.1", feed: "ESP_1_la-liga", sport: "football", calendarYear: false },
+  "bundesliga": { name: "Bundesliga", slug: "ger.1", feed: "GER_1_bundesliga", sport: "football", calendarYear: false },
+  "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football", calendarYear: false },
+  "ligue-1": { name: "Ligue 1", slug: "fra.1", feed: "FRA_1_ligue-1", sport: "football", calendarYear: false },
+  "champions-league": { name: "UEFA Champions League", slug: "uefa.champions", feed: "UEFA_1_champions-league", sport: "football", calendarYear: false },
+  "europa-league": { name: "UEFA Europa League", slug: "uefa.europa", feed: "UEFA_1_europa-league", sport: "football", calendarYear: false },
+  "conference-league": { name: "UEFA Conference League", slug: "uefa.europa.conf", feed: "UEFA_1_conference-league", sport: "football", calendarYear: false },
+  "eng-cup-efl-cup": { name: "EFL Cup (Carabao Cup)", feed: "ENG_CUP_efl-cup", sport: "football", calendarYear: false },
+  "eng-cup-fa-cup": { name: "FA Cup", feed: "ENG_CUP_fa-cup", sport: "football", calendarYear: false },
+  "esp-cup-copa-del-rey": { name: "Copa del Rey", feed: "ESP_CUP_copa-del-rey", sport: "football", calendarYear: false },
+  "coppa-italia": { name: "Coppa Italia", slug: "ita.coppa_italia", feed: "ITA_CUP_coppa-italia", sport: "football", calendarYear: false },
+  "ger-cup-dfb-pokal": { name: "DFB-Pokal", feed: "GER_CUP_dfb-pokal", sport: "football", calendarYear: false },
+  "ned-cup-knvb-beker": { name: "KNVB Beker", feed: "NED_CUP_knvb-beker", sport: "football", calendarYear: false },
+  "por-cup-taca-de-portugal": { name: "Taça de Portugal", feed: "POR_CUP_taca-de-portugal", sport: "football", calendarYear: false },
+  "sco-cup-scottish-cup": { name: "Scottish Cup", feed: "SCO_CUP_scottish-cup", sport: "football", calendarYear: false },
+  "sco-cup-league-cup": { name: "Scottish League Cup", feed: "SCO_CUP_league-cup", sport: "football", calendarYear: false },
+  "aut-cup-ofb-cup": { name: "OFB Cup", feed: "AUT_CUP_ofb-cup", sport: "football", calendarYear: false },
+  "sui-cup-swiss-cup": { name: "Swiss Cup", feed: "SUI_CUP_swiss-cup", sport: "football", calendarYear: false },
+  "eng-2-championship": { name: "EFL Championship", feed: "ENG_2_championship", sport: "football", calendarYear: false },
+  "eng-3-league-one": { name: "EFL League One", feed: "ENG_3_league-one", sport: "football", calendarYear: false },
+  "eng-4-league-two": { name: "EFL League Two", feed: "ENG_4_league-two", sport: "football", calendarYear: false },
+  "eng-5-national-league": { name: "National League", feed: "ENG_5_national-league", sport: "football", calendarYear: false },
+  "eng-6-national-league-north": { name: "National League North", feed: "ENG_6_national-league-north", sport: "football", calendarYear: false },
+  "eng-6-national-league-south": { name: "National League South", feed: "ENG_6_national-league-south", sport: "football", calendarYear: false },
+  "eng-7-northern-premier-league": { name: "Northern Premier League", feed: "ENG_7_northern-premier-league", sport: "football", calendarYear: false },
+  "sco-1-premiership": { name: "Scottish Premiership", feed: "SCO_1_premiership", sport: "football", calendarYear: false },
+  "sco-2-championship": { name: "Scottish Championship", feed: "SCO_2_championship", sport: "football", calendarYear: false },
+  "sco-3-league-one": { name: "Scottish League One", feed: "SCO_3_league-one", sport: "football", calendarYear: false },
+  "sco-4-league-two": { name: "Scottish League Two", feed: "SCO_4_league-two", sport: "football", calendarYear: false },
+  "ger-2-2-bundesliga": { name: "2. Bundesliga", feed: "GER_2_2-bundesliga", sport: "football", calendarYear: false },
+  "ger-3-3-liga": { name: "3. Liga", feed: "GER_3_3-liga", sport: "football", calendarYear: false },
+  "por-1-primeira-liga": { name: "Primeira Liga", feed: "POR_1_primeira-liga", sport: "football", calendarYear: false },
+  "ned-1-eredivisie": { name: "Eredivisie", feed: "NED_1_eredivisie", sport: "football", calendarYear: false },
+  "bel-1-pro-league": { name: "Belgian Pro League", feed: "BEL_1_pro-league", sport: "football", calendarYear: false },
+  "tur-1-super-lig": { name: "Süper Lig", feed: "TUR_1_super-lig", sport: "football", calendarYear: false },
+  "gre-1-super-league": { name: "Super League Greece", feed: "GRE_1_super-league", sport: "football", calendarYear: false },
+  "sui-1-super-league": { name: "Swiss Super League", feed: "SUI_1_super-league", sport: "football", calendarYear: false },
+  "aut-1-bundesliga": { name: "Austrian Bundesliga", feed: "AUT_1_bundesliga", sport: "football", calendarYear: false },
+  "den-1-superliga": { name: "Danish Superliga", feed: "DEN_1_superliga", sport: "football", calendarYear: false },
+  "swe-1-allsvenskan": { name: "Allsvenskan", feed: "SWE_1_allsvenskan", sport: "football", calendarYear: false },
+  "nor-1-eliteserien": { name: "Eliteserien", feed: "NOR_1_eliteserien", sport: "football", calendarYear: false },
+  "rou-1-liga-1": { name: "Liga I", feed: "ROU_1_liga-1", sport: "football", calendarYear: false },
+  "rus-1-premier-liga": { name: "Russian Premier Liga", feed: "RUS_1_premier-liga", sport: "football", calendarYear: false },
+  "ire-2-first-division": { name: "League of Ireland First Division", feed: "IRE_2_first-division", sport: "football", calendarYear: false },
+  "ire-3-national-league": { name: "League of Ireland National League", feed: "IRE_3_national-league", sport: "football", calendarYear: false },
+  "pol-1-ekstraklasa": { name: "Ekstraklasa", feed: "POL_1_ekstraklasa", sport: "football", calendarYear: false },
+  "pol-2-division-1": { name: "I Liga", feed: "POL_2_division-1", sport: "football", calendarYear: false },
+  "pol-3-division-2": { name: "II Liga", feed: "POL_3_division-2", sport: "football", calendarYear: false },
+  "bel-u21-pro-league": { name: "Pro League U21", feed: "BEL_U21_pro-league", sport: "football", calendarYear: false },
+  "wal-1-cymru-premier": { name: "Cymru Premier", feed: "WAL_1_cymru-premier", sport: "football", calendarYear: false },
+  "wal-2-cymru-north": { name: "Cymru North", feed: "WAL_2_cymru-north", sport: "football", calendarYear: false },
+  "wal-3-cymru-south": { name: "Cymru South", feed: "WAL_3_cymru-south", sport: "football", calendarYear: false },
+  "cro-1-hnl": { name: "HNL", feed: "CRO_1_hnl", sport: "football", calendarYear: false },
+  "cze-1-chance-liga": { name: "Chance Liga", feed: "CZE_1_chance-liga", sport: "football", calendarYear: false },
+  "ukr-1-premier-league": { name: "Ukrainian Premier League", feed: "UKR_1_premier-league", sport: "football", calendarYear: false },
+  "cyp-1-first-division": { name: "Cyprus League", feed: "CYP_1_first-division", sport: "football", calendarYear: false },
+  "svk-1-nike-liga": { name: "Nike Liga", feed: "SVK_1_nike-liga", sport: "football", calendarYear: false },
+  "svn-1-prva-liga": { name: "Prva Liga", feed: "SVN_1_prva-liga", sport: "football", calendarYear: false },
+  "fin-1-veikkausliiga": { name: "Veikkausliiga", feed: "FIN_1_veikkausliiga", sport: "football", calendarYear: false },
+  "kaz-1-premier-league": { name: "Kazakhstan Premier League", feed: "KAZ_1_premier-league", sport: "football", calendarYear: false },
+  "esp-2-segunda-division": { name: "Segunda División", feed: "ESP_2_segunda-division", sport: "football", calendarYear: false },
+  "serie-b": { name: "Serie B", slug: "ita.2", feed: "ITA_2_serie-b", sport: "football", calendarYear: false },
+  "fra-2-ligue-2": { name: "Ligue 2", feed: "FRA_2_ligue-2", sport: "football", calendarYear: false },
+  "ned-2-eerste-divisie": { name: "Eerste Divisie", feed: "NED_2_eerste-divisie", sport: "football", calendarYear: false },
+  "bra-1-serie-a": { name: "Brasileirão Série A", feed: "BRA_1_serie-a", sport: "football", calendarYear: true },
+  "bra-2-serie-b": { name: "Série B", feed: "BRA_2_serie-b", sport: "football", calendarYear: true },
+  "arg-1-liga-profesional": { name: "Liga Profesional", feed: "ARG_1_liga-profesional", sport: "football", calendarYear: true },
+  "arg-2-primera-nacional": { name: "Primera Nacional", feed: "ARG_2_primera-nacional", sport: "football", calendarYear: true },
+  "mex-1-liga-mx": { name: "Liga MX", feed: "MEX_1_liga-mx", sport: "football", calendarYear: true },
+  "mex-2-liga-expansion": { name: "Liga de Expansión MX", feed: "MEX_2_liga-expansion", sport: "football", calendarYear: true },
+  "usa-1-mls": { name: "Major League Soccer", feed: "USA_1_mls", sport: "football", calendarYear: true },
+  "jpn-1-j1-league": { name: "J1 League", feed: "JPN_1_j1-league", sport: "football", calendarYear: true },
+  "aus-1-a-league": { name: "A-Leagues", feed: "AUS_1_a-league", sport: "football", calendarYear: false },
+  "chn-1-super-league": { name: "Chinese Super League", feed: "CHN_1_super-league", sport: "football", calendarYear: true },
   "nations-league": { name: "UEFA Nations League", slug: "uefa.nations", sport: "football" }
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -77,7 +142,9 @@ function normalizeCsv(row,id,finished){
   return {id:null,date:String(row.date||""),time:String(row.time||""),round:csvNumber(row.gw),stage:row.gw?"Giornata "+row.gw:COMPETITIONS[id].name,home:String(row.home||""),away:String(row.away||""),hg:done?hg:null,ag:done?ag:null,ht:csvNumber(row.ht_home),at:csvNumber(row.ht_away),hs:csvNumber(row.home_shots),as:csvNumber(row.away_shots),hst:csvNumber(row.home_target),ast:csvNumber(row.away_target),hf:csvNumber(row.home_fouls),af:csvNumber(row.away_fouls),hc:csvNumber(row.home_corners),ac:csvNumber(row.away_corners),hy:csvNumber(row.home_yellow),ay:csvNumber(row.away_yellow),hr:csvNumber(row.home_red),ar:csvNumber(row.away_red),goalMinutes:String(row.goal_minutes||""),status:done?"FT":"NS",statusLong:done?"Terminata":"In programma",competition:id,source:"open-matchday"};
 }
 async function fetchOpenMatchday(id,competition){
-  const code=seasonCode(new Date().getUTCMonth()>=6?new Date().getUTCFullYear():new Date().getUTCFullYear()-1);
+  const now = new Date();
+  const seasonYear = competition.calendarYear ? now.getUTCFullYear() : (now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1);
+  const code = competition.calendarYear ? String(seasonYear) : seasonCode(seasonYear);
   const base=DATA_ROOT+competition.feed+"/";
   const urls=[base+"results_"+code+".csv",base+"fixtures_"+code+".csv"];
   const settled=await Promise.allSettled(urls.map(async(url,index)=>{
@@ -110,8 +177,7 @@ function nationsLeagueOfficialFallback(now = new Date()) {
     competition: "nations-league", source: "UEFA · calendario ufficiale 2026/27"
   }));
 }
-async function fetchCompetition(id, competition, startDate, endDate) {
-  if (competition.feed) return fetchOpenMatchday(id, competition);
+async function fetchCompetitionFromEspn(id, competition, startDate, endDate) {
   const windows = [];
   for (let cursor = new Date(startDate); cursor <= endDate; ) {
     const from = new Date(cursor), to = new Date(cursor);
@@ -128,14 +194,29 @@ async function fetchCompetition(id, competition, startDate, endDate) {
     return (Array.isArray(payload.events) ? payload.events : []).map(event => normalizeEvent(event, competition)).filter(Boolean);
   }));
   const batches = settled.filter(result => result.status === "fulfilled").map(result => result.value);
-  if (!batches.length) {
-    if (id === "nations-league") return nationsLeagueOfficialFallback();
-    const failure = settled.find(result => result.status === "rejected");
-    throw failure?.reason || new Error(id + " ESPN: tutte le finestre calendario non disponibili");
-  }
+  if (!batches.length) throw settled.find(result => result.status === "rejected")?.reason || new Error(id + " ESPN non disponibile");
   const unique = new Map();
   batches.flat().forEach(match => unique.set(String(match.id || [match.date,match.home,match.away].join("|")), match));
-  const normalized = [...unique.values()];
+  return [...unique.values()];
+}
+async function fetchCompetition(id, competition, startDate, endDate) {
+  if (competition.feed) {
+    try { return await fetchOpenMatchday(id, competition); }
+    catch (primaryError) {
+      if (!competition.slug) throw primaryError;
+      try {
+        const fallback = await fetchCompetitionFromEspn(id, competition, startDate, endDate);
+        if (fallback.length) return fallback.map(match => ({ ...match, source: "ESPN · fallback dopo Open Matchday" }));
+      } catch (_) { /* Preserve the primary provider error below. */ }
+      throw primaryError;
+    }
+  }
+  let normalized;
+  try { normalized = await fetchCompetitionFromEspn(id, competition, startDate, endDate); }
+  catch (error) {
+    if (id === "nations-league") return nationsLeagueOfficialFallback();
+    throw error;
+  }
   if (id === "nations-league" && normalized.length === 0) return nationsLeagueOfficialFallback();
   if (id === "nations-league") {
     for (const match of nationsLeagueOfficialFallback()) {
@@ -194,7 +275,7 @@ async function getCalendar(request) {
   const counts = Object.fromEntries(entries.map(x => [x.id, x.matches.length]));
   return json({
     configured: true, type: "calendar", season: year, matches, history,
-    source: "open-matchday CSV + ESPN Nations League + openfootball historical Serie A", sourceMode: "multi-competition-public",
+    source: selected === "nations-league" ? "ESPN public scoreboard" : "Open Matchday CSV" + (entries[0].matches.some(match => String(match.source || "").includes("ESPN")) ? " + ESPN fallback" : ""), sourceMode: "multi-competition-public",
     counts, errors: entries.filter(x => x.error).map(x => x.error).concat(historyErrors),
     updatedAt: new Date().toISOString(),
     note: "Calendari multi-competizione da ESPN; archivio storico Serie A da openfootball. Le statistiche avanzate, le quote e le formazioni non vengono inventate."
