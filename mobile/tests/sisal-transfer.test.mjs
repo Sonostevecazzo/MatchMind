@@ -40,7 +40,9 @@ test("Sisal consumes prediction arrays from the app and supports Italian team al
   assert.match(script, /row\.predictions/);
   assert.match(script, /netherlands: \["netherlands", "holland", "the netherlands", "olanda", "paesi bassi", "nederland"\]/);
   assert.match(script, /greece: \["greece", "grecia", "hellas"\]/);
-  assert.match(script, /function includesTeam\(text, name\)/);\n   assert.match(script, /function eventText\(root\)/);\n   assert.match(script, /data-home-team/);
+  assert.match(script, /function includesTeam\(text, name\)/);
+  assert.match(script, /function eventText\(root\)/);
+  assert.match(script, /data-home-team/);
   assert.match(script, /function eventRootCandidates\(button, rootCache\)/);
 });
 
