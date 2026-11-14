@@ -31,6 +31,7 @@ test("walk-forward backtest uses only earlier matches and returns valid 1X2 metr
   }
   assert.ok(result.model.logLoss >= 0);
   assert.ok(result.model.brier >= 0);
+  assert.ok(result.model.accuracy > 0.2, "1X2 accuracy must only rank home/draw/away, not goal markets");
   assert.deepEqual(Object.keys(result.byClass).sort(), ["away", "draw", "home"]);
   assert.ok(result.model.accuracyCI[0] <= result.model.accuracy);
   assert.ok(result.model.accuracyCI[1] >= result.model.accuracy);
