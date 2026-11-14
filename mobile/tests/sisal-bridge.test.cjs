@@ -26,8 +26,7 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.equal(result.total, 1);
   assert.equal(result.payload.version, 3);
   assert.equal(result.payload.sentAt, 12345);
-  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio?mmplay="));
-  assert.ok(!result.url.includes("#mmplay="));
+  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio#mmplay="));
   const item = result.payload.items[0];
   assert.equal(item.home, "Netherlands");
   assert.equal(item.away, "Greece");
@@ -43,8 +42,9 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.equal(item.predictions[0].sampleEnough, undefined);
 
   const parsed = new URL(result.url);
-  const decoded = JSON.parse(parsed.searchParams.get("mmplay"));
-  assert.equal(parsed.hash, "");
+  assert.ok(parsed.hash.startsWith("#mmplay="));
+  assert.equal(parsed.searchParams.has("mmplay"), false);
+  const decoded = JSON.parse(decodeURIComponent(parsed.hash.slice("#mmplay=".length)));
   assert.equal(decoded.v, 3);
   assert.equal(decoded.t, result.payload.sentAt);
   assert.equal(decoded.i.length, 1);
@@ -73,9 +73,9 @@ test("keeps an 11-match transfer compact without duplicating the payload", () =>
   const result = bridge.createUrl(rows, { sentAt: 12345 });
   assert.equal(result.payload.items.length, 11);
   const parsed = new URL(result.url);
-  assert.equal(parsed.searchParams.getAll("mmplay").length, 1);
-  assert.equal(parsed.hash, "");
-  const wire = JSON.parse(parsed.searchParams.get("mmplay"));
+  assert.ok(parsed.hash.startsWith("#mmplay="));
+  assert.equal(parsed.searchParams.getAll("mmplay").length, 0);
+  const wire = JSON.parse(decodeURIComponent(parsed.hash.slice("#mmplay=".length)));
   assert.equal(wire.v, 3);
   assert.equal(wire.i.length, 11);
   assert.equal(wire.i[0][9].length, 14);
@@ -151,8 +151,7 @@ test("keeps NBA moneyline on the NBA Sisal destination", () => {
     predictions: [{ marketKey: "nbaMoneyline:home", label: "Vince casa", probability: 0.68 }]
   }], { sentAt: 99 });
   assert.equal(result.skipped, 0);
-  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba?mmplay="));
-  assert.ok(!result.url.includes("#mmplay="));
+  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba#mmplay="));
   assert.equal(result.payload.items[0].predictions[0].probability, 0.68);
 });
 
@@ -161,7 +160,7 @@ test("does not route mixed football and NBA handoffs to a single sport-specific 
     { home: "Roma", away: "Lazio", competition: "serie-a", marketKey: "home", probability: 0.6 },
     { sport: "nba", home: "Boston Celtics", away: "New York Knicks", marketKey: "nbaMoneyline:away", probability: 0.41 }
   ], { sentAt: 7 });
-  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio?mmplay="));
+  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio#mmplay="));
   assert.equal(result.payload.items.length, 2);
 });
 
