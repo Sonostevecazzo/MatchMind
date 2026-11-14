@@ -82,7 +82,7 @@
     return {date:parts.year+'-'+parts.month+'-'+parts.day,time:parts.hour+':'+parts.minute};
   }
   async function fetchDirectNationsLeague(year){
-    const now=new Date(),start=new Date(Date.UTC(now.getUTCFullYear()-2,8,1)),end=new Date(now);end.setDate(end.getDate()+92);
+    const now=new Date(),start=new Date(Date.UTC(now.getUTCFullYear(),8,1)),end=new Date(now);end.setDate(end.getDate()+92);
     const windows=[];
     for(let cursor=new Date(start);cursor<=end;){
       const from=new Date(cursor),to=new Date(cursor);to.setUTCDate(to.getUTCDate()+27);if(to>end)to.setTime(end.getTime());
