@@ -1,6 +1,6 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v11-serie-a-nations-20261114';
+  const CACHE_KEY='matchmind-multipage-cache-v12-nations-history-builder';
   const COMPETITIONS = {
     "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false },
     "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, calendarYear: true }
@@ -82,7 +82,7 @@
     return {date:parts.year+'-'+parts.month+'-'+parts.day,time:parts.hour+':'+parts.minute};
   }
   async function fetchDirectNationsLeague(year){
-    const start=new Date(),end=new Date(start);end.setDate(end.getDate()+92);
+    const now=new Date(),start=new Date(Date.UTC(now.getUTCFullYear()-2,8,1)),end=new Date(now);end.setDate(end.getDate()+92);
     const windows=[];
     for(let cursor=new Date(start);cursor<=end;){
       const from=new Date(cursor),to=new Date(cursor);to.setDate(to.getDate()+6);if(to>end)to.setTime(end.getTime());
@@ -155,7 +155,7 @@
     if(selectedId==="nations-league"){
       try{
         const nations=await fetchDirectNationsLeague(y);
-        matches.push(...nations);
+        matches.push(...nations.filter(upcoming));
         history.push(...nations.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));
       }catch(error){feedErrors.push("Nations League: "+String(error&&error.message||error));}
     }
