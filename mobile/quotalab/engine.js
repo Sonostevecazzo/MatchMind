@@ -26,6 +26,13 @@ export function normalizeDate(value) {
   return null;
 }
 
+export function currentSeasonCode(date = new Date()) {
+  const value = date instanceof Date ? date : new Date(date);
+  if (!Number.isFinite(value.getTime())) throw new RangeError("Data stagione non valida");
+  const startYear = value.getMonth() >= 6 ? value.getFullYear() : value.getFullYear() - 1;
+  return String(startYear % 100).padStart(2, "0") + String((startYear + 1) % 100).padStart(2, "0");
+}
+
 export function parseCSV(text) {
   if (typeof text !== "string" || !text.trim()) return [];
   const rows = [];

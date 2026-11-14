@@ -14,6 +14,12 @@ QuotaLab è un ambiente indipendente, mobile-first, per analisi pre-partita, con
 - Schedina modificabile, una selezione per partita, archivio, registrazione manuale degli esiti e backup JSON.
 - PWA installabile con shell offline. I dati restano nel local storage del browser.
 
+## Fonte dati integrata
+
+La pagina **Dati e metodo** consente di aggiornare manualmente risultati e calendario 2026/27 per Serie A, Champions League ed Europa League da [open-matchday](https://github.com/oladeeayo/open-matchday). L'app prova prima il CDN jsDelivr e poi il file raw GitHub. Le richieste sono eseguite dal browser; se la rete o le policy CORS le bloccano, resta disponibile l'import CSV manuale.
+
+La fonte dichiara aggiornamento giornaliero alle 00:00 UTC, non live. I file della release corrente coprono la stagione corrente: non sostituiscono da soli un archivio multi-stagione, che si può importare separatamente per ampliare il backtest. La disponibilità di statistiche dettagliate è disomogenea e non comprende xG, formazioni, infortuni o quote. Il dataset è dichiarato per uso informativo non commerciale con attribuzione al repository; i diritti dei provider originari restano separati. Leggere sempre [README e DISCLAIMER upstream](https://github.com/oladeeayo/open-matchday).
+
 ## Avvio locale
 
 Serve un server statico locale: i moduli JavaScript non funzionano in modo affidabile aprendo il file direttamente da file://.
