@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = readFileSync(resolve(ROOT, "scripts/sisal-matchmind.user.js"), "utf8");
 const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
+const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 const core = readFileSync(resolve(ROOT, "site-core.js"), "utf8");
 const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
@@ -93,6 +94,15 @@ test("app transfers only the market explicitly selected in MatchMind", () => {
   assert.doesNotMatch(bets, /const candidates=ENGINE\\(\\)\\.marketCandidates\\("auto"\\)/);
   assert.match(bets, /const allSelections=selectedRows\\(\\)\\.map/);
   assert.match(bets, /predictions:exportSisalPredictions\\(row\\)/);
+});
+
+test("the automatic builder treats the chosen market family as a hard filter", () => {
+  assert.match(bets, /const allowedMarkets=ENGINE\\(\\)\\.marketCandidates\\(marketMode\\)/);
+  assert.match(bets, /const candidateKeys=allowedMarkets\\.map\\(item=>item\\.key\\)/);
+  assert.doesNotMatch(bets, /const overrides=/);
+  for (const mode of ["1x2", "goals", "btts", "single", "combo-goals", "combo-btts"]) {
+    assert.ok(betsHtml.includes('value="' + mode + '"'), "Missing market option " + mode);
+  }
 });
 
 test("Sisal highlights the exact selected market, including combined markets", () => {
