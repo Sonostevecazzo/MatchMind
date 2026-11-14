@@ -281,6 +281,9 @@ function updateSisalTransfer(){
 
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
+ const allPicks=readPicks(),count=$("betWorkspacePickCount"),saveButton=$("saveManualSlip");
+ if(count)count.textContent=String(allPicks.length);
+ if(saveButton)saveButton.disabled=allPicks.length===0;
  updateSisalTransfer(rows);
  if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
  const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
@@ -457,6 +460,18 @@ function setBetTab(tab){
  const selected=["create","live","archive"].includes(tab)?tab:"create";
  document.querySelectorAll("[data-bets-tab]").forEach(button=>{const active=button.dataset.betsTab===selected;button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active));});
  ["create","live","archive"].forEach(name=>{const panel=$("betsTab"+name[0].toUpperCase()+name.slice(1));if(panel)panel.hidden=name!==selected;});
+}
+
+function setBetWorkspaceTab(tab){
+ const selected=tab==="slip"?"slip":"builder";
+ document.querySelectorAll("[data-bet-workspace-tab]").forEach(button=>{
+  const active=button.dataset.betWorkspaceTab===selected;
+  button.classList.toggle("active",active);
+  button.setAttribute("aria-selected",String(active));
+ });
+ const builder=$("betWorkspaceBuilder"),slip=$("betWorkspaceSlip");
+ if(builder)builder.hidden=selected!=="builder";
+ if(slip)slip.hidden=selected!=="slip";
 }
 function saveCurrentSlip(){
  const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
@@ -856,7 +871,7 @@ function handleUrlImport(){
   });
   if(count>0){
    if(payload.stake&&Number(payload.stake)>=0.5){currentStake=Number(payload.stake);save(STAKE_KEY,currentStake);}
-   writePicks();slipExpanded=true;setBetTab("create");renderSlip();updateSlipCalculations();
+   writePicks();slipExpanded=true;setBetTab("create");setBetWorkspaceTab("slip");renderSlip();updateSlipCalculations();
    const statusLine=$("manualBuilderStatus");
    if(statusLine)statusLine.innerHTML='<span style="color:#c4f36a;font-weight:700;">Quote importate: '+count+' selezioni da '+esc(defaultBkmk)+'.</span> '+(skipped?skipped+' elementi ignorati. ':'')+'Le probabilità restano quelle del modello MatchMind; verifica sempre la quota prima di giocare.';
    if(window.history&&window.history.replaceState)window.history.replaceState(null,"",window.location.pathname+window.location.search);
@@ -869,6 +884,7 @@ function handleUrlImport(){
 function initEvents(){
 
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
+ document.querySelectorAll("[data-bet-workspace-tab]").forEach(button=>button.addEventListener("click",()=>setBetWorkspaceTab(button.dataset.betWorkspaceTab)));
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
  const handleContextChange=event=>{
   const select=event.target.closest("[data-context-field]");
@@ -1067,7 +1083,10 @@ function hasTodayOpenTicket(){
  return archive.some(ticket=>(ticket.selections||[]).some(selection=>selection.date===today&&!terminalStatus(selection.status||"Da giocare")));
 }
 document.addEventListener("DOMContentLoaded",async()=>{
- initEvents();$("globalStatus").textContent="Carico calendario e risultati storici…";
+ initEvents();
+ const initialPicks=readPicks();
+ setBetWorkspaceTab(location.hash.includes("manualBuilder")||location.hash.includes("saveManualSlip")||initialPicks.length?"slip":"builder");
+ $("globalStatus").textContent="Carico calendario e risultati storici…";
  try{
   await window.MM.loadOdds?.();
   await window.MM.loadInjuries?.();
