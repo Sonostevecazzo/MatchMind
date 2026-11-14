@@ -17,7 +17,7 @@ test("Sisal userscript does not run its own football forecast model", () => {
 test("Sisal only displays probabilities explicitly delivered by MatchMind", () => {
   assert.match(script, /const probability = validProbability\(entry\.probability\)/);
   assert.match(script, /if \(probability === null\) return/);
-  assert.match(script, /badge\.textContent = formatPercent\(prediction\.probability\)/);
+  assert.match(script, /badge\.textContent = selected \? "MM ✓ " \+ formatPercent\(prediction\.probability\) : formatPercent\(prediction\.probability\)/);
   assert.doesNotMatch(script, /0\.5\s*\*\s*100|probability\s*=\s*0\.5/);
 });
 
