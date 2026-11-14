@@ -131,6 +131,9 @@
   function marketCandidates(mode) {
     const singles = BET_MARKETS.map(([key, label]) => ({ key, label }));
     if (mode === "single") return singles;
+    if (mode === "1x2") return singles.filter(item => ["home", "draw", "away"].includes(item.key));
+    if (mode === "goals") return singles.filter(item => /^(over|under)/.test(item.key));
+    if (mode === "btts") return singles.filter(item => ["bttsYes", "bttsNo"].includes(item.key));
     if (mode === "combo-goals" || mode === "combo-btts") return comboMarketChoices(mode);
     if (mode === "auto") return singles.concat(comboMarketChoices("combo-auto"));
     return singles;

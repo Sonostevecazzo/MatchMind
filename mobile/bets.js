@@ -217,33 +217,16 @@ function updateSlipCalculations(){
 }
 
 function exportSisalPredictions(row){
- if(row.sport==="nba"){
-  return Number.isFinite(row.probability)?[{
-   marketKey:row.marketKey,label:row.marketLabel,probability:row.probability,
-   sampleEnough:row.sampleEnough===true,historyCount:Number(row.historyCount)||0,model:row.predictionMethod||"NBA Elo"
-  }]:[];
- }
- const forecast=row.forecast;
- if(!forecast||!forecast.probabilities)return [];
- const candidates=ENGINE().marketCandidates("auto");
- const rows=candidates.map(item=>({
-  marketKey:item.key,label:item.label,
-  probability:marketProbability(forecast,item.key),
-  sampleEnough:forecast.sampleEnough===true,
-  historyCount:Number(forecast.historyCount)||0,
-  model:forecast.predictionMethod||"Poisson/Elo"
- }));
- const p=forecast.probabilities;
- rows.push(
-  {marketKey:"dc1X",label:"Doppia chance 1X",probability:p.home+p.draw,sampleEnough:forecast.sampleEnough===true,historyCount:Number(forecast.historyCount)||0,model:forecast.predictionMethod||"Poisson/Elo"},
-  {marketKey:"dcX2",label:"Doppia chance X2",probability:p.draw+p.away,sampleEnough:forecast.sampleEnough===true,historyCount:Number(forecast.historyCount)||0,model:forecast.predictionMethod||"Poisson/Elo"},
-  {marketKey:"dc12",label:"Doppia chance 12",probability:p.home+p.away,sampleEnough:forecast.sampleEnough===true,historyCount:Number(forecast.historyCount)||0,model:forecast.predictionMethod||"Poisson/Elo"}
- );
- const unique=new Map();
- rows.forEach(item=>{
-  if(Number.isFinite(item.probability)&&item.probability>=0&&item.probability<=1)unique.set(item.marketKey,item);
- });
- return Array.from(unique.values());
+ // Sisal receives only the exact market selected in MatchMind. Sending every
+ // model market made the selected outcome ambiguous on the bookmaker page.
+ const probability=Number(row.probability);
+ if(!row.marketKey||!Number.isFinite(probability)||probability<0||probability>1)return [];
+ return [{
+  marketKey:row.marketKey,label:row.marketLabel||marketLabel(row.marketKey),probability,
+  sampleEnough:row.sampleEnough===true||row.forecast?.sampleEnough===true,
+  historyCount:Number(row.historyCount??row.forecast?.historyCount)||0,
+  model:row.predictionMethod||row.forecast?.predictionMethod||(row.sport==="nba"?"NBA Elo":"Poisson/Elo")
+ }];
 }
 
 function updateSisalTransfer(){
@@ -277,8 +260,9 @@ function updateSisalTransfer(){
  link.removeAttribute("tabindex");
  link.textContent="Trasferisci "+result.payload.items.length+" selezioni su Sisal";
  const skippedNote=result.skipped?(result.skipped===1?" 1 partita non trasferibile è stata esclusa.":" "+result.skipped+" partite non trasferibili sono state escluse."):"";
- const competitions=[...new Set(result.payload.items.map(item=>item.competition||"serie-a"))];
- status.textContent="Pronte "+result.payload.items.length+" selezioni effettivamente presenti nella schedina. Apri Sisal e verifica gli eventi: lo script mostra le previsioni ma non conferma la giocata."+skippedNote;
+ const selectedMarkets=[...new Set(result.payload.items.map(item=>item.label||item.marketKey))];
+ const marketSummary=selectedMarkets.slice(0,4).join(", ")+(selectedMarkets.length>4?" e altri "+(selectedMarkets.length-4):"");
+ status.textContent="Trasferite "+result.payload.items.length+" selezioni. Mercati scelti: "+marketSummary+". Su Sisal vedrai il badge MM ✓ accanto al mercato corrispondente; verifica sempre evento e quota."+skippedNote;
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
@@ -655,8 +639,9 @@ function buildProposal(){
   candidateFixtures=upcoming.filter(m=>{const date=Date.parse(m.date+"T12:00:00");return Number.isFinite(date)&&date>=today.getTime()&&date<=end;});
   proposalPeriodLabel="prossimi "+days+" giorni";
  }else proposalPeriodLabel="tutte le partite future della competizione";
- const overrides={};picks.forEach(p=>{const match=candidateFixtures.find(m=>fixtureKey(m)===fixtureKey(p));if(match)overrides[engineKey(match)]=p.marketKey;});
  const marketMode=$("marketMode")?.value||"auto";
+ const allowedMarkets=ENGINE().marketCandidates(marketMode);
+ const candidateKeys=allowedMarkets.map(item=>item.key);
 
  // Evaluate all candidate selections across matches
  const allEvaluations=[];
@@ -664,16 +649,8 @@ function buildProposal(){
   const forecast=getForecast(m);
   if(!forecast||!forecast.probabilities)return;
   const o=window.MM.matchOdds?window.MM.matchOdds(m):null;
-  const overrideKey=overrides[engineKey(m)];
-  const candidateKeys=overrideKey?[overrideKey]:(marketMode==='single'?[
-   'home','draw','away','over15','under15','over25','under25','over35','under35','bttsYes','bttsNo'
-  ]:marketMode==='combo-goals'?[
-   'home','away','over25','under25','combo:home:over25','combo:home:under25','combo:away:over25','combo:away:under25'
-  ]:marketMode==='combo-btts'?[
-   'home','away','bttsYes','bttsNo','combo:home:bttsYes','combo:home:bttsNo','combo:away:bttsYes','combo:away:bttsNo'
-  ]:[
-   'home','draw','away','over15','under15','over25','under25','bttsYes','bttsNo','combo:home:over25','combo:away:over25'
-  ]);
+  // The chosen market family is a hard filter: the ranking strategy may
+  // optimize only among markets explicitly allowed by the user's selection.
 
   candidateKeys.forEach(mKey=>{
    const prob=ENGINE().marketProbability(forecast,mKey);
@@ -691,7 +668,7 @@ function buildProposal(){
     bookmaker:oddInfo.bookmaker,
     ev:ev,
     confidence:forecast.sampleEnough?'Campione solido':'Campione parziale',
-    preferredByUser:Boolean(overrideKey&&overrideKey===mKey),
+    preferredByUser:false,
     reason:generateMotivation(m,mKey,label,prob,oddInfo.isReal?oddInfo.odd:null,forecast)
    });
   });
