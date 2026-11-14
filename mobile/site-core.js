@@ -3,6 +3,8 @@
   const CACHE_KEY='matchmind-multipage-cache-v16-cornerflick-nations-history';
   const COMPETITIONS = {
     "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false },
+    "champions-league": { id: "champions-league", name: "UEFA Champions League", country: "Europa", kind: "club", logo: null, fallback: "UCL", feed: "UEFA_1_champions-league", calendarYear: false },
+    "europa-league": { id: "europa-league", name: "UEFA Europa League", country: "Europa", kind: "club", logo: null, fallback: "UEL", feed: "UEFA_1_europa-league", calendarYear: false },
     "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, calendarYear: true }
   };
   function getSelectedCompetition(){
@@ -39,7 +41,7 @@
       id:competition.id,
       folder:competition.feed,
       calendarYear:Boolean(competition.calendarYear),
-      history:competition.id==="serie-a"
+      history:["serie-a","champions-league","europa-league"].includes(competition.id)
     }));
 
   function parseCsvRows(input){
@@ -826,6 +828,7 @@ function eventForecast(match,history){
     ];
     const secondary=[
       ['league.html','league','Classifiche','league'],
+      ['nba.html','nba','NBA','nba'],
       ['explore.html','teams','Squadre','explore'],
       ['players.html','players','Giocatori','players'],
       ['data.html','data','Dati','data'],

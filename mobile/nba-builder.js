@@ -68,7 +68,9 @@
         market:String(x.market||("Vittoria "+(x.side==="home"?"casa":"trasferta"))),
         marketKey:String(x.marketKey||("nbaMoneyline:"+x.side)),
         probability:Number(x.probability),odds:Number.isFinite(Number(x.odds))&&Number(x.odds)>1?Number(x.odds):null,
-        competition:"nba",status:"Da giocare"
+        competition:"nba",status:"Da giocare",sampleEnough:x.sampleEnough===true||x.reliable===true,
+        historyCount:Number.isFinite(Number(x.historyCount))?Math.max(0,Number(x.historyCount)):0,
+        predictionMethod:String(x.predictionMethod||"NBA Elo")
       }))
     };
   }

@@ -33,40 +33,55 @@ test("all configured club competitions map to current-season open-matchday feeds
   if(url.endsWith("fixtures_2627.csv"))return new Response(csvFixtures,{status:200});
   return new Response(JSON.stringify({matches:[]}),{status:200});
  };
- for(const id of ["serie-a","serie-b","premier-league","la-liga","bundesliga","ligue-1","champions-league","europa-league","conference-league","coppa-italia"]){
+ for(const id of ["serie-a","champions-league","europa-league"]){
   const response=await onRequestGet({request:request(id)}),body=await response.json();
   assert.equal(response.status,200,id);
   assert.ok(body.matches.length>0,id);
   assert.ok(body.matches.every(row=>row.competition===id),id);
  }
- for(const folder of ["ITA_1_serie-a","ITA_2_serie-b","ENG_1_premier-league","ESP_1_la-liga","GER_1_bundesliga","FRA_1_ligue-1","UEFA_1_champions-league","UEFA_1_europa-league","UEFA_1_conference-league","ITA_CUP_coppa-italia"])
+ for(const folder of ["ITA_1_serie-a","UEFA_1_champions-league","UEFA_1_europa-league"])
   assert.ok(seen.some(url=>url.includes("/"+folder+"/")),folder);
 });
-test("a missing selected competition feed returns a clear error instead of fake fixtures",async t=>{
+test("an unsupported competition is rejected instead of silently returning another league",async t=>{
  const originalFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=originalFetch;});
  globalThis.fetch=async()=>new Response("missing",{status:404});
- const response=await onRequestGet({request:request("serie-b")}),body=await response.json();
- assert.equal(response.status,503);
+ const response=await onRequestGet({request:request("premier-league")}),body=await response.json();
+ assert.equal(response.status,400);
  assert.equal(body.matches.length,0);
- assert.ok(body.errors.some(error=>error.includes("serie-b")));
+ assert.ok(body.errors.some(error=>error.includes("premier-league")));
+ assert.match(body.error,/non supportata/i);
 });
 
 
-test("75 Open Matchday competitions are registered and calendar-year leagues request the correct dataset", async t=>{
+test("configured competitions use the current-season Open Matchday feeds and ESPN league slugs", async t=>{
  const originalFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=originalFetch;});
  const source=await (await import("node:fs/promises")).readFile(new URL("../functions/api/competition-calendar.js",import.meta.url),"utf8");
- const feedCount=[...source.matchAll(/feed: "[A-Za-z0-9_-]+"/g)].length;
- assert.equal(feedCount,75,"all 75 competitions in the upstream 2026/27 index must have a feed");
+ for(const feed of ["ITA_1_serie-a","UEFA_1_champions-league","UEFA_1_europa-league"])
+  assert.ok(source.includes('feed: "'+feed+'"'),"Missing configured feed "+feed);
+ assert.ok(source.includes('slug: "uefa.champions"'));
+ assert.ok(source.includes('slug: "uefa.europa"'));
+ assert.ok(source.includes('slug: "uefa.nations"'));
  const seen=[];
  globalThis.fetch=async input=>{
   const url=String(input);seen.push(url);
-  if(url.endsWith("results_2026.csv"))return new Response(["date,gw,home,away,ft_home,ft_away","2026-02-01,1,Flamengo,Palmeiras,2,1"].join("\n"),{status:200});
-  if(url.endsWith("fixtures_2026.csv"))return new Response(["date,gw,home,away","2026-11-20,2,Santos,Corinthians"].join("\n"),{status:200});
+  if(url.endsWith("results_2627.csv"))return new Response(csvResults,{status:200});
+  if(url.endsWith("fixtures_2627.csv"))return new Response(csvFixtures,{status:200});
+  if(url.includes("/it.1.json"))return new Response(JSON.stringify({matches:[]}),{status:200});
+  if(url.includes("/uefa.nations/scoreboard"))return new Response(JSON.stringify({events:[]}),{status:200});
   return new Response("not found",{status:404});
  };
- const response=await onRequestGet({request:request("bra-1-serie-a")}),body=await response.json();
- assert.equal(response.status,200);
- assert.ok(seen.some(url=>url.endsWith("BRA_1_serie-a/results_2026.csv")));
- assert.equal(body.historyScope,"current-season-only");
- assert.equal(body.coverage.completed,1);
+ for(const [id,folder] of [
+  ["serie-a","ITA_1_serie-a"],
+  ["champions-league","UEFA_1_champions-league"],
+  ["europa-league","UEFA_1_europa-league"]
+ ]){
+  const response=await onRequestGet({request:request(id)}),body=await response.json();
+  assert.equal(response.status,200,id);
+  assert.ok(body.matches.length>0,id);
+  assert.ok(body.matches.every(row=>row.competition===id),id);
+  assert.ok(seen.some(url=>url.includes("/"+folder+"/results_2627.csv")),folder);
+ }
+ const nations=await onRequestGet({request:request("nations-league")});
+ assert.equal(nations.status,200);
+ assert.ok(seen.some(url=>url.includes("/uefa.nations/scoreboard?dates=")));
 });

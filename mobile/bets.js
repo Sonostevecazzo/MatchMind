@@ -8,7 +8,7 @@ try{const storedStake=Number(JSON.parse(localStorage.getItem(STAKE_KEY)||"10"));
 const curr=v=>Number.isFinite(v)?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—";
 const fmtOdds=v=>Number.isFinite(v)&&v>0?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
 const fmtEv=v=>Number.isFinite(v)?(v>=0?"+":"")+(v*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
-let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false;
+let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false,editingTicketId=null,editingPreviousPicks=null;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -181,7 +181,7 @@ function selectedRows(){
   const label=side==="home"?"Vince casa":"Vince trasferta";
   const match={id,home:String(p.home),away:String(p.away),date:String(p.date||String(p.start||"").slice(0,10)),time:"",start:String(p.start||""),competition:"nba",sport:"nba"};
   const odds=Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
-  return{match,marketKey,marketLabel:label,probability,forecast:null,odds,bookmaker:p.bookmaker||null,sport:"nba",removeKey:"nba|"+id,nbaPickId:id};
+  return{match,marketKey,marketLabel:label,probability,forecast:null,odds,bookmaker:p.bookmaker||null,sport:"nba",removeKey:"nba|"+id,nbaPickId:id,sampleEnough:p.sampleEnough===true,historyCount:Number(p.historyCount)||0,predictionMethod:p.predictionMethod||"NBA Elo"};
  }).filter(Boolean);
  return footballRows.concat(nbaRows);
 }
@@ -220,7 +220,7 @@ function exportSisalPredictions(row){
  if(row.sport==="nba"){
   return Number.isFinite(row.probability)?[{
    marketKey:row.marketKey,label:row.marketLabel,probability:row.probability,
-   sampleEnough:true,historyCount:0,model:"NBA Elo"
+   sampleEnough:row.sampleEnough===true,historyCount:Number(row.historyCount)||0,model:row.predictionMethod||"NBA Elo"
   }]:[];
  }
  const forecast=row.forecast;
@@ -257,9 +257,9 @@ function updateSisalTransfer(){
   marketLabel:row.marketLabel||"Esito 1",
   probability:Number.isFinite(Number(row.probability))?row.probability:null,
   predictions:exportSisalPredictions(row),
-  sampleEnough:row.forecast?.sampleEnough===true,
-  historyCount:Number(row.forecast?.historyCount)||0,
-  predictionMethod:row.forecast?.predictionMethod||(row.sport==="nba"?"NBA Elo":"MatchMind")
+  sampleEnough:row.sampleEnough===true||row.forecast?.sampleEnough===true,
+  historyCount:Number(row.historyCount??row.forecast?.historyCount)||0,
+  predictionMethod:row.predictionMethod||row.forecast?.predictionMethod||(row.sport==="nba"?"NBA Elo":"MatchMind")
  }));
  const result=bridge?bridge.createUrl(allSelections):null;
  if(!result||!result.url){
@@ -364,41 +364,48 @@ function ticketTransferUrl(ticket){
  const rows=ticket.selections.map(s=>({
   match:{home:s.home,away:s.away,date:s.date,competition:s.competition||"serie-a",id:s.eventId||""},
   sport:s.sport==="nba"?"nba":"football",marketKey:s.marketKey,marketLabel:s.market||s.marketKey,
-  probability:Number(s.probability),sampleEnough:true,historyCount:0,
-  predictionMethod:"MatchMind · schedina salvata",odds:s.odds||null,
+  probability:Number(s.probability),sampleEnough:s.sampleEnough===true,historyCount:Number(s.historyCount)||0,
+  predictionMethod:s.predictionMethod||"MatchMind · schedina salvata",odds:s.odds||null,
   predictions:[{marketKey:s.marketKey,probability:Number(s.probability)}]
  }));
  return bridge.createUrl(rows);
 }
-function editSavedTicket(ticket){
- if(!ticket||!Array.isArray(ticket.selections))return;
- const stakeInput=window.prompt("Puntata della schedina (€):",String(ticket.stake??""));
- if(stakeInput===null)return;
- const stake=Number(String(stakeInput).replace(",","."));
- if(!Number.isFinite(stake)||stake<0){alert("Inserisci una puntata valida.");return;}
- const edited=[];
- for(const selection of ticket.selections){
-  const current=selection.marketKey||"";
-  const marketInput=window.prompt("Mercato per "+selection.home+" – "+selection.away+"\nChiavi: home, draw, away, dc1X, dcX2, dc12, over15, under15, over25, under25, over35, under35, bttsYes, bttsNo",current);
-  if(marketInput===null)return;
-  const market=marketInput.trim();
-  if(!window.MatchMindSisalBridge?.supportedMarket(market,selection.sport==="nba"?"nba":"football")){alert("Mercato non supportato: "+market);return;}
-  const oddInput=window.prompt("Quota per "+selection.home+" – "+selection.away+" (lascia vuoto se non disponibile):",String(selection.odds??""));
-  if(oddInput===null)return;
-  const oddText=oddInput.trim(),odds=oddText?Number(oddText.replace(",",".")):null;
-  if(odds!==null&&(!Number.isFinite(odds)||odds<=1||odds>1000)){alert("Quota non valida.");return;}
-  edited.push({...selection,marketKey:market,market:marketLabel(market),odds,status:"Da giocare",result:null});
- }
- ticket.stake=stake;ticket.selections=edited;
- const probs=edited.map(s=>Number(s.probability));
- ticket.probability=probs.length&&probs.every(p=>Number.isFinite(p)&&p>0&&p<1)?probs.reduce((a,b)=>a*b,1):null;
- const odds=edited.map(s=>Number(s.odds));
- ticket.totalOdds=odds.length&&odds.every(o=>Number.isFinite(o)&&o>1)?odds.reduce((a,b)=>a*b,1):null;
- ticket.potentialWin=ticket.totalOdds!==null?stake*ticket.totalOdds:null;
- ticket.netWin=ticket.potentialWin!==null?ticket.potentialWin-stake:null;
- delete ticket.actualPayout;
- save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
- $("archiveStatus").textContent="Schedina modificata e salvata. Ora puoi trasferirla su Sisal.";
+function startEditTicket(ticket){
+ if(!ticket||!Array.isArray(ticket.selections)||!ticket.selections.length)return;
+ editingTicketId=ticket.id;
+ editingPreviousPicks=readPicks();
+ currentStake=Number(ticket.stake)>=0.5?Number(ticket.stake):10;
+ save(STAKE_KEY,currentStake);
+ const restored=ticket.selections.map(selection=>selection.sport==="nba"||selection.competition==="nba"?({
+  sport:"nba",id:selection.eventId,eventId:selection.eventId,home:selection.home,away:selection.away,
+  date:selection.date,start:selection.start||"",side:selection.side||"away",
+  marketKey:selection.marketKey||("nbaMoneyline:"+(selection.side||"away")),
+  probability:selection.probability,odds:selection.odds,bookmaker:selection.bookmaker,competition:"nba",
+  sampleEnough:selection.sampleEnough===true,historyCount:Number(selection.historyCount)||0,predictionMethod:selection.predictionMethod||"NBA Elo"
+ }):({
+  competition:selection.competition||"serie-a",date:selection.date,home:selection.home,away:selection.away,
+  marketKey:selection.marketKey,probability:selection.probability,odds:selection.odds,bookmaker:selection.bookmaker,
+  sampleEnough:selection.sampleEnough===true,historyCount:Number(selection.historyCount)||0,predictionMethod:selection.predictionMethod||"MatchMind"
+ }));
+ save(PICKS_KEY,restored);
+ picks=restored.filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
+ window.dispatchEvent(new Event("matchmind:picks-updated"));
+ const saveButton=$("saveManualSlip");if(saveButton)saveButton.textContent="Salva modifiche";
+ const cancelButton=$("cancelEditTicket");if(cancelButton)cancelButton.hidden=false;
+ setBetTab("create");setBetWorkspaceTab("slip");slipExpanded=true;renderSlip();updateSlipCalculations();
+ $("manualBuilderStatus").textContent="Modifica schedina: puoi rimuovere selezioni, aggiungerne altre dal costruttore e cambiare quote e puntata. Salva per aggiornare la schedina esistente.";
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+function cancelEditTicket(){
+ if(!editingTicketId)return;
+ const previous=Array.isArray(editingPreviousPicks)?editingPreviousPicks:[];
+ editingTicketId=null;editingPreviousPicks=null;
+ save(PICKS_KEY,previous);
+ picks=previous.filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
+ const saveButton=$("saveManualSlip");if(saveButton)saveButton.textContent="Salva schedina";
+ const cancelButton=$("cancelEditTicket");if(cancelButton)cancelButton.hidden=true;
+ window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();
+ $("manualBuilderStatus").textContent="Modifica annullata. La schedina originale è rimasta invariata.";
 }
 function renderOpenTickets(){
  const target=$("openTickets");if(!target)return;
@@ -491,6 +498,8 @@ function renderArchive(){
     const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
     return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+'<div class="settings-actions">' +
+    '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica</button>' +
+    '<button type="button" class="secondary" data-transfer-ticket="'+esc(ticket.id)+'">Apri su Sisal</button>' +
     '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
     '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
     '<button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button>' +
@@ -529,9 +538,12 @@ function saveCurrentSlip(){
  const netWin=potentialWin!=null?potentialWin-currentStake:null;
  const expectedValue=totalOdds!=null&&probability!=null?ENGINE().expectedValue(probability,totalOdds):null;
 
+ const previous=editingTicketId?archive.find(ticket=>ticket.id===editingTicketId):null;
+ const previousByKey=new Map((previous?.selections||[]).map(selection=>[[selection.sport||"football",selection.eventId||selection.date,selection.home,selection.away,selection.marketKey].join("|"),selection]));
  const item={
-  id:"slip-"+Date.now(),
-  createdAt:new Date().toISOString(),
+  id:editingTicketId||("slip-"+Date.now()),
+  createdAt:previous?.createdAt||new Date().toISOString(),
+  updatedAt:previous?new Date().toISOString():null,
   stake:currentStake,
   totalOdds:totalOdds!=null?Number(totalOdds.toFixed(2)):null,
   potentialWin:potentialWin!=null&&Number.isFinite(potentialWin)?Number(potentialWin.toFixed(2)):null,
@@ -550,14 +562,28 @@ function saveCurrentSlip(){
    market:x.marketLabel,
    marketKey:x.marketKey,
    probability:x.probability,
+   sampleEnough:x.sport==="nba"?(x.sampleEnough===true):(x.forecast?.sampleEnough===true),
+   historyCount:Number(x.historyCount??x.forecast?.historyCount)||0,
+   predictionMethod:x.predictionMethod||x.forecast?.predictionMethod||(x.sport==="nba"?"NBA Elo":"MatchMind"),
    odds:x.odds||null,
    fairOdds:ENGINE().fairOdds(x.probability),
 bookmaker:x.bookmaker||null,
    competition:x.match.competition||window.MM.getSelectedCompetition(),
-   status:"Da giocare"
+   status:(previousByKey.get([(x.sport||"football"),(x.sport==="nba"?(x.match.id||x.nbaPickId||""):x.match.date),x.match.home,x.match.away,x.marketKey].join("|"))||{}).status||"Da giocare",
+   result:(previousByKey.get([(x.sport||"football"),(x.sport==="nba"?(x.match.id||x.nbaPickId||""):x.match.date),x.match.home,x.match.away,x.marketKey].join("|"))||{}).result||null
   }))
  };
- archive.unshift(item);archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);picks=[];save(PICKS_KEY,[]);window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();renderOpenTickets();renderArchive();$("manualBuilderStatus").textContent="Schedina salvata con puntata e quote registrate.";setBetTab("live");
+ if(editingTicketId){const index=archive.findIndex(ticket=>ticket.id===editingTicketId);if(index>=0)archive[index]=item;else archive.unshift(item);}
+ else archive.unshift(item);
+ archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);
+ const wasEditing=Boolean(editingTicketId),restorePicks=wasEditing&&Array.isArray(editingPreviousPicks)?editingPreviousPicks:[];
+ editingTicketId=null;editingPreviousPicks=null;
+ save(PICKS_KEY,wasEditing?restorePicks:[]);
+ picks=(wasEditing?restorePicks:[]).filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
+ const saveButton=$("saveManualSlip");if(saveButton)saveButton.textContent="Salva schedina";
+ const cancelButton=$("cancelEditTicket");if(cancelButton)cancelButton.hidden=true;
+ window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();renderOpenTickets();renderArchive();
+ $("manualBuilderStatus").textContent=wasEditing?"Modifiche salvate nella schedina esistente.":"Schedina salvata con puntata e quote registrate.";setBetTab("live");
 }
 let currentBuilderStrategy='balanced';
 let proposalTarget=0.55,proposalPeriodLabel='prossima giornata';
@@ -930,6 +956,7 @@ function initEvents(){
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  document.querySelectorAll("[data-bet-workspace-tab]").forEach(button=>button.addEventListener("click",()=>setBetWorkspaceTab(button.dataset.betWorkspaceTab)));
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
+ $("cancelEditTicket")?.addEventListener("click",cancelEditTicket);
  const handleContextChange=event=>{
   const select=event.target.closest("[data-context-field]");
   if(select){
@@ -1072,7 +1099,7 @@ function initEvents(){
  });
  $("refreshArchive").addEventListener("click",updateArchive);
  ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
-  const editBtn=event.target.closest("[data-edit-ticket]");if(editBtn){const ticket=archive.find(x=>x.id===editBtn.dataset.editTicket);if(ticket)editSavedTicket(ticket);return;}
+  const editBtn=event.target.closest("[data-edit-ticket]");if(editBtn){const ticket=archive.find(x=>x.id===editBtn.dataset.editTicket);if(ticket)startEditTicket(ticket);return;}
   const transferBtn=event.target.closest("[data-transfer-ticket]");if(transferBtn){const ticket=archive.find(x=>x.id===transferBtn.dataset.transferTicket);const result=ticket&&ticketTransferUrl(ticket);if(result&&result.url){window.open(result.url,"_blank","noopener");$("archiveStatus").textContent="Dati inviati allo script Sisal. Verifica gli eventi e le quote prima di confermare.";}else $("archiveStatus").textContent="Trasferimento non disponibile: controlla i mercati della schedina.";return;}
   const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();return;}
   const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);return;}

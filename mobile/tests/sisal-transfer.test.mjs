@@ -13,7 +13,7 @@ const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.0\.7$/m);
+  assert.match(script, /^\/\/ @version\s+3\.0\.8$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
@@ -86,17 +86,41 @@ test("Sisal scanner is event-driven and has no polling loop", () => {
   assert.doesNotMatch(script, /setInterval\(\(\) => scanPage/);
 });
 
-test("app exports all calculated markets for each selected football match", () => {
+test("app exports model forecasts only for the current selected slip", () => {
   assert.match(bets, /function exportSisalPredictions\(row\)/);
   assert.match(bets, /ENGINE\(\)\.marketCandidates\("auto"\)/);
   assert.match(bets, /marketProbability\(forecast,item\.key\)/);
   assert.match(bets, /marketKey:"dc1X"/);
   assert.match(bets, /marketKey:"dcX2"/);
   assert.match(bets, /marketKey:"dc12"/);
-  assert.match(bets, /const calendarRows=\(Array\.isArray\(fixtures\)\?fixtures:\[\]\)/);
-  assert.match(bets, /\.slice\(0,11\)/);
+  assert.match(bets, /const allSelections=selectedRows\(\)\.map/);
+  assert.doesNotMatch(bets, /const calendarRows=/);
   assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
-  assert.match(bets, /predictionMethod:row\.forecast\?\.predictionMethod/);
+  assert.match(bets, /sampleEnough:row\.sampleEnough===true\|\|row\.forecast\?\.sampleEnough===true/);
+  assert.match(bets, /predictionMethod:row\.predictionMethod\|\|row\.forecast\?\.predictionMethod/);
+});
+
+test("archived tickets retain real sample quality when reopened and transferred", () => {
+  assert.match(bets, /sampleEnough:s\.sampleEnough===true/);
+  assert.match(bets, /sampleEnough:x\.sport==="nba"\?\(x\.sampleEnough===true\)/);
+  assert.match(bets, /sampleEnough:selection\.sampleEnough===true/);
+  assert.match(bets, /historyCount:Number\(selection\.historyCount\)\|\|0/);
+  assert.doesNotMatch(bets, /sampleEnough:true,historyCount:0/);
+});
+
+test("bridge uses a URL fragment for Sisal handoff", () => {
+  assert.match(bridge, /base \+ "#mmplay=" \+ encoded/);
+  assert.doesNotMatch(bridge, /base \+ "\?mmplay="/);
+});
+
+test("closed archive tickets expose full edit and Sisal transfer actions", () => {
+  assert.match(bets, /data-edit-ticket=/);
+  assert.match(bets, /data-transfer-ticket=/);
+  assert.match(bets, /function startEditTicket\(ticket\)/);
+  assert.match(bets, /function cancelEditTicket\(\)/);
+  assert.match(bets, /editingTicketId/);
+  assert.match(bets, /archive\[index\]=item/);
+  assert.match(bets, /ticketTransferUrl\(ticket\)/);
 });
 
 test("bridge preserves all predictions and sample metadata in version 3 payload", () => {
