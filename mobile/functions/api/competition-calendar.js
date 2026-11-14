@@ -7,6 +7,8 @@ const seasonCode = year => String(year).slice(-2) + String(year + 1).slice(-2);
 const seasonFolder = year => String(year) + "-" + String(year + 1).slice(-2);
 const COMPETITIONS = {
   "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football", calendarYear: false },
+  "champions-league": { name: "UEFA Champions League", slug: "uefa.champions", feed: "UEFA_1_champions-league", sport: "football", calendarYear: false },
+  "europa-league": { name: "UEFA Europa League", slug: "uefa.europa", feed: "UEFA_1_europa-league", sport: "football", calendarYear: false },
   "nations-league": { name: "UEFA Nations League", slug: "uefa.nations", sport: "football", calendarYear: true }
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -208,7 +210,10 @@ async function fetchCompetition(id, competition, startDate, endDate) {
 async function getCalendar(request) {
   const params = new URL(request.url).searchParams;
   const selectedId = params.get("competition") || "serie-a";
-  const selected = COMPETITIONS[selectedId] ? selectedId : "serie-a";
+  if (!COMPETITIONS[selectedId]) {
+    return json({ configured: false, type: "calendar", matches: [], history: [], errors: ["Competizione non supportata: " + selectedId], error: "Competizione non supportata." }, 400);
+  }
+  const selected = selectedId;
   const competition = COMPETITIONS[selected];
   const now = new Date();
   const year = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
@@ -274,7 +279,7 @@ async function getCalendar(request) {
     counts, coverage, historyScope: selected === "serie-a" ? "five-season-archive" : selected === "nations-league" ? "Cornerflick-season-archive" : "current-season-only",
     errors: entries.filter(x => x.error).map(x => x.error).concat(historyErrors),
     updatedAt: new Date().toISOString(),
-    note: "Calendario e risultati club da Open Matchday; ESPN è usato per Nations League e come fallback dove configurato. Lo storico pluristagionale è attualmente disponibile in modo verificato per la sola Serie A. Le statistiche non presenti restano null."
+    note: "Serie A, Champions League ed Europa League usano i dataset pubblici Open Matchday con fallback ESPN. Nations League usa ESPN e il fallback UEFA. Lo storico pluristagionale verificato è disponibile per la sola Serie A; le statistiche non presenti restano null."
   });
 }
 export async function onRequestGet({ request }) { return getCalendar(request); }
