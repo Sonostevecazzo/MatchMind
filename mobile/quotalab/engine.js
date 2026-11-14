@@ -271,6 +271,97 @@ export function buildSuggestions(analyses, options = {}) {
   const odds=selections.reduce((product,item)=>product*item.offer.odds,1);
   return {selections,probability:selections.length?probability:null,combinedOdds:selections.length?odds:null,expectedValue:selections.length?probability*odds-1:null,assumption:"Probabilità congiunta stimata come prodotto delle singole probabilità: presuppone indipendenza tra eventi e non è verificata."};
 }
+function argMax(values) {
+  let best = 0;
+  for (let index = 1; index < values.length; index += 1) if (values[index] > values[best]) best = index;
+  return best;
+}
+
+export function backtestHistory(allHistory, options = {}) {
+  const competition = String(options.competition || "serie-a").toLowerCase();
+  const history = (allHistory || [])
+    .filter(match => match.competition === competition && normalizeDate(match.date) &&
+      Number.isInteger(match.homeGoals) && Number.isInteger(match.awayGoals))
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const sums = {
+    modelBrier1x2: 0, baselineBrier1x2: 0, modelLogLoss1x2: 0, baselineLogLoss1x2: 0,
+    modelAccuracy1x2: 0, baselineAccuracy1x2: 0,
+    modelBrierOver25: 0, baselineBrierOver25: 0, modelLogLossOver25: 0, baselineLogLossOver25: 0,
+    modelBrierBtts: 0, baselineBrierBtts: 0, modelLogLossBtts: 0, baselineLogLossBtts: 0
+  };
+  let evaluatedMatches = 0;
+  let firstEvaluatedDate = null, lastEvaluatedDate = null;
+  const epsilon = 1e-12;
+  for (const target of history) {
+    const prior = history.filter(match => match.date < target.date);
+    if (!prior.length) continue;
+    const forecast = forecastFixture(target, history);
+    if (!forecast.available) continue;
+    const actual = target.homeGoals > target.awayGoals ? 0 : target.homeGoals === target.awayGoals ? 1 : 2;
+    const model = [forecast.probabilities.home, forecast.probabilities.draw, forecast.probabilities.away];
+    const counts = [0, 0, 0];
+    let priorOver25 = 0, priorBtts = 0;
+    for (const match of prior) {
+      if (match.homeGoals > match.awayGoals) counts[0] += 1;
+      else if (match.homeGoals === match.awayGoals) counts[1] += 1;
+      else counts[2] += 1;
+      if (match.homeGoals + match.awayGoals >= 3) priorOver25 += 1;
+      if (match.homeGoals > 0 && match.awayGoals > 0) priorBtts += 1;
+    }
+    const countTotal = prior.length + 3;
+    const baseline = counts.map(count => (count + 1) / countTotal);
+    const baselineOver25 = (priorOver25 + 1) / (prior.length + 2);
+    const baselineBtts = (priorBtts + 1) / (prior.length + 2);
+    const y = [0, 0, 0]; y[actual] = 1;
+    sums.modelBrier1x2 += model.reduce((sum, probability, index) => sum + Math.pow(probability - y[index], 2), 0) / 3;
+    sums.baselineBrier1x2 += baseline.reduce((sum, probability, index) => sum + Math.pow(probability - y[index], 2), 0) / 3;
+    sums.modelLogLoss1x2 += -Math.log(Math.max(epsilon, model[actual]));
+    sums.baselineLogLoss1x2 += -Math.log(Math.max(epsilon, baseline[actual]));
+    sums.modelAccuracy1x2 += argMax(model) === actual ? 1 : 0;
+    sums.baselineAccuracy1x2 += argMax(baseline) === actual ? 1 : 0;
+
+    const actualOver25 = target.homeGoals + target.awayGoals >= 3 ? 1 : 0;
+    const modelOver25 = forecast.probabilities.over25;
+    sums.modelBrierOver25 += Math.pow(modelOver25 - actualOver25, 2);
+    sums.baselineBrierOver25 += Math.pow(baselineOver25 - actualOver25, 2);
+    sums.modelLogLossOver25 += -(actualOver25 ? Math.log(Math.max(epsilon, modelOver25)) : Math.log(Math.max(epsilon, 1 - modelOver25)));
+    sums.baselineLogLossOver25 += -(actualOver25 ? Math.log(Math.max(epsilon, baselineOver25)) : Math.log(Math.max(epsilon, 1 - baselineOver25)));
+
+    const actualBtts = target.homeGoals > 0 && target.awayGoals > 0 ? 1 : 0;
+    const modelBtts = forecast.probabilities.bttsYes;
+    sums.modelBrierBtts += Math.pow(modelBtts - actualBtts, 2);
+    sums.baselineBrierBtts += Math.pow(baselineBtts - actualBtts, 2);
+    sums.modelLogLossBtts += -(actualBtts ? Math.log(Math.max(epsilon, modelBtts)) : Math.log(Math.max(epsilon, 1 - modelBtts)));
+    sums.baselineLogLossBtts += -(actualBtts ? Math.log(Math.max(epsilon, baselineBtts)) : Math.log(Math.max(epsilon, 1 - baselineBtts)));
+    evaluatedMatches += 1;
+    if (!firstEvaluatedDate) firstEvaluatedDate = target.date;
+    lastEvaluatedDate = target.date;
+  }
+  const average = key => evaluatedMatches ? sums[key] / evaluatedMatches : null;
+  const model = {
+    brier1x2: average("modelBrier1x2"), logLoss1x2: average("modelLogLoss1x2"), accuracy1x2: average("modelAccuracy1x2"),
+    brierOver25: average("modelBrierOver25"), logLossOver25: average("modelLogLossOver25"),
+    brierBtts: average("modelBrierBtts"), logLossBtts: average("modelLogLossBtts")
+  };
+  const baseline = {
+    brier1x2: average("baselineBrier1x2"), logLoss1x2: average("baselineLogLoss1x2"), accuracy1x2: average("baselineAccuracy1x2"),
+    brierOver25: average("baselineBrierOver25"), logLossOver25: average("baselineLogLossOver25"),
+    brierBtts: average("baselineBrierBtts"), logLossBtts: average("baselineLogLossBtts")
+  };
+  return {
+    competition, availableMatches: history.length, evaluatedMatches, skippedMatches: history.length - evaluatedMatches,
+    startDate: firstEvaluatedDate, endDate: lastEvaluatedDate,
+    model, baseline,
+    improvement: {
+      brier1x2: baseline.brier1x2 === null ? null : baseline.brier1x2 - model.brier1x2,
+      logLoss1x2: baseline.logLoss1x2 === null ? null : baseline.logLoss1x2 - model.logLoss1x2
+    },
+    method: "Walk-forward cronologico: ogni partita è prevista usando solo risultati con data strettamente precedente; baseline storica con smoothing di Laplace.",
+    warning: "Risultato descrittivo sul dataset importato, non garanzia di rendimento futuro. Le osservazioni non sono indipendenti e non sono calcolati intervalli di confidenza."
+  };
+}
+
 export function calculateTicket(legs, stake) {
   const amount=finiteNumber(stake,"Puntata",0.01,1000000);
   if (!(legs||[]).length||!(legs||[]).every(leg=>Number.isFinite(Number(leg.odds))&&Number(leg.odds)>1&&Number.isFinite(Number(leg.probability))&&Number(leg.probability)>=0&&Number(leg.probability)<=1)) throw new RangeError("Schedina vuota o quote/probabilità non valide");

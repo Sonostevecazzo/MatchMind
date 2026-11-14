@@ -42,7 +42,7 @@ Le righe qui sopra descrivono il formato e non sono dati inclusi nel prodotto.
 
 ## Limiti da dichiarare
 
-Questa versione è un baseline trasparente: non è un modello AI addestrato, calibrato o validato come strategia di scommessa. Non importa fixture live, infortuni confermati, formazioni, statistiche giocatori, quote storiche o closing odds. Non include ancora calibrazione, correzione Dixon–Coles, report walk-forward, monitoraggio del modello o integrazione verificata con Sisal.
+Questa versione è un baseline trasparente: non è un modello AI addestrato, calibrato o validato come strategia di scommessa. Non importa fixture live, infortuni confermati, formazioni, statistiche giocatori, quote storiche o closing odds. Include un backtest walk-forward cronologico con Brier score, log loss e accuratezza per 1X2, Over 2,5 e Gol/No Gol, confrontati con una baseline storica smussata. Il backtest è descrittivo sul dataset importato e non prova la redditività. Restano esclusi calibrazione, correzione Dixon–Coles, intervalli di confidenza, monitoraggio del modello e integrazione verificata con Sisal.
 
 Le quote sono manuali. Non vengono piazzate o trasmesse scommesse. Gli esiti si registrano manualmente. La probabilità congiunta di selezioni su partite diverse è il prodotto delle probabilità marginali e assume indipendenza, non verificata.
 

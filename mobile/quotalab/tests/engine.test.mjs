@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeDate, parseCSV, validateHistory, forecastFixture, buildMarketOffers, priceOffers, buildSuggestions, calculateTicket, scoreMatrix } from "../engine.js";
+import { normalizeDate, parseCSV, validateHistory, forecastFixture, buildMarketOffers, priceOffers, buildSuggestions, calculateTicket, scoreMatrix, backtestHistory } from "../engine.js";
 
 function historyFixture() {
   const rows = [];
@@ -98,6 +98,25 @@ test("il costruttore rispetta il mercato selezionato senza riempire candidati ma
 });
 
 test("rifiuta categorie di mercato sconosciute", () => assert.throws(() => buildSuggestions([], { category: "unknown" })));
+
+test("il backtest walk-forward usa solo storico precedente e confronta una baseline", () => {
+  const rows = [];
+  for (let day = 1; day <= 40; day += 1) {
+    const date = new Date(Date.UTC(2025, 0, day)).toISOString().slice(0, 10);
+    rows.push({ date, competition: "serie-a", home: "Alpha", away: "Beta", homeGoals: day % 3 === 0 ? 2 : 1, awayGoals: day % 4 === 0 ? 1 : 0 });
+    rows.push({ date, competition: "serie-a", home: "Gamma", away: "Delta", homeGoals: day % 5 === 0 ? 0 : 1, awayGoals: day % 2 === 0 ? 1 : 0 });
+  }
+  const { matches } = validateHistory(rows);
+  const report = backtestHistory(matches, { competition: "serie-a" });
+  assert.equal(report.availableMatches, 80);
+  assert.equal(report.evaluatedMatches, 60);
+  assert.equal(report.startDate, "2025-01-11");
+  assert.equal(report.endDate, "2025-02-09");
+  assert.ok(Number.isFinite(report.model.brier1x2));
+  assert.ok(Number.isFinite(report.baseline.brier1x2));
+  assert.ok(report.model.brier1x2 >= 0 && report.model.brier1x2 <= 2 / 3);
+  assert.ok(Number.isFinite(report.improvement.brier1x2));
+});
 
 test("calcola quota composta, ritorno e probabilità congiunta", () => {
   const result = calculateTicket([{ odds: 2.1, probability: .6 }, { odds: 1.8, probability: .7 }], 10);
