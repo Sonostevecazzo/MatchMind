@@ -171,6 +171,17 @@ assert re.search(r"const CACHE='matchmind-pwa-v\d+[^']*'", (ROOT/"sw.js").read_t
 assert "matchmind-manual-selections-v1" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "setTimeout(next,0)" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "manual-slip-dropdown" in (ROOT/"bets.js").read_text(encoding="utf-8")
+
+bets_page=(ROOT/"bets.html").read_text(encoding="utf-8")
+bets_script=(ROOT/"bets.js").read_text(encoding="utf-8")
+assert 'data-bet-workspace-tab="builder"' in bets_page and 'data-bet-workspace-tab="slip"' in bets_page
+assert 'id="betWorkspaceBuilder"' in bets_page and 'id="betWorkspaceSlip"' in bets_page
+assert "function setBetWorkspaceTab" in bets_script and "betWorkspacePickCount" in bets_script
+assert "location.hash.includes(\"manualBuilder\")" in bets_script
+assert "bet-sisal-details" in bets_page and "main/mobile/scripts/sisal-matchmind.user.js" in bets_page
+assert "Salvare registra la schedina in MatchMind" in bets_page
+assert "bets.js?v=20261116-integrated-slip" in bets_page
+assert "bets.js?v=20261116-integrated-slip" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert (ROOT/"notifications.js").is_file()
 assert "upcomingMatches" in (ROOT/"live.html").read_text(encoding="utf-8")
 assert "upcomingMatches" in (ROOT/"live.js").read_text(encoding="utf-8")
