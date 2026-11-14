@@ -16,8 +16,8 @@ subprocess.run(["node","--check",str(ROOT/"scripts"/"sisal-matchmind.user.js")],
 subprocess.run(["node","--check",str(ROOT/"nba-engine.mjs")],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
-assert '"serie-a"' in core and '"nations-league"' in core
-assert '"serie-a"' in api and '"nations-league"' in api
+assert all(name in core for name in ['"serie-a"','"champions-league"','"europa-league"','"nations-league"'])
+assert all(name in api for name in ['"serie-a"','"champions-league"','"europa-league"','"nations-league"'])
 assert 'slug: "uefa.nations"' in api
 assert "fetchDirectNationsLeague" in core and "fetchCompetitionFromEspn" in api and "slug: \"uefa.nations\"" in api
 assert "matchmind-multipage-cache-v16-cornerflick-nations-history" in core
