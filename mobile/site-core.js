@@ -1,6 +1,6 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v15-nations-current-season';
+  const CACHE_KEY='matchmind-multipage-cache-v16-cornerflick-nations-history';
   const COMPETITIONS = {
     "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false },
     "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, calendarYear: true }
@@ -115,6 +115,48 @@
     }).filter(Boolean);
   }
 
+  function cornerflickRows(payload){
+    if(Array.isArray(payload))return payload;
+    if(!payload||typeof payload!=="object")return[];
+    for(const key of ["matches","results","data","fixtures","items","events"]){
+      const value=payload[key];
+      if(Array.isArray(value))return value;
+      if(value&&typeof value==="object"){
+        for(const nested of ["matches","results","items","events"])if(Array.isArray(value[nested]))return value[nested];
+      }
+    }
+    return[];
+  }
+  function cornerflickValue(row,keys){
+    for(const key of keys){const value=row?.[key];if(value!==undefined&&value!==null&&value!=="")return value;}
+    return null;
+  }
+  async function fetchCornerflickNationsHistory(){
+    const url="https://cornerflick.com/football/leagues/nations-league/results/season.json";
+    const response=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store",signal:AbortSignal.timeout(18000)});
+    if(!response.ok)throw new Error("Cornerflick Nations League HTTP "+response.status);
+    const payload=await response.json(),rows=cornerflickRows(payload);
+    const matches=rows.map(row=>{
+      const homeValue=cornerflickValue(row,["home_team_name","home_team","home_name","home","team_home","homeTeam"]);
+      const awayValue=cornerflickValue(row,["away_team_name","away_team","away_name","away","team_away","awayTeam"]);
+      const home=typeof homeValue==="object"?(homeValue.name||homeValue.display_name||homeValue.short_name):homeValue;
+      const away=typeof awayValue==="object"?(awayValue.name||awayValue.display_name||awayValue.short_name):awayValue;
+      const score=row?.score||row?.full_time||row?.ft||{};
+      const goals=row?.goals||{};
+      const hgRaw=cornerflickValue(row,["home_goals","home_score","score_home","goals_home","homeGoals","homeScore"])??cornerflickValue(score,["home","home_goals","home_score"])??cornerflickValue(goals,["home","home_goals"]);
+      const agRaw=cornerflickValue(row,["away_goals","away_score","score_away","goals_away","awayGoals","awayScore"])??cornerflickValue(score,["away","away_goals","away_score"])??cornerflickValue(goals,["away","away_goals"]);
+      const dateRaw=cornerflickValue(row,["match_date","kickoff_date","date","kickoff_at","kickoff","utc_date","datetime","start_time"]);
+      const dateObject=dateRaw?new Date(dateRaw):null;
+      const date= dateObject&&Number.isFinite(dateObject.getTime()) ? (String(dateRaw).length>10?romeDateTime(dateRaw)?.date:String(dateRaw).slice(0,10)) : "";
+      const time= dateObject&&Number.isFinite(dateObject.getTime()) ? (String(dateRaw).length>10?romeDateTime(dateRaw)?.time||"":String(cornerflickValue(row,["time","kickoff_time"])||"")) : "";
+      const hg=num(hgRaw),ag=num(agRaw);
+      if(!home||!away||!date||hg===null||ag===null)return null;
+      return {id:String(row.id||row.match_id||""),date,time,round:num(row.matchday||row.round||row.gameweek),stage:String(row.stage||row.matchday||"UEFA Nations League"),home:String(home),away:String(away),hg,ag,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:"FT",statusLong:"Terminata",competition:"nations-league",source:"Cornerflick · risultati stagione (CC BY 4.0)"};
+    }).filter(Boolean);
+    if(matches.length<30)throw new Error("Cornerflick ha restituito solo "+matches.length+" risultati validi; soglia minima 30");
+    return matches;
+  }
+
   function nationsLeagueOfficialFallback(now = new Date()) {
     const rows = [
       ["2026-11-12","18:00","Türkiye","Belgium","A1"],["2026-11-12","18:00","Armenia","Cyprus","C2"],["2026-11-12","20:45","Italy","France","A1"],["2026-11-12","20:45","Czechia","Spain","A3"],["2026-11-12","20:45","England","Croatia","A3"],["2026-11-12","20:45","Albania","Finland","C1"],["2026-11-12","20:45","San Marino","Belarus","C1"],["2026-11-12","20:45","Montenegro","Latvia","C2"],
@@ -180,19 +222,23 @@
     const histSettled=await Promise.allSettled(histJobs);
     histSettled.forEach(result=>{if(result.status==='fulfilled')history.push(...result.value);});
     if(selectedId==="nations-league"){
-      let nations=[];
+      let nations=[],cornerHistory=[];
       try{nations=await fetchDirectNationsLeague(y);}
       catch(error){feedErrors.push("ESPN Nations League: "+String(error&&error.message||error));}
-      // GitHub Pages cannot call the Cloudflare calendar endpoint. Keep the
-      // official UEFA matchday schedule as a deterministic fallback and merge
-      // it with ESPN without duplicating fixtures.
+      try{cornerHistory=await fetchCornerflickNationsHistory();}
+      catch(error){feedErrors.push("Cornerflick Nations League: "+String(error&&error.message||error));}
+      // The official UEFA schedule guarantees upcoming fixtures; Cornerflick
+      // supplies a season-wide completed-results archive for the model.
       const official=nationsLeagueOfficialFallback();
       const merged=new Map();
       [...nations,...official].forEach(match=>merged.set([match.date,norm(match.home),norm(match.away)].join("|"),match));
       const all=[...merged.values()];
       matches.push(...all.filter(upcoming));
-      history.push(...all.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));
-      if(!nations.length)feedErrors.push("Calendario futuro: fallback ufficiale UEFA; storico ESPN non disponibile.");
+      const resultMap=new Map();
+      [...all.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null),...cornerHistory].forEach(match=>resultMap.set([match.date,norm(match.home),norm(match.away)].join("|"),match));
+      history.push(...resultMap.values());
+      if(!nations.length)feedErrors.push("Calendario futuro: fallback ufficiale UEFA; ESPN storico non disponibile.");
+      if(!cornerHistory.length)feedErrors.push("Archivio risultati Cornerflick non disponibile: il modello userà solo i risultati ESPN presenti.");
     }
     matches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
     history.sort((a,b)=>a.date.localeCompare(b.date));
