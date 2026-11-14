@@ -285,7 +285,7 @@ function renderSlip(){
  if(count)count.textContent=String(allPicks.length);
  if(saveButton)saveButton.disabled=allPicks.length===0;
  updateSisalTransfer(rows);
- if(!rows.length){target.innerHTML='<div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div>';slipExpanded=false;return;}
+ if(!rows.length){target.innerHTML='<div class="empty-state">La schedina è vuota. Aggiungi una selezione dal <a href="./matches.html">calendario calcio</a> oppure apri il <a href="./bets.html?sport=nba#betWorkspaceBuilder">calendario NBA</a>.</div>';slipExpanded=false;return;}
  const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
  const probability=hasAllProbabilities?rows.reduce((v,x)=>v*x.probability,1):null;
  const fairCombinedOdds=probability!=null?ENGINE().fairOdds(probability):null;
@@ -350,8 +350,7 @@ function renderSlip(){
    financialSummaryHtml+
    '<div class="manual-selected-list">'+rowsHtml+'</div>'+
    '<div class="manual-summary-actions">'+
-    '<button type="button" id="archiveCurrentSlip" class="primary">Salva schedina</button>'+
-    '<button type="button" id="clearCurrentSlip" class="secondary">Svuota</button>'+
+    '<button type="button" id="clearCurrentSlip" class="secondary">Svuota selezioni</button>'+
    '</div>'+
   '</div>'+
  '</details>';
