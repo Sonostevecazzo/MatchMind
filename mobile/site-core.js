@@ -1,6 +1,6 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v13-nations-history-resilient';
+  const CACHE_KEY='matchmind-multipage-cache-v14-nations-uefa-fallback';
   const COMPETITIONS = {
     "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false },
     "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, calendarYear: true }
@@ -115,6 +115,26 @@
     }).filter(Boolean);
   }
 
+  function nationsLeagueOfficialFallback(now = new Date()) {
+    const rows = [
+      ["2026-11-12","18:00","Türkiye","Belgium","A1"],["2026-11-12","18:00","Armenia","Cyprus","C2"],["2026-11-12","20:45","Italy","France","A1"],["2026-11-12","20:45","Czechia","Spain","A3"],["2026-11-12","20:45","England","Croatia","A3"],["2026-11-12","20:45","Albania","Finland","C1"],["2026-11-12","20:45","San Marino","Belarus","C1"],["2026-11-12","20:45","Montenegro","Latvia","C2"],
+      ["2026-11-13","18:00","Moldova","Kazakhstan","C3"],["2026-11-13","20:45","Netherlands","Greece","A2"],["2026-11-13","20:45","Serbia","Germany","A2"],["2026-11-13","20:45","Scotland","North Macedonia","B1"],["2026-11-13","20:45","Slovenia","Switzerland","B1"],["2026-11-13","20:45","Slovakia","Faroe Islands","C3"],["2026-11-13","20:45","Bulgaria","Iceland","C4"],["2026-11-13","20:45","Luxembourg","Estonia","C4"],["2026-11-13","20:45","Andorra","Gibraltar","D1"],["2026-11-13","20:45","Liechtenstein","Azerbaijan","D2"],
+      ["2026-11-14","15:00","Kosovo","Israel","B3"],["2026-11-14","18:00","Norway","Wales","A4"],["2026-11-14","18:00","Georgia","Hungary","B2"],["2026-11-14","20:45","Portugal","Denmark","A4"],["2026-11-14","20:45","Northern Ireland","Ukraine","B2"],["2026-11-14","20:45","Austria","Republic of Ireland","B3"],["2026-11-14","20:45","Romania","Poland","B4"],["2026-11-14","20:45","Sweden","Bosnia and Herzegovina","B4"],
+      ["2026-11-15","15:00","Cyprus","Montenegro","C2"],["2026-11-15","15:00","Latvia","Armenia","C2"],["2026-11-15","18:00","Belarus","Albania","C1"],["2026-11-15","18:00","Finland","San Marino","C1"],["2026-11-15","20:45","Belgium","Italy","A1"],["2026-11-15","20:45","France","Türkiye","A1"],["2026-11-15","20:45","Croatia","Czechia","A3"],["2026-11-15","20:45","Spain","England","A3"],
+      ["2026-11-16","16:00","Faroe Islands","Moldova","C3"],["2026-11-16","16:00","Kazakhstan","Slovakia","C3"],["2026-11-16","18:00","Estonia","Bulgaria","C4"],["2026-11-16","18:00","Iceland","Luxembourg","C4"],["2026-11-16","18:00","Lithuania","Liechtenstein","D2"],["2026-11-16","20:45","Germany","Netherlands","A2"],["2026-11-16","20:45","Greece","Serbia","A2"],["2026-11-16","20:45","North Macedonia","Slovenia","B1"],["2026-11-16","20:45","Switzerland","Scotland","B1"],["2026-11-16","20:45","Gibraltar","Malta","D1"],
+      ["2026-11-17","20:45","Denmark","Norway","A4"],["2026-11-17","20:45","Wales","Portugal","A4"],["2026-11-17","20:45","Hungary","Northern Ireland","B2"],["2026-11-17","20:45","Ukraine","Georgia","B2"],["2026-11-17","20:45","Israel","Austria","B3"],["2026-11-17","20:45","Republic of Ireland","Kosovo","B3"],["2026-11-17","20:45","Bosnia and Herzegovina","Romania","B4"],["2026-11-17","20:45","Poland","Sweden","B4"]
+    ];
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+    return rows.filter(([date]) => date >= today).map(([date,time,home,away,group], index) => ({
+      id: "uefa-nl-2026-" + index, date, time, round: date <= "2026-11-14" ? 5 : 6,
+      stage: "UEFA Nations League · " + group, home, away,
+      hg: null, ag: null, ht: null, at: null, hs: null, as: null, hst: null, ast: null,
+      hf: null, af: null, hc: null, ac: null, hy: null, ay: null, hr: null, ar: null,
+      goalMinutes: "", status: "NS", statusLong: "In programma",
+      competition: "nations-league", source: "UEFA · calendario ufficiale 2026/27"
+    }));
+  }
+
   async function fetchDirectCalendar(){
     const y=seasonStart();
     const selectedId=getSelectedCompetition();
@@ -160,11 +180,19 @@
     const histSettled=await Promise.allSettled(histJobs);
     histSettled.forEach(result=>{if(result.status==='fulfilled')history.push(...result.value);});
     if(selectedId==="nations-league"){
-      try{
-        const nations=await fetchDirectNationsLeague(y);
-        matches.push(...nations.filter(upcoming));
-        history.push(...nations.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));
-      }catch(error){feedErrors.push("Nations League: "+String(error&&error.message||error));}
+      let nations=[];
+      try{nations=await fetchDirectNationsLeague(y);}
+      catch(error){feedErrors.push("ESPN Nations League: "+String(error&&error.message||error));}
+      // GitHub Pages cannot call the Cloudflare calendar endpoint. Keep the
+      // official UEFA matchday schedule as a deterministic fallback and merge
+      // it with ESPN without duplicating fixtures.
+      const official=nationsLeagueOfficialFallback();
+      const merged=new Map();
+      [...nations,...official].forEach(match=>merged.set([match.date,norm(match.home),norm(match.away)].join("|"),match));
+      const all=[...merged.values()];
+      matches.push(...all.filter(upcoming));
+      history.push(...all.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));
+      if(!nations.length)feedErrors.push("Calendario futuro: fallback ufficiale UEFA; storico ESPN non disponibile.");
     }
     matches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
     history.sort((a,b)=>a.date.localeCompare(b.date));
