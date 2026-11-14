@@ -85,16 +85,23 @@
     const now=new Date(),start=new Date(Date.UTC(now.getUTCFullYear()-2,8,1)),end=new Date(now);end.setDate(end.getDate()+92);
     const windows=[];
     for(let cursor=new Date(start);cursor<=end;){
-      const from=new Date(cursor),to=new Date(cursor);to.setDate(to.getDate()+6);if(to>end)to.setTime(end.getTime());
-      const fmt=d=>String(d.getFullYear())+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
-      windows.push([fmt(from),fmt(to)]);cursor=new Date(to);cursor.setDate(cursor.getDate()+1);
+      const from=new Date(cursor),to=new Date(cursor);to.setUTCDate(to.getUTCDate()+27);if(to>end)to.setTime(end.getTime());
+      const fmt=d=>String(d.getUTCFullYear())+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0");
+      windows.push([fmt(from),fmt(to)]);cursor=new Date(to);cursor.setUTCDate(cursor.getUTCDate()+1);
     }
-    const batches=await Promise.all(windows.map(async([from,to])=>{
-      const response=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500",{signal:AbortSignal.timeout(18000)});
-      if(!response.ok)throw new Error("ESPN Nations League HTTP "+response.status);
-      const payload=await response.json();return Array.isArray(payload.events)?payload.events:[];
-    }));
-    const events=[...new Map(batches.flat().map(event=>[String(event.id),event])).values()];
+    // ESPN may throttle long historical requests. Fetch bounded batches and
+    // retain successful windows instead of discarding the whole calendar.
+    const batches=[];
+    for(let offset=0;offset<windows.length;offset+=3){
+      const settled=await Promise.allSettled(windows.slice(offset,offset+3).map(async([from,to])=>{
+        const response=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500",{signal:AbortSignal.timeout(18000)});
+        if(!response.ok)throw new Error("ESPN Nations League HTTP "+response.status);
+        const payload=await response.json();return Array.isArray(payload.events)?payload.events:[];
+      }));
+      settled.forEach(result=>{if(result.status==="fulfilled")batches.push(...result.value);});
+    }
+    if(!batches.length)throw new Error("ESPN Nations League: nessuna finestra storica accessibile");
+    const events=[...new Map(batches.map(event=>[String(event.id),event])).values()];
     return events.map(event=>{
       const comp=event?.competitions?.[0]||{},teams=Array.isArray(comp.competitors)?comp.competitors:[];
       const home=teams.find(x=>x?.homeAway==="home")||teams[0]||{},away=teams.find(x=>x?.homeAway==="away")||teams[1]||{};
