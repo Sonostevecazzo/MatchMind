@@ -18,7 +18,7 @@
       if(!x||!x.home||!x.away||!["home","away"].includes(x.side))continue;
       const id=String(x.id||x.eventId||"");
       if(all.some(p=>p.sport==="nba"&&String(p.id||p.eventId)===id&&p.side===x.side))continue;
-      all.push({sport:"nba",competition:"nba",id,eventId:id,home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start||"",date:String(x.start||"").slice(0,10),side:x.side,team:x.team||(x.side==="home"?x.home:x.away),marketKey:"nbaMoneyline:"+x.side,probability:Number(x.probability??x.prob),prob:Number(x.probability??x.prob),odds:null});
+      all.push({sport:"nba",competition:"nba",id,eventId:id,home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start||"",date:String(x.start||"").slice(0,10),side:x.side,team:x.team||(x.side==="home"?x.home:x.away),marketKey:"nbaMoneyline:"+x.side,probability:Number(x.probability??x.prob),prob:Number(x.probability??x.prob),odds:null,sampleEnough:false,historyCount:0,predictionMethod:"NBA Elo"});
     }
     writeAll(all);
     try{localStorage.removeItem(LEGACY);}catch{}
@@ -31,7 +31,7 @@
     else{
       if(existing>=0)all.splice(existing,1);
       const prob=side==="home"?g.prediction.homeWin:g.prediction.awayWin;
-      all.push({sport:"nba",competition:"nba",id:String(g.id),eventId:String(g.id),home:g.home,away:g.away,homeAbbr:g.homeAbbr||"",awayAbbr:g.awayAbbr||"",start:g.start,date:String(g.start).slice(0,10),side,team:side==="home"?g.home:g.away,marketKey:"nbaMoneyline:"+side,probability:prob,prob,odds:null});
+      all.push({sport:"nba",competition:"nba",id:String(g.id),eventId:String(g.id),home:g.home,away:g.away,homeAbbr:g.homeAbbr||"",awayAbbr:g.awayAbbr||"",start:g.start,date:String(g.start).slice(0,10),side,team:side==="home"?g.home:g.away,marketKey:"nbaMoneyline:"+side,probability:prob,prob,odds:null,sampleEnough:g.prediction.reliable===true,historyCount:0,predictionMethod:"NBA Elo"});
     }
     writeAll(all);render();
     $("globalStatus").textContent="Selezioni NBA aggiornate nella schedina condivisa.";
@@ -144,7 +144,8 @@
       sport:"nba",competition:"nba",id:String(x.id),eventId:String(x.id),
       home:x.home,away:x.away,homeAbbr:x.homeAbbr,awayAbbr:x.awayAbbr,
       start:x.start,date:x.date,side:x.side,team:x.team,marketKey:x.marketKey,
-      probability:x.probability,prob:x.probability,odds:null
+      probability:x.probability,prob:x.probability,odds:null,
+      sampleEnough:x.reliable===true,historyCount:0,predictionMethod:"NBA Elo"
     }));
     writeAll(retained.concat(rows));render();
     $("globalStatus").textContent="Proposta NBA aggiunta alla schedina condivisa. Inserisci soltanto quote verificate prima del calcolo dell’EV.";
