@@ -252,17 +252,7 @@ function updateSisalTransfer(){
  const bridge=window.MatchMindSisalBridge;
  // Export the loaded upcoming calendar, not only manually selected picks.
  // The v3 compact payload is tested for 11 fixtures and mobile URL limits.
- const calendarRows=(Array.isArray(fixtures)?fixtures:[])
-  .filter(match=>match&&match.home&&match.away&&match.date&&(!match.status||!["FT","AET","PEN","CANC","POSTP"].includes(String(match.status).toUpperCase())))
-  .slice(0,11)
-  .map(match=>{
-   const forecast=getForecast(match);
-   if(!forecast||!forecast.probabilities)return null;
-   return {match,marketKey:"home",marketLabel:"Esito 1",probability:forecast.probabilities.home,forecast,odds:null,sport:"football"};
-  }).filter(Boolean);
- const rowsByKey=new Map(calendarRows.map(row=>[fixtureKey(row.match),row]));
- selectedRows().forEach(row=>rowsByKey.set(fixtureKey(row.match),row));
- const allSelections=Array.from(rowsByKey.values()).map(row=>({
+ const allSelections=selectedRows().map(row=>({
   ...row,sport:row.sport||"football",
   marketLabel:row.marketLabel||"Esito 1",
   probability:Number.isFinite(Number(row.probability))?row.probability:null,
@@ -285,10 +275,10 @@ function updateSisalTransfer(){
  link.href=result.url;
  link.removeAttribute("aria-disabled");
  link.removeAttribute("tabindex");
- link.textContent="Apri Sisal con "+result.payload.items.length+" partite";
+ link.textContent="Trasferisci "+result.payload.items.length+" selezioni su Sisal";
  const skippedNote=result.skipped?(result.skipped===1?" 1 partita non trasferibile è stata esclusa.":" "+result.skipped+" partite non trasferibili sono state escluse."):"";
  const competitions=[...new Set(result.payload.items.map(item=>item.competition||"serie-a"))];
- status.textContent="Previsioni trasferite: "+result.payload.items.length+" partite in "+competitions.length+" competizioni. Il bridge non aggiunge né conferma giocate."+skippedNote;
+ status.textContent="Pronte "+result.payload.items.length+" selezioni effettivamente presenti nella schedina. Apri Sisal e verifica gli eventi: lo script mostra le previsioni ma non conferma la giocata."+skippedNote;
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
@@ -368,6 +358,48 @@ function renderSlip(){
  const details=target.querySelector("details");if(details)details.addEventListener("toggle",()=>{slipExpanded=details.open;});
 }
 function terminalStatus(status){return ["Vinta","Persa","Conclusa"].includes(status);}
+function ticketTransferUrl(ticket){
+ const bridge=window.MatchMindSisalBridge;
+ if(!bridge||!ticket||!Array.isArray(ticket.selections))return null;
+ const rows=ticket.selections.map(s=>({
+  match:{home:s.home,away:s.away,date:s.date,competition:s.competition||"serie-a",id:s.eventId||""},
+  sport:s.sport==="nba"?"nba":"football",marketKey:s.marketKey,marketLabel:s.market||s.marketKey,
+  probability:Number(s.probability),sampleEnough:true,historyCount:0,
+  predictionMethod:"MatchMind · schedina salvata",odds:s.odds||null,
+  predictions:[{marketKey:s.marketKey,probability:Number(s.probability)}]
+ }));
+ return bridge.createUrl(rows);
+}
+function editSavedTicket(ticket){
+ if(!ticket||!Array.isArray(ticket.selections))return;
+ const stakeInput=window.prompt("Puntata della schedina (€):",String(ticket.stake??""));
+ if(stakeInput===null)return;
+ const stake=Number(String(stakeInput).replace(",","."));
+ if(!Number.isFinite(stake)||stake<0){alert("Inserisci una puntata valida.");return;}
+ const edited=[];
+ for(const selection of ticket.selections){
+  const current=selection.marketKey||"";
+  const marketInput=window.prompt("Mercato per "+selection.home+" – "+selection.away+"\nChiavi: home, draw, away, dc1X, dcX2, dc12, over15, under15, over25, under25, over35, under35, bttsYes, bttsNo",current);
+  if(marketInput===null)return;
+  const market=marketInput.trim();
+  if(!window.MatchMindSisalBridge?.supportedMarket(market,selection.sport==="nba"?"nba":"football")){alert("Mercato non supportato: "+market);return;}
+  const oddInput=window.prompt("Quota per "+selection.home+" – "+selection.away+" (lascia vuoto se non disponibile):",String(selection.odds??""));
+  if(oddInput===null)return;
+  const oddText=oddInput.trim(),odds=oddText?Number(oddText.replace(",",".")):null;
+  if(odds!==null&&(!Number.isFinite(odds)||odds<=1||odds>1000)){alert("Quota non valida.");return;}
+  edited.push({...selection,marketKey:market,market:marketLabel(market),odds,status:"Da giocare",result:null});
+ }
+ ticket.stake=stake;ticket.selections=edited;
+ const probs=edited.map(s=>Number(s.probability));
+ ticket.probability=probs.length&&probs.every(p=>Number.isFinite(p)&&p>0&&p<1)?probs.reduce((a,b)=>a*b,1):null;
+ const odds=edited.map(s=>Number(s.odds));
+ ticket.totalOdds=odds.length&&odds.every(o=>Number.isFinite(o)&&o>1)?odds.reduce((a,b)=>a*b,1):null;
+ ticket.potentialWin=ticket.totalOdds!==null?stake*ticket.totalOdds:null;
+ ticket.netWin=ticket.potentialWin!==null?ticket.potentialWin-stake:null;
+ delete ticket.actualPayout;
+ save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();
+ $("archiveStatus").textContent="Schedina modificata e salvata. Ora puoi trasferirla su Sisal.";
+}
 function renderOpenTickets(){
  const target=$("openTickets");if(!target)return;
  const open=archive.filter(ticket=>(ticket.selections||[]).some(selection=>!terminalStatus(selection.status||"Da giocare")));
@@ -390,6 +422,8 @@ function renderOpenTickets(){
     return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+
    '<div class="settings-actions">' +
+    '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica</button>' +
+    '<button type="button" class="secondary" data-transfer-ticket="'+esc(ticket.id)+'">Apri su Sisal</button>' +
     '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
     '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
     '<button type="button" class="secondary" data-share="'+esc(ticket.id)+'">Condividi</button>' +
@@ -1038,6 +1072,8 @@ function initEvents(){
  });
  $("refreshArchive").addEventListener("click",updateArchive);
  ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
+  const editBtn=event.target.closest("[data-edit-ticket]");if(editBtn){const ticket=archive.find(x=>x.id===editBtn.dataset.editTicket);if(ticket)editSavedTicket(ticket);return;}
+  const transferBtn=event.target.closest("[data-transfer-ticket]");if(transferBtn){const ticket=archive.find(x=>x.id===transferBtn.dataset.transferTicket);const result=ticket&&ticketTransferUrl(ticket);if(result&&result.url){window.open(result.url,"_blank","noopener");$("archiveStatus").textContent="Dati inviati allo script Sisal. Verifica gli eventi e le quote prima di confermare.";}else $("archiveStatus").textContent="Trasferimento non disponibile: controlla i mercati della schedina.";return;}
   const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();return;}
   const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);return;}
   const winBtn=event.target.closest("[data-settle-win]");if(winBtn){
