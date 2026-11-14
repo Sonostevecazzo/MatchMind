@@ -99,7 +99,7 @@ test("app exports all calculated markets for each selected football match", () =
   assert.match(bets, /predictionMethod:row\.forecast\?\.predictionMethod/);
 });
 
-test("bridge preserves all predictions and sample metadata in version 3 payload", () => {
+test("bridge hands off through URL fragment to avoid Sisal query redirects", () => {\n  assert.match(bridge, /base \\+ "#mmplay=" \\+ encoded/);\n  assert.doesNotMatch(bridge, /base \\+ "\\?mmplay="/);\n});\n\ntest("saved tickets can be edited and Sisal receives only current slip selections", () => {\n  assert.match(bets, /function startEditTicket\\(ticketId\\)/);\n  assert.match(bets, /data-edit-ticket=/);\n  assert.match(bets, /function cancelEditTicket\\(\\)/);\n  assert.match(bets, /const allSelections=\\(Array\\.isArray\\(rows\\)\\?rows:\\[\\]\\)/);\n  assert.doesNotMatch(bets, /const calendarRows=\\(Array\\.isArray\\(fixtures\\)\\?fixtures:\\[\\]\\)/);\n});\n\ntest("bridge preserves all predictions and sample metadata in version 3 payload", () => {
   assert.match(bridge, /version: 3/);
   assert.match(bridge, /predictions,/);
   assert.match(bridge, /sampleEnough/);
