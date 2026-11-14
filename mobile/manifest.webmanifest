@@ -1,7 +1,7 @@
 {
   "name": "MatchMind — Sports Intelligence",
   "short_name": "MatchMind",
-  "description": "Partite, statistiche, analisi e schedine per calcio e NBA",
+  "description": "Partite, statistiche, analisi e schedine di calcio",
   "lang": "it-IT",
   "start_url": "./matches.html",
   "scope": "./",
