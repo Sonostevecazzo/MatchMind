@@ -273,12 +273,20 @@ async function getCalendar(request) {
   history.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
   if (!matches.length) return json({ configured: true, type: "calendar", matches: [], history: [], errors: entries.map(x => x.error).filter(Boolean), error: "Nessuna partita disponibile dalla fonte selezionata. Verificare il feed della competizione." }, 503);
   const counts = Object.fromEntries(entries.map(x => [x.id, x.matches.length]));
+  const statFields = ["ht", "at", "hs", "as", "hst", "ast", "hf", "af", "hc", "ac", "hy", "ay", "hr", "ar", "goalMinutes"];
+  const selectedMatches = entries[0].matches;
+  const coverage = {
+    fixturesAndResults: selectedMatches.length,
+    completed: selectedMatches.filter(match => match.status === "FT" && match.hg !== null && match.ag !== null).length,
+    statistics: Object.fromEntries(statFields.map(field => [field, selectedMatches.filter(match => field === "goalMinutes" ? Boolean(match[field]) : Number.isFinite(match[field])).length]))
+  };
   return json({
     configured: true, type: "calendar", season: year, matches, history,
     source: selected === "nations-league" ? "ESPN public scoreboard" : "Open Matchday CSV" + (entries[0].matches.some(match => String(match.source || "").includes("ESPN")) ? " + ESPN fallback" : ""), sourceMode: "multi-competition-public",
-    counts, errors: entries.filter(x => x.error).map(x => x.error).concat(historyErrors),
+    counts, coverage, historyScope: selected === "serie-a" ? "five-season-archive" : selected === "nations-league" ? "current-window-only" : "current-season-only",
+    errors: entries.filter(x => x.error).map(x => x.error).concat(historyErrors),
     updatedAt: new Date().toISOString(),
-    note: "Calendari multi-competizione da ESPN; archivio storico Serie A da openfootball. Le statistiche avanzate, le quote e le formazioni non vengono inventate."
+    note: "Calendario e risultati club da Open Matchday; ESPN è usato per Nations League e come fallback dove configurato. Lo storico pluristagionale è attualmente disponibile in modo verificato per la sola Serie A. Le statistiche non presenti restano null."
   });
 }
 export async function onRequestGet({ request }) { return getCalendar(request); }
