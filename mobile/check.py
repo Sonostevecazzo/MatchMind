@@ -19,8 +19,11 @@ assert '"serie-a"' in core and '"nations-league"' in core
 assert '"serie-a"' in api and '"nations-league"' in api
 assert 'slug: "uefa.nations"' in api
 assert "fetchDirectNationsLeague" in core and "fetchCompetitionFromEspn" in api and "slug: \"uefa.nations\"" in api
-assert "matchmind-multipage-cache-v15-nations-current-season" in core
+assert "matchmind-multipage-cache-v16-cornerflick-nations-history" in core
 # The GitHub Pages data path must retain an official Nations League fallback.
+assert "fetchCornerflickNationsHistory" in core and "fetchCornerflickNationsHistory" in api
+assert "cornerflick.com/football/leagues/nations-league/results/season.json" in core
+assert "cornerflick.com/football/leagues/nations-league/results/season.json" in api
 assert "function nationsLeagueOfficialFallback" in core
 assert 'const official=nationsLeagueOfficialFallback()' in core
 assert "Calendario futuro: fallback ufficiale UEFA" in core
