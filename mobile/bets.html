@@ -56,7 +56,7 @@
  <section class="section panel panel-pad" id="manualBuilder">
   <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Qui trovi le selezioni di calcio. Puoi modificare le quote, rimuovere gli eventi e salvare la schedina.</p></div></div>
   <div id="manualSlipSummary"><div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div></div>
-  <button id="saveManualSlip" type="button" class="primary" style="width:100%;margin-top:10px">Salva schedina</button>
+  <div class="manual-summary-actions"><button id="saveManualSlip" type="button" class="primary" style="flex:1;margin-top:10px">Salva schedina</button><button id="cancelEditTicket" type="button" class="secondary" style="margin-top:10px" hidden>Annulla modifica</button></div>
   <p class="bet-slip-helper">Salvare registra la schedina in MatchMind: non invia una scommessa al bookmaker.</p>
   <div class="sisal-transfer-controls">
    <a id="sendSelectionsToSisal" class="button-like primary sisal-transfer-link" aria-disabled="true" tabindex="-1" target="_blank" rel="noopener noreferrer">Apri Sisal con le selezioni</a>
@@ -64,17 +64,6 @@
   </div>
   <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
  </section>
- <details class="section panel panel-pad sisal-integration-box bet-sisal-details">
-  <summary><span>Collegamento con Sisal</span><small>Trasferimento manuale e installazione script</small></summary>
-  <div class="sisal-integration-content">
-   <h3>Evidenzia quote su Sisal</h3>
-   <p>MatchMind trasferisce le previsioni disponibili per le selezioni riconosciute. L'aggiunta delle quote e la conferma della giocata restano manuali.</p>
-   <div class="sisal-actions">
-    <a href="https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js" class="button primary" target="_blank" rel="noopener noreferrer">Installa MatchMind Sisal 3.0.7</a>
-    <small>Installa una sola copia dello script. Lo script mostra le percentuali ricevute dall'app: non clicca quote e non invia scommesse.</small>
-   </div>
-  </div>
- </details>
  </section>
  </div>
  <section id="betsTabLive" class="bets-tab-panel" role="tabpanel" hidden>
