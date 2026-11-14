@@ -19,7 +19,7 @@ assert '"serie-a"' in core and '"nations-league"' in core
 assert '"serie-a"' in api and '"nations-league"' in api
 assert 'slug: "uefa.nations"' in api
 assert "fetchDirectNationsLeague" in core and "fetchCompetitionFromEspn" in api and "slug: \"uefa.nations\"" in api
-assert "matchmind-multipage-cache-v14-nations-uefa-fallback" in core
+assert "matchmind-multipage-cache-v15-nations-current-season" in core
 # The GitHub Pages data path must retain an official Nations League fallback.
 assert "function nationsLeagueOfficialFallback" in core
 assert 'const official=nationsLeagueOfficialFallback()' in core
