@@ -87,9 +87,9 @@ test("il margine è normalizzato solo per mercati completi", () => {
 test("il costruttore rispetta il mercato selezionato senza riempire candidati mancanti", () => {
   const fixture = { id: "match-1", home: "Alpha", away: "Beta" };
   const offers = [
-    { key: "1x2_home", category: "1x2", odds: 2.5, probability: .5, expectedValue: .25, fairMarketProbability: .4 },
-    { key: "ou_over25", category: "goals", odds: 1.8, probability: .6, expectedValue: .08, fairMarketProbability: .55 },
-    { key: "btts_yes", category: "btts", odds: 1.9, probability: .55, expectedValue: .045, fairMarketProbability: .53 }
+    { key: "1x2_home", category: "1x2", odds: 2.5, probability: .5, expectedValue: .25, fairMarketProbability: .4, edge: .1 },
+    { key: "ou_over25", category: "goals", odds: 1.8, probability: .6, expectedValue: .08, fairMarketProbability: .55, edge: .05 },
+    { key: "btts_yes", category: "btts", odds: 1.9, probability: .55, expectedValue: .045, fairMarketProbability: .53, edge: .02 }
   ];
   const result = buildSuggestions([{ fixture, forecast: { available: true }, offers }], { category: "goals", minEv: .03, maxLegs: 2 });
   assert.equal(result.selections.length, 1);

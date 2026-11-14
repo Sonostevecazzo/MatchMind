@@ -61,7 +61,12 @@ const ALIASES = {
   awayGoals: ["away_goals", "ftag", "ag", "ft_away", "gol_trasferta", "goals_away"],
   competition: ["competition", "league", "division", "campionato", "competizione"]
 };
-function valueFor(row, aliases) { for (const key of aliases) if (row[key] !== undefined && String(row[key]).trim() !== "") return row[key]; return ""; }
+function valueFor(row, aliases) {
+  for (const key of aliases) if (row[key] !== undefined && String(row[key]).trim() !== "") return row[key];
+  const accepted = new Set(aliases.map(key => key.toLowerCase()));
+  for (const [key, value] of Object.entries(row)) if (accepted.has(key.toLowerCase()) && value !== undefined && String(value).trim() !== "") return value;
+  return "";
+}
 function numericScore(value) {
   if (value === null || value === undefined || String(value).trim() === "") return null;
   const number = Number(String(value).replace(",", "."));
