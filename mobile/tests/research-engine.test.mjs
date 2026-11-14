@@ -23,7 +23,7 @@ test("dossier uses only earlier fixtures from the same competition",()=>{
  const match={date:"2025-02-01",home:"Alpha",away:"Beta",competition:"serie-a"};
  const dossier=window.MatchMindResearch.buildDossier(match,rows,{updatedAt:Date.now(),source:"Open Matchday",historyScope:"five-season-archive"},{predictionMethod:"elo-1x2-poisson-goals"});
  assert.equal(dossier.historyCount,24);
- assert.equal(dossier.sourceCounts.open-matchday,24);
+ assert.equal(dossier.sourceCounts["open-matchday"],24);
  assert.equal(dossier.forecastMethod,"elo-1x2-poisson-goals");
  assert.equal(dossier.probabilityImpact,"none");
  assert.equal(dossier.home.last10.played,10);
