@@ -1,7 +1,7 @@
-const CACHE='matchmind-pwa-v142-20261114-serie-a-only';
+const CACHE='matchmind-pwa-v143-20261114-national-football-no-nba';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
- './team.html','./match.html','./players.html','./analysis-lab.html','./nba.html','./bets.html','./data.html','./settings.html',
+ './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
  './site.css','./mobile-readable.css','./mobile-readable.css?v=20261113-compact-nav-1','./matches-redesign.css','./matches-redesign.css?v=20261114-bullet-center-1','./site-core.js?v=20261114-research-coverage','./site-pages.js?v=20261114-bullet-center-1',
  './mobile-readable.css?v=20261104-analysis','./mobile-readable.css?v=20261111-navigation-nba-builder','./mobile-readable.css?v=20261104-open-data','./mobile-readable.css?v=20261103-0117','./mobile-readable.css?v=20261104-live','./mobile-readable.css?v=20261104-navigation-cleanup','./mobile-readable.css?v=20261104-public','./analysis.css','./live.css','./site-core.js','./site-pages.js','./elo.js','./tipsaudit.js',
  './rounds.js','./sports-switch.js?v=20261116-espn-window','./ai-engine.js','./research-engine.js','./bets-engine.js','./sisal-bridge.js','./bets.js','./bets.js?v=20261116-integrated-slip-2','./live.js','./notifications.js','./nba.js?v=20261116-espn-window','./nba-builder.js?v=20261116-espn-window','./nba.css?v=20261116-espn-window','./nba-engine.mjs',
