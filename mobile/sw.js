@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v144-20261114-nations-history-builder';
+const CACHE='matchmind-pwa-v145-20261114-nations-history-resilient';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
