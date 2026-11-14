@@ -96,6 +96,12 @@ test("app transfers only the market explicitly selected in MatchMind", () => {
   assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
 });
 
+test("transfer confirmation lists the markets selected in the MatchMind slip", () => {
+  assert.match(bets, /const selectedMarkets=\[\.\.\.new Set\(result\.payload\.items\.map/);
+  assert.match(bets, /Mercati scelti:/);
+  assert.match(bets, /badge MM ✓/);
+});
+
 test("the automatic builder treats the chosen market family as a hard filter", () => {
   assert.match(bets, /const allowedMarkets=ENGINE\(\)\.marketCandidates\(marketMode\)/);
   assert.match(bets, /const candidateKeys=allowedMarkets\.map\(item=>item\.key\)/);
