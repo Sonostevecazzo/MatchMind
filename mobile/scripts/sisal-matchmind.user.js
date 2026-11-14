@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Predictions
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.5
+// @version      3.0.6
 // @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint/*
 // @match        https://scommesse.sisal.it/*
 // @noframes
-// @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/recovery/nba-mainline-20261110/mobile/scripts/sisal-matchmind.user.js
-// @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/recovery/nba-mainline-20261110/mobile/scripts/sisal-matchmind.user.js
+// @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
+// @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
 // @icon         https://sonostevecazzo.github.io/MatchMind/icon.svg
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.0.5";
+  const VERSION = "3.0.6";
   const APP_URL = "https://recovery-nba-mainline-202611.matchmind-3te.pages.dev/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
@@ -441,7 +441,7 @@
   function eventRootCandidates(button, rootCache) {
     const roots = [];
     let current = button.parentElement;
-    for (let depth = 0; depth < 10 && current && current !== document.body; depth++, current = current.parentElement) {
+    for (let depth = 0; depth < 14 && current && current !== document.body; depth++, current = current.parentElement) {
       let metrics = rootCache.get(current);
       if (!metrics) {
         metrics = {
@@ -450,8 +450,8 @@
         };
         rootCache.set(current, metrics);
       }
-      if (!metrics.text || metrics.text.length > 6000) continue;
-      if (metrics.count > 0 && metrics.count <= 55) roots.push({ root: current, text: metrics.text });
+      if (!metrics.text || metrics.text.length > 10000) continue;
+      if (metrics.count > 0 && metrics.count <= 80) roots.push({ root: current, text: metrics.text });
     }
     return roots;
   }
