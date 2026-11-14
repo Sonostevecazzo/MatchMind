@@ -55,7 +55,7 @@ test("a missing selected competition feed returns a clear error instead of fake 
 test("75 Open Matchday competitions are registered and calendar-year leagues request the correct dataset", async t=>{
  const originalFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=originalFetch;});
  const source=await (await import("node:fs/promises")).readFile(new URL("../functions/api/competition-calendar.js",import.meta.url),"utf8");
- const feedCount=[...source.matchAll(/feed: "[A-Z0-9_]+"/g)].length;
+ const feedCount=[...source.matchAll(/feed: "[A-Za-z0-9_-]+"/g)].length;
  assert.equal(feedCount,75,"all 75 competitions in the upstream 2026/27 index must have a feed");
  const seen=[];
  globalThis.fetch=async input=>{
