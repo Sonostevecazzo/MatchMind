@@ -13,7 +13,7 @@ const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.0\.6$/m);
+  assert.match(script, /^\/\/ @version\s+3\.0\.7$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
@@ -40,7 +40,7 @@ test("Sisal consumes prediction arrays from the app and supports Italian team al
   assert.match(script, /row\.predictions/);
   assert.match(script, /netherlands: \["netherlands", "holland", "the netherlands", "olanda", "paesi bassi", "nederland"\]/);
   assert.match(script, /greece: \["greece", "grecia", "hellas"\]/);
-  assert.match(script, /function includesTeam\(text, name\)/);
+  assert.match(script, /function includesTeam\(text, name\)/);\n   assert.match(script, /function eventText\(root\)/);\n   assert.match(script, /data-home-team/);
   assert.match(script, /function eventRootCandidates\(button, rootCache\)/);
 });
 
