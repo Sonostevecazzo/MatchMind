@@ -184,8 +184,10 @@
 
   async function fetchDirectCalendar(){
     const y=seasonStart();
+    const selectedId=getSelectedCompetition();
     const matches=[],history=[];
-    const jobs=LEAGUE_SOURCES.map(async league=>{
+    const selectedFeeds=LEAGUE_SOURCES.filter(league=>league.id===selectedId);
+    const jobs=selectedFeeds.map(async league=>{
       const seasonYear=league.calendarYear?new Date().getFullYear():y;
       const code=league.calendarYear?String(seasonYear):seasonCode(seasonYear);
       const base=DATA_ROOT+league.folder+'/';
@@ -224,11 +226,13 @@
     });
     const histSettled=await Promise.allSettled(histJobs);
     histSettled.forEach(result=>{if(result.status==='fulfilled')history.push(...result.value);});
-    try{
-      const nations=await fetchDirectNationsLeague(y);
-      matches.push(...nations);
-      history.push(...nations.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));
-    }catch(error){feedErrors.push("Nations League: "+String(error&&error.message||error));}
+    if(selectedId==="nations-league"){
+      try{
+        const nations=await fetchDirectNationsLeague(y);
+        matches.push(...nations);
+        history.push(...nations.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));
+      }catch(error){feedErrors.push("Nations League: "+String(error&&error.message||error));}
+    }
     matches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
     history.sort((a,b)=>a.date.localeCompare(b.date));
     if(!matches.length)throw new Error('I dataset pubblici non contengono partite accessibili per questa stagione.');
