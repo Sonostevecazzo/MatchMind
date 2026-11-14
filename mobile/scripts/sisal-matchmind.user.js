@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Predictions
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.7
+// @version      3.0.8
 // @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint/*
 // @match        https://scommesse.sisal.it/*
 // @noframes
-// @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
-// @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
+// @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/fix/sisal-slip-workflow-20261114/mobile/scripts/sisal-matchmind.user.js
+// @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/fix/sisal-slip-workflow-20261114/mobile/scripts/sisal-matchmind.user.js
 // @icon         https://sonostevecazzo.github.io/MatchMind/icon.svg
 // @grant        GM_getValue
 // @grant        GM_setValue
