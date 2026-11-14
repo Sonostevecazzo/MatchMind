@@ -257,16 +257,22 @@
       const y=seasonStart(),cached=readCache();
       const selected=getSelectedCompetition();
       const cacheCoversSelected=Boolean(cached&&Array.isArray(cached.matches)&&cached.matches.some(match=>match&&match.competition===selected));
-      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&cacheCoversSelected&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
+      const cacheHasUpcoming=Boolean(cached&&Array.isArray(cached.matches)&&cached.matches.some(match=>match&&match.competition===selected&&upcoming(match)));
+      const directOnly=location.hostname.endsWith('github.io');
+      if(!force&&cached&&cached.season===y&&Array.isArray(cached.matches)&&cached.matches.length&&cacheCoversSelected&&cacheHasUpcoming&&Date.now()-Number(cached.updatedAt||0)<15*60*1000){data=cached;return data;}
       let payload=null;
-      try{
-        const requestedCompetition=getSelectedCompetition();
-        const response=await fetch('./api/competition-calendar?competition='+encodeURIComponent(requestedCompetition),{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(90000)});
-        if(response.ok){
-          const body=await response.json().catch(()=>null);
-          if(body&&Array.isArray(body.matches)&&body.matches.length)payload=body;
-        }
-      }catch(_){}
+      // GitHub Pages cannot execute Cloudflare Functions. Use the public CSV
+      // calendar directly there instead of waiting on the unavailable /api route.
+      if(!directOnly){
+        try{
+          const requestedCompetition=getSelectedCompetition();
+          const response=await fetch('./api/competition-calendar?competition='+encodeURIComponent(requestedCompetition),{headers:{Accept:'application/json'},cache:'no-store',signal:AbortSignal.timeout(20000)});
+          if(response.ok){
+            const body=await response.json().catch(()=>null);
+            if(body&&Array.isArray(body.matches)&&body.matches.length)payload=body;
+          }
+        }catch(_){}
+      }
 
       if(!payload){
         try{
