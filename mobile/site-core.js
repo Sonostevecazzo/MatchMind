@@ -107,11 +107,14 @@
   }
   const DATA_ROOT='https://raw.githubusercontent.com/oladeeayo/open-matchday/master/data/';
   const HISTORY_ROOT='https://raw.githubusercontent.com/openfootball/football.json/master/';
-  const LEAGUE_SOURCES=[
-    {id:'serie-a',folder:'ITA_1_serie-a',history:true},
-    {id:'champions-league',folder:'UEFA_1_champions-league',history:false},
-    {id:'europa-league',folder:'UEFA_1_europa-league',history:false}
-  ];
+  const LEAGUE_SOURCES=Object.values(COMPETITIONS)
+    .filter(competition=>competition&&competition.feed)
+    .map(competition=>({
+      id:competition.id,
+      folder:competition.feed,
+      calendarYear:Boolean(competition.calendarYear),
+      history:competition.id==="serie-a"
+    }));
 
   function parseCsvRows(input){
     const rows=[];let row=[],field='',quoted=false;
@@ -180,35 +183,38 @@
   }
 
   async function fetchDirectCalendar(){
-    const y=seasonStart(),code=seasonCode(y);
+    const y=seasonStart();
+    const matches=[],history=[];
     const jobs=LEAGUE_SOURCES.map(async league=>{
+      const seasonYear=league.calendarYear?new Date().getFullYear():y;
+      const code=league.calendarYear?String(seasonYear):seasonCode(seasonYear);
       const base=DATA_ROOT+league.folder+'/';
       const [resultsCsv,fixturesCsv]=await Promise.all([
-        fetch(base+'results_'+code+'.csv',{signal:AbortSignal.timeout(15000)}).then(r=>r.ok?r.text():'').catch(()=>''),
-        fetch(base+'fixtures_'+code+'.csv',{signal:AbortSignal.timeout(15000)}).then(r=>r.ok?r.text():'').catch(()=>'')
+        fetch(base+'results_'+code+'.csv',{headers:{Accept:'text/plain'},signal:AbortSignal.timeout(18000)}).then(r=>r.ok?r.text():'').catch(()=>''),
+        fetch(base+'fixtures_'+code+'.csv',{headers:{Accept:'text/plain'},signal:AbortSignal.timeout(18000)}).then(r=>r.ok?r.text():'').catch(()=>'')
       ]);
       const results=resultsCsv?parseCsvRows(resultsCsv).map(r=>normalizeMatchRow(r,league.id,true)).filter(m=>m.date&&m.home&&m.away):[];
       const fixtures=fixturesCsv?parseCsvRows(fixturesCsv).map(r=>normalizeMatchRow(r,league.id,false)).filter(m=>m.date&&m.home&&m.away):[];
       return {league,results,fixtures};
     });
     const settled=await Promise.allSettled(jobs);
-    const matches=[],history=[];
+    const feedErrors=[];
     for(let i=0;i<settled.length;i++){
-      const s=settled[i];
-      if(s.status==='fulfilled'){
-        matches.push(...s.value.results,...s.value.fixtures);
-        history.push(...s.value.results);
-      }
+      const result=settled[i];
+      if(result.status!=='fulfilled'){feedErrors.push(String(result.reason&&result.reason.message||result.reason));continue;}
+      const {league,results,fixtures}=result.value;
+      matches.push(...results,...fixtures);
+      if(league.history)history.push(...results);
     }
-    const histJobs=[y-1,y-2,y-3].map(async year=>{
+    const histJobs=[y-1,y-2,y-3,y-4,y-5].map(async year=>{
       const folder=year+'-'+String(year+1).slice(-2);
-      const res=await fetch(HISTORY_ROOT+folder+'/it.1.json',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+      const res=await fetch(HISTORY_ROOT+folder+'/it.1.json',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)}).catch(()=>null);
       if(!res||!res.ok)return [];
       const payload=await res.json().catch(()=>({}));
       return (payload.matches||[]).map(row=>{
         const ft=row.score?.ft||null,ht=row.score?.ht||null,done=Array.isArray(ft)&&ft.length>=2&&ft[0]!==null&&ft[1]!==null;
         return {
-          id:null,date:String(row.date||''),time:String(row.time||''),round:num(String(row.round||'').match(/\d+/)?.[0]),
+          id:null,date:String(row.date||''),time:String(row.time||''),round:num(String(row.round||'').match(/\\d+/)?.[0]),
           stage:String(row.round||''),home:String(row.team1||''),away:String(row.team2||''),
           hg:done?num(ft[0]):null,ag:done?num(ft[1]):null,ht:Array.isArray(ht)?num(ht[0]):null,at:Array.isArray(ht)?num(ht[1]):null,
           hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,
@@ -217,18 +223,20 @@
       }).filter(m=>m.date&&m.home&&m.away&&m.hg!==null&&m.ag!==null);
     });
     const histSettled=await Promise.allSettled(histJobs);
-    histSettled.forEach(r=>{if(r.status==='fulfilled')history.push(...r.value);});
-    try{const nations=await fetchDirectNationsLeague(y);matches.push(...nations);history.push(...nations.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));}catch(_){/* Optional public national-team feed. */}
-
+    histSettled.forEach(result=>{if(result.status==='fulfilled')history.push(...result.value);});
+    try{
+      const nations=await fetchDirectNationsLeague(y);
+      matches.push(...nations);
+      history.push(...nations.filter(m=>m.status==="FT"&&m.hg!==null&&m.ag!==null));
+    }catch(error){feedErrors.push("Nations League: "+String(error&&error.message||error));}
     matches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
     history.sort((a,b)=>a.date.localeCompare(b.date));
-
     if(!matches.length)throw new Error('I dataset pubblici non contengono partite accessibili per questa stagione.');
+    const counts=Object.fromEntries(LEAGUE_SOURCES.map(league=>[league.id,matches.filter(match=>match.competition===league.id).length]));
     return {
-      matches,history,season:y,
-      source:'open-matchday + openfootball + ESPN Nations League',
-      updatedAt:Date.now(),
-      sourceMode:'public-dataset-direct'
+      matches,history,season:y,counts,errors:feedErrors,
+      source:'open-matchday (catalogo completo) + openfootball + ESPN Nations League',
+      updatedAt:Date.now(),sourceMode:'public-dataset-direct'
     };
   }
 
