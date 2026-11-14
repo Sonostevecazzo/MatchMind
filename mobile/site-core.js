@@ -1,8 +1,9 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v10-serie-a-verified';
+  const CACHE_KEY='matchmind-multipage-cache-v11-serie-a-nations-20261114';
   const COMPETITIONS = {
-    "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false }
+    "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false },
+    "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, calendarYear: true }
   };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
