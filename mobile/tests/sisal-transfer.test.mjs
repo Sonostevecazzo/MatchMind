@@ -17,7 +17,7 @@ test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () =>
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
-  assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/recovery\/nba-mainline-20261110\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
+  assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.doesNotMatch(script, /@match\s+https:\/\/\*\.sisal\.it/);
   assert.doesNotMatch(script, /@match\s+https:\/\/.*matchmind/);
 });
