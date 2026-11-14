@@ -163,7 +163,7 @@ async function getCalendar(request) {
   const startDate = new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()-2));
   const endDate = new Date(startDate); endDate.setUTCDate(endDate.getUTCDate()+92);
   const entries = await Promise.all([[selected,competition]].map(async ([id, config]) => {
-    try { return { id, matches: await fetchCompetition(id, config, startDate, endDate), error: null }; }
+    try { const dataStart = id === "nations-league" ? new Date(Date.UTC(year-2,8,1)) : startDate; return { id, matches: await fetchCompetition(id, config, dataStart, endDate), error: null }; }
     catch (error) { return { id, matches: [], error: String(error?.message || error) }; }
   }));
   const matches = entries.flatMap(x => x.matches).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
