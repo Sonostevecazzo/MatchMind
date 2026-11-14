@@ -60,7 +60,8 @@
    if(h.played>=10)homeSamples++;if(a.played>=10)awaySamples++;
    if(prior.some(row=>["hs","as","hc","ac","hy","ay"].some(field=>finite(row[field])!==null)))statRows++;
   }
-  return {competition:competition||"serie-a",played:played.length,walkForwardCases:eligible,adequateSamples:complete,adequateSampleRate:eligible?complete/eligible:0,fixturesWithAdvancedStats:statRows,advancedStatsRate:played.length?statRows/played.length:0,method:"chronological evidence-coverage audit",probabilitiesChanged:false};
+  const currentModel=root.MM&&typeof root.MM.backtest==="function"?root.MM.backtest(played):null;
+  return {competition:competition||"serie-a",played:played.length,walkForwardCases:eligible,adequateSamples:complete,adequateSampleRate:eligible?complete/eligible:0,fixturesWithAdvancedStats:statRows,advancedStatsRate:played.length?statRows/played.length:0,currentModel,method:"chronological evidence-coverage audit",probabilitiesChanged:false};
  }
  root.MatchMindResearch={version:"local-research-v1",buildDossier,simulate,summarize};
 })(window);
