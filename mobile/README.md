@@ -68,6 +68,14 @@ The current model improved all three aggregate metrics in this specific five-sea
 
 A controlled venue-split experiment was also evaluated on the same 1,733 fixtures. It used each home team's prior home matches and each away team's prior away matches, with shrinkage toward league averages (five pseudo-matches). It did not improve on the current model: accuracy 50.09%, log loss 1.0213 and Brier 0.6113. It was therefore not adopted. This is an important negative result: added complexity is not automatically an improvement.
 
+### Current OpenFootball replay and backtest correction
+
+A fresh local replay was run against the five OpenFootball Serie A season files (2021-08-21 to 2026-05-24). The files contained 1,854 completed score rows; 1,687 chronological forecasts met the current sample gates. With the current Poisson-only 1X2 replay, accuracy was 51.63%, multiclass log loss 1.0080 and Brier 0.6020; the Laplace-smoothed historical baseline scored 41.26%, 1.0828 and 0.6560. This is a separate replay from the older qhtexas benchmark above and should not be compared as if the samples were identical.
+
+The replay also exposed and fixed a backtest defect: the forecast object includes goal-market probabilities (BTTS and totals), so ranking every key incorrectly allowed a goal market to be counted as a 1X2 winner. The accuracy calculation now ranks only home/draw/away. The regression test prevents this from returning.
+
+The first Research Engine shadow audit on the same 1,854-result archive found 1,824 walk-forward cases with at least 30 prior league results; 1,687 (92.49%) also met the two-team ten-match sample gate. No advanced match-stat fields were present in that historical OpenFootball archive, so the historical advanced-stat coverage was 0%. The Research Engine did not alter probabilities.
+
 The Intelligence page now reports calibration by 1/X/2 outcome, a Wilson interval for accuracy, and season-by-season diagnostics. The in-app backtest explicitly bypasses any locally stored adaptive calibration and evaluates the unchanged Poisson baseline, avoiding contamination from a model trained on the same archive. Adaptive calibration is evaluated separately on its chronological holdout. The in-app backtest is recomputed from the currently loaded archive, so its results may differ if the provider changes or extends the data. This benchmark is a historical diagnostic, not a guarantee of future performance, a bookmaker comparison, or a profitability test. The public dataset's historical availability and completeness are external dependencies.
 
 
