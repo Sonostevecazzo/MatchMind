@@ -20,7 +20,7 @@
   "use strict";
 
   const VERSION = "3.0.7";
-  const APP_URL = "https://recovery-nba-mainline-202611.matchmind-3te.pages.dev/bets.html";
+  const APP_URL = "https://sonostevecazzo.github.io/MatchMind/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
   const BADGE_CLASS = "mm-sisal-prediction-v3";
