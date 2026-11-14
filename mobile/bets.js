@@ -181,7 +181,7 @@ function selectedRows(){
   const label=side==="home"?"Vince casa":"Vince trasferta";
   const match={id,home:String(p.home),away:String(p.away),date:String(p.date||String(p.start||"").slice(0,10)),time:"",start:String(p.start||""),competition:"nba",sport:"nba"};
   const odds=Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
-  return{match,marketKey,marketLabel:label,probability,forecast:null,odds,bookmaker:p.bookmaker||null,sport:"nba",removeKey:"nba|"+id,nbaPickId:id};
+  return{match,marketKey,marketLabel:label,probability,forecast:null,odds,bookmaker:p.bookmaker||null,sport:"nba",removeKey:"nba|"+id,nbaPickId:id,sampleEnough:p.sampleEnough===true,historyCount:Number(p.historyCount)||0,predictionMethod:p.predictionMethod||"NBA Elo"};
  }).filter(Boolean);
  return footballRows.concat(nbaRows);
 }
@@ -220,7 +220,7 @@ function exportSisalPredictions(row){
  if(row.sport==="nba"){
   return Number.isFinite(row.probability)?[{
    marketKey:row.marketKey,label:row.marketLabel,probability:row.probability,
-   sampleEnough:true,historyCount:0,model:"NBA Elo"
+   sampleEnough:row.sampleEnough===true,historyCount:Number(row.historyCount)||0,model:row.predictionMethod||"NBA Elo"
   }]:[];
  }
  const forecast=row.forecast;
@@ -257,9 +257,9 @@ function updateSisalTransfer(){
   marketLabel:row.marketLabel||"Esito 1",
   probability:Number.isFinite(Number(row.probability))?row.probability:null,
   predictions:exportSisalPredictions(row),
-  sampleEnough:row.forecast?.sampleEnough===true,
-  historyCount:Number(row.forecast?.historyCount)||0,
-  predictionMethod:row.forecast?.predictionMethod||(row.sport==="nba"?"NBA Elo":"MatchMind")
+  sampleEnough:row.sampleEnough===true||row.forecast?.sampleEnough===true,
+  historyCount:Number(row.historyCount??row.forecast?.historyCount)||0,
+  predictionMethod:row.predictionMethod||row.forecast?.predictionMethod||(row.sport==="nba"?"NBA Elo":"MatchMind")
  }));
  const result=bridge?bridge.createUrl(allSelections):null;
  if(!result||!result.url){
@@ -364,8 +364,8 @@ function ticketTransferUrl(ticket){
  const rows=ticket.selections.map(s=>({
   match:{home:s.home,away:s.away,date:s.date,competition:s.competition||"serie-a",id:s.eventId||""},
   sport:s.sport==="nba"?"nba":"football",marketKey:s.marketKey,marketLabel:s.market||s.marketKey,
-  probability:Number(s.probability),sampleEnough:true,historyCount:0,
-  predictionMethod:"MatchMind · schedina salvata",odds:s.odds||null,
+  probability:Number(s.probability),sampleEnough:s.sampleEnough===true,historyCount:Number(s.historyCount)||0,
+  predictionMethod:s.predictionMethod||"MatchMind · schedina salvata",odds:s.odds||null,
   predictions:[{marketKey:s.marketKey,probability:Number(s.probability)}]
  }));
  return bridge.createUrl(rows);
@@ -380,10 +380,12 @@ function startEditTicket(ticket){
   sport:"nba",id:selection.eventId,eventId:selection.eventId,home:selection.home,away:selection.away,
   date:selection.date,start:selection.start||"",side:selection.side||"away",
   marketKey:selection.marketKey||("nbaMoneyline:"+(selection.side||"away")),
-  probability:selection.probability,odds:selection.odds,bookmaker:selection.bookmaker,competition:"nba"
+  probability:selection.probability,odds:selection.odds,bookmaker:selection.bookmaker,competition:"nba",
+  sampleEnough:selection.sampleEnough===true,historyCount:Number(selection.historyCount)||0,predictionMethod:selection.predictionMethod||"NBA Elo"
  }):({
   competition:selection.competition||"serie-a",date:selection.date,home:selection.home,away:selection.away,
-  marketKey:selection.marketKey,probability:selection.probability,odds:selection.odds,bookmaker:selection.bookmaker
+  marketKey:selection.marketKey,probability:selection.probability,odds:selection.odds,bookmaker:selection.bookmaker,
+  sampleEnough:selection.sampleEnough===true,historyCount:Number(selection.historyCount)||0,predictionMethod:selection.predictionMethod||"MatchMind"
  }));
  save(PICKS_KEY,restored);
  picks=restored.filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
@@ -560,6 +562,9 @@ function saveCurrentSlip(){
    market:x.marketLabel,
    marketKey:x.marketKey,
    probability:x.probability,
+   sampleEnough:x.sport==="nba"?(x.sampleEnough===true):(x.forecast?.sampleEnough===true),
+   historyCount:Number(x.historyCount??x.forecast?.historyCount)||0,
+   predictionMethod:x.predictionMethod||x.forecast?.predictionMethod||(x.sport==="nba"?"NBA Elo":"MatchMind"),
    odds:x.odds||null,
    fairOdds:ENGINE().fairOdds(x.probability),
 bookmaker:x.bookmaker||null,
