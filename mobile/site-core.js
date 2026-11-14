@@ -304,6 +304,9 @@
         source:payload.source||'openfootball',
         updatedAt:Date.now(),
         sourceMode:payload.sourceMode||'public-dataset',
+        coverage:payload.coverage&&typeof payload.coverage==='object'?payload.coverage:null,
+        historyScope:payload.historyScope||null,
+        counts:payload.counts&&typeof payload.counts==='object'?payload.counts:{},
         errors:Array.isArray(payload.errors)?payload.errors:[],
         nationsLeagueError:payload.nationsLeagueError||null
       };
