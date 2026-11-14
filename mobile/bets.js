@@ -250,9 +250,21 @@ function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
  const bridge=window.MatchMindSisalBridge;
- const allSelections=selectedRows().map(row=>({
-  ...row, sport:row.sport||"football",
-  marketLabel:row.marketLabel,
+ // Export the loaded upcoming calendar, not only manually selected picks.
+ // The v3 compact payload is tested for 11 fixtures and mobile URL limits.
+ const calendarRows=(Array.isArray(fixtures)?fixtures:[])
+  .filter(match=>match&&match.home&&match.away&&match.date&&(!match.status||!["FT","AET","PEN","CANC","POSTP"].includes(String(match.status).toUpperCase())))
+  .slice(0,11)
+  .map(match=>{
+   const forecast=getForecast(match);
+   if(!forecast||!forecast.probabilities)return null;
+   return {match,marketKey:"home",marketLabel:"Esito 1",probability:forecast.probabilities.home,forecast,odds:null,sport:"football"};
+  }).filter(Boolean);
+ const rowsByKey=new Map(calendarRows.map(row=>[fixtureKey(row.match),row]));
+ selectedRows().forEach(row=>rowsByKey.set(fixtureKey(row.match),row));
+ const allSelections=Array.from(rowsByKey.values()).map(row=>({
+  ...row,sport:row.sport||"football",
+  marketLabel:row.marketLabel||"Esito 1",
   probability:Number.isFinite(Number(row.probability))?row.probability:null,
   predictions:exportSisalPredictions(row),
   sampleEnough:row.forecast?.sampleEnough===true,
@@ -267,18 +279,17 @@ function updateSisalTransfer(){
   link.textContent="Aggiungi selezioni supportate";
   if(!bridge)status.textContent="Ponte Sisal non caricato. Ricarica la pagina e riprova.";
   else if(result.skipped)status.textContent=(result.skipped===1?"1 selezione non trasferibile":result.skipped+" selezioni non trasferibili")+": il mercato non è supportato o i dati della partita sono incompleti.";
-  else status.textContent="Aggiungi almeno una selezione singola supportata per attivare il trasferimento.";
+  else status.textContent="Nessuna partita con previsioni disponibili da trasferire.";
   return;
  }
  link.href=result.url;
  link.removeAttribute("aria-disabled");
  link.removeAttribute("tabindex");
- link.textContent="Apri Sisal con "+result.payload.items.length+" selezion"+(result.payload.items.length===1?"e":"i");
- const skippedNote=result.skipped?(result.skipped===1?" 1 selezione non trasferibile è stata esclusa.":" "+result.skipped+" selezioni non trasferibili sono state escluse."):"";
+ link.textContent="Apri Sisal con "+result.payload.items.length+" partite";
+ const skippedNote=result.skipped?(result.skipped===1?" 1 partita non trasferibile è stata esclusa.":" "+result.skipped+" partite non trasferibili sono state escluse."):"";
  const competitions=[...new Set(result.payload.items.map(item=>item.competition||"serie-a"))];
- status.textContent="Trasferimento pronto: "+result.payload.items.length+" selezioni in "+competitions.length+" competizioni. Apri l'evento corrispondente su Sisal, verifica esito e quota e aggiungi manualmente ogni selezione; il bridge non conferma giocate."+skippedNote;
+ status.textContent="Previsioni trasferite: "+result.payload.items.length+" partite in "+competitions.length+" competizioni. Il bridge non aggiunge né conferma giocate."+skippedNote;
 }
-
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
  const allPicks=readPicks(),count=$("betWorkspacePickCount"),saveButton=$("saveManualSlip");
