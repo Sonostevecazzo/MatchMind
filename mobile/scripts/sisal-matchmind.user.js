@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Predictions
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.6
+// @version      3.0.7
 // @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.0.6";
+  const VERSION = "3.0.7";
   const APP_URL = "https://recovery-nba-mainline-202611.matchmind-3te.pages.dev/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
@@ -229,10 +229,32 @@
 
   function includesTeam(text, name) {
     const haystack = " " + normalize(text) + " ";
+    const compactHaystack = compact(text);
     return teamAliases(name).some(alias => {
-      const needle = " " + normalize(alias) + " ";
-      return needle.length > 2 && haystack.includes(needle);
+      const normalized = normalize(alias);
+      if (!normalized) return false;
+      const needle = " " + normalized + " ";
+      if (needle.length > 2 && haystack.includes(needle)) return true;
+      // Sisal sometimes exposes team names in aria-labels, image alt text or
+      // data attributes without preserving spaces in the visible card text.
+      const compactAlias = compact(alias);
+      return compactAlias.length >= 4 && compactHaystack.includes(compactAlias);
     });
+  }
+
+  function eventText(root) {
+    const parts = [root.innerText || root.textContent || ""];
+    const nodes = root.querySelectorAll(
+      "[aria-label],[title],[data-team],[data-team-name],[data-home-team],[data-away-team],img[alt],svg[aria-label]"
+    );
+    nodes.forEach(node => {
+      ["aria-label", "title", "data-team", "data-team-name", "data-home-team", "data-away-team", "alt"]
+        .forEach(attr => {
+          const value = node.getAttribute(attr);
+          if (value) parts.push(value);
+        });
+    });
+    return parts.join(" ").slice(0, 16000);
   }
 
   function sameEvent(text, item) {
@@ -445,12 +467,12 @@
       let metrics = rootCache.get(current);
       if (!metrics) {
         metrics = {
-          text: current.innerText || current.textContent || "",
+          text: eventText(current),
           count: current.querySelectorAll("button,[role='button'],a[role='button'],[data-outcome]").length
         };
         rootCache.set(current, metrics);
       }
-      if (!metrics.text || metrics.text.length > 10000) continue;
+      if (!metrics.text || metrics.text.length > 16000) continue;
       if (metrics.count > 0 && metrics.count <= 80) roots.push({ root: current, text: metrics.text });
     }
     return roots;
