@@ -18,6 +18,7 @@ for name in required:
   assert "sports-switch.js" in html and "nba.js" in html and 'id="sportSwitchMount"' in html and 'id="nbaIntegratedView"' in html
  if name=="analysis-lab.html":
   assert 'id="analysisOverview"' in html and "bets-engine.js" in html
+  assert "research-engine.js" in html
  if name!="index.html": assert "site-core.js" in html and "mobile-readable.css" in html
  if name=="bets.html":
   assert "bets-engine.js" in html and "sisal-bridge.js" in html and "bets.js" in html
