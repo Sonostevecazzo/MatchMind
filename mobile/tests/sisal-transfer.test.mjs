@@ -104,10 +104,13 @@ test("bridge uses a URL fragment for Sisal handoff", () => {
   assert.doesNotMatch(bridge, /base \+ "\?mmplay="/);
 });
 
-test("closed archive tickets expose edit and Sisal transfer actions", () => {
+test("closed archive tickets expose full edit and Sisal transfer actions", () => {
   assert.match(bets, /data-edit-ticket=/);
   assert.match(bets, /data-transfer-ticket=/);
-  assert.match(bets, /editSavedTicket\(ticket\)/);
+  assert.match(bets, /function startEditTicket\(ticket\)/);
+  assert.match(bets, /function cancelEditTicket\(\)/);
+  assert.match(bets, /editingTicketId/);
+  assert.match(bets, /archive\[index\]=item/);
   assert.match(bets, /ticketTransferUrl\(ticket\)/);
 });
 
