@@ -260,8 +260,9 @@ function updateSisalTransfer(){
  link.removeAttribute("tabindex");
  link.textContent="Trasferisci "+result.payload.items.length+" selezioni su Sisal";
  const skippedNote=result.skipped?(result.skipped===1?" 1 partita non trasferibile è stata esclusa.":" "+result.skipped+" partite non trasferibili sono state escluse."):"";
- const competitions=[...new Set(result.payload.items.map(item=>item.competition||"serie-a"))];
- status.textContent="Pronte "+result.payload.items.length+" selezioni effettivamente presenti nella schedina. Apri Sisal e verifica gli eventi: lo script mostra le previsioni ma non conferma la giocata."+skippedNote;
+ const selectedMarkets=[...new Set(result.payload.items.map(item=>item.label||item.marketKey))];
+ const marketSummary=selectedMarkets.slice(0,4).join(", ")+(selectedMarkets.length>4?" e altri "+(selectedMarkets.length-4):"");
+ status.textContent="Trasferite "+result.payload.items.length+" selezioni. Mercati scelti: "+marketSummary+". Su Sisal vedrai il badge MM ✓ accanto al mercato corrispondente; verifica sempre evento e quota."+skippedNote;
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
