@@ -139,7 +139,7 @@ function ticketCard(t) {
 function archiveView() {
   const open=s.tickets.filter(t=>t.status==="open"),done=s.tickets.filter(t=>t.status==="won"||t.status==="lost");
   const staked=done.reduce((n,t)=>n+Number(t.stake||0),0),net=done.reduce((n,t)=>n+Number(t.netResult||0),0);
-  return '<div class="page-intro"><div><span class="kicker">TICKET JOURNAL</span><h2>Misura, non ricordare a memoria.</h2><p>Modifica le schedine aperte, registra l'esito e controlla il rendimento storico.</p></div></div>'+
+  return '<div class="page-intro"><div><span class="kicker">TICKET JOURNAL</span><h2>Misura, non ricordare a memoria.</h2><p>Modifica le schedine aperte, registra l&#39;esito e controlla il rendimento storico.</p></div></div>'+
   '<div class="metric-grid">'+metric("Schedine aperte",open.length,"da regolare")+metric("Schedine regolate",done.length,"vittorie e sconfitte")+metric("Risultato netto",eur(net),"su "+eur(staked),net>=0?"positive":"negative")+metric("ROI registrato",staked?percent(net/staked):"—","solo ticket regolati",net>=0?"positive":"negative")+'</div>'+
   '<section class="panel">'+panelHead("APERTE","Schedine da seguire",'<span class="count-badge">'+open.length+'</span>')+(open.length?open.map(ticketCard).join(""):empty("Nessuna schedina aperta","Aggiungi una selezione dall'analisi o dal costruttore.","go-analysis","Apri analisi"))+'</section>'+
   '<section class="panel">'+panelHead("STORICO","Schedine regolate",'<span class="count-badge">'+done.length+'</span>')+(done.length?done.slice().reverse().map(ticketCard).join(""):'<p class="muted">Gli esiti registrati compariranno qui.</p>')+'</section>';
