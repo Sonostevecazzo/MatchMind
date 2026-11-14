@@ -57,8 +57,8 @@ const ALIASES = {
   date: ["date", "data", "match_date", "kickoff"],
   home: ["home", "hometeam", "home_team", "squadra_casa", "team_home"],
   away: ["away", "awayteam", "away_team", "squadra_trasferta", "team_away"],
-  homeGoals: ["home_goals", "fthg", "hg", "ft_home", "gol_casa", "goals_home"],
-  awayGoals: ["away_goals", "ftag", "ag", "ft_away", "gol_trasferta", "goals_away"],
+  homeGoals: ["home_goals", "homegoals", "fthg", "hg", "ft_home", "gol_casa", "goals_home"],
+  awayGoals: ["away_goals", "awaygoals", "ftag", "ag", "ft_away", "gol_trasferta", "goals_away"],
   competition: ["competition", "league", "division", "campionato", "competizione"]
 };
 function valueFor(row, aliases) {
