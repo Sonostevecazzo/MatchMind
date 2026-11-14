@@ -78,7 +78,7 @@
     "aus-1-a-league": { id: "aus-1-a-league", name: "A-Leagues", country: "Australia", kind: "club", logo: null, fallback: "A", feed: "AUS_1_a-league", calendarYear: false },
     "chn-1-super-league": { id: "chn-1-super-league", name: "Chinese Super League", country: "Cina", kind: "club", logo: null, fallback: "CSL", feed: "CHN_1_super-league", calendarYear: true },
     "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali UEFA", kind: "national", logo: null, fallback: "NL" }
-  }
+  };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
     if(COMPETITIONS[requested]){try{localStorage.setItem('matchmind-competition-v1',requested);}catch{}return requested;}
