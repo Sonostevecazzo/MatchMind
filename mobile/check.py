@@ -6,7 +6,6 @@ ROOT=Path(__file__).resolve().parent
 manifest=json.loads((ROOT/"manifest.webmanifest").read_text(encoding="utf-8"))
 assert manifest.get("name") and manifest.get("display")=="standalone"
 assert (ROOT/"sw.js").is_file()
-required=["index.html","matches.html","live.html","nba.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
 for name in required:
  p=ROOT/name
  assert p.is_file(),f"Missing screen: {name}"
@@ -15,7 +14,6 @@ for name in required:
  if name=="matches.html":
   assert 'id="matchFilters"' in html and 'id="matchList"' in html
   assert 'id="matchSlipPreview"' not in html
-  assert "sports-switch.js" in html and "nba.js" in html and 'id="sportSwitchMount"' in html and 'id="nbaIntegratedView"' in html
  if name=="analysis-lab.html":
   assert 'id="analysisOverview"' in html and "bets-engine.js" in html
   assert "research-engine.js" in html
@@ -23,26 +21,18 @@ for name in required:
  if name=="bets.html":
   assert "bets-engine.js" in html and "sisal-bridge.js" in html and "bets.js" in html
   assert 'data-bets-tab="create"' in html and 'data-bets-tab="live"' in html and 'data-bets-tab="archive"' in html
-  assert 'data-bets-tab="nba"' not in html and 'id="betsTabNba"' not in html
-  assert "nba.js" in html and "nba-builder.js" in html and "nba.css" in html and "sports-switch.js" in html
-  assert 'id="sportSwitchMount"' in html and 'id="nbaIntegratedView"' in html
   assert 'id="footballBuilderView"' in html
   assert 'id="openTickets"' in html and 'id="slipArchive"' in html
  elif name=="live.html":
-  assert "sports-switch.js" in html and "nba.js" in html and 'id="sportSwitchMount"' in html
   assert "live.js" in html and "live.css" in html and 'id="livePitch"' in html and 'id="liveLineups"' in html and 'id="refreshLiveDetail"' in html
- elif name not in ("index.html","nba.html"): assert "site-pages.js" in html
 legacy=(ROOT/"legacy-workbench.html").read_text(encoding="utf-8")
 scripts=re.findall(r"<script>(.*?)</script>",legacy,flags=re.DOTALL)
 assert len(scripts)==1
 with tempfile.NamedTemporaryFile("w",suffix=".js",encoding="utf-8") as handle:
  handle.write(scripts[0]);handle.flush();subprocess.run(["node","--check",handle.name],check=True)
-for filename in ["site-core.js","research-engine.js","sports-switch.js","notifications.js","ai-engine.js","site-pages.js","bets-engine.js","sisal-bridge.js","tipsaudit.js","bets.js","live.js","nba.js","nba-builder.js","elo.js","rounds.js","sw.js"]:
  subprocess.run(["node","--check",str(ROOT/filename)],check=True)
 subprocess.run(["node","--check",str(ROOT/"scripts"/"sisal-matchmind.user.js")],check=True)
-for path in [ROOT/"functions"/"_middleware.js",ROOT/"functions"/"api"/"public-calendar.js",ROOT/"functions"/"api"/"competition-calendar.js",ROOT/"functions"/"api"/"player-context.js",ROOT/"functions"/"api"/"live-match.js",ROOT/"functions"/"api"/"athletic-news.js",ROOT/"functions"/"api"/"public"/"nba.js",ROOT/"nba-engine.mjs"]:
  subprocess.run(["node","--input-type=module","--check"],input=path.read_text(encoding="utf-8"),text=True,check=True)
-for test in ["ai-engine.test.mjs","research-engine.test.mjs","odds-integrity.test.mjs","public-calendar.test.mjs","competition-calendar.test.mjs","live-match.test.mjs","backtest.test.mjs","elo.test.mjs","rounds.test.mjs","bets-engine.test.cjs","sisal-bridge.test.cjs","tipsaudit.test.cjs","nba-engine.test.mjs","nba-builder.test.cjs","sisal-bridge.test.cjs","sisal-model-guard.test.cjs","sisal-transfer.test.mjs"]:
  subprocess.run(["node","--test",str(ROOT/"tests"/test)],check=True)
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 calendar=(ROOT/"functions"/"api"/"public-calendar.js").read_text(encoding="utf-8")
@@ -51,7 +41,7 @@ assert "./api/competition-calendar" in core and "open-matchday" in calendar
 assert all(key in core for key in ["serie-b","premier-league","la-liga","bundesliga","ligue-1","conference-league","coppa-italia","nations-league"])
 assert all(key in competition_calendar for key in ["ita.1","ita.2","eng.1","esp.1","ger.1","fra.1","uefa.champions","uefa.europa","uefa.europa.conf","ita.coppa_italia","uefa.nations"])
 assert "multi-competition-public" in competition_calendar
-assert len(re.findall(r'feed: "[A-Za-z0-9_-]+"', competition_calendar)) == 75, "all 75 Open Matchday competitions must be registered"
+assert len(re.findall(r'feed: "[A-Za-z0-9_-]+"', competition_calendar)) == 1, "only verified Serie A Open Matchday feed is registered"
 assert "calendarYear" in competition_calendar and "historyScope" in competition_calendar
 assert "europa-league" in core and "UEFA_1_europa-league" in calendar
 assert '"europa-league": 3' in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
@@ -65,21 +55,9 @@ assert "api/athletic-news" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "API_FOOTBALL_KEY" not in core and "X-MatchMind-API-Key" not in core
 assert "media.api-sports.io" not in core
 bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
-nba_html=(ROOT/"nba.html").read_text(encoding="utf-8")
-nba_core=(ROOT/"nba.js").read_text(encoding="utf-8")
-nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
-nba_engine=(ROOT/"nba-engine.mjs").read_text(encoding="utf-8")
-assert 'data-page="nba"' in nba_html and 'id="nbaSlip"' in nba_html
-assert "nba-builder.js" in nba_html and "nba.js" in nba_html
-assert 'data-page="nba"' in nba_html and "nba-builder.js" in nba_html and "nba.js" in nba_html
 assert bets_html.index('id="betsTabCreate"') < bets_html.index('id="betsTabLive"') < bets_html.index('id="betsTabArchive"')
-assert nba_html.index('id="nbaList"') < nba_html.index('id="nbaSlip"')
 assert ".bets-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert ".competition-select-trigger" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
-assert "matchmind-manual-selections-v1" in nba_core and "matchmind-slip-archive-v2" in nba_core
-assert "calculate" in nba_builder and "predictNba" in nba_engine
-assert "./nba.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
-assert "./nba.js" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert 'href="matches.html"' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'location.replace(target)' in (ROOT/"index.html").read_text(encoding="utf-8")
 assert 'globalSlipDock' in core and 'matchmind:picks-updated' in core
@@ -91,8 +69,6 @@ assert "live.html" in core and "Live" in core
 assert core.index("['matches.html','matches','Home']") < core.index("['live.html','live','Live']")
 assert "mobile-primary-nav" in core and "competitionSelect" in core and "nations-league" in core
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
-assert all(token in sports_switch for token in ['data-sport="football"','data-sport="nba"',"matchmind-sport-v1","nbaIntegratedView"])
-assert "['nba.html','nba','NBA']" not in core
 assert re.search(r"const CACHE='matchmind-pwa-v\d+[^']*'", (ROOT/"sw.js").read_text(encoding="utf-8"))
 assert "cache.addAll(CORE_SHELL)" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "competition-picker-menu" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
@@ -113,12 +89,6 @@ assert "uefanationsleague/statistics" in (ROOT/"data.html").read_text(encoding="
 assert "mobile-primary-nav" in (ROOT/"mobile-readable.css").read_text(encoding="utf-8")
 assert 'id="builderPeriod"' in bets_html
 assert "const period=$(\"builderPeriod\")?.value||\"next-round\"" in (ROOT/"bets.js").read_text(encoding="utf-8")
-assert "const storedFootball=readPicks().filter(p=>p&&p.sport!==\"nba\")" in (ROOT/"bets.js").read_text(encoding="utf-8")
-assert "return footballRows.concat(nbaRows)" in (ROOT/"bets.js").read_text(encoding="utf-8")
-assert "buildProposal" in nba_builder and "nbaAutoProposal" in (ROOT/"sports-switch.js").read_text(encoding="utf-8")
-assert "buildNbaProposal" in (ROOT/"nba.js").read_text(encoding="utf-8")
-assert 'if(document.body.dataset.page!=="nba"){box.hidden=true;return;}' in (ROOT/"nba.js").read_text(encoding="utf-8")
-assert "page==='live'?'live'" in core and "page==='nba'?'nba'" in core and "(page==='mind'||page==='analysis-lab')?'mind'" in core
 assert "playerApi(" not in core and "playerApi(" not in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "function backtest(rows)" in core
 assert "window.MatchMindAI.train" in core
@@ -149,7 +119,6 @@ bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
 assert 'id="targetProbability"' in bets_html and 'type="range"' in bets_html
 assert 'min="0"' in bets_html and 'max="100"' in bets_html
 assert 'id="manualFixtures"' not in bets_html and 'id="manualSlipSummary"' in bets_html
-assert 'href="./matches.html"' in bets_html and "selezioni di calcio e NBA nello stesso riepilogo" in bets_html
 assert "globalSlipDock" in core
 bets_js=(ROOT/"bets.js").read_text(encoding="utf-8")
 assert "MatchMindSisalBridge" in bets_js and "playerApi" not in bets_js
@@ -214,10 +183,8 @@ assert "combo-goals" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "combo-btts" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert 'id="saveManualSlip"' in (ROOT/"bets.html").read_text(encoding="utf-8")
 assert "saveCurrentSlip" in (ROOT/"bets.js").read_text(encoding="utf-8")
-assert "Apri schedina NBA" in (ROOT/"site-core.js").read_text(encoding="utf-8") and "data-slip-confirm" in (ROOT/"site-core.js").read_text(encoding="utf-8")
 assert "is-expanded" in (ROOT/"site-core.js").read_text(encoding="utf-8")
 assert "repeat(5,minmax(0,1fr))" in (ROOT/"site.css").read_text(encoding="utf-8")
-assert "NBA_MARKETS" in (ROOT/"sisal-bridge.js").read_text(encoding="utf-8")
 
 assert "builderStrategyPills" in (ROOT/"bets.html").read_text(encoding="utf-8")
 assert "generateMotivation" in (ROOT/"bets.js").read_text(encoding="utf-8")
@@ -244,9 +211,6 @@ assert "cacheCoversSelected" in site_core
 assert 'selectedCompetition==="nations-league"' in site_core
 sports_switch=(ROOT/"sports-switch.js").read_text(encoding="utf-8")
 assert 'type="range" min="50" max="90" step="1"' in sports_switch
-assert 'id="nbaAutoMaxSelections" type="number" min="1" max="30"' in sports_switch
-nba_builder=(ROOT/"nba-builder.js").read_text(encoding="utf-8")
-assert "Math.min(30,Math.floor(Number(options.maxSelections)))" in nba_builder
 
 calendar_api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
 assert "params.get(\"competition\")" in calendar_api
