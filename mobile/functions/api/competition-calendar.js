@@ -6,7 +6,8 @@ const DATA_ROOT = "https://raw.githubusercontent.com/oladeeayo/open-matchday/mas
 const seasonCode = year => String(year).slice(-2) + String(year + 1).slice(-2);
 const seasonFolder = year => String(year) + "-" + String(year + 1).slice(-2);
 const COMPETITIONS = {
-  "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football", calendarYear: false }
+  "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football", calendarYear: false },
+  "nations-league": { name: "UEFA Nations League", slug: "uefa.nations", sport: "football", calendarYear: true }
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
