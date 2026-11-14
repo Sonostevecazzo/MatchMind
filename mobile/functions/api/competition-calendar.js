@@ -103,6 +103,55 @@ function nationsLeagueOfficialFallback(now = new Date()) {
     competition: "nations-league", source: "UEFA · calendario ufficiale 2026/27"
   }));
 }
+function cornerflickRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+  for (const key of ["matches","results","data","fixtures","items","events"]) {
+    const value = payload[key];
+    if (Array.isArray(value)) return value;
+    if (value && typeof value === "object") for (const nested of ["matches","results","items","events"]) if (Array.isArray(value[nested])) return value[nested];
+  }
+  return [];
+}
+function cornerflickValue(row, keys) {
+  for (const key of keys) { const value = row?.[key]; if (value !== undefined && value !== null && value !== "") return value; }
+  return null;
+}
+async function fetchCornerflickNationsHistory() {
+  const response = await fetch("https://cornerflick.com/football/leagues/nations-league/results/season.json", {
+    headers: { Accept: "application/json" }, signal: AbortSignal.timeout(18000)
+  });
+  if (!response.ok) throw new Error("Cornerflick Nations League HTTP " + response.status);
+  const rows = cornerflickRows(await response.json());
+  const matches = rows.map(row => {
+    const homeValue = cornerflickValue(row, ["home_team_name","home_team","home_name","home","team_home","homeTeam"]);
+    const awayValue = cornerflickValue(row, ["away_team_name","away_team","away_name","away","team_away","awayTeam"]);
+    const home = typeof homeValue === "object" ? (homeValue.name || homeValue.display_name || homeValue.short_name) : homeValue;
+    const away = typeof awayValue === "object" ? (awayValue.name || awayValue.display_name || awayValue.short_name) : awayValue;
+    const score = row?.score || row?.full_time || row?.ft || {}, goals = row?.goals || {};
+    const hgRaw = cornerflickValue(row, ["home_goals","home_score","score_home","goals_home","homeGoals","homeScore"]) ?? cornerflickValue(score, ["home","home_goals","home_score"]) ?? cornerflickValue(goals, ["home","home_goals"]);
+    const agRaw = cornerflickValue(row, ["away_goals","away_score","score_away","goals_away","awayGoals","awayScore"]) ?? cornerflickValue(score, ["away","away_goals","away_score"]) ?? cornerflickValue(goals, ["away","away_goals"]);
+    const dateRaw = cornerflickValue(row, ["match_date","kickoff_date","date","kickoff_at","kickoff","utc_date","datetime","start_time"]);
+    const dateObject = dateRaw ? new Date(dateRaw) : null;
+    const local = dateObject && Number.isFinite(dateObject.getTime()) ? romeDateTime(dateRaw) : null;
+    const date = local?.date || (dateObject && Number.isFinite(dateObject.getTime()) ? String(dateRaw).slice(0,10) : "");
+    const time = local?.time || String(cornerflickValue(row, ["time","kickoff_time"]) || "");
+    const hg = csvNumber(hgRaw), ag = csvNumber(agRaw);
+    if (!home || !away || !date || hg === null || ag === null) return null;
+    return {
+      id: String(row.id || row.match_id || ""), date, time,
+      round: csvNumber(row.matchday || row.round || row.gameweek),
+      stage: String(row.stage || row.matchday || "UEFA Nations League"),
+      home: String(home), away: String(away), hg, ag,
+      ht: null, at: null, hs: null, as: null, hst: null, ast: null, hf: null, af: null,
+      hc: null, ac: null, hy: null, ay: null, hr: null, ar: null, goalMinutes: "",
+      status: "FT", statusLong: "Terminata", competition: "nations-league",
+      source: "Cornerflick · risultati stagione (CC BY 4.0)"
+    };
+  }).filter(Boolean);
+  if (matches.length < 30) throw new Error("Cornerflick ha restituito solo " + matches.length + " risultati validi; soglia minima 30");
+  return matches;
+}
 async function fetchCompetitionFromEspn(id, competition, startDate, endDate) {
   const windows = [];
   for (let cursor = new Date(startDate); cursor <= endDate; ) {
@@ -171,6 +220,16 @@ async function getCalendar(request) {
   }));
   const matches = entries.flatMap(x => x.matches).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const history = matches.filter(match => match.status === "FT" && match.hg !== null && match.ag !== null);
+  if (selected === "nations-league") {
+    try {
+      const cornerHistory = await fetchCornerflickNationsHistory();
+      const unique = new Map(history.map(match => [[match.date,match.home,match.away].join("|"),match]));
+      cornerHistory.forEach(match => unique.set([match.date,match.home,match.away].join("|"),match));
+      history.splice(0, history.length, ...unique.values());
+    } catch (error) {
+      entries[0].error = [entries[0].error, "Cornerflick storico: " + String(error?.message || error)].filter(Boolean).join("; ");
+    }
+  }
   // Preserve the five-season Serie A archive used by the Elo/Poisson forecasts.
   const historicalYears = selected === "serie-a" ? await Promise.allSettled(Array.from({ length: 5 }, (_, index) => year - 1 - index).map(async historicalYear => {
     const url = HISTORY_ROOT + seasonFolder(historicalYear) + "/it.1.json";
@@ -212,7 +271,7 @@ async function getCalendar(request) {
   return json({
     configured: true, type: "calendar", season: year, matches, history,
     source: selected === "nations-league" ? "ESPN public scoreboard" : "Open Matchday CSV" + (entries[0].matches.some(match => String(match.source || "").includes("ESPN")) ? " + ESPN fallback" : ""), sourceMode: "multi-competition-public",
-    counts, coverage, historyScope: selected === "serie-a" ? "five-season-archive" : selected === "nations-league" ? "current-window-only" : "current-season-only",
+    counts, coverage, historyScope: selected === "serie-a" ? "five-season-archive" : selected === "nations-league" ? "Cornerflick-season-archive" : "current-season-only",
     errors: entries.filter(x => x.error).map(x => x.error).concat(historyErrors),
     updatedAt: new Date().toISOString(),
     note: "Calendario e risultati club da Open Matchday; ESPN è usato per Nations League e come fallback dove configurato. Lo storico pluristagionale è attualmente disponibile in modo verificato per la sola Serie A. Le statistiche non presenti restano null."
