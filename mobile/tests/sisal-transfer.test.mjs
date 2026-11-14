@@ -99,7 +99,7 @@ test("app exports all calculated markets for each selected football match", () =
   assert.match(bets, /predictionMethod:row\.forecast\?\.predictionMethod/);
 });
 
-test("bridge preserves all predictions and sample metadata in version 3 payload", () => {
+test("bridge uses a URL fragment for Sisal handoff", () => {\n  assert.match(bridge, /base \\+ "#mmplay=" \\+ encoded/);\n  assert.doesNotMatch(bridge, /base \\+ "\\?mmplay="/);\n});\n\ntest("closed archive tickets expose edit and Sisal transfer actions", () => {\n  assert.match(bets, /data-edit-ticket=/);\n  assert.match(bets, /data-transfer-ticket=/);\n  assert.match(bets, /editSavedTicket\\(ticket\\)/);\n  assert.match(bets, /ticketTransferUrl\\(ticket\\)/);\n});\n\ntest("bridge preserves all predictions and sample metadata in version 3 payload", () => {
   assert.match(bridge, /version: 3/);
   assert.match(bridge, /predictions,/);
   assert.match(bridge, /sampleEnough/);
