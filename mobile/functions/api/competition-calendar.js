@@ -107,22 +107,25 @@ async function fetchCompetitionFromEspn(id, competition, startDate, endDate) {
   const windows = [];
   for (let cursor = new Date(startDate); cursor <= endDate; ) {
     const from = new Date(cursor), to = new Date(cursor);
-    to.setUTCDate(to.getUTCDate()+6);
+    to.setUTCDate(to.getUTCDate()+27);
     if (to > endDate) to.setTime(endDate.getTime());
     windows.push([ymd(from), ymd(to)]);
     cursor = new Date(to); cursor.setUTCDate(cursor.getUTCDate()+1);
   }
-  const settled = await Promise.allSettled(windows.map(async ([from,to]) => {
-    const url = ESPN_BASE + competition.slug + "/scoreboard?dates=" + from + "-" + to + "&limit=500";
-    const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(18000) });
-    if (!response.ok) throw new Error(id + " ESPN HTTP " + response.status + " (" + from + "-" + to + ")");
-    const payload = await response.json();
-    return (Array.isArray(payload.events) ? payload.events : []).map(event => normalizeEvent(event, competition)).filter(Boolean);
-  }));
-  const batches = settled.filter(result => result.status === "fulfilled").map(result => result.value);
-  if (!batches.length) throw settled.find(result => result.status === "rejected")?.reason || new Error(id + " ESPN non disponibile");
+  const batches = [];
+  for (let offset = 0; offset < windows.length; offset += 3) {
+    const settled = await Promise.allSettled(windows.slice(offset, offset+3).map(async ([from,to]) => {
+      const url = ESPN_BASE + competition.slug + "/scoreboard?dates=" + from + "-" + to + "&limit=500";
+      const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(18000) });
+      if (!response.ok) throw new Error(id + " ESPN HTTP " + response.status + " (" + from + "-" + to + ")");
+      const payload = await response.json();
+      return (Array.isArray(payload.events) ? payload.events : []).map(event => normalizeEvent(event, competition)).filter(Boolean);
+    }));
+    settled.forEach(result => { if (result.status === "fulfilled") batches.push(...result.value); });
+  }
+  if (!batches.length) throw new Error(id + " ESPN: nessuna finestra accessibile");
   const unique = new Map();
-  batches.flat().forEach(match => unique.set(String(match.id || [match.date,match.home,match.away].join("|")), match));
+  batches.forEach(match => unique.set(String(match.id || [match.date,match.home,match.away].join("|")), match));
   return [...unique.values()];
 }
 async function fetchCompetition(id, competition, startDate, endDate) {
