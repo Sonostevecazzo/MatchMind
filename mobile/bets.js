@@ -406,6 +406,7 @@ function duplicateTicket(ticket){
  archive.unshift(copy);
  archive=archive.slice(0,100);
  save(ARCHIVE_KEY,archive);
+ setBetTab("live");
  renderOpenTickets();
  renderArchive();
  const status=$("archiveStatus");
