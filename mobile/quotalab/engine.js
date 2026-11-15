@@ -65,6 +65,9 @@ const ALIASES = {
   home: ["home", "hometeam", "home_team", "squadra_casa", "team_home"],
   away: ["away", "awayteam", "away_team", "squadra_trasferta", "team_away"],
   homeGoals: ["home_goals", "homegoals", "fthg", "hg", "ft_home", "gol_casa", "goals_home"],
+  homeShots: ["hs", "home_shots"], awayShots: ["as", "away_shots"],
+homeShotsTarget: ["hst", "home_shots_target"], awayShotsTarget: ["ast", "away_shots_target"],
+  homeCorners: ["hc", "home_corners"], awayCorners: ["ac", "away_corners"], homeYellow: ["hy", "home_yellow"], awayYellow: ["ay", "away_yellow"], homeRed: ["hr", "home_red"], awayRed: ["ar", "away_red"],
   awayGoals: ["away_goals", "awaygoals", "ftag", "ag", "ft_away", "gol_trasferta", "goals_away"],
   competition: ["competition", "league", "division", "campionato", "competizione"]
 };
@@ -101,11 +104,29 @@ export function validateHistory(rows, defaultCompetition = "serie-a") {
       (normalizeName(home) === normalizeName(away)) ? "squadre identiche" :
       (homeGoals === null || awayGoals === null) ? "risultato finale non valido" : (!competition) ? "competizione mancante" : null;
     if (reason) { rejected.push({ row: index + 2, reason }); continue; }
-    const match = { date, competition, home, away, homeGoals, awayGoals };
+    const optionalStat = aliases => {
+      const raw = valueFor(row, aliases);
+      if (raw === "" || raw === null || raw === undefined) return null;
+      const number = Number(raw);
+      return Number.isFinite(number) && number >= 0 && number <= 100 ? number : null;
+    };
+    const match = {
+      date, competition, home, away, homeGoals, awayGoals,
+      stats: {
+        homeShots: optionalStat(ALIASES.homeShots), awayShots: optionalStat(ALIASES.awayShots),
+        homeShotsTarget: optionalStat(ALIASES.homeShotsTarget), awayShotsTarget: optionalStat(ALIASES.awayShotsTarget),
+        homeCorners: optionalStat(ALIASES.homeCorners), awayCorners: optionalStat(ALIASES.awayCorners),
+        homeYellow: optionalStat(ALIASES.homeYellow), awayYellow: optionalStat(ALIASES.awayYellow),
+        homeRed: optionalStat(ALIASES.homeRed), awayRed: optionalStat(ALIASES.awayRed)
+      }
+    };
     const key = [date, competition, normalizeName(home), normalizeName(away)].join("|");
     if (seen.has(key)) {
       const prior = seen.get(key);
       if (prior.homeGoals !== homeGoals || prior.awayGoals !== awayGoals) rejected.push({ row: index + 2, reason: "duplicato con risultato discordante" });
+      else if (match.stats) {
+        prior.stats = Object.fromEntries(Object.keys(match.stats).map(stat => [stat, match.stats[stat] ?? prior.stats?.[stat] ?? null]));
+      }
       continue;
     }
     seen.set(key, match); accepted.push(match);

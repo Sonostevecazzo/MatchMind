@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         MatchMind · Sisal Predictions
+// @name         QuotaLab / MatchMind · Sisal Bridge
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.0.9
-// @description  Percentuali MatchMind sulle quote Sisal, senza widget invasivi o invio automatico.
+// @version      3.1.0
+// @description  Acquisisce quote visibili Sisal per QuotaLab e mostra le stime MatchMind; nessun invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint/*
@@ -19,8 +19,11 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.0.9";
-  const APP_URL = "https://sonostevecazzo.github.io/MatchMind/bets.html";
+  const VERSION = "3.1.0";
+  const QL_APP_ORIGIN = "https://sonostevecazzo.github.io";
+  let quotaLabCapture = null;
+  let quotaLabLastSignature = "";
+  const APP_URL = "https://sonostevecazzo.github.io/MatchMind/quotalab/";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
   const BADGE_CLASS = "mm-sisal-prediction-v3";
@@ -592,6 +595,96 @@
     const values = (buttonText(button).match(/[0-9]+(?:[.,][0-9]+)?/g) || []).map(value => Number(value.replace(',', '.')));
     return values.find(value => Number.isFinite(value) && value > 1 && value < 1000) || null;
   }
+
+  function decodeQuotaLabHash() {
+    const params = new URLSearchParams(String(location.hash || "").replace(/^#/, ""));
+    const encoded = params.get("qlsync");
+    if (!encoded) return false;
+    try {
+      const payload = JSON.parse(encoded);
+      if (!payload || payload.version !== 1 || !Array.isArray(payload.fixtures)) return false;
+      quotaLabCapture = {
+        requestId: String(payload.requestId || ""),
+        fixtures: payload.fixtures.filter(item => item && item.home && item.away && item.date && item.competition)
+      };
+      params.delete("qlsync");
+      const cleanHash = params.toString();
+      history.replaceState(null, "", location.pathname + location.search + (cleanHash ? "#" + cleanHash : ""));
+      return quotaLabCapture.fixtures.length > 0;
+    } catch (_) { return false; }
+  }
+
+  function quotaLabMarketKey(key) {
+    const map = {
+      home:"1x2_home", draw:"1x2_draw", away:"1x2_away",
+      dc1X:"dc_1x", dcX2:"dc_x2", dc12:"dc_12",
+      over15:"ou_over15", under15:"ou_under15", over25:"ou_over25", under25:"ou_under25",
+      over35:"ou_over35", under35:"ou_under35", bttsYes:"btts_yes", bttsNo:"btts_no"
+    };
+    if (map[key]) return map[key];
+    const combo = String(key || "").match(/^combo:(home|draw|away):(over15|under15|over25|under25|over35|under35|bttsYes|bttsNo)$/);
+    return combo ? "combo_" + combo[1] + "_" + combo[2] : "";
+  }
+
+  function quotaLabOddsFromButton(button) {
+    const values = (buttonText(button).match(/[0-9]+(?:[.,][0-9]+)?/g) || [])
+      .map(value => Number(value.replace(",", ".")))
+      .filter(value => Number.isFinite(value) && value > 1 && value < 1000);
+    return values.length ? values[values.length - 1] : null;
+  }
+
+  function scanQuotaLabOdds() {
+    if (!quotaLabCapture || !quotaLabCapture.fixtures.length || !window.opener) return;
+    const selector = "button,[role='button'],a[role='button'],[data-outcome],[data-selection-name]";
+    const buttons = Array.from(document.querySelectorAll(selector)).filter(button => {
+      if (button.closest("#" + ROOT_ID) || button.closest("[data-mm-sisal-ui]")) return false;
+      if (!button.getClientRects().length) return false;
+      const text = buttonText(button);
+      return text && text.length < 160 && /[0-9]+(?:[.,][0-9]+)?/.test(text);
+    });
+    const rootCache = new WeakMap();
+    const collected = new Map();
+    for (const button of buttons) {
+      const roots = eventRootCandidates(button, rootCache);
+      let matched = null;
+      for (const candidate of roots) {
+        const fixture = quotaLabCapture.fixtures.find(item => sameEvent(candidate.text, item));
+        if (fixture) { matched = { fixture, root: candidate.root }; break; }
+      }
+      if (!matched) continue;
+      const rawKey = marketKeyFor(button, matched.root);
+      const marketKey = quotaLabMarketKey(rawKey);
+      const odds = quotaLabOddsFromButton(button);
+      if (!marketKey || !odds) continue;
+      const key = [matched.fixture.competition, matched.fixture.date, compact(matched.fixture.home), compact(matched.fixture.away)].join("|");
+      if (!collected.has(key)) collected.set(key, {competition:matched.fixture.competition,date:matched.fixture.date,home:matched.fixture.home,away:matched.fixture.away,markets:{}});
+      collected.get(key).markets[rawKey] = odds;
+    }
+    const items = Array.from(collected.values()).filter(item => Object.keys(item.markets).length);
+    if (!items.length) return;
+    const signature = JSON.stringify(items);
+    if (signature === quotaLabLastSignature) return;
+    quotaLabLastSignature = signature;
+    try {
+      window.opener.postMessage({
+        type:"QUOTALAB_SISAL_ODDS",
+        requestId:quotaLabCapture.requestId,
+        capturedAt:new Date().toISOString(),
+        items
+      }, QL_APP_ORIGIN);
+    } catch (_) {}
+  }
+
+  let quotaLabCaptureTimer = null;
+  function scheduleQuotaLabCapture(delay = 700) {
+    if (!quotaLabCapture) return;
+    if (quotaLabCaptureTimer) window.clearTimeout(quotaLabCaptureTimer);
+    quotaLabCaptureTimer = window.setTimeout(() => {
+      quotaLabCaptureTimer = null;
+      scanQuotaLabOdds();
+    }, Math.max(250, Number(delay) || 700));
+  }
+
   function marketFamily(key) {
     if (['home', 'draw', 'away'].includes(key)) return '1x2';
     if (['dc1X', 'dcX2', 'dc12'].includes(key)) return 'double-chance';
@@ -701,11 +794,13 @@
   }
 
   function captureAndPrepare() {
+    decodeQuotaLabHash();
     const imported = decodeIncomingHash();
     const statusData = readStored();
     createStatus();
     setStatus();
     scheduleScan(imported ? 500 : 900);
+    scheduleQuotaLabCapture(imported ? 650 : 1100);
     return statusData.length;
   }
 
@@ -723,7 +818,7 @@
         if (/^(SCRIPT|STYLE|LINK|META)$/.test(node.tagName || "")) return false;
         return true;
       });
-      if (relevant) { scheduleScan(450); break; }
+      if (relevant) { scheduleScan(450); scheduleQuotaLabCapture(800); break; }
     }
   });
 
@@ -734,7 +829,7 @@
   else document.addEventListener("DOMContentLoaded", startObserver, { once: true });
 
   document.addEventListener("click", event => {
-    if (event.target.closest && event.target.closest("button,[role='button'],a")) scheduleScan(500);
+    if (event.target.closest && event.target.closest("button,[role='button'],a")) { scheduleScan(500); scheduleQuotaLabCapture(750); }
   }, { passive: true });
   let scrollScanQueued = false;
   window.addEventListener("scroll", () => {
@@ -742,14 +837,16 @@
     scrollScanQueued = true;
     window.setTimeout(() => {
       scrollScanQueued = false;
-      scheduleScan(280);
+      scheduleScan(280); scheduleQuotaLabCapture(500);
     }, 220);
   }, { passive: true });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) scheduleScan(250);
+    if (!document.hidden) { scheduleScan(250); scheduleQuotaLabCapture(450); }
   });
-  window.addEventListener("popstate", () => scheduleScan(350));
+  window.addEventListener("popstate", () => { scheduleScan(350); scheduleQuotaLabCapture(550); });
   window.addEventListener("hashchange", () => {
+    decodeQuotaLabHash();
+    scheduleQuotaLabCapture(650);
     if (decodeIncomingHash()) {
       setStatus();
       scheduleScan(450);

@@ -3,11 +3,13 @@ on:
   pull_request:
     paths:
       - "mobile/quotalab/**"
+      - "mobile/scripts/sisal-matchmind.user.js"
       - ".github/workflows/quotalab-tests.yml"
   push:
     branches: [main]
     paths:
       - "mobile/quotalab/**"
+      - "mobile/scripts/sisal-matchmind.user.js"
       - ".github/workflows/quotalab-tests.yml"
   workflow_dispatch:
 permissions:
@@ -31,3 +33,4 @@ jobs:
           test -s mobile/quotalab/sw.js
           node --check mobile/quotalab/app.js
           node --check mobile/quotalab/engine.js
+          node --check mobile/scripts/sisal-matchmind.user.js

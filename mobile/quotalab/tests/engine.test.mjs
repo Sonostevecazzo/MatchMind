@@ -30,6 +30,19 @@ test("calcola il codice stagione europeo rispettando il cambio a luglio", () => 
   assert.throws(() => currentSeasonCode("invalid-date"));
 });
 
+test("acquisisce statistiche opzionali senza inventare campi mancanti", () => {
+  const csv = [
+    "Date,Div,HomeTeam,AwayTeam,FTHG,FTAG,HS,AS,HST,AST,HC,AC,HY,AY",
+    "2025-08-23,I1,Inter,Milan,2,1,15,8,6,3,7,2,2,1",
+    "2025-08-24,I1,Roma,Lazio,1,1,,,,,,,,,,"
+  ].join("\n");
+  const { matches } = validateHistory(parseCSV(csv));
+  assert.equal(matches.length, 2);
+  assert.equal(matches[0].stats.homeShots, 15);
+  assert.equal(matches[0].stats.homeCorners, 7);
+  assert.equal(matches[1].stats.homeShots, null);
+});
+
 test("il parser CSV gestisce virgole quotate, separatore ; e virgolette doppie", () => {
   const parsed = parseCSV('Date,HomeTeam,AwayTeam,FTHG,FTAG\n2025-01-01,"Alpha, FC","Beta ""B""",2,1');
   assert.equal(parsed[0].hometeam, "Alpha, FC");

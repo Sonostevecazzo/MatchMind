@@ -14,13 +14,23 @@ const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.0\.9$/m);
+  assert.match(script, /^\/\/ @version\s+3\.1\.0$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.doesNotMatch(script, /@match\s+https:\/\/\*\.sisal\.it/);
   assert.doesNotMatch(script, /@match\s+https:\/\/.*matchmind/);
+});
+
+test("QuotaLab bridge captures Sisal odds and returns them only to the QuotaLab origin", () => {
+  assert.match(script, /function decodeQuotaLabHash\(\)/);
+  assert.match(script, /function quotaLabMarketKey\(key\)/);
+  assert.match(script, /function scanQuotaLabOdds\(\)/);
+  assert.match(script, /type:"QUOTALAB_SISAL_ODDS"/);
+  assert.match(script, /window\.opener\.postMessage/);
+  assert.match(script, /https:\/\/sonostevecazzo\.github\.io/);
+  assert.match(script, /function quotaLabOddsFromButton\(button\)/);
 });
 
 test("Sisal script is an inline percentage overlay, not a floating widget", () => {
