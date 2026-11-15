@@ -23,7 +23,7 @@
   const QL_APP_ORIGIN = "https://sonostevecazzo.github.io";
   let quotaLabCapture = null;
   let quotaLabLastSignature = "";
-  const APP_URL = "https://sonostevecazzo.github.io/MatchMind/quotalab/";
+  const APP_URL = "https://matchmind-3te.pages.dev/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
   const ROOT_ID = "mm-sisal-status-v3";
   const BADGE_CLASS = "mm-sisal-prediction-v3";
