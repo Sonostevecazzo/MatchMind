@@ -325,12 +325,12 @@
  }
  async function initSettings(){
   const status=$('globalStatus');
-  if(status)status.textContent='Fonti statistiche esterne: Docteur Bet (Dixon–Coles) e Statz (proiezioni e statistiche). Nessuna delle due sostituisce le quote Sisal.';
+  if(status)status.textContent='Docteur Bet (Dixon–Coles) e Statz non sono integrati: non è stato verificato un endpoint pubblico gratuito e stabile. Le probabilità mostrate restano quelle del motore MatchMind locale.';
 }
 function GenCopy(value){try{navigator.clipboard.writeText(value);$('settingsProviderStatus').innerHTML='<div class="notice good">Nome del secret copiato.</div>';}catch{$('settingsProviderStatus').innerHTML='<div class="notice">Nome del secret: <b>'+value+'</b></div>';}}
  async function initData(){
   const target=$('providerStatus');
-  if(target)target.innerHTML='<div class="data-row"><span>Calendario e storico</span><b>Open Matchday · 75 competizioni · OpenFootball storico Serie A</b></div><div class="data-row"><span>Probabilità 1X2 indipendenti</span><b>Docteur Bet · Dixon–Coles</b></div><div class="data-row"><span>Statistiche e proiezioni squadre / giocatori</span><b>Statz · copertura variabile</b></div><div class="data-row"><span>Live primario</span><b>API-Football · secret facoltativo</b></div><div class="data-row"><span>Live alternativo</span><b>ESPN · senza API key</b></div><div class="data-row"><span>Quote prematch</span><b>Controllo aggiornamento…</b></div><div class="data-row"><span>Indisponibili Serie A</span><b>Controllo aggiornamento…</b></div>';
+  if(target)target.innerHTML='<div class="data-row"><span>Calendario e storico</span><b>Open Matchday · 75 competizioni · OpenFootball storico Serie A</b></div><div class="data-row"><span>Docteur Bet · modello Dixon–Coles</span><b>Non integrato · endpoint gratuito non verificato</b></div><div class="data-row"><span>Statz · statistiche e proiezioni</span><b>Non integrato · feed gratuito non verificato</b></div><div class="data-row"><span>Live primario</span><b>API-Football · secret facoltativo</b></div><div class="data-row"><span>Live alternativo</span><b>ESPN · senza API key</b></div><div class="data-row"><span>Quote prematch</span><b>Controllo aggiornamento…</b></div><div class="data-row"><span>Indisponibili Serie A</span><b>Controllo aggiornamento…</b></div>';
   if(target){
    const [odds,injuries]=await Promise.all([MM().loadOdds(),MM().loadInjuries()]);
    const oddsMeta=MM().getOddsMeta(),injuryMeta=MM().getInjuryFeedStatus();
