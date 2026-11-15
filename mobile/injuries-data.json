@@ -1,6 +1,6 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-14T19:39:39Z",
+  "last_updated": "2026-11-15T14:29:12Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
@@ -166,9 +166,9 @@
       "assenze_difesa": 1,
       "infortunati": [
         {
-          "player": "Raimondo",
-          "detail": "l'attaccante KO l'1 novembre contro il Toro vittima di una lesione multilegamentosa contusivo-distorsiva della caviglia sinistra. Iniziate le cure del caso, proverà a tornare già da metà dicembre in campo.",
-          "role": "Attacco"
+          "player": "Grillitsch",
+          "detail": "il centrocampista non convocato dalla gara di Genova (12 settembre) a causa di una sindrome retto-adduttoria, ha poi deciso di operarsi. Stop di circa sei settimane, può tornare convocabile dalla seconda metà di novembre.",
+          "role": "Centrocampo"
         },
         {
           "player": "Terzic",
@@ -176,9 +176,9 @@
           "role": "Difesa"
         },
         {
-          "player": "Grillitsch",
-          "detail": "il centrocampista non convocato dalla gara di Genova (12 settembre) a causa di una sindrome retto-adduttoria, ha poi deciso di operarsi. Stop di circa sei settimane, può tornare convocabile dalla seconda metà di novembre.",
-          "role": "Centrocampo"
+          "player": "Raimondo",
+          "detail": "l'attaccante KO l'1 novembre contro il Toro vittima di una lesione multilegamentosa contusivo-distorsiva della caviglia sinistra. Iniziate le cure del caso, proverà a tornare già da metà dicembre in campo.",
+          "role": "Attacco"
         }
       ],
       "squalificati": [
@@ -235,19 +235,19 @@
       "assenze_difesa": 2,
       "infortunati": [
         {
-          "player": "Locatelli",
-          "detail": "il metronomo del centrocampo bianconero ha rimediato la rottura del menisco esterno del ginocchio. Verrà operato a Lione a stretto giro. Lungo stop e possibilità di rivederlo in campo da febbraio.",
-          "role": "Centrocampo"
-        },
-        {
           "player": "Grabara",
           "detail": "Il portiere out dal 20 settembre per una lesione al crociato anteriore del ginocchio destro. Operazione chirurgica e lungo stop, rientro da aprile.",
           "role": "Difesa"
         },
         {
           "player": "Yildiz",
-          "detail": "l'attaccante turco, dopo la gara di Frosinone (23 agosto), ha lamentato un problema al piede. Operato il 31 agosto di osteosintesi della frattura della base del V metatarso del piede sinistro, stop di circa tre mesi. Rientro in campo da prima metà di dicembre.",
+          "detail": "l'attaccante turco, dopo la gara di Frosinone (23 agosto), ha lamentato un problema al piede. Operato il 31 agosto di osteosintesi della frattura della base del V metatarso del piede sinistro. Rientro in campo da fine di dicembre.",
           "role": "Attacco"
+        },
+        {
+          "player": "Locatelli",
+          "detail": "il metronomo del centrocampo bianconero ha rimediato la rottura del menisco esterno del ginocchio. Verrà operato a Lione a stretto giro. Lungo stop e possibilità di rivederlo in campo da febbraio.",
+          "role": "Centrocampo"
         },
         {
           "player": "Kalulu",
