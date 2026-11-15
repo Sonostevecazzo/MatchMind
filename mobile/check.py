@@ -14,6 +14,17 @@ for name in ["site-core.js","sports-switch.js","bets.js","bets-engine.js","ai-en
     subprocess.run(["node","--check",str(ROOT/name)],check=True)
 subprocess.run(["node","--check",str(ROOT/"scripts"/"sisal-matchmind.user.js")],check=True)
 subprocess.run(["node","--check",str(ROOT/"nba-engine.mjs")],check=True)
+bets=(ROOT/"bets.js").read_text(encoding="utf-8")
+sisal=(ROOT/"scripts"/"sisal-matchmind.user.js").read_text(encoding="utf-8")
+settings=(ROOT/"settings.html").read_text(encoding="utf-8")
+pages=(ROOT/"site-pages.js").read_text(encoding="utf-8")
+readme=(ROOT/"README.md").read_text(encoding="utf-8")
+assert bets.count('data-duplicate-ticket=') == 2, "Both open and archived tickets must expose duplication"
+assert "function duplicateTicket(ticket)" in bets and 'status:"Da giocare",result:null' in bets
+assert 'const APP_URL = "https://matchmind-3te.pages.dev/bets.html"' in sisal, "Sisal overlay must link to the main MatchMind app"
+assert "Docteur Bet e Statz non sono integrati" in pages, "Unverified model providers must not be presented as active"
+assert "OddsPapi" not in readme, "Do not document a paid/unverified odds integration as active"
+assert "Il Live funziona solo se API_FOOTBALL_KEY" not in settings, "ESPN must remain available without API keys"
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
 assert all(name in core for name in ['"serie-a"','"champions-league"','"europa-league"','"nations-league"'])
