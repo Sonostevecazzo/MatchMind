@@ -169,3 +169,16 @@ test("national-team presentation uses Italian Sisal labels and national flags", 
   assert.match(core, /https:\/\/flagcdn\.com\/w80\//);
   assert.match(pages, /MM\(\)\.displayTeamName/);
 });
+
+test("Sisal overlay opens the main MatchMind betting workspace, not the abandoned QuotaLab page", () => {
+  assert.match(script, /const APP_URL = "https:\/\/matchmind-3te\.pages\.dev\/bets\.html"/);
+});
+
+test("saved tickets can be duplicated without changing the original or carrying settled results", () => {
+  assert.match(bets, /function duplicateTicket\(ticket\)/);
+  assert.match(bets, /copy\.id="slip-copy-"/);
+  assert.match(bets, /status:"Da giocare",result:null/);
+  assert.match(bets, /delete copy\.actualPayout/);
+  assert.match(bets, /data-duplicate-ticket=/);
+  assert.match(bets, /duplicateTicket\(ticket\)/);
+});
