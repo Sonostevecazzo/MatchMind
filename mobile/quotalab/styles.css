@@ -6,3 +6,28 @@
 @media(prefers-reduced-motion:no-preference){button,.panel,.metric-card{transition:background .18s ease,border-color .18s ease,transform .18s ease}.button-primary:hover{transform:translateY(-1px)}}
 
 .sync-divider{width:100%;max-width:380px;border-top:1px solid #344447;margin:4px 0;padding-top:12px;text-transform:uppercase;font:9px var(--mono);letter-spacing:1px;color:#7f928a}.drop-zone .small{line-height:1.7}.drop-zone a{color:var(--lime);text-underline-offset:3px}.drop-zone .button{margin:8px 0}
+
+/* QuotaLab 0.2 · clearer builder and automatic source status */
+.strategy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 20px}
+.strategy-card{display:flex;flex-direction:column;gap:7px;align-items:flex-start;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:14px;color:var(--text);min-height:84px}
+.strategy-card strong{font-size:13px}.strategy-card small{font-size:11px;line-height:1.45;color:var(--muted)}
+.strategy-card.active{border-color:var(--lime);background:rgba(190,242,100,.08);box-shadow:inset 0 0 0 1px rgba(190,242,100,.15)}
+.builder-form-wide{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+.target-control{margin:18px 0 12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.target-control label{display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:12px}
+.target-control label strong{color:var(--lime);font-variant-numeric:tabular-nums}
+.target-control input{width:100%;accent-color:var(--lime)}
+.range-scale{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:5px}
+.target-status{padding:10px 12px;border-radius:9px;margin:10px 0 14px;font-size:11px;font-weight:700}
+.target-ok{background:rgba(190,242,100,.09);color:var(--lime)}.target-missed{background:rgba(245,158,11,.1);color:#fbbf24}
+.quote-missing{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;color:var(--muted)}
+.source-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.source-card{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:14px;min-width:0}
+.source-card-top,.source-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.source-card-top strong{font-size:13px}.source-card p{font-size:11px;line-height:1.55;color:var(--muted);min-height:54px}
+.source-card-foot small{font-size:10px;color:var(--muted)}.source-card-foot a{font-size:11px;color:var(--lime)}
+.source-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}.source-actions .small{color:var(--muted)}
+@media(max-width:700px){.strategy-grid,.source-grid,.builder-form-wide{grid-template-columns:1fr}.strategy-card{min-height:68px}.source-card p{min-height:0}.source-actions .button{width:100%}}
+
+.market-odds strong,.market-odds small{display:block}.market-odds strong{font:12px var(--mono)}.market-odds small{color:var(--muted);font-size:9px;margin-top:3px}
+@media(max-width:520px){.market-row{grid-template-columns:minmax(90px,1fr) 66px 60px 68px 28px;gap:5px}.market-name strong{font-size:9px}.market-prob strong,.market-value strong,.market-odds strong{font-size:10px}}

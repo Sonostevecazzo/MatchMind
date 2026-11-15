@@ -16,9 +16,14 @@ QuotaLab è un ambiente indipendente, mobile-first, per analisi pre-partita, con
 
 ## Fonte dati integrata
 
-La pagina **Dati e metodo** consente di aggiornare manualmente risultati e calendario 2026/27 per Serie A, Champions League ed Europa League da [open-matchday](https://github.com/oladeeayo/open-matchday). L'app prova prima il CDN jsDelivr e poi il file raw GitHub. Le richieste sono eseguite dal browser; se la rete o le policy CORS le bloccano, resta disponibile l'import CSV manuale.
+La PWA scarica automaticamente lo storico Serie A da [DataHub / football-data.co.uk](https://datahub.io/football/italian-serie-a) e i risultati/calendari correnti 2026/27 per Serie A, Champions League ed Europa League da [open-matchday](https://github.com/oladeeayo/open-matchday). L'app prova prima il CDN jsDelivr e poi il file raw GitHub. Le richieste sono eseguite dal browser; se la rete o le policy CORS le bloccano, resta disponibile l'import CSV manuale.
 
-La fonte dichiara aggiornamento giornaliero alle 00:00 UTC, non live. I file della release corrente coprono la stagione corrente: non sostituiscono da soli un archivio multi-stagione, che si può importare separatamente per ampliare il backtest. La disponibilità di statistiche dettagliate è disomogenea e non comprende xG, formazioni, infortuni o quote. Il dataset è dichiarato per uso informativo non commerciale con attribuzione al repository; i diritti dei provider originari restano separati. Leggere sempre [README e DISCLAIMER upstream](https://github.com/oladeeayo/open-matchday).
+Lo storico DataHub comprende fino a 10 stagioni Serie A con risultati e statistiche dove disponibili. Open Matchday dichiara aggiornamento giornaliero alle 00:00 UTC, non live; i suoi file coprono la stagione corrente. La disponibilità di statistiche dettagliate è disomogenea e non comprende xG, formazioni, infortuni o quote. Il dataset è dichiarato per uso informativo non commerciale con attribuzione al repository; i diritti dei provider originari restano separati. Leggere sempre [README e DISCLAIMER upstream](https://github.com/oladeeayo/open-matchday).
+
+
+### Quote Sisal senza inserimento manuale
+
+Il pulsante **Acquisisci quote Sisal** apre Sisal in una finestra collegata. La versione 3.1.0 dello userscript Tampermonkey legge le quote visibili per le partite selezionate e le restituisce alla PWA tramite `postMessage`. La raccolta dipende dalla struttura della pagina e dai mercati effettivamente caricati; controllare sempre la fonte e l'orario di acquisizione. Non piazza scommesse.
 
 ## Avvio locale
 
