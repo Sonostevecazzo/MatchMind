@@ -179,6 +179,7 @@ test("saved tickets can be duplicated without changing the original or carrying 
   assert.match(bets, /copy\.id="slip-copy-"/);
   assert.match(bets, /status:"Da giocare",result:null/);
   assert.match(bets, /delete copy\.actualPayout/);
+  assert.match(bets, /setBetTab\("live"\)/);
   assert.match(bets, /data-duplicate-ticket=/);
   assert.match(bets, /duplicateTicket\(ticket\)/);
 });
