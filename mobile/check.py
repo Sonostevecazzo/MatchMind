@@ -22,7 +22,7 @@ readme=(ROOT/"README.md").read_text(encoding="utf-8")
 assert bets.count('data-duplicate-ticket=') == 2, "Both open and archived tickets must expose duplication"
 assert "function duplicateTicket(ticket)" in bets and 'status:"Da giocare",result:null' in bets
 assert 'const APP_URL = "https://matchmind-3te.pages.dev/bets.html"' in sisal, "Sisal overlay must link to the main MatchMind app"
-assert "Docteur Bet e Statz non sono integrati" in pages, "Unverified model providers must not be presented as active"
+assert "non sono integrati: non è stato verificato un endpoint pubblico gratuito e stabile" in pages, "Unverified model providers must not be presented as active"
 assert "OddsPapi" not in readme, "Do not document a paid/unverified odds integration as active"
 assert "Il Live funziona solo se API_FOOTBALL_KEY" not in settings, "ESPN must remain available without API keys"
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
