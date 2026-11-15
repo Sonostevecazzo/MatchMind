@@ -391,6 +391,27 @@ function cancelEditTicket(){
  window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();
  $("manualBuilderStatus").textContent="Modifica annullata. La schedina originale è rimasta invariata.";
 }
+function duplicateTicket(ticket){
+ if(!ticket||!Array.isArray(ticket.selections)||!ticket.selections.length)return false;
+ const copy=JSON.parse(JSON.stringify(ticket));
+ copy.id="slip-copy-"+Date.now()+"-"+Math.random().toString(36).slice(2,9);
+ copy.createdAt=new Date().toISOString();
+ copy.updatedAt=null;
+ delete copy.actualPayout;
+ copy.selections=copy.selections.map(selection=>{
+  const next={...selection,status:"Da giocare",result:null};
+  delete next.settledAt;
+  return next;
+ });
+ archive.unshift(copy);
+ archive=archive.slice(0,100);
+ save(ARCHIVE_KEY,archive);
+ renderOpenTickets();
+ renderArchive();
+ const status=$("archiveStatus");
+ if(status)status.textContent="Copia creata. La schedina originale non è stata modificata.";
+ return true;
+}
 function renderOpenTickets(){
  const target=$("openTickets");if(!target)return;
  const open=archive.filter(ticket=>(ticket.selections||[]).some(selection=>!terminalStatus(selection.status||"Da giocare")));
@@ -414,6 +435,7 @@ function renderOpenTickets(){
    }).join("")+
    '<div class="settings-actions">' +
     '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica</button>' +
+    '<button type="button" class="secondary" data-duplicate-ticket="'+esc(ticket.id)+'">Duplica</button>' +
     '<button type="button" class="secondary" data-transfer-ticket="'+esc(ticket.id)+'">Apri su Sisal</button>' +
     '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
     '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
@@ -483,6 +505,7 @@ function renderArchive(){
     return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+'<div class="settings-actions">' +
     '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica</button>' +
+    '<button type="button" class="secondary" data-duplicate-ticket="'+esc(ticket.id)+'">Duplica</button>' +
     '<button type="button" class="secondary" data-transfer-ticket="'+esc(ticket.id)+'">Apri su Sisal</button>' +
     '<button type="button" class="secondary settle-btn-win" data-settle-win="'+esc(ticket.id)+'">🏆 Segna Vinta</button>' +
     '<button type="button" class="secondary settle-btn-loss" data-settle-loss="'+esc(ticket.id)+'">❌ Segna Persa</button>' +
@@ -1077,6 +1100,7 @@ function initEvents(){
  $("refreshArchive").addEventListener("click",updateArchive);
  ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
   const editBtn=event.target.closest("[data-edit-ticket]");if(editBtn){const ticket=archive.find(x=>x.id===editBtn.dataset.editTicket);if(ticket)startEditTicket(ticket);return;}
+  const duplicateBtn=event.target.closest("[data-duplicate-ticket]");if(duplicateBtn){const ticket=archive.find(x=>x.id===duplicateBtn.dataset.duplicateTicket);if(ticket)duplicateTicket(ticket);return;}
   const transferBtn=event.target.closest("[data-transfer-ticket]");if(transferBtn){const ticket=archive.find(x=>x.id===transferBtn.dataset.transferTicket);const result=ticket&&ticketTransferUrl(ticket);if(result&&result.url){window.open(result.url,"_blank","noopener");$("archiveStatus").textContent="Dati inviati allo script Sisal. Verifica gli eventi e le quote prima di confermare.";}else $("archiveStatus").textContent="Trasferimento non disponibile: controlla i mercati della schedina.";return;}
   const del=event.target.closest("[data-delete]");if(del){archive=archive.filter(x=>x.id!==del.dataset.delete);save(ARCHIVE_KEY,archive);renderOpenTickets();renderArchive();return;}
   const shared=event.target.closest("[data-share]");if(shared){const ticket=archive.find(x=>x.id===shared.dataset.share);if(ticket)shareTicket(ticket);return;}
