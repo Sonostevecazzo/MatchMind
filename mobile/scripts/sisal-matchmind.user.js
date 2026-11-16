@@ -19,12 +19,13 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.5.1";
-  const QL_APP_ORIGIN = "https://sonostevecazzo.github.io";
+  const VERSION = "3.5.2";
+  const MATCHMIND_APP_ORIGIN = "https://matchmind-3te.pages.dev";
   let quotaLabCapture = null;
   let quotaLabLastSignature = "";
   const APP_URL = "https://matchmind-3te.pages.dev/bets.html";
   const STORAGE_KEY = "mm_sisal_predictions_v3";
+  const CAPTURE_SESSION_KEY = "mm_sisal_capture_session_v1";
   const ROOT_ID = "mm-sisal-status-v3";
   const BADGE_CLASS = "mm-sisal-prediction-v3";
   const LEGACY_STYLE_ID = "mm-sisal-legacy-cleanup-v3";
@@ -450,9 +451,11 @@
       "#"+ROOT_ID+" .mm-dot{width:6px;height:6px;border-radius:50%;background:#19c784;box-shadow:0 0 0 3px rgba(25,199,132,.13)}",
       "."+BADGE_CLASS+"{display:inline-flex!important;align-items:center!important;justify-content:center!important;vertical-align:middle!important;margin:2px 0 0 4px!important;padding:2px 5px!important;border:1px solid #64748b!important;border-radius:5px!important;background:#1e293b!important;color:#f8fafc!important;font:800 10px/1.15 system-ui,-apple-system,sans-serif!important;letter-spacing:.1px!important;white-space:nowrap!important;pointer-events:none!important;box-shadow:none!important;}",
       "."+BADGE_CLASS+".mm-picked{outline:2px solid #facc15!important;outline-offset:1px!important;}",
-      "."+BADGE_CLASS+".mm-best{border-color:#16a34a!important;background:#dcfce7!important;color:#166534!important;}",
-      "."+BADGE_CLASS+".mm-value{border-color:#2563eb!important;background:#dbeafe!important;color:#1d4ed8!important;}",
-      "."+BADGE_CLASS+".mm-avoid{border-color:#dc2626!important;background:#fee2e2!important;color:#991b1b!important;}",
+      "."+BADGE_CLASS+".mm-positive-ev{border-color:#16a34a!important;background:#dcfce7!important;color:#166534!important;box-shadow:0 0 0 1px rgba(22,163,74,.25)!important;}",
+      "."+BADGE_CLASS+".mm-negative-ev{border-color:#dc2626!important;background:#fee2e2!important;color:#991b1b!important;}",
+      "."+BADGE_CLASS+".mm-best{border-color:#64748b!important;background:#1e293b!important;color:#f8fafc!important;}",
+      "."+BADGE_CLASS+".mm-value{border-color:#64748b!important;background:#1e293b!important;color:#f8fafc!important;}",
+      "."+BADGE_CLASS+".mm-avoid{border-color:#64748b!important;background:#1e293b!important;color:#f8fafc!important;}",
       "."+BADGE_CLASS+"[data-mm-limited='true']{border-style:dashed!important;}",
       "@media(max-width:600px){#"+ROOT_ID+"{right:8px;bottom:88px;padding:4px 8px;font-size:10px;}}"
     ].join("");
@@ -671,20 +674,35 @@
 
   function decodeQuotaLabHash() {
     const params = new URLSearchParams(String(location.hash || "").replace(/^#/, ""));
-    const encoded = params.get("qlsync");
-    if (!encoded) return false;
-    try {
-      const payload = JSON.parse(encoded);
-      if (!payload || payload.version !== 1 || !Array.isArray(payload.fixtures)) return false;
-      quotaLabCapture = {
-        requestId: String(payload.requestId || ""),
-        fixtures: payload.fixtures.filter(item => item && item.home && item.away && item.date && item.competition)
-      };
-      params.delete("qlsync");
-      const cleanHash = params.toString();
-      history.replaceState(null, "", location.pathname + location.search + (cleanHash ? "#" + cleanHash : ""));
-      return quotaLabCapture.fixtures.length > 0;
-    } catch (_) { return false; }
+    const encoded = params.get("mmcapture") || params.get("qlsync");
+    if (encoded) {
+      try {
+        const payload = JSON.parse(encoded);
+        if (!payload || payload.version !== 1 || !Array.isArray(payload.fixtures)) return false;
+        quotaLabCapture = {
+          requestId: String(payload.requestId || ""),
+          fixtures: payload.fixtures.filter(item => item && item.home && item.away && item.date && item.competition)
+        };
+        try { sessionStorage.setItem(CAPTURE_SESSION_KEY, JSON.stringify(quotaLabCapture)); } catch (_) {}
+        params.delete("mmcapture");
+        params.delete("qlsync");
+        const cleanHash = params.toString();
+        history.replaceState(null, "", location.pathname + location.search + (cleanHash ? "#" + cleanHash : ""));
+        return quotaLabCapture.fixtures.length > 0;
+      } catch (_) { return false; }
+    }
+    if (!quotaLabCapture) {
+      try {
+        const payload = JSON.parse(sessionStorage.getItem(CAPTURE_SESSION_KEY) || "null");
+        if (payload && payload.requestId && Array.isArray(payload.fixtures)) {
+          quotaLabCapture = {
+            requestId: String(payload.requestId),
+            fixtures: payload.fixtures.filter(item => item && item.home && item.away && item.date && item.competition)
+          };
+        }
+      } catch (_) {}
+    }
+    return Boolean(quotaLabCapture && quotaLabCapture.fixtures.length);
   }
 
   function quotaLabMarketKey(key) {
@@ -740,11 +758,11 @@
     quotaLabLastSignature = signature;
     try {
       window.opener.postMessage({
-        type:"QUOTALAB_SISAL_ODDS",
+        type:"MATCHMIND_SISAL_ODDS",
         requestId:quotaLabCapture.requestId,
         capturedAt:new Date().toISOString(),
         items
-      }, QL_APP_ORIGIN);
+      }, MATCHMIND_APP_ORIGIN);
     } catch (_) {}
   }
 
@@ -767,16 +785,25 @@
     if (key === "nbaMoneyline:home" || key === "nbaMoneyline:away") return "nbaMoneyline";
     return key;
   }
+  function formatExpectedValue(value) {
+    return (value >= 0 ? "+" : "") + (value * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
+  }
+
   function addPredictionBadge(button, prediction, selected, classification) {
     let badge = button.querySelector(':scope > .' + BADGE_CLASS);
     if (!badge) { badge = document.createElement('span'); badge.className = BADGE_CLASS; badge.setAttribute('data-mm-sisal-ui', 'true'); button.appendChild(badge); }
-    badge.textContent = selected ? "MM ✓ " + formatPercent(prediction.probability) : formatPercent(prediction.probability);
+    const showEv = prediction.sampleEnough === true && Number.isFinite(classification.expectedValue);
+    badge.textContent = (selected ? "MM ✓ " : "MM ") + formatPercent(prediction.probability) +
+      (showEv ? " · EV " + formatExpectedValue(classification.expectedValue) : "");
     badge.dataset.mmLimited = String(!prediction.sampleEnough);
-    badge.title = classification.title + ' - ' + (prediction.sampleEnough ? 'campione adeguato' : 'campione limitato') + (prediction.historyCount ? ' · ' + prediction.historyCount + ' risultati storici' : '') + ' - ' + prediction.model;
+    badge.title = classification.title + ' - ' + (prediction.sampleEnough ? 'campione adeguato' : 'campione limitato') +
+      (prediction.historyCount ? ' · ' + prediction.historyCount + ' risultati storici' : '') + ' - ' + prediction.model;
     badge.classList.toggle('mm-picked', Boolean(selected));
-    badge.classList.toggle('mm-best', classification.type === 'best');
-    badge.classList.toggle('mm-value', classification.type === 'value');
-    badge.classList.toggle('mm-avoid', classification.type === 'avoid');
+    badge.classList.toggle('mm-positive-ev', classification.type === 'positive-ev');
+    badge.classList.toggle('mm-negative-ev', classification.type === 'negative-ev');
+    badge.classList.toggle('mm-best', false);
+    badge.classList.toggle('mm-value', false);
+    badge.classList.toggle('mm-avoid', false);
     button.setAttribute('data-mm-prediction', prediction.marketKey || '');
   }
   function scan() {
@@ -840,22 +867,15 @@
       });
       delete item.__requireDate;
       if (eventSeen) matchesSeen++;
-      const families = new Map();
-      found.forEach(entry => { const family = marketFamily(entry.key); if (!families.has(family)) families.set(family, []); families.get(family).push(entry); });
       found.forEach(entry => {
-        const group = families.get(marketFamily(entry.key));
-        let classification = { type: 'neutral', title: 'Stima MatchMind' };
-        if (group.length > 1) {
-          const maxP = Math.max(...group.map(value => value.prediction.probability));
-          const minP = Math.min(...group.map(value => value.prediction.probability));
-          const odds = group.filter(value => value.odds !== null);
-          const maxOdds = odds.length > 1 ? Math.max(...odds.map(value => value.odds)) : null;
-          const isBest = Math.abs(entry.prediction.probability - maxP) < 1e-9;
-          const isAvoid = Math.abs(entry.prediction.probability - minP) < 1e-9;
-          const isValue = maxOdds !== null && entry.odds !== null && Math.abs(entry.odds - maxOdds) < 1e-9;
-          if (isValue) classification = { type: 'value', title: 'Stima MatchMind · quota più alta tra le alternative confrontabili' };
-          else if (isBest && !isAvoid) classification = { type: 'best', title: 'Stima MatchMind · probabilità più alta tra le alternative confrontabili' };
-          else if (isAvoid && !isBest) classification = { type: 'avoid', title: 'Stima MatchMind · probabilità più bassa tra le alternative confrontabili' };
+        let classification = { type: 'neutral', expectedValue: null, title: 'Stima MatchMind · quota o campione non sufficienti per calcolare un EV affidabile' };
+        if (entry.prediction.sampleEnough === true && entry.odds !== null) {
+          const expectedValue = entry.prediction.probability * entry.odds - 1;
+          classification = {
+            type: expectedValue >= 0.03 ? 'positive-ev' : expectedValue < 0 ? 'negative-ev' : 'neutral',
+            expectedValue,
+            title: 'Valore atteso MatchMind: ' + formatExpectedValue(expectedValue) + ' (' + formatPercent(entry.prediction.probability) + ' × quota ' + entry.odds.toFixed(2) + ' − 1)'
+          };
         }
         const hasExplicitSelection = Object.prototype.hasOwnProperty.call(item, "selectedMarketKey");
         const selected = hasExplicitSelection
@@ -937,6 +957,7 @@
     scrollScanTimer = window.setTimeout(() => {
       scrollScanTimer = null;
       scheduleScan(900);
+      scheduleQuotaLabCapture(850);
     }, 1100);
   }, { passive: true });
   document.addEventListener("visibilitychange", () => {
