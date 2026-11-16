@@ -327,7 +327,16 @@ async function updateSisalTransfer(){
  link.textContent="Preparo tutte le partite…";status.textContent="Caricamento calendari e probabilità MatchMind per tutte le competizioni e NBA.";
  try{
   const calendar=await collectAllSisalFixtures();
-  const result=bridge.createUrl(calendar.rows);
+  const currentPicks=readPicks();
+  const transferRows=calendar.rows.map(row=>{
+   const match=row.match;
+   const pick=row.sport==="nba"
+    ?currentPicks.find(item=>item&&item.sport==="nba"&&String(item.id||item.eventId)===String(match.id||match.eventId))
+    :currentPicks.find(item=>item&&item.sport!=="nba"&&(item.competition||"serie-a")===(match.competition||"serie-a")&&item.date===match.date&&norm(item.home)===norm(match.home)&&norm(item.away)===norm(match.away));
+   const selectedMarketKey=pick?(pick.marketKey||(pick.sport==="nba"?"nbaMoneyline:"+pick.side:"")):null;
+   return {...row,selectedMarketKey:row.predictions.some(item=>item.marketKey===selectedMarketKey)?selectedMarketKey:null};
+  });
+  const result=bridge.createUrl(transferRows);
   if(!result||!result.url){
    link.textContent="Nessuna partita trasferibile";
    status.textContent="Nessuna partita con probabilità valide disponibile per il trasferimento.";
