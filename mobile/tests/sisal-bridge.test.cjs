@@ -141,6 +141,18 @@ test("preserves competition metadata for multiple supported leagues", () => {
   ]);
 });
 
+test("all MatchMind football competitions retain their competition IDs in the Sisal payload", () => {
+  const competitions = ["serie-a", "champions-league", "europa-league", "nations-league"];
+  const rows = competitions.map((competition, index) => ({
+    home: "Home " + index, away: "Away " + index, date: "2026-11-16",
+    competition, marketKey: "home", probability: 0.61,
+    predictions: [{ marketKey: "home", probability: 0.61 }]
+  }));
+  const result = bridge.createUrl(rows, { sentAt: 99 });
+  assert.equal(result.skipped, 0);
+  assert.deepEqual(result.payload.items.map(item => item.competition), competitions);
+  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio#mmplay="));
+});
 test("keeps NBA moneyline on the NBA Sisal destination", () => {
   const result = bridge.createUrl([{
     sport: "nba", id: "401810001", eventId: "401810001",
