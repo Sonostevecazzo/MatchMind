@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v155-20261116-all-fixtures-nba-date';
+const CACHE='matchmind-pwa-v156-20261116-sisal-sport-scan';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html','./nba.html',
