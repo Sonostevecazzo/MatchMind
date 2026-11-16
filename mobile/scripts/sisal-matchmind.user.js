@@ -668,8 +668,12 @@
   }
 
   function oddsFromButton(button) {
-    const values = (buttonText(button).match(/[0-9]+(?:[.,][0-9]+)?/g) || []).map(value => Number(value.replace(',', '.')));
-    return values.find(value => Number.isFinite(value) && value > 1 && value < 1000) || null;
+    // Sisal buttons can include the outcome ("2") or total line ("2,5")
+    // before the price. The decimal odds are the last decimal token.
+    const values = (buttonText(button).match(/\b\d{1,3}[.,]\d{1,3}\b/g) || [])
+      .map(value => Number(value.replace(",", ".")))
+      .filter(value => Number.isFinite(value) && value > 1 && value < 1000);
+    return values.length ? values[values.length - 1] : null;
   }
 
   function decodeQuotaLabHash() {
@@ -724,7 +728,7 @@
   }
 
   function quotaLabOddsFromButton(button) {
-    const values = (buttonText(button).match(/[0-9]+(?:[.,][0-9]+)?/g) || [])
+    const values = (buttonText(button).match(/\b\d{1,3}[.,]\d{1,3}\b/g) || [])
       .map(value => Number(value.replace(",", ".")))
       .filter(value => Number.isFinite(value) && value > 1 && value < 1000);
     return values.length ? values[values.length - 1] : null;
