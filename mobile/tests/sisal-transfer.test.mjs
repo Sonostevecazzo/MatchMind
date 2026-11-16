@@ -138,11 +138,12 @@ test("Sisal can display 1X2, double chance, goals and both-teams-to-score foreca
 });
 
 test("NBA picks and Sisal transfer use Italy-local calendar dates consistently", () => {
-  assert.match(nba, /const localDate=iso=>/);
-  assert.match(nba, /timeZone:"Europe\\/Rome"/);
-  assert.match(nba, /date:localDate\\(g\\.start\\)/);
-  assert.match(bets, /timeZone:"Europe\\/Rome"/);
+  assert.ok(nba.includes('const localDate=iso=>'));
+  assert.ok(nba.includes('timeZone:"Europe/Rome"'));
+  assert.ok(nba.includes('date:localDate(g.start)'));
+  assert.ok(bets.includes('timeZone:"Europe/Rome"'));
 });
+
 test("NBA transfer matches team names and abbreviations, recognizes moneyline and US date labels", () => {
   assert.match(script, /item\.sport === "nba"/);
   assert.match(script, /nbaMoneyline:home/);
