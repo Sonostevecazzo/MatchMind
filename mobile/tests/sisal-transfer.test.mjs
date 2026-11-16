@@ -265,6 +265,18 @@ test("Sisal script never clicks, adds, confirms or submits a wager", () => {
   assert.match(script, /addPredictionBadge\(button/);
 });
 
+test("Sisal EV scanner reads the decimal price, not the 1X2 outcome or Over/Under line", () => {
+  const start = script.indexOf("  function oddsFromButton(button) {");
+  const end = script.indexOf("\n\n", start);
+  assert.ok(start >= 0 && end > start);
+  const readOdds = new Function("buttonText", script.slice(start, end) + "; return oddsFromButton;");
+  const parser = readOdds(button => button.text);
+  assert.equal(parser({ text: "2 1,85" }), 1.85);
+  assert.equal(parser({ text: "Over 2,5 1,80" }), 1.8);
+  assert.equal(parser({ text: "Under 3,5 2,05" }), 2.05);
+  assert.equal(parser({ text: "Esito 1" }), null);
+});
+
 test("Sisal scanner captures lazily-loaded markets on DOM changes and scroll without polling", () => {
   assert.match(script, /new MutationObserver/);
   assert.match(script, /scheduleScan\(450\)/);
