@@ -357,7 +357,7 @@
             predictions: { ...(old.predictions || {}), ...item.predictions }
           } : item);
         });
-        writeStored(Array.from(merged.values()).slice(-40));
+        writeStored(Array.from(merged.values()).slice(-250));
       }
       try {
         const cleanUrl = new URL(location.href);
