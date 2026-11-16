@@ -63,6 +63,17 @@ test("Sisal scanner is scoped to the visible area and rescans on scroll", () => 
   assert.match(script, /new WeakMap\(\)/);
   assert.match(script, /window\.addEventListener\("scroll"/);
 });
+test("Sisal import keeps at least 250 fixtures across multiple competitions", () => {
+  assert.match(script, /writeStored\(Array\.from\(merged\.values\(\)\)\.slice\(-250\)\)/);
+  assert.match(script, /function eventKey\(item\)/);
+  assert.match(script, /item\.competition \|\| ""/);
+});
+test("the MatchMind transfer reads selections from every stored football competition", () => {
+  assert.match(bets, /const storedFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!==\"nba\"\)/);
+  assert.match(bets, /const competition=p\.competition\|\|\"serie-a\"/);
+  assert.match(bets, /competition\)===competition/);
+  assert.match(bets, /return footballRows\.concat\(nbaRows\)/);
+});
 test("Sisal can display 1X2, double chance, goals and both-teams-to-score forecasts", () => {
   assert.match(script, /function marketKeyFor\(button, eventRoot\)/);
   assert.match(script, /return "bttsYes"/);
