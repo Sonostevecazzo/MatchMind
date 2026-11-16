@@ -301,7 +301,7 @@
       const year = hit[3] ? Number(hit[3]) : targetYear;
       if (Number(hit[1]) === targetDay && months[hit[2]] === targetMonth && year === targetYear) return true;
     }
-    const monthFirst = /\\b(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|october|oct|november|nov|december|dec)\\s+(\\d{1,2})(?:,?\\s+(20\\d{2}))?\\b/g;
+    const monthFirst = /\b(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|october|oct|november|nov|december|dec)\s+(\d{1,2})(?:,?\s+(20\d{2}))?\b/g;
     while ((hit = monthFirst.exec(value))) {
       found = true;
       const year = hit[3] ? Number(hit[3]) : targetYear;
