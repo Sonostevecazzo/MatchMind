@@ -301,10 +301,18 @@
       const year = hit[3] ? Number(hit[3]) : targetYear;
       if (Number(hit[1]) === targetDay && months[hit[2]] === targetMonth && year === targetYear) return true;
     }
+    const monthFirst = /\\b(january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|october|oct|november|nov|december|dec)\\s+(\\d{1,2})(?:,?\\s+(20\\d{2}))?\\b/g;
+    while ((hit = monthFirst.exec(value))) {
+      found = true;
+      const year = hit[3] ? Number(hit[3]) : targetYear;
+      if (Number(hit[2]) === targetDay && months[hit[1]] === targetMonth && year === targetYear) return true;
+    }
     return found ? false : null;
   }
   function sameEvent(text, item, requireDate) {
-    if (!includesTeam(text, item.home) || !includesTeam(text, item.away)) return false;
+    const homeFound = includesTeam(text, item.home) || (item.sport === "nba" && includesTeam(text, item.homeAbbr));
+    const awayFound = includesTeam(text, item.away) || (item.sport === "nba" && includesTeam(text, item.awayAbbr));
+    if (!homeFound || !awayFound) return false;
     const dateMatch = eventDateMatch(text, item.date);
     return requireDate ? dateMatch === true : dateMatch !== false;
   }
@@ -582,8 +590,8 @@
         button.getAttribute("data-market") || button.getAttribute("data-market-type");
       if (dataKey === "nbaMoneyline:home" || dataKey === "nbaMoneyline:away") return dataKey;
       const outcome = buttonText(button);
-      const home = includesTeam(outcome, item.home);
-      const away = includesTeam(outcome, item.away);
+      const home = includesTeam(outcome, item.home) || includesTeam(outcome, item.homeAbbr);
+      const away = includesTeam(outcome, item.away) || includesTeam(outcome, item.awayAbbr);
       if (home !== away) return home ? "nbaMoneyline:home" : "nbaMoneyline:away";
       const normalized = normalize(label);
       if (/^(home|casa|1|vincecasa|vittoriacasa)$/.test(normalized)) return "nbaMoneyline:home";
