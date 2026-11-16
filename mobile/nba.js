@@ -7,7 +7,8 @@
   let nbaStake=10;try{const saved=Number(JSON.parse(localStorage.getItem(STAKE_KEY)||"10"));if(Number.isFinite(saved)&&saved>=0.5&&saved<=100000)nbaStake=saved;}catch{}
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const pct=p=>Number.isFinite(Number(p))?Math.round(Number(p)*100)+"%":"—";
-  const when=iso=>{const d=new Date(iso);return Number.isNaN(d.getTime())?"Data non disponibile":d.toLocaleDateString("it-IT",{weekday:"short",day:"2-digit",month:"short"})+" · "+d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});};
+  const localDate=iso=>{const d=new Date(iso);if(Number.isNaN(d.getTime()))return "";const p=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d).filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));return p.year+"-"+p.month+"-"+p.day;};
+  const when=iso=>{const d=new Date(iso);return Number.isNaN(d.getTime())?"Data non disponibile":d.toLocaleDateString("it-IT",{timeZone:"Europe/Rome",weekday:"short",day:"2-digit",month:"short"})+" · "+d.toLocaleTimeString("it-IT",{timeZone:"Europe/Rome",hour:"2-digit",minute:"2-digit"});};
   const readAll=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(x)?x:[];}catch{return[];}};
   const writeAll=rows=>{try{localStorage.setItem(KEY,JSON.stringify(rows));window.dispatchEvent(new Event("matchmind:picks-updated"));window.dispatchEvent(new Event("storage"));}catch(e){$("globalStatus").textContent="Impossibile salvare le selezioni: memoria locale non disponibile.";}}
   function migrateLegacy(){
@@ -18,7 +19,7 @@
       if(!x||!x.home||!x.away||!["home","away"].includes(x.side))continue;
       const id=String(x.id||x.eventId||"");
       if(all.some(p=>p.sport==="nba"&&String(p.id||p.eventId)===id&&p.side===x.side))continue;
-      all.push({sport:"nba",competition:"nba",id,eventId:id,home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start||"",date:String(x.start||"").slice(0,10),side:x.side,team:x.team||(x.side==="home"?x.home:x.away),marketKey:"nbaMoneyline:"+x.side,probability:Number(x.probability??x.prob),prob:Number(x.probability??x.prob),odds:null,sampleEnough:false,historyCount:0,predictionMethod:"NBA Elo"});
+      all.push({sport:"nba",competition:"nba",id,eventId:id,home:x.home,away:x.away,homeAbbr:x.homeAbbr||"",awayAbbr:x.awayAbbr||"",start:x.start||"",date:localDate(x.start||""),side:x.side,team:x.team||(x.side==="home"?x.home:x.away),marketKey:"nbaMoneyline:"+x.side,probability:Number(x.probability??x.prob),prob:Number(x.probability??x.prob),odds:null,sampleEnough:false,historyCount:0,predictionMethod:"NBA Elo"});
     }
     writeAll(all);
     try{localStorage.removeItem(LEGACY);}catch{}
@@ -31,7 +32,7 @@
     else{
       if(existing>=0)all.splice(existing,1);
       const prob=side==="home"?g.prediction.homeWin:g.prediction.awayWin;
-      all.push({sport:"nba",competition:"nba",id:String(g.id),eventId:String(g.id),home:g.home,away:g.away,homeAbbr:g.homeAbbr||"",awayAbbr:g.awayAbbr||"",start:g.start,date:String(g.start).slice(0,10),side,team:side==="home"?g.home:g.away,marketKey:"nbaMoneyline:"+side,probability:prob,prob,odds:null,sampleEnough:g.prediction.reliable===true,historyCount:0,predictionMethod:"NBA Elo"});
+      all.push({sport:"nba",competition:"nba",id:String(g.id),eventId:String(g.id),home:g.home,away:g.away,homeAbbr:g.homeAbbr||"",awayAbbr:g.awayAbbr||"",start:g.start,date:localDate(g.start),side,team:side==="home"?g.home:g.away,marketKey:"nbaMoneyline:"+side,probability:prob,prob,odds:null,sampleEnough:g.prediction.reliable===true,historyCount:0,predictionMethod:"NBA Elo"});
     }
     writeAll(all);render();
     $("globalStatus").textContent="Selezioni NBA aggiornate nella schedina condivisa.";
@@ -98,7 +99,7 @@
     if(state.view==="ranking"){renderRanking();return;}
     const q=state.query.trim().toLowerCase(),now=Date.now();
     let rows=state.view==="results"?state.data.games.filter(g=>g.status==="FT").slice().reverse():state.data.games.filter(g=>g.status!=="FT"&&Date.parse(g.start)>=now-6*60*60*1000);
-    rows=rows.filter(g=>(!q||g.home.toLowerCase().includes(q)||g.away.toLowerCase().includes(q))&&(!state.date||String(g.start||"").slice(0,10)===state.date));
+    rows=rows.filter(g=>(!q||g.home.toLowerCase().includes(q)||g.away.toLowerCase().includes(q))&&(!state.date||localDate(g.start)===state.date));
     $("nbaListTitle").textContent=state.view==="results"?"Risultati":"In programma";
     $("nbaSummary").textContent=rows.length+' partite · stagione '+state.data.season+' · fonte ESPN'+(state.data.errors?.length?' · '+state.data.errors.length+' richieste parziali non riuscite':"");
     $("nbaList").innerHTML=rows.length?rows.slice(0,state.shown).map(card).join(""):'<div class="empty-state">Nessuna partita trovata con questi filtri.</div>';
