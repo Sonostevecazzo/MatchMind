@@ -484,7 +484,7 @@
 
   function setStatus() {
     if (!statusRoot) return;
-    const currentSport = /\\/basket\\/usa\\/nba(?:\\/|$)/i.test(location.pathname || "") ? "nba" : "football";
+    const currentSport = String(location.pathname || "").includes("/basket/usa/nba") ? "nba" : "football";
     const imported = readStored().filter(item => (item.sport || "football") === currentSport).length;
     const title = matchedSelections
       ? "MatchMind attivo · " + matchedSelections + " mercati selezionati riconosciuti su " + matchedMatches + " partite."
@@ -788,7 +788,7 @@
     }
     lastScan = now;
 
-    const currentSport = /\\/basket\\/usa\\/nba(?:\\/|$)/i.test(location.pathname || "") ? "nba" : "football";
+    const currentSport = String(location.pathname || "").includes("/basket/usa/nba") ? "nba" : "football";
     const queue = readStored().filter(item => item && (item.sport || "football") === currentSport && item.predictions && Object.keys(item.predictions).length);
     if (!queue.length) {
       document.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
