@@ -342,8 +342,11 @@ function renderSisalCaptureAnalysis(){
    const probability=Number(prediction&&prediction.probability);
    const sampleEnough=record.sampleEnough===true;
    const hasModel=Number.isFinite(probability)&&probability>0&&probability<1;
-   const ev=hasModel&&sampleEnough&&Number.isFinite(odds)?probability*odds-1:null;
-   entries.push({record,marketKey,odds,prediction,probability,sampleEnough,ev});
+   const quoteTimestamp=Date.parse(quote&&quote.updatedAt||record.updatedAt||"");
+   const quoteAge=Date.now()-quoteTimestamp;
+   const quoteFresh=Number.isFinite(quoteTimestamp)&&quoteAge>=-5*60*1000&&quoteAge<=60*60*1000;
+   const ev=hasModel&&sampleEnough&&quoteFresh&&Number.isFinite(odds)?probability*odds-1:null;
+   entries.push({record,marketKey,odds,prediction,probability,sampleEnough,quoteFresh,ev});
   });
  });
  const rank=item=>item.ev!==null&&item.ev>=0.03?3:item.ev!==null&&item.ev<0?1:2;
@@ -351,7 +354,7 @@ function renderSisalCaptureAnalysis(){
  const positive=entries.filter(item=>item.ev!==null&&item.ev>=0.03).length;
  const evaluated=entries.filter(item=>item.ev!==null).length;
  const rows=entries.slice(0,40).map(item=>{
-  const status=item.ev===null?"Dati insufficienti":item.ev>=0.03?"Valore positivo":item.ev<0?"EV negativo":"Margine ridotto";
+  const status=!item.quoteFresh?"Quota non aggiornata":item.ev===null?"Dati insufficienti":item.ev>=0.03?"Valore positivo":item.ev<0?"EV negativo":"Margine ridotto";
   const cls=item.ev===null?"neutral":item.ev>=0.03?"positive":item.ev<0?"negative":"neutral";
   const p=Number.isFinite(item.probability)?pct(item.probability):"—";
   const ev=item.ev===null?"—":fmtEv(item.ev);
