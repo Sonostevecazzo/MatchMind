@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         QuotaLab / MatchMind · Sisal Bridge
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.5.1
-// @description  Acquisisce quote visibili Sisal per QuotaLab e mostra le stime MatchMind; nessun invio automatico.
+// @version      3.5.2
+// @description  Legge quote Sisal visibili, le confronta con MatchMind e mostra il valore atteso; nessun invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint/*
@@ -679,8 +679,11 @@
       try {
         const payload = JSON.parse(encoded);
         if (!payload || payload.version !== 1 || !Array.isArray(payload.fixtures)) return false;
+        const requestedOrigin = String(payload.appOrigin || "");
         quotaLabCapture = {
           requestId: String(payload.requestId || ""),
+          appOrigin: ["https://matchmind-3te.pages.dev", "https://sonostevecazzo.github.io"].includes(requestedOrigin)
+            ? requestedOrigin : "https://sonostevecazzo.github.io",
           fixtures: payload.fixtures.filter(item => item && item.home && item.away && item.date && item.competition)
         };
         try { sessionStorage.setItem(CAPTURE_SESSION_KEY, JSON.stringify(quotaLabCapture)); } catch (_) {}
@@ -695,8 +698,11 @@
       try {
         const payload = JSON.parse(sessionStorage.getItem(CAPTURE_SESSION_KEY) || "null");
         if (payload && payload.requestId && Array.isArray(payload.fixtures)) {
+          const requestedOrigin = String(payload.appOrigin || "");
           quotaLabCapture = {
             requestId: String(payload.requestId),
+            appOrigin: ["https://matchmind-3te.pages.dev", "https://sonostevecazzo.github.io"].includes(requestedOrigin)
+              ? requestedOrigin : "https://sonostevecazzo.github.io",
             fixtures: payload.fixtures.filter(item => item && item.home && item.away && item.date && item.competition)
           };
         }
@@ -757,12 +763,13 @@
     if (signature === quotaLabLastSignature) return;
     quotaLabLastSignature = signature;
     try {
+      const targetOrigin = quotaLabCapture.appOrigin || "https://sonostevecazzo.github.io";
       window.opener.postMessage({
-        type:"MATCHMIND_SISAL_ODDS",
+        type:targetOrigin === MATCHMIND_APP_ORIGIN ? "MATCHMIND_SISAL_ODDS" : "QUOTALAB_SISAL_ODDS",
         requestId:quotaLabCapture.requestId,
         capturedAt:new Date().toISOString(),
         items
-      }, MATCHMIND_APP_ORIGIN);
+      }, targetOrigin);
     } catch (_) {}
   }
 
