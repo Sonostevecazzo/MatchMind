@@ -1,13 +1,13 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-15T20:06:16Z",
+  "last_updated": "2026-11-16T16:41:21Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
       "team": "Atalanta",
-      "totale_assenze": 5,
+      "totale_assenze": 3,
       "assenze_attacco": 0,
-      "assenze_difesa": 4,
+      "assenze_difesa": 3,
       "infortunati": [
         {
           "player": "Kossounou",
@@ -23,21 +23,11 @@
           "player": "Pompei",
           "detail": "Il portiere fermo da inizio ottobre per la frattura della falange della mano destra, out nel prossimo turno di campionato. Recuperabile da dicembre.",
           "role": "Difesa"
-        },
-        {
-          "player": "Gaetano",
-          "detail": "il centrocampista frenato nella gara di fine ottobre a Firenze per una distrazione di medio grado ai muscoli adduttori della coscia destra, recuperabile da fine novembre.",
-          "role": "Centrocampo"
-        },
-        {
-          "player": "Kristensen T.",
-          "detail": "il difensore costretto al cambio il 29 ottobre a Firenze dopo pochi minuti di gara a causa di una distrazione di basso grado ai muscoli flessori della coscia sinistra. Recuperabile dalla seconda metà di novembre.",
-          "role": "Difesa"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "5 infortunati, 0 squalificati"
+      "summary": "3 infortunati, 0 squalificati"
     },
     "Bologna": {
       "team": "Bologna",
@@ -92,14 +82,14 @@
           "role": "Difesa"
         },
         {
-          "player": "Mina",
-          "detail": "il colombiano condizionato da una vecchia ferita alla gamba (microlesione muscolare al bicipite femorale), out nel turno precedente contro il Frosinone. Da valutare durante la sosta per le Nazionali in vista della ripresa del campionato contro il Como.",
-          "role": "Altro"
-        },
-        {
           "player": "Felici",
           "detail": "il centrocampista KO il 7 settembre contro il Lecce in casa vittima della rottura del legamento crociato anteriore. Verrà operato e costretto a un lungo stop (ipotizziamo un rientro da marzo).",
           "role": "Centrocampo"
+        },
+        {
+          "player": "Mina",
+          "detail": "il colombiano condizionato da una vecchia ferita alla gamba (microlesione muscolare al bicipite femorale), out nel turno precedente contro il Frosinone. Da valutare durante la sosta per le Nazionali in vista della ripresa del campionato contro il Como.",
+          "role": "Altro"
         }
       ],
       "squalificati": [
@@ -297,8 +287,8 @@
       "assenze_difesa": 0,
       "infortunati": [
         {
-          "player": "Monteiro J.",
-          "detail": "l'ala offensiva dei salentini KO l'1 novembre contro il Bologna vittima di una lesione di primo grado al polpaccio sinistro. Recuperabile dall'inizio di dicembre.",
+          "player": "Pierotti",
+          "detail": "l'ala offensiva dei salentini ferma ai box per la frattura composta del malleolo mediale della caviglia destra rimediata nella seconda metà di ottobre, poi operato a inizio novembre. Lungo stop, ipotizziamo un rientro in campo da gennaio.",
           "role": "Attacco"
         },
         {
@@ -307,8 +297,8 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Pierotti",
-          "detail": "l'ala offensiva dei salentini ferma ai box per la frattura composta del malleolo mediale della caviglia destra rimediata nella seconda metà di ottobre, poi operato a inizio novembre. Lungo stop, ipotizziamo un rientro in campo da gennaio.",
+          "player": "Monteiro J.",
+          "detail": "l'ala offensiva dei salentini KO l'1 novembre contro il Bologna vittima di una lesione di primo grado al polpaccio sinistro. Recuperabile dall'inizio di dicembre.",
           "role": "Attacco"
         }
       ],
