@@ -426,7 +426,7 @@ async function startSisalOddsCapture(){
    const match=row.match,key=sisalFixtureKey(match);
    if(!unique.has(key))unique.set(key,{id:String(match.id||""),competition:match.competition||"serie-a",date:match.date,home:match.home,away:match.away});
   });
-  const payload={version:1,requestId,fixtures:[...unique.values()]};
+  const payload={version:1,requestId,appOrigin:location.origin,fixtures:[...unique.values()]};
   const targetUrl=new URL(transfer.url);
   const params=new URLSearchParams(targetUrl.hash.replace(/^#/,""));
   params.set("qlsync",JSON.stringify(payload));
