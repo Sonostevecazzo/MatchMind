@@ -85,10 +85,16 @@
       const sampleEnough = row.sampleEnough === true || Boolean(row.forecast && row.forecast.sampleEnough);
       const historyCount = Number.isFinite(Number(row.historyCount)) ? Number(row.historyCount) :
         Number(row.forecast && row.forecast.historyCount) || 0;
+      const requestedSelection = row && Object.prototype.hasOwnProperty.call(row, "selectedMarketKey")
+        ? String(row.selectedMarketKey || "")
+        : marketKey;
+      const selectedMarketKey = requestedSelection && predictions.some(entry => entry.marketKey === requestedSelection)
+        ? requestedSelection : (Object.prototype.hasOwnProperty.call(row || {}, "selectedMarketKey") ? null : marketKey);
       const item = {
         home, away, marketKey, label, date, competition, eventId, sport,
         probability: selected ? selected.probability : selectedProbability,
         predictions,
+        selectedMarketKey,
         sampleEnough,
         historyCount: Math.max(0, historyCount),
         predictionMethod: String(row.predictionMethod || (row.forecast && row.forecast.predictionMethod) || (sport === "nba" ? "NBA Elo" : "MatchMind"))
@@ -128,7 +134,7 @@
         item.predictions.map(prediction => [prediction.marketKey, prediction.probability]),
         item.sampleEnough ? 1 : 0, item.historyCount, item.predictionMethod,
         item.start || "", item.homeAbbr || "", item.awayAbbr || "",
-        item.side || "", item.team || ""
+        item.side || "", item.team || "", item.selectedMarketKey
       ])
     };
     const encoded = encodeURIComponent(JSON.stringify(wire));
