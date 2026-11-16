@@ -9,6 +9,7 @@ const curr=v=>Number.isFinite(v)?v.toLocaleString("it-IT",{minimumFractionDigits
 const fmtOdds=v=>Number.isFinite(v)&&v>0?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
 const fmtEv=v=>Number.isFinite(v)?(v>=0?"+":"")+(v*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false,editingTicketId=null,editingPreviousPicks=null;
+let sisalCalendarCache={at:0,rows:[],counts:{football:0,nba:0},errors:[]},sisalCalendarPromise=null;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -229,40 +230,118 @@ function exportSisalPredictions(row){
  }];
 }
 
-function updateSisalTransfer(){
+async function collectAllSisalFixtures(){
+ if(sisalCalendarCache.at&&Date.now()-sisalCalendarCache.at<5*60*1000)return sisalCalendarCache;
+ if(sisalCalendarPromise)return sisalCalendarPromise;
+ sisalCalendarPromise=(async()=>{
+  const rows=[],errors=[];
+  const selectedCompetition=window.MM.getSelectedCompetition();
+  const competitions=window.MM.getCompetitions().filter(item=>item&&item.id);
+  const storedPicks=readPicks();
+  const footballJobs=competitions.map(async competition=>{
+   let payload=null;
+   try{
+    const response=await fetch("./api/competition-calendar?competition="+encodeURIComponent(competition.id),{
+     headers:{Accept:"application/json"},cache:"no-store",signal:AbortSignal.timeout(20000)
+    });
+    if(response.ok){
+     const body=await response.json().catch(()=>null);
+     if(body&&Array.isArray(body.matches))payload=body;
+    }else errors.push(competition.name+": HTTP "+response.status);
+   }catch(error){errors.push(competition.name+": "+String(error&&error.message||error));}
+   if(!payload&&competition.id===selectedCompetition){
+    const fallback=allData||data;
+    if(fallback&&Array.isArray(fallback.matches))payload=fallback;
+   }
+   if(!payload)return [];
+   const history=Array.isArray(payload.history)?payload.history:[];
+   return payload.matches.filter(match=>match&&match.home&&match.away&&match.competition===competition.id&&window.MM.upcoming(match)).map(match=>{
+    let forecast=null;
+    try{forecast=window.MM.forecast(match,history,getContext(match));}catch(_){}
+    if(!forecast)return null;
+    const predictions=markets().map(([key,label])=>({
+     marketKey:key,label,probability:marketProbability(forecast,key)
+    })).filter(item=>Number.isFinite(item.probability)&&item.probability>0&&item.probability<1);
+    if(!predictions.length)return null;
+    const pick=storedPicks.find(item=>item&&item.sport!=="nba"&&(item.competition||"serie-a")===competition.id&&item.date===match.date&&norm(item.home)===norm(match.home)&&norm(item.away)===norm(match.away));
+    const base=predictions.find(item=>item.marketKey==="home")||predictions[0];
+    return {
+     match,marketKey:base.marketKey,marketLabel:base.label,probability:base.probability,
+     selectedMarketKey:pick&&predictions.some(item=>item.marketKey===pick.marketKey)?pick.marketKey:null,
+     predictions,sampleEnough:forecast.sampleEnough===true,
+     historyCount:Number(forecast.historyCount)||0,
+     predictionMethod:forecast.predictionMethod||"MatchMind · "+competition.name,
+     sport:"football"
+    };
+   }).filter(Boolean);
+  });
+  const nbaJob=(async()=>{
+   try{
+    const response=await fetch("./api/public/nba",{headers:{Accept:"application/json"},cache:"no-store",signal:AbortSignal.timeout(25000)});
+    if(!response.ok)throw new Error("HTTP "+response.status);
+    const payload=await response.json();
+    if(!Array.isArray(payload.games))throw new Error("Calendario NBA non valido");
+    return payload.games.filter(game=>{
+     const kickoff=Date.parse(game&&game.start||"");
+     return game&&game.id&&game.home&&game.away&&game.status!=="FT"&&Number.isFinite(kickoff)&&kickoff>=Date.now()-6*60*60*1000&&game.prediction;
+    }).map(game=>{
+     const prediction=game.prediction,home=Number(prediction.homeWin),away=Number(prediction.awayWin);
+     if(!Number.isFinite(home)||!Number.isFinite(away)||home<=0||away<=0||home>=1||away>=1)return null;
+     const predictions=[
+      {marketKey:"nbaMoneyline:home",label:"Vince casa",probability:home},
+      {marketKey:"nbaMoneyline:away",label:"Vince trasferta",probability:away}
+     ];
+     const pick=storedPicks.find(item=>item&&item.sport==="nba"&&String(item.id||item.eventId)===String(game.id));
+     const base=home>=away?predictions[0]:predictions[1];
+     return {
+      match:{...game,date:String(game.start).slice(0,10),competition:"nba",sport:"nba"},
+      marketKey:base.marketKey,marketLabel:base.label,probability:base.probability,
+      selectedMarketKey:pick?String(pick.marketKey||("nbaMoneyline:"+pick.side)):null,
+      predictions,sampleEnough:prediction.reliable===true,historyCount:0,
+      predictionMethod:"NBA Elo",sport:"nba"
+     };
+    }).filter(Boolean);
+   }catch(error){errors.push("NBA: "+String(error&&error.message||error));return [];}
+  })();
+  const [footballGroups,nbaRows]=await Promise.all([Promise.all(footballJobs),nbaJob]);
+  footballGroups.forEach(group=>rows.push(...group));
+  const unique=new Map();
+  rows.forEach(row=>{
+   const match=row.match,key=[row.sport,row.match.competition,row.match.date,norm(match.home),norm(match.away)].join("|");
+   if(!unique.has(key))unique.set(key,row);
+  });
+  const allRows=[...unique.values(),...nbaRows];
+  const result={at:Date.now(),rows:allRows,counts:{football:allRows.filter(row=>row.sport==="football").length,nba:nbaRows.length},errors};
+  sisalCalendarCache=result;
+  return result;
+ })().finally(()=>{sisalCalendarPromise=null;});
+ return sisalCalendarPromise;
+}
+
+async function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
  const bridge=window.MatchMindSisalBridge;
- // Export the loaded upcoming calendar, not only manually selected picks.
- // The v3 compact payload is tested for 11 fixtures and mobile URL limits.
- const allSelections=selectedRows().map(row=>({
-  ...row,sport:row.sport||"football",
-  marketLabel:row.marketLabel||"Esito 1",
-  probability:Number.isFinite(Number(row.probability))?row.probability:null,
-  predictions:exportSisalPredictions(row),
-  sampleEnough:row.sampleEnough===true||row.forecast?.sampleEnough===true,
-  historyCount:Number(row.historyCount??row.forecast?.historyCount)||0,
-  predictionMethod:row.predictionMethod||row.forecast?.predictionMethod||(row.sport==="nba"?"NBA Elo":"MatchMind")
- }));
- const result=bridge?bridge.createUrl(allSelections):null;
- if(!result||!result.url){
-  link.removeAttribute("href");
-  link.setAttribute("aria-disabled","true");
-  link.setAttribute("tabindex","-1");
-  link.textContent="Aggiungi selezioni supportate";
-  if(!bridge)status.textContent="Ponte Sisal non caricato. Ricarica la pagina e riprova.";
-  else if(result.skipped)status.textContent=(result.skipped===1?"1 selezione non trasferibile":result.skipped+" selezioni non trasferibili")+": il mercato non è supportato o i dati della partita sono incompleti.";
-  else status.textContent="Nessuna partita con previsioni disponibili da trasferire.";
-  return;
+ if(!bridge){link.removeAttribute("href");link.setAttribute("aria-disabled","true");link.textContent="Ponte Sisal non disponibile";status.textContent="Ponte Sisal non caricato. Ricarica la pagina.";return;}
+ link.removeAttribute("href");link.setAttribute("aria-disabled","true");link.setAttribute("tabindex","-1");
+ link.textContent="Preparo tutte le partite…";status.textContent="Caricamento calendari e probabilità MatchMind per tutte le competizioni e NBA.";
+ try{
+  const calendar=await collectAllSisalFixtures();
+  const result=bridge.createUrl(calendar.rows);
+  if(!result||!result.url){
+   link.textContent="Nessuna partita trasferibile";
+   status.textContent="Nessuna partita con probabilità valide disponibile per il trasferimento.";
+   return;
+  }
+  link.href=result.url;link.removeAttribute("aria-disabled");link.removeAttribute("tabindex");
+  link.textContent="Trasferisci "+result.payload.items.length+" partite su Sisal";
+  const counts=calendar.counts;
+  const errorNote=calendar.errors.length?" · fonti non disponibili: "+calendar.errors.join("; "):"";
+  status.textContent="Pronte "+counts.football+" partite di calcio da tutte le competizioni MatchMind e "+counts.nba+" partite NBA. Probabilità MatchMind evidenziate: verde = più alta, blu = quota Sisal più alta, rosso = più bassa, confrontando solo alternative dello stesso mercato. "+(counts.nba?"Dopo il trasferimento apri anche la sezione Basket/NBA di Sisal: le relative partite sono già nella coda dello script. ":"")+errorNote+(result.skipped?" · "+result.skipped+" eventi esclusi per dati o mercati incompleti.":"");
+ }catch(error){
+  link.textContent="Riprova trasferimento";
+  status.textContent="Trasferimento non completato: "+String(error&&error.message||error);
  }
- link.href=result.url;
- link.removeAttribute("aria-disabled");
- link.removeAttribute("tabindex");
- link.textContent="Trasferisci "+result.payload.items.length+" selezioni su Sisal";
- const skippedNote=result.skipped?(result.skipped===1?" 1 partita non trasferibile è stata esclusa.":" "+result.skipped+" partite non trasferibili sono state escluse."):"";
- const selectedMarkets=[...new Set(result.payload.items.map(item=>item.label||item.marketKey))];
- const marketSummary=selectedMarkets.slice(0,4).join(", ")+(selectedMarkets.length>4?" e altri "+(selectedMarkets.length-4):"");
- status.textContent="Trasferite "+result.payload.items.length+" selezioni. Mercati scelti: "+marketSummary+". Su Sisal vedrai il badge MM ✓ accanto al mercato corrispondente; verifica sempre evento e quota."+skippedNote;
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
