@@ -535,13 +535,9 @@
         rootCache.set(current, metrics);
       }
       if (!metrics.text || metrics.text.length > 16000) continue;
-      // Stop at the smallest container that groups the outcomes of one event.
-      // Walking all 14 ancestors repeatedly extracts huge page fragments and
-      // is the main source of needless DOM work on Sisal.
-      if (metrics.count >= 2 && metrics.count <= 40) {
-        roots.push({ root: current, text: metrics.text });
-        break;
-      }
+      // Keep the candidate ancestors so event matching still works with
+      // Sisal layouts where team names live on a wrapper above the market card.
+      if (metrics.count > 0 && metrics.count <= 80) roots.push({ root: current, text: metrics.text });
     }
     return roots;
   }
