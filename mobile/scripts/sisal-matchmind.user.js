@@ -260,8 +260,53 @@
     return parts.join(" ").slice(0, 16000);
   }
 
-  function sameEvent(text, item) {
-    return includesTeam(text, item.home) && includesTeam(text, item.away);
+  function sameFixtureTeams(left, right) {
+    const aliasesMatch = (a, b) => teamAliases(a).some(x =>
+      teamAliases(b).some(y => compact(x) === compact(y))
+    );
+    return Boolean(left && right &&
+      aliasesMatch(left.home, right.home) &&
+      aliasesMatch(left.away, right.away));
+  }
+
+  function eventDateMatch(text, date) {
+    const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(date || ""));
+    if (!match) return null;
+    const targetDay = Number(match[3]), targetMonth = Number(match[2]), targetYear = Number(match[1]);
+    const value = normalize(text);
+    const iso = /\\b(20\\d{2})-(\\d{1,2})-(\\d{1,2})\\b/g;
+    let found = false, hit;
+    while ((hit = iso.exec(value))) {
+      found = true;
+      if (Number(hit[1]) === targetYear && Number(hit[2]) === targetMonth && Number(hit[3]) === targetDay) return true;
+    }
+    const numeric = /\\b(\\d{1,2})[\\/. -](\\d{1,2})(?:[\\/. -](\\d{2,4}))?\\b/g;
+    while ((hit = numeric.exec(value))) {
+      const day = Number(hit[1]), month = Number(hit[2]);
+      const year = hit[3] ? (Number(hit[3]) < 100 ? 2000 + Number(hit[3]) : Number(hit[3])) : targetYear;
+      found = true;
+      if (day === targetDay && month === targetMonth && year === targetYear) return true;
+    }
+    const months = {
+      gennaio:1,gen:1,febbraio:2,feb:2,marzo:3,mar:3,aprile:4,apr:4,
+      maggio:5,mag:5,giugno:6,giu:6,luglio:7,lug:7,agosto:8,ago:8,
+      settembre:9,set:9,ottobre:10,ott:10,novembre:11,nov:11,dicembre:12,dic:12,
+      january:1,jan:1,february:2,mar:3,april:4,may:5,june:6,july:7,
+      august:8,aug:8,september:9,sep:9,october:10,oct:10,november:11,december:12,dec:12
+    };
+    const words = /\\b(\\d{1,2})\\s+(gennaio|gen|febbraio|feb|marzo|mar|aprile|apr|maggio|mag|giugno|giu|luglio|lug|agosto|ago|settembre|set|ottobre|ott|novembre|nov|dicembre|dic|january|jan|february|march|april|may|june|july|august|aug|september|sep|october|oct|november|december|dec)(?:\\s+(20\\d{2}))?\\b/g;
+    while ((hit = words.exec(value))) {
+      found = true;
+      const year = hit[3] ? Number(hit[3]) : targetYear;
+      if (Number(hit[1]) === targetDay && months[hit[2]] === targetMonth && year === targetYear) return true;
+    }
+    return found ? false : null;
+  }
+
+  function sameEvent(text, item, requireDate) {
+    if (!includesTeam(text, item.home) || !includesTeam(text, item.away)) return false;
+    const dateMatch = eventDateMatch(text, item.date);
+    return requireDate ? dateMatch === true : dateMatch !== false;
   }
 
   function validProbability(value) {
@@ -737,8 +782,8 @@
     const rootMatches = (root, text, item) => {
       let cache = eventMatchCache.get(root);
       if (!cache) { cache = new Map(); eventMatchCache.set(root, cache); }
-      const key = eventKey(item);
-      if (!cache.has(key)) cache.set(key, sameEvent(text, item));
+      const key = eventKey(item) + (item.__requireDate ? "|date-required" : "");
+      if (!cache.has(key)) cache.set(key, sameEvent(text, item, item.__requireDate === true));
       return cache.get(key);
     };
 
@@ -747,6 +792,11 @@
     let selectionsSeen = 0;
     queue.forEach(item => {
       const predictions = item.predictions || {};
+      const requireDate = queue.some(other =>
+        other !== item && other.date && item.date && other.date !== item.date &&
+        sameFixtureTeams(item, other)
+      );
+      item.__requireDate = requireDate;
       let eventSeen = false;
       const found = [];
       snapshots.forEach(snapshot => {
@@ -757,6 +807,7 @@
         const prediction = predictions[key];
         if (prediction) found.push({ button: snapshot.button, key, prediction, odds: oddsFromButton(snapshot.button) });
       });
+      delete item.__requireDate;
       if (eventSeen) matchesSeen++;
       const families = new Map();
       found.forEach(entry => { const family = marketFamily(entry.key); if (!families.has(family)) families.set(family, []); families.get(family).push(entry); });
