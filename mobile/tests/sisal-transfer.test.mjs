@@ -112,14 +112,19 @@ test("Sisal import keeps at least 250 fixtures across multiple competitions", ()
   assert.match(script, /function eventKey\(item\)/);
   assert.match(script, /item\.competition \|\| ""/);
 });
-test("the MatchMind transfer reads selections from every stored football competition", () => {
-  assert.match(bets, /const storedFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!==\"nba\"\)/);
-  assert.match(bets, /const competition=p\.competition\|\|\"serie-a\"/);
-  assert.match(bets, /m\.competition\|\|"serie-a"\)===competition/);
-  assert.match(bets, /return footballRows\.concat\(nbaRows\)/);
+test("the MatchMind transfer loads every configured football competition and NBA fixtures", () => {
+  assert.match(bets, /async function collectAllSisalFixtures\(\)/);
+  assert.match(bets, /window\.MM\.getCompetitions\(\)/);
+  assert.match(bets, /api\/competition-calendar\?competition=/);
+  assert.match(bets, /api\/public\/nba/);
+  assert.match(bets, /window\.MM\.forecast\(match,history,getContext\(match\)\)/);
+  assert.match(bets, /marketKey:base\.marketKey/);
+  assert.match(bets, /selectedMarketKey:pick&&predictions\.some/);
+  assert.match(bets, /nbaMoneyline:home/);
+  assert.match(bets, /Trasferisci \"\+result\.payload\.items\.length\+\" partite su Sisal/);
 });
 test("Sisal can display 1X2, double chance, goals and both-teams-to-score forecasts", () => {
-  assert.match(script, /function marketKeyFor\(button, eventRoot\)/);
+  assert.match(script, /function marketKeyFor\(button, eventRoot, item\)/);
   assert.match(script, /return "bttsYes"/);
   assert.match(script, /return "bttsNo"/);
   assert.match(script, /return "dc1X"/);
@@ -131,6 +136,24 @@ test("Sisal can display 1X2, double chance, goals and both-teams-to-score foreca
   assert.match(script, /return "away"/);
 });
 
+test("NBA transfer matches team names and abbreviations, recognizes moneyline and US date labels", () => {
+  assert.match(script, /item\.sport === "nba"/);
+  assert.match(script, /nbaMoneyline:home/);
+  assert.match(script, /nbaMoneyline:away/);
+  assert.match(script, /item\.homeAbbr/);
+  assert.match(script, /item\.awayAbbr/);
+  assert.match(script, /const monthFirst = \/\\b\(january\|jan/);
+  assert.match(script, /key === "nbaMoneyline:home" \|\| key === "nbaMoneyline:away"/);
+});
+test("color ranking remains green probability, blue best Sisal odds, red lowest probability", () => {
+  assert.match(script, /mm-best\{border-color:#16a34a/);
+  assert.match(script, /mm-value\{border-color:#2563eb/);
+  assert.match(script, /mm-avoid\{border-color:#dc2626/);
+  assert.match(script, /quota più alta tra le alternative confrontabili/);
+  assert.match(script, /probabilità più alta tra le alternative confrontabili/);
+  assert.match(script, /probabilità più bassa tra le alternative confrontabili/);
+  assert.match(script, /function marketFamily\(key\)/);
+});
 test("Sisal displays limited-sample model estimates without relabelling them as calibrated", () => {
   assert.match(script, /badge\.dataset\.mmLimited/);
   assert.match(script, /prediction\.sampleEnough/);
@@ -152,15 +175,15 @@ test("Sisal scanner is event-driven and has no polling loop", () => {
   assert.doesNotMatch(script, /setInterval\(\(\) => scanPage/);
 });
 
-test("app transfers only the market explicitly selected in MatchMind", () => {
-  assert.match(bets, /function exportSisalPredictions\(row\)/);
-  assert.match(bets, /const probability=Number\(row\.probability\)/);
-  assert.match(bets, /marketKey:row\.marketKey,label:row\.marketLabel/);
-  assert.doesNotMatch(bets, /const candidates=ENGINE\(\)\.marketCandidates\("auto"\)/);
-  assert.match(bets, /const allSelections=selectedRows\(\)\.map/);
-  assert.match(bets, /predictions:exportSisalPredictions\(row\)/);
+test("full-match transfer exports all model markets without marking an unselected outcome", () => {
+  assert.match(bets, /const predictions=markets\(\)\.map\(\(\[key,label\]\)/);
+  assert.match(bets, /selectedMarketKey:pick&&predictions\.some/);
+  assert.match(bets, /predictions,sampleEnough:forecast\.sampleEnough===true/);
+  assert.match(bets, /const allRows=\[\.\.\.unique\.values\(\),\.\.\.nbaRows\]/);
+  assert.match(bridge, /selectedMarketKey/);
+  assert.match(script, /hasExplicitSelection/);
+  assert.match(script, /item\.selectedMarketKey === entry\.key/);
 });
-
 test("transfer confirmation lists the markets selected in the MatchMind slip", () => {
   assert.match(bets, /const selectedMarkets=\[\.\.\.new Set\(result\.payload\.items\.map/);
   assert.match(bets, /Mercati scelti:/);
