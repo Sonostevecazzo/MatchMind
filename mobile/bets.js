@@ -445,8 +445,6 @@ async function startSisalOddsCapture(){
   if(status)status.textContent="Acquisizione non avviata: "+String(error&&error.message||error);
  }
 }
-window.addEventListener("message",handleSisalOddsMessage);
-
 async function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
@@ -1170,6 +1168,7 @@ function handleUrlImport(){
 }
 
 function initEvents(){
+ window.addEventListener("message",handleSisalOddsMessage);
 
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  document.querySelectorAll("[data-bet-workspace-tab]").forEach(button=>button.addEventListener("click",()=>setBetWorkspaceTab(button.dataset.betWorkspaceTab)));
