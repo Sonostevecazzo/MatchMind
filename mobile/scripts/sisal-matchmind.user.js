@@ -270,18 +270,19 @@
   }
 
   function eventDateMatch(text, date) {
-    const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(date || ""));
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date || ""));
     if (!match) return null;
     const targetDay = Number(match[3]), targetMonth = Number(match[2]), targetYear = Number(match[1]);
-    const value = normalize(text);
-    const iso = /\\b(20\\d{2})-(\\d{1,2})-(\\d{1,2})\\b/g;
+    const raw = String(text || "");
+    const value = normalize(raw);
+    const iso = /\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/g;
     let found = false, hit;
-    while ((hit = iso.exec(value))) {
+    while ((hit = iso.exec(raw))) {
       found = true;
       if (Number(hit[1]) === targetYear && Number(hit[2]) === targetMonth && Number(hit[3]) === targetDay) return true;
     }
-    const numeric = /\\b(\\d{1,2})[\\/. -](\\d{1,2})(?:[\\/. -](\\d{2,4}))?\\b/g;
-    while ((hit = numeric.exec(value))) {
+    const numeric = /\b(\d{1,2})[\/. -](\d{1,2})(?:[\/. -](\d{2,4}))?\b/g;
+    while ((hit = numeric.exec(raw))) {
       const day = Number(hit[1]), month = Number(hit[2]);
       const year = hit[3] ? (Number(hit[3]) < 100 ? 2000 + Number(hit[3]) : Number(hit[3])) : targetYear;
       found = true;
@@ -291,10 +292,10 @@
       gennaio:1,gen:1,febbraio:2,feb:2,marzo:3,mar:3,aprile:4,apr:4,
       maggio:5,mag:5,giugno:6,giu:6,luglio:7,lug:7,agosto:8,ago:8,
       settembre:9,set:9,ottobre:10,ott:10,novembre:11,nov:11,dicembre:12,dic:12,
-      january:1,jan:1,february:2,mar:3,april:4,may:5,june:6,july:7,
+      january:1,jan:1,february:2,march:3,april:4,may:5,june:6,july:7,
       august:8,aug:8,september:9,sep:9,october:10,oct:10,november:11,december:12,dec:12
     };
-    const words = /\\b(\\d{1,2})\\s+(gennaio|gen|febbraio|feb|marzo|mar|aprile|apr|maggio|mag|giugno|giu|luglio|lug|agosto|ago|settembre|set|ottobre|ott|novembre|nov|dicembre|dic|january|jan|february|march|april|may|june|july|august|aug|september|sep|october|oct|november|december|dec)(?:\\s+(20\\d{2}))?\\b/g;
+    const words = /\b(\d{1,2})\s+(gennaio|gen|febbraio|feb|marzo|mar|aprile|apr|maggio|mag|giugno|giu|luglio|lug|agosto|ago|settembre|set|ottobre|ott|novembre|nov|dicembre|dic|january|jan|february|march|april|may|june|july|august|aug|september|sep|october|oct|november|december|dec)(?:\s+(20\d{2}))?\b/g;
     while ((hit = words.exec(value))) {
       found = true;
       const year = hit[3] ? Number(hit[3]) : targetYear;
@@ -302,7 +303,6 @@
     }
     return found ? false : null;
   }
-
   function sameEvent(text, item, requireDate) {
     if (!includesTeam(text, item.home) || !includesTeam(text, item.away)) return false;
     const dateMatch = eventDateMatch(text, item.date);
