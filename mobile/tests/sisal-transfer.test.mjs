@@ -13,9 +13,9 @@ const core = readFileSync(resolve(ROOT, "site-core.js"), "utf8");
 const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
 const nba = readFileSync(resolve(ROOT, "nba.js"), "utf8");
 
-test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
+test("Sisal userscript v3.5.1 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.5\.0$/m);
+  assert.match(script, /^\/\/ @version\s+3\.5\.1$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);

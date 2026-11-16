@@ -1251,8 +1251,17 @@ document.addEventListener("DOMContentLoaded",async()=>{
  setBetWorkspaceTab(location.hash.includes("manualBuilder")||location.hash.includes("saveManualSlip")||initialPicks.length?"slip":"builder");
  $("globalStatus").textContent="Carico calendario e risultati storici…";
  try{
-  await window.MM.loadOdds?.();
-  await window.MM.loadInjuries?.();
+  // Optional feeds run beside the calendar instead of delaying the first render.
+  // The fixture list is usable without bookmaker odds or injury context.
+  let initialRenderComplete=false;
+  const secondaryFeeds=Promise.allSettled([
+   window.MM.loadOdds?.(),
+   window.MM.loadInjuries?.()
+  ]).then(results=>{
+   const injuryFeed=results[1];
+   // Add the injury context after the calendar is already visible, when available.
+   if(initialRenderComplete&&injuryFeed?.status==="fulfilled"&&injuryFeed.value)renderFixtures();
+  }).catch(()=>{});
   allData=await window.MM.loadData();data=window.MM.forCompetition(allData);
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   picks=readPicks().filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
@@ -1270,6 +1279,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   if(teamSelect)teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+window.MM.getTeams(fixtures).map(t=>'<option value="'+esc(t)+'">'+esc(displayTeam(t))+'</option>').join("");
   if(roundSelect){const rounds=[...new Set(fixtures.map(m=>String(m.round||"")).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));roundSelect.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+esc(n)+'">Giornata '+esc(n)+'</option>').join("");}
   renderFixtures();renderSlip();renderOpenTickets();renderArchive();
+  initialRenderComplete=true;
   handleUrlImport();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
