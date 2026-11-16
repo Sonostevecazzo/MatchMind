@@ -11,6 +11,7 @@ const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 const core = readFileSync(resolve(ROOT, "site-core.js"), "utf8");
 const pages = readFileSync(resolve(ROOT, "site-pages.js"), "utf8");
+const nba = readFileSync(resolve(ROOT, "nba.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
@@ -136,6 +137,12 @@ test("Sisal can display 1X2, double chance, goals and both-teams-to-score foreca
   assert.match(script, /return "away"/);
 });
 
+test("NBA picks and Sisal transfer use Italy-local calendar dates consistently", () => {
+  assert.match(nba, /const localDate=iso=>/);
+  assert.match(nba, /timeZone:"Europe\\/Rome"/);
+  assert.match(nba, /date:localDate\\(g\\.start\\)/);
+  assert.match(bets, /timeZone:"Europe\\/Rome"/);
+});
 test("NBA transfer matches team names and abbreviations, recognizes moneyline and US date labels", () => {
   assert.match(script, /item\.sport === "nba"/);
   assert.match(script, /nbaMoneyline:home/);
