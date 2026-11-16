@@ -294,7 +294,7 @@ async function collectAllSisalFixtures(){
      const pick=storedPicks.find(item=>item&&item.sport==="nba"&&String(item.id||item.eventId)===String(game.id));
      const base=home>=away?predictions[0]:predictions[1];
      return {
-      match:{...game,date:String(game.start).slice(0,10),competition:"nba",sport:"nba"},
+      match:{...game,date:(()=>{const parts=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(game.start)).filter(part=>part.type!=="literal").map(part=>[part.type,part.value]));return parts.year+"-"+parts.month+"-"+parts.day;})(),competition:"nba",sport:"nba"},
       marketKey:base.marketKey,marketLabel:base.label,probability:base.probability,
       selectedMarketKey:pick?String(pick.marketKey||("nbaMoneyline:"+pick.side)):null,
       predictions,sampleEnough:prediction.reliable===true,historyCount:0,
