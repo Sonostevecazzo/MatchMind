@@ -237,7 +237,7 @@ test("Sisal overlay colors are based on model expected value and sample sufficie
   assert.match(script, /mm-negative-ev\{border-color:#dc2626/);
   assert.match(script, /entry\.prediction\.sampleEnough === true && entry\.odds !== null/);
   assert.match(script, /expectedValue >= 0\.03 \? 'positive-ev' : expectedValue < 0 \? 'negative-ev'/);
-  assert.match(script, /badge\.textContent.*EV/);
+  assert.match(script, /" · EV "/);
   assert.doesNotMatch(script, /quota più alta tra le alternative confrontabili/);
 });
 test("Sisal displays limited-sample model estimates without relabelling them as calibrated", () => {
