@@ -15,7 +15,7 @@ const nba = readFileSync(resolve(ROOT, "nba.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.4\.0$/m);
+  assert.match(script, /^\/\/ @version\s+3\.5\.0$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
@@ -58,6 +58,11 @@ test("Sisal consumes prediction arrays from the app and supports Italian team al
   assert.match(script, /function eventRootCandidates\(button, rootCache\)/);
 });
 
+test("Sisal scanner processes only the sport page currently open, without discarding the other sport queue", () => {
+  assert.match(script, /String\(location\.pathname \|\| ""\)\.includes\("\/basket\/usa\/nba"\)/);
+  assert.match(script, /\(item\.sport \|\| "football"\) === currentSport/);
+  assert.match(script, /writeStored\(Array\.from\(merged\.values\(\)\)\.slice\(-250\)\)/);
+});
 test("Sisal scanner is scoped to the visible area and rescans on scroll", () => {
   assert.match(script, /getBoundingClientRect\(\)/);
   assert.match(script, /rect\.bottom < -margin \|\| rect\.top > viewportHeight \+ margin/);
