@@ -484,7 +484,8 @@
 
   function setStatus() {
     if (!statusRoot) return;
-    const imported = readStored().length;
+    const currentSport = /\\/basket\\/usa\\/nba(?:\\/|$)/i.test(location.pathname || "") ? "nba" : "football";
+    const imported = readStored().filter(item => (item.sport || "football") === currentSport).length;
     const title = matchedSelections
       ? "MatchMind attivo · " + matchedSelections + " mercati selezionati riconosciuti su " + matchedMatches + " partite."
       : imported
@@ -787,7 +788,8 @@
     }
     lastScan = now;
 
-    const queue = readStored().filter(item => item && item.predictions && Object.keys(item.predictions).length);
+    const currentSport = /\\/basket\\/usa\\/nba(?:\\/|$)/i.test(location.pathname || "") ? "nba" : "football";
+    const queue = readStored().filter(item => item && (item.sport || "football") === currentSport && item.predictions && Object.keys(item.predictions).length);
     if (!queue.length) {
       document.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
       document.querySelectorAll("[data-mm-prediction]").forEach(node => node.removeAttribute("data-mm-prediction"));
