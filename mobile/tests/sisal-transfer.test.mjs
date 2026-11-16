@@ -63,6 +63,48 @@ test("Sisal scanner is scoped to the visible area and rescans on scroll", () => 
   assert.match(script, /new WeakMap\(\)/);
   assert.match(script, /window\.addEventListener\("scroll"/);
 });
+test("Sisal import runtime retains 60 fixtures across all four football competitions", () => {
+  const normalizeStart = script.indexOf("  function normalizePredictions(row) {");
+  const decodeStart = script.indexOf("  function decodeIncomingHash() {", normalizeStart);
+  const eventStart = script.indexOf("  function eventKey(item) {", decodeStart);
+  const cleanupStart = script.indexOf("  function clearLegacyInterface()", eventStart);
+  assert.ok(normalizeStart >= 0 && decodeStart > normalizeStart && eventStart > decodeStart && cleanupStart > eventStart);
+  const normalizeSource = script.slice(normalizeStart, decodeStart);
+  const decodeSource = script.slice(decodeStart, eventStart);
+  const eventSource = script.slice(eventStart, cleanupStart);
+  const competitions = ["serie-a", "champions-league", "europa-league", "nations-league"];
+  const payload = {
+    version: 3,
+    sentAt: 123,
+    items: Array.from({ length: 60 }, (_, index) => ({
+      home: "Casa " + index, away: "Trasferta " + index,
+      date: "2026-11-16", competition: competitions[index % competitions.length],
+      sport: "football", marketKey: "home", probability: 0.6,
+      predictions: [{ marketKey: "home", probability: 0.6 }]
+    }))
+  };
+  const location = {
+    search: "",
+    hash: "#mmplay=" + encodeURIComponent(JSON.stringify(payload)),
+    href: "https://www.sisal.it/scommesse-matchpoint/sport/calcio#mmplay=test"
+  };
+  const stored = [];
+  let cleaned = false;
+  const history = { replaceState() { cleaned = true; } };
+  const compact = value => String(value || "").normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const decode = new Function("location", "history", "readStored", "writeStored",
+    "URLSearchParams", "URL", "compact",
+    normalizeSource + decodeSource + eventSource + "return decodeIncomingHash;");
+  const run = decode(location, history, () => stored, value => stored.splice(0, stored.length, ...value),
+    URLSearchParams, URL, compact);
+  assert.equal(run(), true);
+  assert.equal(stored.length, 60);
+  for (const competition of competitions) {
+    assert.equal(stored.filter(item => item.competition === competition).length, 15);
+  }
+  assert.equal(cleaned, true);
+});
 test("Sisal import keeps at least 250 fixtures across multiple competitions", () => {
   assert.match(script, /writeStored\(Array\.from\(merged\.values\(\)\)\.slice\(-250\)\)/);
   assert.match(script, /function eventKey\(item\)/);
