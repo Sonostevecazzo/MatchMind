@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         QuotaLab / MatchMind · Sisal Bridge
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.2.0
+// @version      3.3.0
 // @description  Acquisisce quote visibili Sisal per QuotaLab e mostra le stime MatchMind; nessun invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.2.0";
+  const VERSION = "3.3.0";
   const QL_APP_ORIGIN = "https://sonostevecazzo.github.io";
   let quotaLabCapture = null;
   let quotaLabLastSignature = "";
@@ -366,11 +366,12 @@
             const [
               home, away, marketKey, label, date, competition, eventId, sport,
               selectedProbability, compactPredictions, sampleEnough, historyCount,
-              predictionMethod, start, homeAbbr, awayAbbr, side, team
+              predictionMethod, start, homeAbbr, awayAbbr, side, team, selectedMarketKey
             ] = tuple;
             return {
               home, away, marketKey, label, date, competition, eventId, sport,
               probability: selectedProbability,
+              selectedMarketKey: selectedMarketKey === undefined ? marketKey : selectedMarketKey,
               predictions: (Array.isArray(compactPredictions) ? compactPredictions : [])
                 .filter(pair => Array.isArray(pair) && pair.length >= 2)
                 .map(pair => ({ marketKey: pair[0], probability: pair[1] })),
@@ -388,6 +389,9 @@
         competition: String(row.competition || "serie-a"),
         sport: String(row.sport || "football"),
         marketKey: String(row.marketKey || ""),
+        selectedMarketKey: Object.prototype.hasOwnProperty.call(row, "selectedMarketKey")
+          ? (row.selectedMarketKey == null || row.selectedMarketKey === "" ? null : String(row.selectedMarketKey))
+          : String(row.marketKey || ""),
         predictions: normalizePredictions(row),
         sentAt: Number(payload.sentAt) || Date.now()
       })).filter(row => Object.keys(row.predictions).length > 0);
@@ -571,8 +575,21 @@
     return String(raw).replace(/\b\d+[.,]\d{1,3}\b/g, " ").replace(/\s+/g, " ").trim();
   }
 
-  function marketKeyFor(button, eventRoot) {
+  function marketKeyFor(button, eventRoot, item) {
     const label = outcomeLabel(button);
+    if (item && item.sport === "nba") {
+      const dataKey = button.getAttribute("data-market-key") ||
+        button.getAttribute("data-market") || button.getAttribute("data-market-type");
+      if (dataKey === "nbaMoneyline:home" || dataKey === "nbaMoneyline:away") return dataKey;
+      const outcome = buttonText(button);
+      const home = includesTeam(outcome, item.home);
+      const away = includesTeam(outcome, item.away);
+      if (home !== away) return home ? "nbaMoneyline:home" : "nbaMoneyline:away";
+      const normalized = normalize(label);
+      if (/^(home|casa|1|vincecasa|vittoriacasa)$/.test(normalized)) return "nbaMoneyline:home";
+      if (/^(away|trasferta|2|vincetrasferta|vittoriatrasferta)$/.test(normalized)) return "nbaMoneyline:away";
+      return "";
+    }
     const normalizedLabel = normalize(label);
     const context = marketContext(button, eventRoot);
     const all = normalize(context + " " + buttonText(button));
@@ -735,6 +752,8 @@
     if (['dc1X', 'dcX2', 'dc12'].includes(key)) return 'double-chance';
     if (/^(over|under)(15|25|35)$/.test(key)) return key.slice(-2);
     if (['bttsYes', 'bttsNo'].includes(key)) return 'btts';
+    if (/^combo:(home|draw|away):/.test(key)) return 'combo:' + key.split(':').slice(2).join(':');
+    if (key === "nbaMoneyline:home" || key === "nbaMoneyline:away") return "nbaMoneyline";
     return key;
   }
   function addPredictionBadge(button, prediction, selected, classification) {
@@ -803,7 +822,7 @@
         const candidate = snapshot.roots.find(entry => rootMatches(entry.root, entry.text, item));
         if (!candidate) return;
         eventSeen = true;
-        const key = marketKeyFor(snapshot.button, candidate.root);
+        const key = marketKeyFor(snapshot.button, candidate.root, item);
         const prediction = predictions[key];
         if (prediction) found.push({ button: snapshot.button, key, prediction, odds: oddsFromButton(snapshot.button) });
       });
@@ -826,7 +845,10 @@
           else if (isBest && !isAvoid) classification = { type: 'best', title: 'Stima MatchMind · probabilità più alta tra le alternative confrontabili' };
           else if (isAvoid && !isBest) classification = { type: 'avoid', title: 'Stima MatchMind · probabilità più bassa tra le alternative confrontabili' };
         }
-        const selected = entry.key === item.marketKey;
+        const hasExplicitSelection = Object.prototype.hasOwnProperty.call(item, "selectedMarketKey");
+        const selected = hasExplicitSelection
+          ? item.selectedMarketKey === entry.key
+          : entry.key === item.marketKey;
         addPredictionBadge(entry.button, { ...entry.prediction, marketKey: entry.key }, selected, classification);
         if (selected) selectionsSeen++;
         marketsSeen++;
