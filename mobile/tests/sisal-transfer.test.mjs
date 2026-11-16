@@ -184,12 +184,12 @@ test("full-match transfer exports all model markets without marking an unselecte
   assert.match(script, /hasExplicitSelection/);
   assert.match(script, /item\.selectedMarketKey === entry\.key/);
 });
-test("transfer confirmation lists the markets selected in the MatchMind slip", () => {
-  assert.match(bets, /const selectedMarkets=\[\.\.\.new Set\(result\.payload\.items\.map/);
-  assert.match(bets, /Mercati scelti:/);
-  assert.match(bets, /badge MM ✓/);
+test("transfer confirmation reports all competitions and NBA coverage", () => {
+  assert.match(bets, /Pronte \"\+counts\.football\+\" partite di calcio da tutte le competizioni MatchMind/);
+  assert.match(bets, /\+counts\.nba\+\" partite NBA/);
+  assert.match(bets, /verde = più alta, blu = quota Sisal più alta, rosso = più bassa/);
+  assert.match(bets, /Dopo il trasferimento apri anche la sezione Basket\/NBA di Sisal/);
 });
-
 test("the automatic builder treats the chosen market family as a hard filter", () => {
   assert.match(bets, /const allowedMarkets=ENGINE\(\)\.marketCandidates\(marketMode\)/);
   assert.match(bets, /const candidateKeys=allowedMarkets\.map\(item=>item\.key\)/);
