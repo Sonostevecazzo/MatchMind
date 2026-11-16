@@ -137,6 +137,78 @@ test("Sisal can display 1X2, double chance, goals and both-teams-to-score foreca
   assert.match(script, /return "away"/);
 });
 
+test("runtime calendar collector transfers all four football competitions and NBA", async () => {
+  const start = bets.indexOf("async function collectAllSisalFixtures(){");
+  const end = bets.indexOf("\\nasync function updateSisalTransfer()", start);
+  assert.ok(start >= 0 && end > start);
+  const source = bets.slice(start, end);
+  const competitions = ["serie-a", "champions-league", "europa-league", "nations-league"];
+  const calls = [];
+  const fakeFetch = async url => {
+    calls.push(String(url));
+    if (String(url).includes("/api/public/nba")) return {
+      ok: true,
+      json: async () => ({ games: [
+        { id:"nba-1", home:"Boston Celtics", away:"New York Knicks", homeAbbr:"BOS", awayAbbr:"NYK", start:"2099-11-16T19:00:00Z", status:"NS", prediction:{homeWin:.63,awayWin:.37,reliable:true} },
+        { id:"nba-2", home:"Los Angeles Lakers", away:"Golden State Warriors", homeAbbr:"LAL", awayAbbr:"GSW", start:"2099-11-16T21:00:00Z", status:"NS", prediction:{homeWin:.48,awayWin:.52,reliable:false} }
+      ] })
+    };
+    const id = decodeURIComponent(String(url).split("competition=")[1]);
+    return { ok:true, json:async()=>({matches:[{home:"Casa "+id,away:"Ospite "+id,date:"2099-11-16",time:"20:45",competition:id}],history:[{competition:id}]}) };
+  };
+  const MM = {
+    getSelectedCompetition:()=>"serie-a",
+    getCompetitions:()=>competitions.map(id=>({id,name:id})),
+    upcoming:()=>true,
+    forecast:()=>({sampleEnough:true,historyCount:20,predictionMethod:"test",probabilities:{home:.6,draw:.2,away:.2,over25:.55,under25:.45}})
+  };
+  const marketList=[["home","1"],["draw","X"],["away","2"],["over25","Over 2,5"],["under25","Under 2,5"]];
+  const picks=[{competition:"champions-league",date:"2099-11-16",home:"Casa champions-league",away:"Ospite champions-league",marketKey:"over25"}];
+  const factory=new Function("window","fetch","AbortSignal","sisalCalendarCache","sisalCalendarPromise","readPicks","markets","marketProbability","getContext","norm","allData","data",source+";return collectAllSisalFixtures;");
+  const collect=factory({MM},fakeFetch,{timeout:()=>0},{at:0,rows:[],counts:{},errors:[]},null,()=>picks,()=>marketList,(forecast,key)=>forecast.probabilities[key],()=>({}),value=>String(value).toLowerCase(),null,null);
+  const result=await collect();
+  const football=result.rows.filter(row=>row.sport==="football"),nbaRows=result.rows.filter(row=>row.sport==="nba");
+  assert.equal(football.length,4);
+  assert.equal(nbaRows.length,2);
+  assert.deepEqual([...new Set(football.map(row=>row.match.competition))],competitions);
+  assert.ok(football.every(row=>row.predictions.length===5));
+  assert.equal(football.find(row=>row.match.competition==="champions-league").selectedMarketKey,"over25");
+  assert.ok(nbaRows.every(row=>row.predictions.length===2));
+  assert.equal(calls.length,5);
+});
+test("NBA Sisal scanner identifies home/away outcomes, abbreviations and local date", () => {
+  const dateStart=script.indexOf("  function eventDateMatch(text, date) {");
+  const sameStart=script.indexOf("  function sameEvent(text, item, requireDate)",dateStart);
+  const validStart=script.indexOf("  function validProbability",sameStart);
+  const marketStart=script.indexOf("  function marketKeyFor(button, eventRoot, item)",validStart);
+  const marketEnd=script.indexOf("\\n  function compactKeyLabel",marketStart);
+  const familyStart=script.indexOf("  function marketFamily(key)",marketEnd);
+  const familyEnd=script.indexOf("\\n  function addPredictionBadge",familyStart);
+  assert.ok(dateStart>=0&&sameStart>dateStart&&validStart>sameStart&&marketStart>validStart&&marketEnd>marketStart&&familyStart>marketEnd);
+  const normalize=value=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const compact=value=>normalize(value).replace(/\\s+/g,"");
+  const includesTeam=(text,name)=>Boolean(name)&&normalize(text).includes(normalize(name));
+  const buttonText=button=>button.text,outcomeLabel=button=>button.label||button.text,marketContext=()=>"Moneyline";
+  const source=script.slice(dateStart,sameStart)+script.slice(sameStart,validStart)+script.slice(marketStart,marketEnd)+script.slice(familyStart,familyEnd);
+  const run=new Function("normalize","compact","includesTeam","buttonText","outcomeLabel","marketContext","item",source+`
+    const button=text=>({text,label:text,getAttribute:()=>null});
+    return {
+      home:marketKeyFor(button("Boston Celtics"),{},item),
+      away:marketKeyFor(button("New York Knicks"),{},item),
+      abbreviation:marketKeyFor(button("BOS"),{},item),
+      correctDate:sameEvent("Nov 16, 2026 Boston Celtics vs New York Knicks",item,true),
+      wrongDate:sameEvent("Nov 17, 2026 Boston Celtics vs New York Knicks",item,true),
+      family:marketFamily("nbaMoneyline:home")
+    };
+  `);
+  const result=run(normalize,compact,includesTeam,buttonText,outcomeLabel,marketContext,{sport:"nba",home:"Boston Celtics",away:"New York Knicks",homeAbbr:"BOS",awayAbbr:"NYK",date:"2026-11-16"});
+  assert.equal(result.home,"nbaMoneyline:home");
+  assert.equal(result.away,"nbaMoneyline:away");
+  assert.equal(result.abbreviation,"nbaMoneyline:home");
+  assert.equal(result.correctDate,true);
+  assert.equal(result.wrongDate,false);
+  assert.equal(result.family,"nbaMoneyline");
+});
 test("NBA picks and Sisal transfer use Italy-local calendar dates consistently", () => {
   assert.ok(nba.includes('const localDate=iso=>'));
   assert.ok(nba.includes('timeZone:"Europe/Rome"'));
