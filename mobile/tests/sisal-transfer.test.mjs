@@ -94,7 +94,7 @@ test("Sisal import runtime retains 60 fixtures across all four football competit
   let cleaned = false;
   const history = { replaceState() { cleaned = true; } };
   const compact = value => String(value || "").normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const decode = new Function("location", "history", "readStored", "writeStored",
     "URLSearchParams", "URL", "compact",
     probabilitySource + normalizeSource + decodeSource + eventSource + "return decodeIncomingHash;");
@@ -115,7 +115,7 @@ test("Sisal import keeps at least 250 fixtures across multiple competitions", ()
 test("the MatchMind transfer reads selections from every stored football competition", () => {
   assert.match(bets, /const storedFootball=readPicks\(\)\.filter\(p=>p&&p\.sport!==\"nba\"\)/);
   assert.match(bets, /const competition=p\.competition\|\|\"serie-a\"/);
-  assert.match(bets, /competition\)===competition/);
+  assert.match(bets, /m\.competition\|\|"serie-a"\)===competition/);
   assert.match(bets, /return footballRows\.concat\(nbaRows\)/);
 });
 test("Sisal can display 1X2, double chance, goals and both-teams-to-score forecasts", () => {
