@@ -64,11 +64,13 @@ test("Sisal scanner is scoped to the visible area and rescans on scroll", () => 
   assert.match(script, /window\.addEventListener\("scroll"/);
 });
 test("Sisal import runtime retains 60 fixtures across all four football competitions", () => {
+  const probabilityStart = script.indexOf("  function validProbability(value) {");
   const normalizeStart = script.indexOf("  function normalizePredictions(row) {");
   const decodeStart = script.indexOf("  function decodeIncomingHash() {", normalizeStart);
   const eventStart = script.indexOf("  function eventKey(item) {", decodeStart);
   const cleanupStart = script.indexOf("  function clearLegacyInterface()", eventStart);
-  assert.ok(normalizeStart >= 0 && decodeStart > normalizeStart && eventStart > decodeStart && cleanupStart > eventStart);
+  assert.ok(probabilityStart >= 0 && normalizeStart > probabilityStart && decodeStart > normalizeStart && eventStart > decodeStart && cleanupStart > eventStart);
+  const probabilitySource = script.slice(probabilityStart, normalizeStart);
   const normalizeSource = script.slice(normalizeStart, decodeStart);
   const decodeSource = script.slice(decodeStart, eventStart);
   const eventSource = script.slice(eventStart, cleanupStart);
@@ -95,7 +97,7 @@ test("Sisal import runtime retains 60 fixtures across all four football competit
     .replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const decode = new Function("location", "history", "readStored", "writeStored",
     "URLSearchParams", "URL", "compact",
-    normalizeSource + decodeSource + eventSource + "return decodeIncomingHash;");
+    probabilitySource + normalizeSource + decodeSource + eventSource + "return decodeIncomingHash;");
   const run = decode(location, history, () => stored, value => stored.splice(0, stored.length, ...value),
     URLSearchParams, URL, compact);
   assert.equal(run(), true);
