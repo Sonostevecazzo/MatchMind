@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         QuotaLab / MatchMind · Sisal Bridge
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.5.0
+// @version      3.5.1
 // @description  Acquisisce quote visibili Sisal per QuotaLab e mostra le stime MatchMind; nessun invio automatico.
 // @author       MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  const VERSION = "3.5.0";
+  const VERSION = "3.5.1";
   const QL_APP_ORIGIN = "https://sonostevecazzo.github.io";
   let quotaLabCapture = null;
   let quotaLabLastSignature = "";
