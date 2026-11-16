@@ -31,6 +31,7 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.equal(item.home, "Netherlands");
   assert.equal(item.away, "Greece");
   assert.equal(item.marketKey, "bttsYes");
+  assert.equal(item.selectedMarketKey, "bttsYes");
   assert.equal(item.probability, 0.522);
   assert.equal(item.sampleEnough, false);
   assert.equal(item.historyCount, 7);
@@ -54,8 +55,26 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.deepEqual(decoded.i[0][9], item.predictions.map(entry => [entry.marketKey, entry.probability]));
   assert.equal(decoded.i[0][10], 0);
   assert.equal(decoded.i[0][11], item.historyCount);
+  assert.equal(decoded.i[0][18], "bttsYes");
 });
 
+test("supports complete match forecasts without marking any market as selected", () => {
+  const result = bridge.prepare([{
+    home: "Roma", away: "Lazio", date: "2026-11-16", competition: "serie-a",
+    marketKey: "home", selectedMarketKey: null, probability: 0.56,
+    predictions: [
+      { marketKey: "home", probability: 0.56 },
+      { marketKey: "draw", probability: 0.24 },
+      { marketKey: "away", probability: 0.20 },
+      { marketKey: "over25", probability: 0.51 },
+      { marketKey: "under25", probability: 0.49 }
+    ]
+  }], 1);
+  assert.equal(result.skipped, 0);
+  assert.equal(result.payload.items[0].selectedMarketKey, null);
+  assert.deepEqual(result.payload.items[0].predictions.map(item => item.marketKey),
+    ["home", "draw", "away", "over25", "under25"]);
+});
 test("keeps an 11-match transfer compact without duplicating the payload", () => {
   const rows = Array.from({ length: 11 }, (_, index) => ({
     home: "Home Team " + index, away: "Away Team " + index,
