@@ -535,7 +535,13 @@
         rootCache.set(current, metrics);
       }
       if (!metrics.text || metrics.text.length > 16000) continue;
-      if (metrics.count > 0 && metrics.count <= 80) roots.push({ root: current, text: metrics.text });
+      // Stop at the smallest container that groups the outcomes of one event.
+      // Walking all 14 ancestors repeatedly extracts huge page fragments and
+      // is the main source of needless DOM work on Sisal.
+      if (metrics.count >= 2 && metrics.count <= 40) {
+        roots.push({ root: current, text: metrics.text });
+        break;
+      }
     }
     return roots;
   }
@@ -803,10 +809,10 @@
     const buttons = getActionButtons();
     const rootCache = new WeakMap();
     const snapshots = buttons.map(button => ({ button, roots: eventRootCandidates(button, rootCache) }));
-    buttons.forEach(button => {
-      button.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
-      button.removeAttribute("data-mm-prediction");
-    });
+    // Keep existing badges in place and update them only when a prediction
+    // is found. Removing/recreating every badge on each scan causes extra
+    // layout and MutationObserver work on Sisal.
+    const matchedButtons = new Set();
     const eventMatchCache = new WeakMap();
     const rootMatches = (root, text, item) => {
       let cache = eventMatchCache.get(root);
@@ -860,9 +866,16 @@
           ? item.selectedMarketKey === entry.key
           : entry.key === item.marketKey;
         addPredictionBadge(entry.button, { ...entry.prediction, marketKey: entry.key }, selected, classification);
+        matchedButtons.add(entry.button);
         if (selected) selectionsSeen++;
         marketsSeen++;
       });
+    });
+    // Remove only badges that no longer correspond to the current import.
+    buttons.forEach(button => {
+      if (matchedButtons.has(button)) return;
+      button.querySelectorAll("." + BADGE_CLASS).forEach(node => node.remove());
+      button.removeAttribute("data-mm-prediction");
     });
     matchedMatches = matchesSeen;
     matchedMarkets = marketsSeen;
@@ -901,7 +914,11 @@
         if (/^(SCRIPT|STYLE|LINK|META)$/.test(node.tagName || "")) return false;
         return true;
       });
-      if (relevant) { scheduleScan(450); scheduleQuotaLabCapture(800); break; }
+      if (relevant) {
+        scheduleScan(650);
+        if (quotaLabCapture && window.opener) scheduleQuotaLabCapture(1000);
+        break;
+      }
     }
   });
 
@@ -914,14 +931,17 @@
   document.addEventListener("click", event => {
     if (event.target.closest && event.target.closest("button,[role='button'],a")) { scheduleScan(500); scheduleQuotaLabCapture(750); }
   }, { passive: true });
-  let scrollScanQueued = false;
+  // Scrolling is frequent on mobile. A full-page DOM scan on every scroll
+  // makes Sisal feel sluggish; lazy-loaded content is handled by the observer.
+  // Keep a slow fallback scan only after the user has stopped scrolling.
+  let scrollScanTimer = null;
   window.addEventListener("scroll", () => {
-    if (scrollScanQueued || document.hidden) return;
-    scrollScanQueued = true;
-    window.setTimeout(() => {
-      scrollScanQueued = false;
-      scheduleScan(280); scheduleQuotaLabCapture(500);
-    }, 220);
+    if (document.hidden) return;
+    if (scrollScanTimer) window.clearTimeout(scrollScanTimer);
+    scrollScanTimer = window.setTimeout(() => {
+      scrollScanTimer = null;
+      scheduleScan(900);
+    }, 1100);
   }, { passive: true });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) { scheduleScan(250); scheduleQuotaLabCapture(450); }
