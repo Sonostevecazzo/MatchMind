@@ -139,7 +139,7 @@ test("Sisal can display 1X2, double chance, goals and both-teams-to-score foreca
 
 test("runtime calendar collector transfers all four football competitions and NBA", async () => {
   const start = bets.indexOf("async function collectAllSisalFixtures(){");
-  const end = bets.indexOf("\\nasync function updateSisalTransfer()", start);
+  const end = bets.indexOf("\nasync function updateSisalTransfer()", start);
   assert.ok(start >= 0 && end > start);
   const source = bets.slice(start, end);
   const competitions = ["serie-a", "champions-league", "europa-league", "nations-league"];
@@ -181,12 +181,12 @@ test("NBA Sisal scanner identifies home/away outcomes, abbreviations and local d
   const sameStart=script.indexOf("  function sameEvent(text, item, requireDate)",dateStart);
   const validStart=script.indexOf("  function validProbability",sameStart);
   const marketStart=script.indexOf("  function marketKeyFor(button, eventRoot, item)",validStart);
-  const marketEnd=script.indexOf("\\n  function compactKeyLabel",marketStart);
+  const marketEnd=script.indexOf("\n  function compactKeyLabel",marketStart);
   const familyStart=script.indexOf("  function marketFamily(key)",marketEnd);
-  const familyEnd=script.indexOf("\\n  function addPredictionBadge",familyStart);
+  const familyEnd=script.indexOf("\n  function addPredictionBadge",familyStart);
   assert.ok(dateStart>=0&&sameStart>dateStart&&validStart>sameStart&&marketStart>validStart&&marketEnd>marketStart&&familyStart>marketEnd);
-  const normalize=value=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-  const compact=value=>normalize(value).replace(/\\s+/g,"");
+  const normalize=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const compact=value=>normalize(value).replace(/\s+/g,"");
   const includesTeam=(text,name)=>Boolean(name)&&normalize(text).includes(normalize(name));
   const buttonText=button=>button.text,outcomeLabel=button=>button.label||button.text,marketContext=()=>"Moneyline";
   const source=script.slice(dateStart,sameStart)+script.slice(sameStart,validStart)+script.slice(marketStart,marketEnd)+script.slice(familyStart,familyEnd);
