@@ -314,7 +314,7 @@ test("Sisal highlights the exact selected market, including combined markets", (
   assert.match(script, /const comboTotal = compactOutcome\.match/);
   assert.match(script, /const comboBtts = compactOutcome\.match/);
   assert.match(script, /return "combo:" \+ resultKey \+ ":" \+ comboTotal\[2\] \+ comboTotal\[3\]/);
-  assert.match(script, /badge\.textContent = selected \? "MM ✓ " \+ formatPercent/);
+  assert.match(script, /badge\.textContent = \(selected \? "MM ✓ " : "MM "\) \+ formatPercent/);
   assert.match(script, /matchedSelections = selectionsSeen/);
   assert.match(script, /mercati selezionati riconosciuti/);
 });
