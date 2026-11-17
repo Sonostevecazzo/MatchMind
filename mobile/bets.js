@@ -58,10 +58,6 @@ const fixtureKey=m=>[(m.competition||"serie-a"),m.date,norm(m.home),norm(m.away)
 const engineKey=m=>[norm(m.home),norm(m.away)].sort().join("|")+"|"+m.date;
 const read=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value;}catch(_){return fallback;}};
 const save=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch(_){$("globalStatus").textContent="Spazio locale insufficiente per salvare i dati."; }};
-const SISAL_CAPTURE_KEY="matchmind-sisal-captured-quotes-v1";
-const SISAL_CAPTURE_BASE="https://www.sisal.it/scommesse-matchpoint/sport/calcio";
-const SISAL_CAPTURE_ORIGINS=new Set(["https://www.sisal.it","https://scommesse.sisal.it"]);
-let activeSisalCapture=null,sisalCapturedQuotes=read(SISAL_CAPTURE_KEY,{});
 const markets=()=>ENGINE().marketChoices();
 function getContext(match){
   const key = fixtureKey(match);
@@ -322,129 +318,6 @@ async function collectAllSisalFixtures(){
  return sisalCalendarPromise;
 }
 
-function sisalFixtureKey(match){
- return [match.competition||"serie-a",match.date,norm(match.home),norm(match.away)].join("|");
-}
-function renderSisalCaptureAnalysis(){
- const target=$("sisalCaptureAnalysis");
- if(!target)return;
- const requestId=activeSisalCapture&&activeSisalCapture.requestId;
- const records=Object.values(sisalCapturedQuotes||{}).filter(row=>row&&(!requestId||row.requestId===requestId));
- if(!records.length){
-  target.innerHTML='<p class="sisal-capture-empty">Nessuna quota acquisita in questa sessione.</p>';
-  return;
- }
- const entries=[];
- records.forEach(record=>{
-  Object.entries(record.markets||{}).forEach(([marketKey,quote])=>{
-   const odds=Number(quote&&quote.odds);
-   const prediction=(record.predictions||[]).find(item=>item.marketKey===marketKey);
-   const probability=Number(prediction&&prediction.probability);
-   const sampleEnough=record.sampleEnough===true;
-   const hasModel=Number.isFinite(probability)&&probability>0&&probability<1;
-   const quoteTimestamp=Date.parse(quote&&quote.updatedAt||record.updatedAt||"");
-   const quoteAge=Date.now()-quoteTimestamp;
-   const quoteFresh=Number.isFinite(quoteTimestamp)&&quoteAge>=-5*60*1000&&quoteAge<=60*60*1000;
-   const ev=hasModel&&sampleEnough&&quoteFresh&&Number.isFinite(odds)?probability*odds-1:null;
-   entries.push({record,marketKey,odds,prediction,probability,sampleEnough,quoteFresh,ev});
-  });
- });
- const rank=item=>item.ev!==null&&item.ev>=0.03?3:item.ev!==null&&item.ev<0?1:2;
- entries.sort((a,b)=>rank(b)-rank(a)||(Number(b.ev)||-99)-(Number(a.ev)||-99));
- const positive=entries.filter(item=>item.ev!==null&&item.ev>=0.03).length;
- const evaluated=entries.filter(item=>item.ev!==null).length;
- const rows=entries.slice(0,40).map(item=>{
-  const status=!item.quoteFresh?"Quota non aggiornata":item.ev===null?"Dati insufficienti":item.ev>=0.03?"Valore positivo":item.ev<0?"EV negativo":"Margine ridotto";
-  const cls=item.ev===null?"neutral":item.ev>=0.03?"positive":item.ev<0?"negative":"neutral";
-  const p=Number.isFinite(item.probability)?pct(item.probability):"—";
-  const ev=item.ev===null?"—":fmtEv(item.ev);
-  return '<tr><td><b>'+esc(item.record.home)+' – '+esc(item.record.away)+'</b><small>'+esc(item.record.competition)+' · '+esc(item.record.date)+'</small></td><td>'+esc(marketLabel(item.marketKey))+'</td><td>'+fmtOdds(item.odds)+'</td><td>'+p+'</td><td class="'+(cls==="positive"?"positive":cls==="negative"?"negative":"")+'">'+ev+'</td><td><span class="sisal-capture-tag '+cls+'">'+status+'</span></td></tr>';
- }).join("");
- target.innerHTML='<div class="sisal-capture-totals"><b>'+records.length+' partite</b><span>'+entries.length+' quote</span><span>'+evaluated+' mercati valutabili</span><span class="positive">'+positive+' opportunità sopra +3%</span></div>'+
-  '<div class="sisal-capture-table-wrap"><table class="sisal-capture-table"><thead><tr><th>Partita</th><th>Mercato</th><th>Quota</th><th>Prob.</th><th>EV</th><th>Esito analisi</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-  '<p class="sisal-capture-footnote">EV = probabilità MatchMind × quota Sisal − 1. Il semaforo verde richiede campione storico adeguato e EV almeno +3%. Le quote acquisite sono osservazioni della pagina, non un collegamento ufficiale Sisal.</p>';
-}
-function handleSisalOddsMessage(event){
- if(!activeSisalCapture||event.source!==activeSisalCapture.popup||!SISAL_CAPTURE_ORIGINS.has(event.origin))return;
- const data=event.data;
- if(!data||data.type!=="MATCHMIND_SISAL_ODDS"||data.requestId!==activeSisalCapture.requestId||!Array.isArray(data.items))return;
- let updatedMarkets=0,matchedFixtures=0,unmatchedFixtures=0;
- for(const item of data.items){
-  if(!item||!item.home||!item.away||!item.date||!item.competition||!item.markets)continue;
-  const fixture=activeSisalCapture.rows.find(row=>{
-   const match=row.match;
-   return match.date===item.date&&(match.competition||"serie-a")===item.competition&&
-    norm(match.home)===norm(item.home)&&norm(match.away)===norm(item.away);
-  });
-  if(!fixture){unmatchedFixtures++;continue;}
-  const key=sisalFixtureKey(fixture.match);
-  const record=sisalCapturedQuotes[key]||{
-   competition:item.competition,date:item.date,home:item.home,away:item.away,markets:{}
-  };
-  record.requestId=activeSisalCapture.requestId;
-  record.predictions=fixture.predictions||[];
-  record.sampleEnough=fixture.sampleEnough===true;
-  record.historyCount=Number(fixture.historyCount)||0;
-  record.predictionMethod=fixture.predictionMethod||"MatchMind";
-  record.updatedAt=data.capturedAt||new Date().toISOString();
-  for(const [marketKey,rawOdds] of Object.entries(item.markets)){
-   const odds=Number(rawOdds);
-   if(!Number.isFinite(odds)||odds<=1||odds>=1000)continue;
-   record.markets[marketKey]={odds,updatedAt:record.updatedAt};
-   updatedMarkets++;
-  }
-  if(Object.keys(record.markets).length){sisalCapturedQuotes[key]=record;matchedFixtures++;}
- }
- const keys=Object.keys(sisalCapturedQuotes);
- if(keys.length>1500)keys.slice(0,keys.length-1500).forEach(key=>delete sisalCapturedQuotes[key]);
- save(SISAL_CAPTURE_KEY,sisalCapturedQuotes);
- renderSisalCaptureAnalysis();
- const status=$("sisalCaptureStatus");
- if(status){
-  status.textContent="Acquisite "+updatedMarkets+" quote su "+matchedFixtures+" partite. Continua a scorrere il palinsesto e ad aprire i mercati: l'acquisizione si aggiorna automaticamente."+
-   (unmatchedFixtures?" "+unmatchedFixtures+" eventi senza corrispondenza nel calendario MatchMind sono stati ignorati.":"");
-  status.dataset.state=updatedMarkets?"ok":"waiting";
- }
-}
-async function startSisalOddsCapture(){
- const status=$("sisalCaptureStatus");
- const popup=window.open("about:blank","matchmind-sisal-capture");
- if(!popup){
-  if(status)status.textContent="Popup bloccato: consenti l'apertura della finestra Sisal e riprova.";
-  return;
- }
- try{
-  try{popup.document.title="MatchMind · acquisizione quote";popup.document.body.innerHTML='<p style="font:16px system-ui;padding:24px">MatchMind sta preparando calendario e probabilità…</p>';}catch(_){}
-  if(status)status.textContent="Caricamento calendario e calcolo delle probabilità per le partite supportate…";
-  const calendar=await collectAllSisalFixtures();
-  const footballRows=calendar.rows.filter(row=>row&&row.sport==="football"&&row.match&&row.match.home&&row.match.away&&row.match.date);
-  if(!footballRows.length)throw new Error("Nessuna partita di calcio disponibile nel calendario MatchMind.");
-  const bridge=window.MatchMindSisalBridge;
-  if(!bridge)throw new Error("Ponte Sisal non disponibile.");
-  const transfer=bridge.createUrl(footballRows);
-  if(!transfer||!transfer.url)throw new Error("Impossibile preparare il trasferimento delle previsioni.");
-  const requestId=(crypto&&crypto.randomUUID)?crypto.randomUUID():"mm-"+Date.now()+"-"+Math.random().toString(36).slice(2);
-  const unique=new Map();
-  footballRows.forEach(row=>{
-   const match=row.match,key=sisalFixtureKey(match);
-   if(!unique.has(key))unique.set(key,{id:String(match.id||""),competition:match.competition||"serie-a",date:match.date,home:match.home,away:match.away});
-  });
-  const payload={version:1,requestId,appOrigin:location.origin,fixtures:[...unique.values()]};
-  const targetUrl=new URL(transfer.url);
-  const params=new URLSearchParams(targetUrl.hash.replace(/^#/,""));
-  params.set("qlsync",JSON.stringify(payload));
-  targetUrl.hash=params.toString();
-  activeSisalCapture={requestId,popup,rows:footballRows,startedAt:Date.now()};
-  popup.location.replace(targetUrl.toString());
-  const count=unique.size;
-  if(status)status.textContent="Sisal aperto: "+count+" partite previste da MatchMind. Le quote verranno importate man mano che carichi e scorri i mercati.";
-  renderSisalCaptureAnalysis();
- }catch(error){
-  try{popup.close();}catch(_){}
-  activeSisalCapture=null;
-  if(status)status.textContent="Acquisizione non avviata: "+String(error&&error.message||error);
- }
-}
 async function updateSisalTransfer(){
  const link=$("sendSelectionsToSisal"),status=$("sisalBridgeStatus");
  if(!link||!status)return;
@@ -1168,13 +1041,10 @@ function handleUrlImport(){
 }
 
 function initEvents(){
- window.addEventListener("message",handleSisalOddsMessage);
 
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  document.querySelectorAll("[data-bet-workspace-tab]").forEach(button=>button.addEventListener("click",()=>setBetWorkspaceTab(button.dataset.betWorkspaceTab)));
  $("saveManualSlip")?.addEventListener("click",saveCurrentSlip);
- $("captureSisalOdds")?.addEventListener("click",startSisalOddsCapture);
- renderSisalCaptureAnalysis();
  $("cancelEditTicket")?.addEventListener("click",cancelEditTicket);
  const handleContextChange=event=>{
   const select=event.target.closest("[data-context-field]");
