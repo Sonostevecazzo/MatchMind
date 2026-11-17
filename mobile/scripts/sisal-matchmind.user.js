@@ -25,7 +25,10 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.0";
+  const MM_SCRIPT_VERSION = "3.7.0";
+  // Coefficienti statici non calibrati: finché non validati, EV e badge di valore restano disattivati.
+  const MODEL_EVIDENCE_VALIDATED = false;
+  const MAX_DISPLAY_ODDS = 100;
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -179,6 +182,19 @@
     return n;
   }
 
+  function isSupportedModelTeam(name) {
+    return Boolean(TEAM_RATINGS[canonicalTeam(name)]);
+  }
+
+  function isLiveSisalPage() {
+    return /\/scommesse-live(?:\/|$)/i.test(String(location.pathname || ""));
+  }
+
+  function isLikelyLiveEvent(container) {
+    const text = String(container && (container.innerText || container.textContent) || "");
+    return /\b(?:LIVE|IN CORSO|INTERVALLO|FINE 1(?:°|º)? TEMPO|FINE 2(?:°|º)? TEMPO|1° TEMPO|2° TEMPO|OVERTIME|QUARTO\s*[1-4])\b|\b\d{1,2}\s*['′]\s*(?:\+\s*\d{1,2})?/i.test(text);
+  }
+
   // Cache dei calcoli Poisson per evitare ricalcoli inutili
   const forecastCache = new Map();
   const matchContexts = {};
@@ -258,8 +274,9 @@
       return forecastCache.get(memoKey);
     }
 
-    const h = TEAM_RATINGS[hKey] || { att: 1.20, def: 1.20, homeBoost: 0.10 };
-    const a = TEAM_RATINGS[aKey] || { att: 1.20, def: 1.20, homeBoost: 0.10 };
+    const h = TEAM_RATINGS[hKey];
+    const a = TEAM_RATINGS[aKey];
+    if (!h || !a) return null;
 
     const avgHome = 1.35;
     const avgAway = 1.10;
@@ -346,6 +363,23 @@
     const pct = Math.round((prob || 0) * 100);
     const evPct = ev != null ? Math.round(ev * 100) : null;
     const totXg = ((homeXg || 0) + (awayXg || 0)).toFixed(1);
+
+    if (!MODEL_EVIDENCE_VALIDATED) {
+      const fair = Number.isFinite(prob) && prob > 0 ? 1 / prob : null;
+      return {
+        type: "neutral",
+        badgeText: "🟡 Stima indicativa (" + pct + "%)",
+        badgeClass: "mm-verdict-neutral",
+        tagText: "🟡 " + pct + "% · stima",
+        shortVerdict: "Modello non validato",
+        explanation: "La percentuale deriva da coefficienti interni statici, non da una probabilità calibrata su uno storico pre-partita verificato. Il valore atteso non viene calcolato.",
+        tacticalNote: "Usare questa indicazione solo come orientamento, non come consiglio di puntata.",
+        pct,
+        evPct: null,
+        odd: odd || null,
+        fairOdds: fair
+      };
+    }
 
     let type = "neutral";
     let badgeText = `🟡 Equilibrata (${pct}%)`;
@@ -1444,6 +1478,7 @@
   }
 
   let currentStrategy = localStorage.getItem("mm_widget_strategy") || "balanced"; // balanced, accurate, value, doubling
+  if (currentStrategy === "value" && !MODEL_EVIDENCE_VALIDATED) currentStrategy = "balanced";
   let isMinimized = localStorage.getItem("mm_widget_minimized") !== "false"; // Default minimizzato a pillola per non disturbare
   let isHidden = localStorage.getItem("mm_widget_hidden") === "true";
   let minProbThreshold = parseInt(localStorage.getItem("mm_min_prob") || "50", 10);
@@ -1592,6 +1627,7 @@
   // Filtra e ordina in base alla strategia selezionata
   function filterByStrategy(calculations, strategy, threshold) {
     if (!calculations || !calculations.length) return [];
+    if (strategy === "value" && !MODEL_EVIDENCE_VALIDATED) return [];
 
     let filtered = [...calculations];
 
