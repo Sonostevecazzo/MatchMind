@@ -179,6 +179,11 @@
     return n;
   }
 
+  function isKnownTeamName(name) {
+    const key = canonicalTeam(name);
+    return Boolean(key && (TEAM_RATINGS[key] || TEAM_ALIASES[key]));
+  }
+
   // Cache dei calcoli Poisson per evitare ricalcoli inutili
   const forecastCache = new Map();
   const matchContexts = {};
@@ -341,6 +346,30 @@
     { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol" }
   ];
 
+  // Controllo incrociato quota/probabilità: scostamenti estremi sono dati non affidabili.
+  function validateQuoteData(prob, odd, marketKey) {
+    if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return { valid: false, reason: "Probabilità del modello fuori intervallo: EV disattivato." };
+    if (!Number.isFinite(odd) || odd <= 1.01 || odd > 100) return { valid: false, reason: "Quota non valida o non riconosciuta: EV disattivato." };
+    const implied = 1 / odd;
+    const gap = Math.abs(prob - implied);
+    const ev = prob * odd - 1;
+    if (marketKey.startsWith("dc") && odd > 8) return { valid: false, reason: "Quota anomala per una doppia chance. Verifica che Sisal e MatchMind leggano lo stesso esito." };
+    if (gap > 0.35 || ev > 1) return { valid: false, reason: "Quota e probabilità differiscono in modo estremo. Possibile associazione errata tra partita, mercato o quota: nessuna raccomandazione." };
+    return { valid: true, implied, gap, ev };
+  }
+
+  function applyQuoteQuality(evaluation, quality) {
+    if (quality.valid) return evaluation;
+    evaluation.type = "invalid";
+    evaluation.badgeText = "⚠ Dato da verificare";
+    evaluation.badgeClass = "mm-verdict-invalid";
+    evaluation.tagText = "⚠ Quota anomala";
+    evaluation.shortVerdict = "Quota/probabilità incoerenti";
+    evaluation.explanation = quality.reason;
+    evaluation.evPct = null;
+    return evaluation;
+  }
+
   // Valutazione statistica trasparente e comprensibile per ciascun mercato
   function evaluateMarketSelection(prob, odd, fairOdds, ev, marketKey, marketLabel, home, away, homeXg, awayXg) {
     const pct = Math.round((prob || 0) * 100);
@@ -367,10 +396,10 @@
       // 2. Ottimo Valore: quota Sisal più generosa della reale probabilità
       else if (ev >= 0.05 && prob >= 0.28) {
         type = "value";
-        badgeText = `🟢 Ottimo Valore (+${evPct}% EV)`;
+        badgeText = `🟢 Potenziale valore (+${evPct}% EV)`;
         badgeClass = "mm-verdict-value";
         tagText = `🟢 +EV ${pct}%`;
-        shortVerdict = "Consigliata per valore (+EV)";
+        shortVerdict = "Potenziale valore, non validato";
         explanation = `Sisal quota l'esito a ${odd.toFixed(2)}, nettamente sopra la quota equa stimata (${fairOdds.toFixed(2)} con stima reale al ${pct}%). EV nominale positivo secondo questa stima; non garantisce un risultato positivo.`;
       }
       // 3. Alta Probabilità: esito molto probabile e solido
@@ -737,16 +766,16 @@
       border: 1px solid #1e293b;
       border-radius: 12px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.85), 0 0 0 1px rgba(56,189,248,0.2);
-      width: 320px;
-      max-width: calc(100vw - 24px);
-      max-height: 52vh;
+      width: min(360px, calc(100vw - 16px));
+      max-width: calc(100vw - 16px);
+      max-height: min(56dvh, 520px);
       display: flex;
       flex-direction: column;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 11px;
       padding: 10px;
       gap: 7px;
-      touch-action: none;
+      touch-action: pan-y;
       box-sizing: border-box;
       backdrop-filter: blur(10px);
     }
@@ -1030,10 +1059,13 @@
   
 
     /* Mercati completi e valutazioni leggibili */
-    .mm-view-tabs { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; background:#081224 !important; padding:3px !important; border-radius:8px !important; }
+    .mm-list-container { flex:1 1 auto !important; min-height:72px !important; max-height:34dvh !important; overflow-y:auto !important; overscroll-behavior:contain !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; }
+    #mm-widget-head { position:sticky !important; top:0 !important; z-index:5 !important; background:#0b1324 !important; }
+    .mm-view-tabs { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; background:#081224 !important; padding:3px !important; border-radius:8px !important; flex-shrink:0 !important; }
     .mm-view-tab { background:transparent !important; color:#94a3b8 !important; border:0 !important; border-radius:6px !important; padding:5px 3px !important; font-size:9px !important; font-weight:800 !important; cursor:pointer !important; }
     .mm-view-tab.active { background:#0284c7 !important; color:white !important; }
-    .mm-cat-row { display:flex !important; gap:3px !important; overflow-x:auto !important; padding:1px 0 3px !important; }
+    .mm-cat-row { display:flex !important; gap:5px !important; overflow-x:auto !important; overflow-y:hidden !important; padding:3px 1px 6px !important; flex-shrink:0 !important; scroll-snap-type:x proximity !important; touch-action:pan-x !important; scrollbar-width:thin !important; }
+    .mm-cat-btn { min-height:30px !important; scroll-snap-align:start !important; }
     .mm-cat-btn { background:#152238 !important; color:#cbd5e1 !important; border:1px solid #334155 !important; border-radius:12px !important; font-size:9px !important; padding:3px 7px !important; white-space:nowrap !important; cursor:pointer !important; }
     .mm-cat-btn.active { background:#0284c7 !important; color:white !important; border-color:#38bdf8 !important; }
     .mm-legend-bar { display:flex !important; justify-content:space-between !important; font-size:8px !important; color:#cbd5e1 !important; gap:3px !important; }
@@ -1049,6 +1081,10 @@
     .mm-verdict-row { display:flex !important; align-items:center !important; gap:5px !important; flex-wrap:wrap !important; }
     .mm-verdict-short { color:#cbd5e1 !important; font-size:9px !important; font-weight:700 !important; }
     .mm-verdict-sconsigliata { background:#2a1118 !important; color:#fda4af !important; border:1px solid #f43f5e !important; }
+    .mm-verdict-invalid { background:#3b2608 !important; color:#fcd34d !important; border:1px solid #d97706 !important; }
+    .mm-item-card.is-invalid { border-color:#d97706 !important; }
+    .mm-prob-tag.is-invalid { background:#3b2608 !important; color:#fcd34d !important; border-color:#d97706 !important; }
+    .mm-highlight-invalid { outline:2px solid #d97706 !important; outline-offset:1px !important; }
     .mm-card-reason { display:flex !important; flex-direction:column !important; gap:2px !important; line-height:1.35 !important; }
     .mm-reason-desc { color:#f1f5f9 !important; }
     .mm-reason-tactical { color:#94a3b8 !important; font-size:8px !important; }
@@ -1593,7 +1629,7 @@
   function filterByStrategy(calculations, strategy, threshold) {
     if (!calculations || !calculations.length) return [];
 
-    let filtered = [...calculations];
+    let filtered = calculations.filter(c => c.dataValid !== false);
 
     if (strategy === "accurate") {
       // Massima probabilità (Accuratezza)
@@ -1691,8 +1727,8 @@
 
     widget.classList.remove("mm-is-minimized");
     widget.style.height = "auto";
-    widget.style.maxHeight = "58vh";
-    widget.style.width = "335px";
+    widget.style.maxHeight = "min(56dvh, 520px)";
+    widget.style.width = "min(360px, calc(100vw - 16px))";
     widget.onclick = null;
 
     if (!calculations.length && !allMarketsList.length) {
@@ -1751,7 +1787,7 @@
               </div>
               <div class="mm-card-actions">
                 ${item.hasRealOdd ? `<span class="mm-odd-badge">Quota <b>${oddVal.toFixed(2)}</b></span>` : `<span class="mm-odd-badge muted" title="Quota equa teorica">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
-                ${item.hasRealOdd ? `<button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${item.home.replace(/'/g, "\\'")}', '${item.away.replace(/'/g, "\\'")}', '${item.key}', '${item.label.replace(/'/g, "\\'")}', ${sendOdd})">⚡ MM</button>` : ''}
+                ${item.hasRealOdd && item.dataValid !== false ? `<button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${item.home.replace(/'/g, "\\'")}', '${item.away.replace(/'/g, "\\'")}', '${item.key}', '${item.label.replace(/'/g, "\\'")}', ${sendOdd})">⚡ MM</button>` : ''}
               </div>
             </div>
 
@@ -1763,7 +1799,7 @@
             <div class="mm-card-metrics">
               <span>Stima: <b>${ev.pct}%</b></span>
               <span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span>
-              ${item.hasRealOdd ? `<span style="color:${ev.evPct > 0 ? '#34d399' : (ev.evPct < -8 ? '#f87171' : '#fbbf24')};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
+              ${item.hasRealOdd && item.dataValid === false ? '<span style="color:#fbbf24;font-size:9px;font-weight:800;">Quota da verificare</span>' : item.hasRealOdd ? `<span style="color:${ev.evPct > 0 ? '#34d399' : (ev.evPct < -8 ? '#f87171' : '#fbbf24')};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
             </div>
 
             <div class="mm-card-reason">
@@ -1844,7 +1880,7 @@
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
-      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Stime indicative del modello MatchMind, non validate per questa partita. EV teorico, non garanzia.</div>
+      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Rating interni statici + modello Poisson non calibrato. Le quote anomale vengono escluse; EV esplorativo, non prova di vantaggio.</div>
       ${!isMulti && currentAnalysis.home && currentAnalysis.away ? (() => {
         const curCtx = getMatchContext(currentAnalysis.home, currentAnalysis.away);
         const isCustom = Boolean(curCtx.attackingAbsencesHome || curCtx.defensiveAbsencesHome || curCtx.motivationHome || curCtx.attackingAbsencesAway || curCtx.defensiveAbsencesAway || curCtx.motivationAway);
@@ -1940,7 +1976,8 @@
         const btn = c.btn;
         if (!btn || !document.body.contains(btn)) return;
         const evRes = c.evaluation;
-        btn.classList.remove("mm-highlight-valore", "mm-highlight-highprob", "mm-highlight-trap");
+        btn.classList.remove("mm-highlight-valore", "mm-highlight-highprob", "mm-highlight-trap", "mm-highlight-invalid");
+        if (c.dataValid === false) btn.classList.add("mm-highlight-invalid");
         if (evRes.type === "value") btn.classList.add("mm-highlight-valore");
         else if (evRes.type === "highprob") btn.classList.add("mm-highlight-highprob");
         else if (evRes.type === "trap") btn.classList.add("mm-highlight-trap");
@@ -1969,8 +2006,9 @@
       return;
     }
     syncCartState();
-    const singleMatch = detectSingleMatch();
-    const multiMatches = detectMultipleMatches();
+    const detectedSingleMatch = detectSingleMatch();
+    const singleMatch = detectedSingleMatch && isKnownTeamName(detectedSingleMatch.home) && isKnownTeamName(detectedSingleMatch.away) ? detectedSingleMatch : null;
+    const multiMatches = detectMultipleMatches().filter(item => isKnownTeamName(item.home) && isKnownTeamName(item.away));
     const calculations = [];
 
     if (singleMatch) {
@@ -1990,8 +2028,9 @@
           const prob = mmProbs[resolved.key];
           const fairOdds = 1 / prob;
           const ev = (prob * resolved.odd) - 1;
-          const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg);
-          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
+          const quality = validateQuoteData(prob, resolved.odd, resolved.key);
+          const evaluation = applyQuoteQuality(evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg), quality);
+          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev: quality.valid ? ev : null, dataValid: quality.valid, dataIssue: quality.valid ? "" : quality.reason, evaluation, hasRealOdd: true };
           calculations.push(item);
           if (!foundOddsByMarket.has(resolved.key)) foundOddsByMarket.set(resolved.key, item);
         }
@@ -2026,8 +2065,9 @@
             const prob = mmProbs[resolved.key];
             const fairOdds = 1 / prob;
             const ev = (prob * resolved.odd) - 1;
-            const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, item.home, item.away, forecast.homeXg, forecast.awayXg);
-            calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
+            const quality = validateQuoteData(prob, resolved.odd, resolved.key);
+            const evaluation = applyQuoteQuality(evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, item.home, item.away, forecast.homeXg, forecast.awayXg), quality);
+            calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev: quality.valid ? ev : null, dataValid: quality.valid, dataIssue: quality.valid ? "" : quality.reason, evaluation, hasRealOdd: true });
           }
         });
       });
