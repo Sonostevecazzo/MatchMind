@@ -159,3 +159,12 @@ Le probabilità delle schedine riutilizzano il modello Poisson esistente. Il con
 - Il piano gratuito API-Football dichiara 100 richieste al giorno. MatchMind aggiorna il punteggio live ogni 5 minuti e mette in cache la lista e il dettaglio partita per 5 minuti. Il dettaglio partita usa una sola richiesta `/fixtures?id=` per punteggio, eventi, statistiche e formazioni. Il monitoraggio schedine si aggiorna ogni 15 minuti solo quando la vista è aperta e ci sono eventi previsti nella data corrente. Il Live è adattivo: 5 minuti durante il gioco, 15 minuti prima del calcio d'inizio, 30 minuti se non ci sono eventi live e nessun polling dopo la fine.
 - Il campo 2D è una rappresentazione tattica illustrativa basata sulle formazioni iniziali (se disponibili) e su statistiche aggregate per pressione/pallone. Sotto il campo sono elencati titolari e riserve forniti dal provider. Non è tracking GPS/optical né una ricostruzione della posizione live dei calciatori.
 - Senza il secret, il Live mostra una condizione non disponibile, mentre calendario e analisi storiche continuano a funzionare.
+
+
+## Sisal userscript data-quality limits
+
+The Sisal overlay reads visible decimal odds from the page DOM; it does not use an official Sisal odds API. It rejects disabled/suspended selections, ambiguous price text and decimal odds above 100. Odds read from a dedicated value node are marked as a stronger DOM match than values inferred from a whole button label. The parser can still misidentify bookmaker markup when Sisal changes its DOM; always compare the shown price with the actual selection before acting.
+
+The restored Lovable model uses static team coefficients and a Poisson score matrix. These coefficients are not calibrated against a verified, time-ordered multi-season dataset and do not constitute validated probabilities. For this reason version 3.7.0 keeps percentages explicitly indicative, suppresses expected-value (EV) labels and disables the value strategy. Pre-match estimates are not applied to Sisal Live pages. Fixtures are evaluated only when both team names map to an available model rating; unknown teams are skipped instead of receiving a generic fallback rating.
+
+The floating panel now places strategy and probability filters in a collapsed drawer, keeps the main view tabs visible while scrolling, and limits its height on mobile. The football/NBA selection-transfer queue remains separate from probability validation.
