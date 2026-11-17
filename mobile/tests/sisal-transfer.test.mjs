@@ -10,10 +10,10 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("restores the last Lovable Sisal userscript, version 2.4.2, with valid metadata and syntax", () => {
+test("restores the last Lovable Sisal userscript, version 3.6.0 (Lovable 2.4.2 core), with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+2\.4\.2$/m);
+  assert.match(script, /^\/\/ @version\s+3\.6\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
