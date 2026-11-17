@@ -20,7 +20,7 @@ test("NBA PWA shell includes the page and every required data/model asset", () =
   for (const asset of ["./nba.html", "./nba.css?v=20261114-nba-fix-1", "./nba-builder.js?v=20261114-nba-fix-1", "./nba.js?v=20261114-nba-fix-1", "./nba-engine.mjs"]) {
     assert.ok(sw.includes(asset), "Service worker missing " + asset);
   }
-  assert.match(sw, /matchmind-pwa-v158-/);
+  assert.match(sw, /matchmind-pwa-v159-/);
 });
 
 test("NBA is reachable from the shared application navigation", () => {
