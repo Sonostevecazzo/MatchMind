@@ -1319,28 +1319,3 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 @media(prefers-reduced-motion:reduce){
   .mobile-primary-nav .nav-item{transition:none!important}
 }
-
-/* Sisal live quote capture and value analysis */
-.sisal-capture-panel{margin:12px 0;padding:12px;border:1px solid #30413e;border-radius:12px;background:linear-gradient(145deg,#12211f,#111a21);min-width:0}
-.sisal-capture-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.sisal-capture-heading>div{display:grid;gap:4px;min-width:180px;flex:1}
-.sisal-capture-heading strong{font-size:12px;color:#dce9e5}
-.sisal-capture-heading small,.sisal-capture-footnote,.sisal-capture-empty{font-size:10px;line-height:1.45;color:#8fa49e}
-.sisal-capture-panel #captureSisalOdds{min-height:36px}
-.sisal-capture-panel .status-line{font-size:10px;line-height:1.45;white-space:normal}
-.sisal-capture-panel .status-line[data-state="ok"]{color:#8de3c4}
-.sisal-capture-empty{margin:10px 0 2px}
-.sisal-capture-totals{display:flex;gap:7px 14px;flex-wrap:wrap;margin:12px 0 8px;font-size:10px;color:#a9bbb6}
-.sisal-capture-totals .positive{color:#8de3c4}
-.sisal-capture-table-wrap{max-width:100%;overflow-x:auto;border:1px solid #2a3938;border-radius:9px}
-.sisal-capture-table{width:100%;min-width:680px;border-collapse:collapse;font-size:10px}
-.sisal-capture-table th,.sisal-capture-table td{padding:8px 7px;text-align:left;border-bottom:1px solid #263431;white-space:nowrap}
-.sisal-capture-table th{color:#8fa49e;font-weight:700;background:#111b1a}
-.sisal-capture-table td:first-child{white-space:normal;min-width:150px}
-.sisal-capture-table td small{display:block;color:#82948e;font-size:9px;margin-top:2px}
-.sisal-capture-table .positive{color:#8de3c4;font-weight:800}
-.sisal-capture-table .negative{color:#ff9b9b;font-weight:800}
-.sisal-capture-tag{display:inline-block;padding:3px 5px;border-radius:5px;background:#263238;color:#c5d0d2;font-size:9px}
-.sisal-capture-tag.positive{background:#173c2e;color:#8de3c4}
-.sisal-capture-tag.negative{background:#442627;color:#ffaaaa}
-.sisal-capture-footnote{margin:8px 0 0}
