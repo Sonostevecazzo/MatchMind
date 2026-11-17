@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.0
+// @version      3.7.0
 // @description  Motore Lovable 2.4.2 ripristinato · analisi mercati Sisal e trasferimento MatchMind.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -25,7 +25,10 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.0";
+  const MM_SCRIPT_VERSION = "3.7.0";
+  // Coefficienti statici non calibrati: finché non validati, EV e badge di valore restano disattivati.
+  const MODEL_EVIDENCE_VALIDATED = false;
+  const MAX_DISPLAY_ODDS = 100;
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -179,6 +182,19 @@
     return n;
   }
 
+  function isSupportedModelTeam(name) {
+    return Boolean(TEAM_RATINGS[canonicalTeam(name)]);
+  }
+
+  function isLiveSisalPage() {
+    return /\/scommesse-live(?:\/|$)/i.test(String(location.pathname || ""));
+  }
+
+  function isLikelyLiveEvent(container) {
+    const text = String(container && (container.innerText || container.textContent) || "");
+    return /\b(?:LIVE|IN CORSO|INTERVALLO|FINE 1(?:°|º)? TEMPO|FINE 2(?:°|º)? TEMPO|1° TEMPO|2° TEMPO|OVERTIME|QUARTO\s*[1-4])\b|\b\d{1,2}\s*['′]\s*(?:\+\s*\d{1,2})?/i.test(text);
+  }
+
   // Cache dei calcoli Poisson per evitare ricalcoli inutili
   const forecastCache = new Map();
   const matchContexts = {};
@@ -258,8 +274,9 @@
       return forecastCache.get(memoKey);
     }
 
-    const h = TEAM_RATINGS[hKey] || { att: 1.20, def: 1.20, homeBoost: 0.10 };
-    const a = TEAM_RATINGS[aKey] || { att: 1.20, def: 1.20, homeBoost: 0.10 };
+    const h = TEAM_RATINGS[hKey];
+    const a = TEAM_RATINGS[aKey];
+    if (!h || !a) return null;
 
     const avgHome = 1.35;
     const avgAway = 1.10;
@@ -346,6 +363,23 @@
     const pct = Math.round((prob || 0) * 100);
     const evPct = ev != null ? Math.round(ev * 100) : null;
     const totXg = ((homeXg || 0) + (awayXg || 0)).toFixed(1);
+
+    if (!MODEL_EVIDENCE_VALIDATED) {
+      const fair = Number.isFinite(prob) && prob > 0 ? 1 / prob : null;
+      return {
+        type: "neutral",
+        badgeText: "🟡 Stima indicativa (" + pct + "%)",
+        badgeClass: "mm-verdict-neutral",
+        tagText: "🟡 " + pct + "% · stima",
+        shortVerdict: "Modello non validato",
+        explanation: "La percentuale deriva da coefficienti interni statici, non da una probabilità calibrata su uno storico pre-partita verificato. Il valore atteso non viene calcolato.",
+        tacticalNote: "Usare questa indicazione solo come orientamento, non come consiglio di puntata.",
+        pct,
+        evPct: null,
+        odd: odd || null,
+        fairOdds: fair
+      };
+    }
 
     let type = "neutral";
     let badgeText = `🟡 Equilibrata (${pct}%)`;
@@ -739,7 +773,7 @@
       box-shadow: 0 8px 30px rgba(0,0,0,0.85), 0 0 0 1px rgba(56,189,248,0.2);
       width: 320px;
       max-width: calc(100vw - 24px);
-      max-height: 52vh;
+      max-height: 48vh;
       display: flex;
       flex-direction: column;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -918,7 +952,7 @@
       flex-direction: column !important;
       gap: 5px !important;
       overflow-y: auto !important;
-      max-height: 280px !important;
+      max-height: min(22vh, 210px) !important;
       padding-right: 2px !important;
       touch-action: pan-y !important;
     }
@@ -1030,7 +1064,13 @@
   
 
     /* Mercati completi e valutazioni leggibili */
-    .mm-view-tabs { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; background:#081224 !important; padding:3px !important; border-radius:8px !important; }
+    .mm-view-tabs { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; background:#081224 !important; padding:3px !important; border-radius:8px !important; position:sticky !important; top:0 !important; z-index:8 !important; box-shadow:0 3px 8px rgba(0,0,0,.28) !important; }
+    .mm-options-drawer { background:#0f172a !important; border:1px solid #1e293b !important; border-radius:8px !important; padding:5px 7px !important; }
+    .mm-options-drawer > summary { display:flex !important; justify-content:space-between !important; align-items:center !important; gap:8px !important; cursor:pointer !important; color:#7dd3fc !important; font-size:10px !important; font-weight:800 !important; list-style:none !important; }
+    .mm-options-drawer > summary::-webkit-details-marker { display:none !important; }
+    .mm-options-drawer > summary small { color:#94a3b8 !important; font-size:9px !important; font-weight:600 !important; text-align:right !important; }
+    .mm-options-body { display:flex !important; flex-direction:column !important; gap:5px !important; margin-top:7px !important; }
+    .mm-strat-tab:disabled { opacity:.4 !important; cursor:not-allowed !important; filter:grayscale(1) !important; }
     .mm-view-tab { background:transparent !important; color:#94a3b8 !important; border:0 !important; border-radius:6px !important; padding:5px 3px !important; font-size:9px !important; font-weight:800 !important; cursor:pointer !important; }
     .mm-view-tab.active { background:#0284c7 !important; color:white !important; }
     .mm-cat-row { display:flex !important; gap:3px !important; overflow-x:auto !important; padding:1px 0 3px !important; }
@@ -1070,12 +1110,26 @@
     document.head?.appendChild(styleEl);
   }
 
-  // Rileva quote e mercati
+  // Accetta solo quote decimali isolate e plausibili; blocca valori anomali/placeholder.
   function parseOddsValue(text) {
-    const m = String(text || "").match(/\b(\d+[.,]\d{2})\b/);
-    if (!m) return null;
-    const v = Number(m[1].replace(",", "."));
-    return Number.isFinite(v) && v > 1.01 && v <= 100 ? v : null;
+    const raw = String(text || "").trim();
+    if (!/^\d{1,3}[.,]\d{2}$/.test(raw)) return null;
+    const value = Number(raw.replace(",", "."));
+    return Number.isFinite(value) && value > 1.01 && value <= MAX_DISPLAY_ODDS ? value : null;
+  }
+
+  function isUnavailableOddsButton(btn) {
+    if (!btn || btn.disabled || btn.matches?.(":disabled") || btn.getAttribute("aria-disabled") === "true") return true;
+    const stateText = [
+      btn.getAttribute("aria-label") || "",
+      btn.getAttribute("title") || "",
+      btn.getAttribute("data-state") || "",
+      btn.className || "",
+      btn.textContent || ""
+    ].join(" ").toLowerCase();
+    if (/sospes[oa]|non disponibile|quota chiusa|temporaneamente non|suspended|locked|bloccata|bloccato/.test(stateText)) return true;
+    if (btn.querySelector?.('[aria-label*="lock" i], [title*="lock" i], [data-testid*="lock" i], [class*="lock" i]')) return true;
+    return false;
   }
 
     // Estrae il titolo del mercato immediato e l'eventuale linea (Under/Over) per un bottone quota
@@ -1116,40 +1170,44 @@
 
   // Risolve quota numerica e tipologia mercato Sisal per un bottone
   function resolveOddsButton(btn) {
+    if (isUnavailableOddsButton(btn) || !btn.getClientRects?.().length) return null;
     let label = "";
     let val = null;
+    let oddsConfidence = "low";
 
-    // 1. Cerca nei nodi figli diretti (escludendo badge MM)
+    // Prima scelta: valore decimale isolato in un elemento figlio dedicato.
     const children = Array.from(btn.children).filter(el => !el.classList.contains("mm-prob-tag") && !el.classList.contains("mm-badge-recommended"));
-    if (children.length >= 2) {
-      for (const c of children) {
-        const txt = (c.innerText || c.textContent || "").trim();
-        const m = txt.match(/^(\d+[.,]\d{2})$/);
-        if (m && !val) val = parseFloat(m[1].replace(",", "."));
-        else if (!label && txt.length < 25) label = txt;
-      }
+    const childOdds = children.map(el => parseOddsValue((el.innerText || el.textContent || "").trim())).filter(v => v !== null);
+    const uniqueChildOdds = Array.from(new Set(childOdds));
+    if (uniqueChildOdds.length === 1) {
+      val = uniqueChildOdds[0];
+      oddsConfidence = "high";
+    } else if (uniqueChildOdds.length > 1) {
+      return null;
+    }
+    for (const child of children) {
+      const txt = (child.innerText || child.textContent || "").trim();
+      if (!label && txt && parseOddsValue(txt) === null && txt.length < 25) label = txt;
     }
 
-    // 2. Fallback su righe di testo
-    if (!val) {
+    // Fallback: una sola quota isolata nel testo visibile del pulsante.
+    if (val === null) {
       const rawText = (btn.innerText || btn.textContent || "").trim();
-      const parts = rawText.split(/[\r\n\s]+/).map(p => p.trim()).filter(Boolean);
-      for (const p of parts) {
-        const m = p.match(/^(\d+[.,]\d{2})$/);
-        if (m && !val) val = parseFloat(m[1].replace(",", "."));
-        else if (!label && !m && p.length < 25) label = p;
+      const parts = rawText.split(/[\r\n\s]+/).map(part => part.trim()).filter(Boolean);
+      const values = Array.from(new Set(parts.map(parseOddsValue).filter(v => v !== null)));
+      if (values.length === 1) {
+        val = values[0];
+        oddsConfidence = "medium";
+      } else if (values.length > 1) {
+        return null;
+      }
+      for (const part of parts) {
+        if (!label && parseOddsValue(part) === null && part.length < 25) label = part;
       }
     }
 
-    // 3. Fallback su aria-label
-    if (!val) {
-      const aria = btn.getAttribute("aria-label") || "";
-      const m = aria.match(/\b(\d+[.,]\d{2})\b/);
-      if (m) val = parseFloat(m[1].replace(",", "."));
-    }
-
-    if (!val || isNaN(val) || val <= 1.0) return null;
-
+    // I soli aria-label non bastano per verificare che il numero sia una quota selezionabile.
+    if (val === null || !Number.isFinite(val) || val <= 1.01 || val > MAX_DISPLAY_ODDS) return null;
     const { marketTitle, lineInfo, attrText } = getMarketContext(btn);
     const lNorm = (label || "").trim().toUpperCase();
     const mNorm = ((marketTitle || "") + " " + (attrText || "")).toLowerCase();
@@ -1166,21 +1224,21 @@
 
     // Doppia Chance
     if (lNorm === "1X" || lNorm === "1-X" || mNorm.includes("doppia chance 1x")) {
-      return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance", odd: val };
+      return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance", odd: val, oddsConfidence };
     }
     if (lNorm === "X2" || lNorm === "X-2" || mNorm.includes("doppia chance x2")) {
-      return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance", odd: val };
+      return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance", odd: val, oddsConfidence };
     }
     if (lNorm === "12" || lNorm === "1-2" || mNorm.includes("doppia chance 12")) {
-      return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance", odd: val };
+      return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance", odd: val, oddsConfidence };
     }
 
     // Goal / No Goal
     if (lNorm === "GOAL" || lNorm === "GOL" || lNorm === "GG" || (mNorm.includes("goal") && (lNorm === "SI" || lNorm === "SÌ"))) {
-      return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol", odd: val };
+      return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol", odd: val, oddsConfidence };
     }
     if (lNorm === "NOGOAL" || lNorm === "NO GOAL" || lNorm === "NO GOL" || lNorm === "NG" || (mNorm.includes("goal") && lNorm === "NO")) {
-      return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol", odd: val };
+      return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol", odd: val, oddsConfidence };
     }
 
     // Under / Over
@@ -1194,28 +1252,28 @@
 
       if (line === "1.5") {
         return isOver ?
-          { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over", odd: val } :
-          { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over", odd: val };
+          { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence } :
+          { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence };
       }
       if (line === "3.5") {
         return isOver ?
-          { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over", odd: val } :
-          { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over", odd: val };
+          { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence } :
+          { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence };
       }
       return isOver ?
-        { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over", odd: val } :
-        { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over", odd: val };
+        { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence } :
+        { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence };
     }
 
     // 1X2 Finale
     if (lNorm === "1") {
-      return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
+      return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)", odd: val, oddsConfidence };
     }
     if (lNorm === "X") {
-      return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
+      return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)", odd: val, oddsConfidence };
     }
     if (lNorm === "2") {
-      return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
+      return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)", odd: val, oddsConfidence };
     }
 
     return null;
@@ -1233,81 +1291,75 @@
     return null;
   }
 
-  // Rilevamento partita singola con fallback su URL pathname, title e DOM
+  // Rileva solo partite realmente riconosciute dal motore: niente banner o intestazioni generiche.
   function detectSingleMatch() {
     const teamSepRegex = /([A-Za-z0-9\s]{3,22})\s*(?:[-–—/]|[\r\n]+|\bvs\b|\bv\b|\bvs\.)\s*([A-Za-z0-9\s]{3,22})/i;
+    const validPair = (home, away) => home && away && home !== away &&
+      isSupportedModelTeam(home) && isSupportedModelTeam(away);
 
-    // 1. Fallback su pathname URL Sisal (es. /scommesse-matchpoint/.../roma-sassuolo o /roma-sassuolo-2026...)
     try {
-      const path = (window.location.pathname || "").toLowerCase();
+      const path = String(window.location.pathname || "").toLowerCase();
       const segments = path.split("/").filter(Boolean);
       for (let i = segments.length - 1; i >= 0; i--) {
-        const seg = segments[i].replace(/-\d{6,}$/, "");
-        const parts = seg.split("-");
+        const parts = segments[i].replace(/-\d{6,}$/, "").split("-");
         if (parts.length >= 2) {
-          const h = parts[0].trim();
-          const a = parts[1].trim();
-          if (h.length >= 3 && a.length >= 3 && h !== a && !h.includes("scommesse") && !h.includes("evento") && !h.includes("calcio")) {
-            return { home: h, away: a };
-          }
+          const home = parts[0].trim();
+          const away = parts[1].trim();
+          if (home.length >= 3 && away.length >= 3 && validPair(home, away)) return { home, away };
         }
       }
     } catch (e) {}
 
-    // 2. Title della pagina
-    const titleMatch = document.title.match(teamSepRegex);
+    const titleMatch = String(document.title || "").match(teamSepRegex);
     if (titleMatch) {
-      let h = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
-      let a = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
+      const home = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
+      const away = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
+      if (validPair(home, away)) return { home, away };
     }
 
-    // 3. Headings e titoli evento
     const headEls = document.querySelectorAll("h1, h2, [class*='title'], [class*='match-name'], [class*='scoreboard'], [data-qa*='match']");
     for (const el of headEls) {
-      const txt = (el.innerText || "").trim();
-      const m = txt.match(teamSepRegex);
-      if (m) {
-        let h = m[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
-        let a = m[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
-      }
+      const match = String(el.innerText || "").trim().match(teamSepRegex);
+      if (!match) continue;
+      const home = match[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
+      const away = match[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
+      if (validPair(home, away)) return { home, away };
     }
 
-    // 4. Selettori squadre concorrenti
     const teamEls = Array.from(document.querySelectorAll("[class*='competitor'], [class*='team-name'], [class*='teamName'], [class*='participant']"));
     if (teamEls.length >= 2) {
-      const h = (teamEls[0].innerText || "").trim();
-      const a = (teamEls[1].innerText || "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a) {
-        return { home: h, away: a };
-      }
+      const home = String(teamEls[0].innerText || "").trim();
+      const away = String(teamEls[1].innerText || "").trim();
+      if (validPair(home, away)) return { home, away };
     }
-
     return null;
   }
 
-  // Rilevamento partite multiple (Palinsesto / Serie A / Coppe)
+  // Rilevamento partite multiple: deduplica contenitori annidati e scarta partite live/non supportate.
   function detectMultipleMatches() {
-    const containers = Array.from(document.querySelectorAll(`
-      [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
-      [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
-    `));
-
-    const matches = [];
+    const containers = Array.from(document.querySelectorAll(
+      "[data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'], " +
+      "[class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']"
+    ));
+    const matches = new Map();
     containers.forEach(container => {
-      const text = container.innerText || "";
-      const m = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (m) {
-        const h = m[1].trim();
-        const a = m[2].trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a && !h.toLowerCase().includes("quote")) {
-          matches.push({ container, home: h, away: a });
-        }
+      const text = String(container.innerText || "").trim();
+      if (!text || text.length > 2400 || isLikelyLiveEvent(container)) return;
+      const buttonCount = container.querySelectorAll("button, [role='button']").length;
+      if (buttonCount > 60) return;
+      const match = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
+      if (!match) return;
+      const home = match[1].trim();
+      const away = match[2].trim();
+      if (home.length < 3 || away.length < 3 || home === away ||
+          !isSupportedModelTeam(home) || !isSupportedModelTeam(away)) return;
+      const key = canonicalTeam(home) + "|" + canonicalTeam(away);
+      const previous = matches.get(key);
+      if (!previous || buttonCount > previous.buttonCount) {
+        matches.set(key, { container, home, away, buttonCount });
       }
     });
-
-    return matches;
+    return Array.from(matches.values()).map(({ buttonCount, ...match }) => match);
   }
 
   // Invia selezione singola a MatchMind
@@ -1444,6 +1496,7 @@
   }
 
   let currentStrategy = localStorage.getItem("mm_widget_strategy") || "balanced"; // balanced, accurate, value, doubling
+  if (currentStrategy === "value" && !MODEL_EVIDENCE_VALIDATED) currentStrategy = "balanced";
   let isMinimized = localStorage.getItem("mm_widget_minimized") !== "false"; // Default minimizzato a pillola per non disturbare
   let isHidden = localStorage.getItem("mm_widget_hidden") === "true";
   let minProbThreshold = parseInt(localStorage.getItem("mm_min_prob") || "50", 10);
@@ -1564,6 +1617,7 @@
   }
 
   function setStrategy(strat) {
+    if (strat === "value" && !MODEL_EVIDENCE_VALIDATED) return;
     currentStrategy = strat;
     localStorage.setItem("mm_widget_strategy", strat);
     renderWidget();
@@ -1592,6 +1646,7 @@
   // Filtra e ordina in base alla strategia selezionata
   function filterByStrategy(calculations, strategy, threshold) {
     if (!calculations || !calculations.length) return [];
+    if (strategy === "value" && !MODEL_EVIDENCE_VALIDATED) return [];
 
     let filtered = [...calculations];
 
@@ -1664,7 +1719,7 @@
       const queued = readPlayQueue().filter(q => q.status !== "added").length;
       const countBadge = currentView === "all_markets"
         ? `${allMarketsList.length} Mercati`
-        : `${activePicks.length} Consigliate`;
+        : `${activePicks.length} Da verificare`;
 
       widget.innerHTML = `
         <div id="mm-widget-min-bar" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;user-select:none;">
@@ -1691,8 +1746,8 @@
 
     widget.classList.remove("mm-is-minimized");
     widget.style.height = "auto";
-    widget.style.maxHeight = "58vh";
-    widget.style.width = "335px";
+    widget.style.maxHeight = "48vh";
+    widget.style.width = "min(335px, calc(100vw - 16px))";
     widget.onclick = null;
 
     if (!calculations.length && !allMarketsList.length) {
@@ -1705,7 +1760,7 @@
           </div>
         </div>
         <div style="font-size:11px;color:#94a3b8;padding:10px 0;text-align:center;">
-          Nessuna quota calcistica rilevata.<br/><span style="font-size:10px;color:#64748b;">Apri una singola partita o il palinsesto.</span>
+          ${currentAnalysis?.notice || "Nessuna partita supportata rilevata."}<br/><span style="font-size:10px;color:#64748b;">Le squadre non riconosciute e i mercati sospesi/anomali non vengono valutati.</span>
         </div>
         <button id="mm-send-cart-btn" class="mm-btn-cart">📥 Invia carrello Sisal</button>
         <div style="display:flex;justify-content:space-between;margin-top:2px;">
@@ -1750,7 +1805,7 @@
                 ${matchTitle ? `<div class="mm-item-match">${matchTitle}</div>` : ''}
               </div>
               <div class="mm-card-actions">
-                ${item.hasRealOdd ? `<span class="mm-odd-badge">Quota <b>${oddVal.toFixed(2)}</b></span>` : `<span class="mm-odd-badge muted" title="Quota equa teorica">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
+                ${item.hasRealOdd ? `<span class="mm-odd-badge" title="Rilevata nel DOM Sisal · ${item.oddsConfidence === "high" ? "valore isolato" : "testo del pulsante"}">Quota <b>${oddVal.toFixed(2)}</b>${item.oddsConfidence === "medium" ? " · verifica" : ""}</span>` : `<span class="mm-odd-badge muted" title="Quota teorica non validata">Teorica <b>${item.fairOdds.toFixed(2)}</b></span>`}
                 ${item.hasRealOdd ? `<button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${item.home.replace(/'/g, "\\'")}', '${item.away.replace(/'/g, "\\'")}', '${item.key}', '${item.label.replace(/'/g, "\\'")}', ${sendOdd})">⚡ MM</button>` : ''}
               </div>
             </div>
@@ -1762,8 +1817,8 @@
 
             <div class="mm-card-metrics">
               <span>Stima: <b>${ev.pct}%</b></span>
-              <span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span>
-              ${item.hasRealOdd ? `<span style="color:${ev.evPct > 0 ? '#34d399' : (ev.evPct < -8 ? '#f87171' : '#fbbf24')};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
+              <span>Quota teorica: <b>${ev.fairOdds.toFixed(2)}</b></span>
+              ${item.hasRealOdd ? `<span style="color:#fbbf24;font-size:9px;font-weight:800;">EV sospeso · modello non validato</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
             </div>
 
             <div class="mm-card-reason">
@@ -1783,10 +1838,8 @@
           <button class="mm-cat-btn ${currentCategoryFilter === 'dc' ? 'active' : ''}" data-cat="dc">🛡️ Doppia Chance</button>
         </div>
         <div class="mm-legend-bar">
-          <span class="mm-legend-item"><i class="dot-val"></i> Valore</span>
-          <span class="mm-legend-item"><i class="dot-high"></i> Probabile</span>
-          <span class="mm-legend-item"><i class="dot-neu"></i> Neutra</span>
-          <span class="mm-legend-item"><i class="dot-trap"></i> Rischiosa</span>
+          <span class="mm-legend-item"><i class="dot-neu"></i> Stima indicativa</span>
+          <span class="mm-legend-item">Quote sospese/anomale escluse</span>
         </div>
         <div class="mm-list-container">
           ${cardsHtml || '<div style="font-size:11px;color:#94a3b8;padding:12px;text-align:center;">Nessun mercato in questa categoria.</div>'}
@@ -1813,7 +1866,7 @@
                 <div class="mm-card-actions"><span class="mm-odd-badge">Quota <b>${c.odd.toFixed(2)}</b></span><button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${c.home.replace(/'/g, "\\'")}', '${c.away.replace(/'/g, "\\'")}', '${c.key}', '${c.label.replace(/'/g, "\\'")}', ${c.odd})">⚡ MM</button></div>
               </div>
               <div class="mm-verdict-row"><span class="mm-verdict-badge ${ev.badgeClass}">${ev.badgeText}</span><span class="mm-verdict-short">${ev.shortVerdict}</span></div>
-              <div class="mm-card-metrics"><span>Stima: <b>${ev.pct}%</b></span><span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span><span style="color:${ev.evPct > 0 ? '#34d399' : '#94a3b8'};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span></div>
+              <div class="mm-card-metrics"><span>Stima: <b>${ev.pct}%</b></span><span>Quota teorica: <b>${ev.fairOdds.toFixed(2)}</b></span><span style="color:#fbbf24;font-size:9px;font-weight:800;">EV sospeso</span></div>
               <div class="mm-card-reason"><div class="mm-reason-desc">💡 ${ev.explanation}</div>${ev.tacticalNote ? `<div class="mm-reason-tactical">⚽ ${ev.tacticalNote}</div>` : ''}</div>
             </div>
           `;
@@ -1823,10 +1876,13 @@
       }
 
       mainContentHtml = `
+        <details class="mm-options-drawer">
+          <summary><span>⚙️ Strategia e filtri</span><small>${currentStrategy === "balanced" ? "Bilanciata" : currentStrategy === "accurate" ? "Accuratezza" : currentStrategy === "doubling" ? "Raddoppio" : "Valore"} · soglia ${minProbThreshold}%</small></summary>
+          <div class="mm-options-body">
         <div class="mm-strategy-tabs">
           <button class="mm-strat-tab ${currentStrategy === 'balanced' ? 'active' : ''}" data-strat="balanced">⚖️ Bilanciata</button>
           <button class="mm-strat-tab ${currentStrategy === 'accurate' ? 'active' : ''}" data-strat="accurate">🎯 Accuratezza</button>
-          <button class="mm-strat-tab ${currentStrategy === 'value' ? 'active strat-value' : ''}" data-strat="value">💎 +EV Valore</button>
+          <button class="mm-strat-tab ${currentStrategy === 'value' ? 'active strat-value' : ''}" data-strat="value" ${MODEL_EVIDENCE_VALIDATED ? "" : "disabled title='Non disponibile: probabilità non calibrate'"}>💎 EV non validato</button>
           <button class="mm-strat-tab ${currentStrategy === 'doubling' ? 'active' : ''}" data-strat="doubling">✌️ Raddoppio</button>
         </div>
         <div class="mm-filter-bar">
@@ -1834,6 +1890,8 @@
           <div class="mm-chips-row">${presets.map(p => `<button class="mm-chip ${minProbThreshold === p.val ? 'active' : ''}" data-val="${p.val}">${p.label}</button>`).join("")}</div>
           <input type="range" class="mm-slider" id="mm-prob-slider" min="30" max="90" step="5" value="${minProbThreshold}">
         </div>
+          </div>
+        </details>
         <div class="mm-list-container">${recItemsHtml}</div>
       `;
     }
@@ -1844,7 +1902,7 @@
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
-      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Stime indicative del modello MatchMind, non validate per questa partita. EV teorico, non garanzia.</div>
+      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Stime da coefficienti statici non calibrati: solo orientative, non predittive validate. EV sospeso. Quote sospese, anomale e partite live escluse.</div>
       ${!isMulti && currentAnalysis.home && currentAnalysis.away ? (() => {
         const curCtx = getMatchContext(currentAnalysis.home, currentAnalysis.away);
         const isCustom = Boolean(curCtx.attackingAbsencesHome || curCtx.defensiveAbsencesHome || curCtx.motivationHome || curCtx.attackingAbsencesAway || curCtx.defensiveAbsencesAway || curCtx.motivationAway);
@@ -1877,7 +1935,7 @@
       })() : ''}
       <div class="mm-view-tabs">
         <button class="mm-view-tab ${currentView === 'all_markets' ? 'active' : ''}" data-view="all_markets">📋 Tutti i Mercati (${allMarketsList.length})</button>
-        <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">⭐ Solo Consigliate (${activePicks.length})</button>
+        <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">🔎 Da verificare (${activePicks.length})</button>
       </div>
       ${mainContentHtml}
       <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px;">
@@ -1934,8 +1992,16 @@
   function updatePageBadges() {
     if (!currentAnalysis || !currentAnalysis.calculations) return;
     const { calculations } = currentAnalysis;
+    const activeButtons = new Set(calculations.map(c => c.btn).filter(Boolean));
     isMutatingDOM = true;
     try {
+      document.querySelectorAll(".mm-prob-tag").forEach(tag => {
+        const owner = tag.parentElement;
+        if (!activeButtons.has(owner)) {
+          tag.remove();
+          owner?.classList?.remove("mm-highlight-valore", "mm-highlight-highprob", "mm-highlight-trap");
+        }
+      });
       calculations.forEach(c => {
         const btn = c.btn;
         if (!btn || !document.body.contains(btn)) return;
@@ -1949,7 +2015,7 @@
         if (!tag) { tag = document.createElement("div"); tag.className = "mm-prob-tag"; btn.appendChild(tag); }
         tag.className = `mm-prob-tag is-${evRes.type}`;
         tag.innerHTML = evRes.tagText;
-        tag.title = `${c.label} · ${evRes.shortVerdict} (Stima: ${evRes.pct}%, Sisal: ${c.odd.toFixed(2)}, Equa: ${c.fairOdds.toFixed(2)})`;
+        tag.title = `${c.label} · ${evRes.shortVerdict} (Stima indicativa: ${evRes.pct}%, Sisal: ${c.odd.toFixed(2)}, lettura quota: ${c.oddsConfidence || "non disponibile"}, EV non validato)`;
         btn.querySelectorAll(".mm-send-btn").forEach(el => el.remove());
       });
     } finally { isMutatingDOM = false; }
@@ -1969,9 +2035,19 @@
       return;
     }
     syncCartState();
-    const singleMatch = detectSingleMatch();
-    const multiMatches = detectMultipleMatches();
     const calculations = [];
+    if (isLiveSisalPage()) {
+      currentAnalysis = {
+        isMulti: false, home: "", away: "", matchCount: 0,
+        calculations, allMarketsList: [],
+        notice: "Pagina LIVE non valutata: il modello disponibile è pre-partita e non usa punteggio o minuto di gioco."
+      };
+      updatePageBadges();
+      renderWidget();
+      return;
+    }
+    const multiMatches = detectMultipleMatches();
+    const singleMatch = multiMatches.length ? null : detectSingleMatch();
 
     if (singleMatch) {
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
@@ -1989,9 +2065,9 @@
         if (mmProbs[resolved.key] != null) {
           const prob = mmProbs[resolved.key];
           const fairOdds = 1 / prob;
-          const ev = (prob * resolved.odd) - 1;
+          const ev = MODEL_EVIDENCE_VALIDATED && resolved.oddsConfidence === "high" ? (prob * resolved.odd) - 1 : null;
           const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg);
-          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
+          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: resolved.odd, oddsConfidence: resolved.oddsConfidence, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
           calculations.push(item);
           if (!foundOddsByMarket.has(resolved.key)) foundOddsByMarket.set(resolved.key, item);
         }
@@ -2025,15 +2101,19 @@
           if (mmProbs[resolved.key] != null) {
             const prob = mmProbs[resolved.key];
             const fairOdds = 1 / prob;
-            const ev = (prob * resolved.odd) - 1;
+            const ev = MODEL_EVIDENCE_VALIDATED && resolved.oddsConfidence === "high" ? (prob * resolved.odd) - 1 : null;
             const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, item.home, item.away, forecast.homeXg, forecast.awayXg);
-            calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
+            calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, oddsConfidence: resolved.oddsConfidence, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
           }
         });
       });
       currentAnalysis = { isMulti: true, matchCount: multiMatches.length, calculations, allMarketsList: calculations };
     } else {
-      currentAnalysis = { isMulti: false, home: "Partita", away: "In corso", matchCount: 0, calculations: [], allMarketsList: [] };
+      currentAnalysis = {
+        isMulti: false, home: "Partita", away: "", matchCount: 0,
+        calculations: [], allMarketsList: [],
+        notice: "Nessuna partita riconosciuta con coefficienti disponibili. Nessuna probabilità viene assegnata a intestazioni o squadre sconosciute."
+      };
     }
 
     const footballQueue = readPlayQueue().filter(q => q.sport !== "nba" && q.status !== "added");
@@ -2185,10 +2265,12 @@
   }
   function resolveNbaWinner(btn, item, context) {
     const market = nbaMarketText(btn);
-    if (!nbaWinnerMarket(market)) return null;
+    if (!nbaWinnerMarket(market) || isUnavailableOddsButton(btn)) return null;
     const raw = (btn.innerText || Array.from(btn.children).map(c => c.textContent).join(" ") || btn.textContent || "").trim();
-    const odd = parseOddsValue(raw + " " + (btn.getAttribute("aria-label") || ""));
-    if (!odd) return null;
+    const oddsTokens = (raw + " " + (btn.getAttribute("aria-label") || "")).split(/[\r\n\s]+/);
+    const oddsFound = Array.from(new Set(oddsTokens.map(parseOddsValue).filter(value => value !== null)));
+    if (oddsFound.length !== 1) return null;
+    const odd = oddsFound[0];
     const label = (btn.getAttribute('data-outcome') || btn.getAttribute('data-selection-name') || raw.replace(/\b\d+[.,]\d{2}\b/g, "")).trim();
     const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
     let side = nbaTeamPosition(label, h) >= 0 ? "home" : nbaTeamPosition(label, a) >= 0 ? "away" : null;
