@@ -1299,7 +1299,7 @@
         if (parts.length >= 2) {
           const h = parts[0].trim();
           const a = parts[1].trim();
-          if (h.length >= 3 && a.length >= 3 && h !== a && !h.includes("scommesse") && !h.includes("evento") && !h.includes("calcio")) {
+          if (h.length >= 3 && a.length >= 3 && h !== a && isSupportedModelTeam(h) && isSupportedModelTeam(a) && !h.includes("scommesse") && !h.includes("evento") && !h.includes("calcio")) {
             return { home: h, away: a };
           }
         }
@@ -1311,7 +1311,7 @@
     if (titleMatch) {
       let h = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
       let a = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
+      if (h.length >= 3 && a.length >= 3 && h !== a && isSupportedModelTeam(h) && isSupportedModelTeam(a)) return { home: h, away: a };
     }
 
     // 3. Headings e titoli evento
@@ -1331,7 +1331,7 @@
     if (teamEls.length >= 2) {
       const h = (teamEls[0].innerText || "").trim();
       const a = (teamEls[1].innerText || "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a) {
+      if (h.length >= 3 && a.length >= 3 && h !== a && isSupportedModelTeam(h) && isSupportedModelTeam(a)) {
         return { home: h, away: a };
       }
     }
@@ -1346,20 +1346,23 @@
       [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
     `));
 
-    const matches = [];
+    const matches = new Map();
     containers.forEach(container => {
       const text = container.innerText || "";
-      const m = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (m) {
-        const h = m[1].trim();
-        const a = m[2].trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a && !h.toLowerCase().includes("quote")) {
-          matches.push({ container, home: h, away: a });
-        }
-      }
+      if (!text || text.length > 2400 || isLikelyLiveEvent(container)) return;
+      const buttonCount = container.querySelectorAll("button, [role='button']").length;
+      if (buttonCount > 60) return;
+      const m = text.match(/([A-Za-z0-9\\s]{3,20})\\s*[-–vsVS\\n]+\\s*([A-Za-z0-9\\s]{3,20})/);
+      if (!m) return;
+      const h = m[1].trim();
+      const a = m[2].trim();
+      if (h.length < 3 || a.length < 3 || h === a || !isSupportedModelTeam(h) || !isSupportedModelTeam(a)) return;
+      const key = canonicalTeam(h) + "|" + canonicalTeam(a);
+      const previous = matches.get(key);
+      if (!previous || buttonCount > previous.buttonCount) matches.set(key, { container, home: h, away: a, buttonCount });
     });
 
-    return matches;
+    return Array.from(matches.values()).map(({ buttonCount, ...match }) => match);
   }
 
   // Invia selezione singola a MatchMind
@@ -2023,9 +2026,19 @@
       return;
     }
     syncCartState();
-    const singleMatch = detectSingleMatch();
-    const multiMatches = detectMultipleMatches();
     const calculations = [];
+    if (isLiveSisalPage()) {
+      currentAnalysis = {
+        isMulti: false, home: "", away: "", matchCount: 0,
+        calculations, allMarketsList: [],
+        notice: "Pagina LIVE non valutata: il modello disponibile è pre-partita e non usa punteggio o minuto di gioco."
+      };
+      updatePageBadges();
+      renderWidget();
+      return;
+    }
+    const multiMatches = detectMultipleMatches();
+    const singleMatch = multiMatches.length ? null : detectSingleMatch();
 
     if (singleMatch) {
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
@@ -2043,9 +2056,9 @@
         if (mmProbs[resolved.key] != null) {
           const prob = mmProbs[resolved.key];
           const fairOdds = 1 / prob;
-          const ev = (prob * resolved.odd) - 1;
+          const ev = MODEL_EVIDENCE_VALIDATED && resolved.oddsConfidence === "high" ? (prob * resolved.odd) - 1 : null;
           const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, singleMatch.home, singleMatch.away, forecast.homeXg, forecast.awayXg);
-          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
+          const item = { btn, home: singleMatch.home, away: singleMatch.away, odd: resolved.odd, oddsConfidence: resolved.oddsConfidence, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true };
           calculations.push(item);
           if (!foundOddsByMarket.has(resolved.key)) foundOddsByMarket.set(resolved.key, item);
         }
@@ -2079,15 +2092,19 @@
           if (mmProbs[resolved.key] != null) {
             const prob = mmProbs[resolved.key];
             const fairOdds = 1 / prob;
-            const ev = (prob * resolved.odd) - 1;
+            const ev = MODEL_EVIDENCE_VALIDATED && resolved.oddsConfidence === "high" ? (prob * resolved.odd) - 1 : null;
             const evaluation = evaluateMarketSelection(prob, resolved.odd, fairOdds, ev, resolved.key, resolved.label, item.home, item.away, forecast.homeXg, forecast.awayXg);
-            calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
+            calculations.push({ btn, home: item.home, away: item.away, odd: resolved.odd, oddsConfidence: resolved.oddsConfidence, key: resolved.key, label: resolved.label, shortLabel: resolved.shortLabel, cat: resolved.cat, catName: resolved.catName, modelProb: prob, fairOdds, ev, evaluation, hasRealOdd: true });
           }
         });
       });
       currentAnalysis = { isMulti: true, matchCount: multiMatches.length, calculations, allMarketsList: calculations };
     } else {
-      currentAnalysis = { isMulti: false, home: "Partita", away: "In corso", matchCount: 0, calculations: [], allMarketsList: [] };
+      currentAnalysis = {
+        isMulti: false, home: "Partita", away: "", matchCount: 0,
+        calculations: [], allMarketsList: [],
+        notice: "Nessuna partita riconosciuta con coefficienti disponibili. Nessuna probabilità viene assegnata a intestazioni o squadre sconosciute."
+      };
     }
 
     const footballQueue = readPlayQueue().filter(q => q.sport !== "nba" && q.status !== "added");
