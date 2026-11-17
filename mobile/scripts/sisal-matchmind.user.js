@@ -1104,12 +1104,26 @@
     document.head?.appendChild(styleEl);
   }
 
-  // Rileva quote e mercati
+  // Accetta solo quote decimali isolate e plausibili; blocca valori anomali/placeholder.
   function parseOddsValue(text) {
-    const m = String(text || "").match(/\b(\d+[.,]\d{2})\b/);
-    if (!m) return null;
-    const v = Number(m[1].replace(",", "."));
-    return Number.isFinite(v) && v > 1.01 && v <= 100 ? v : null;
+    const raw = String(text || "").trim();
+    if (!/^\d{1,3}[.,]\d{2}$/.test(raw)) return null;
+    const value = Number(raw.replace(",", "."));
+    return Number.isFinite(value) && value > 1.01 && value <= MAX_DISPLAY_ODDS ? value : null;
+  }
+
+  function isUnavailableOddsButton(btn) {
+    if (!btn || btn.disabled || btn.matches?.(":disabled") || btn.getAttribute("aria-disabled") === "true") return true;
+    const stateText = [
+      btn.getAttribute("aria-label") || "",
+      btn.getAttribute("title") || "",
+      btn.getAttribute("data-state") || "",
+      btn.className || "",
+      btn.textContent || ""
+    ].join(" ").toLowerCase();
+    if (/sospes[oa]|non disponibile|quota chiusa|temporaneamente non|suspended|locked|bloccata|bloccato/.test(stateText)) return true;
+    if (btn.querySelector?.('[aria-label*="lock" i], [title*="lock" i], [data-testid*="lock" i], [class*="lock" i]')) return true;
+    return false;
   }
 
     // Estrae il titolo del mercato immediato e l'eventuale linea (Under/Over) per un bottone quota
@@ -1150,40 +1164,44 @@
 
   // Risolve quota numerica e tipologia mercato Sisal per un bottone
   function resolveOddsButton(btn) {
+    if (isUnavailableOddsButton(btn) || !btn.getClientRects?.().length) return null;
     let label = "";
     let val = null;
+    let oddsConfidence = "low";
 
-    // 1. Cerca nei nodi figli diretti (escludendo badge MM)
+    // Prima scelta: valore decimale isolato in un elemento figlio dedicato.
     const children = Array.from(btn.children).filter(el => !el.classList.contains("mm-prob-tag") && !el.classList.contains("mm-badge-recommended"));
-    if (children.length >= 2) {
-      for (const c of children) {
-        const txt = (c.innerText || c.textContent || "").trim();
-        const m = txt.match(/^(\d+[.,]\d{2})$/);
-        if (m && !val) val = parseFloat(m[1].replace(",", "."));
-        else if (!label && txt.length < 25) label = txt;
-      }
+    const childOdds = children.map(el => parseOddsValue((el.innerText || el.textContent || "").trim())).filter(v => v !== null);
+    const uniqueChildOdds = Array.from(new Set(childOdds));
+    if (uniqueChildOdds.length === 1) {
+      val = uniqueChildOdds[0];
+      oddsConfidence = "high";
+    } else if (uniqueChildOdds.length > 1) {
+      return null;
+    }
+    for (const child of children) {
+      const txt = (child.innerText || child.textContent || "").trim();
+      if (!label && txt && parseOddsValue(txt) === null && txt.length < 25) label = txt;
     }
 
-    // 2. Fallback su righe di testo
-    if (!val) {
+    // Fallback: una sola quota isolata nel testo visibile del pulsante.
+    if (val === null) {
       const rawText = (btn.innerText || btn.textContent || "").trim();
-      const parts = rawText.split(/[\r\n\s]+/).map(p => p.trim()).filter(Boolean);
-      for (const p of parts) {
-        const m = p.match(/^(\d+[.,]\d{2})$/);
-        if (m && !val) val = parseFloat(m[1].replace(",", "."));
-        else if (!label && !m && p.length < 25) label = p;
+      const parts = rawText.split(/[\r\n\s]+/).map(part => part.trim()).filter(Boolean);
+      const values = Array.from(new Set(parts.map(parseOddsValue).filter(v => v !== null)));
+      if (values.length === 1) {
+        val = values[0];
+        oddsConfidence = "medium";
+      } else if (values.length > 1) {
+        return null;
+      }
+      for (const part of parts) {
+        if (!label && parseOddsValue(part) === null && part.length < 25) label = part;
       }
     }
 
-    // 3. Fallback su aria-label
-    if (!val) {
-      const aria = btn.getAttribute("aria-label") || "";
-      const m = aria.match(/\b(\d+[.,]\d{2})\b/);
-      if (m) val = parseFloat(m[1].replace(",", "."));
-    }
-
-    if (!val || isNaN(val) || val <= 1.0) return null;
-
+    // I soli aria-label non bastano per verificare che il numero sia una quota selezionabile.
+    if (val === null || !Number.isFinite(val) || val <= 1.01 || val > MAX_DISPLAY_ODDS) return null;
     const { marketTitle, lineInfo, attrText } = getMarketContext(btn);
     const lNorm = (label || "").trim().toUpperCase();
     const mNorm = ((marketTitle || "") + " " + (attrText || "")).toLowerCase();
@@ -1200,21 +1218,21 @@
 
     // Doppia Chance
     if (lNorm === "1X" || lNorm === "1-X" || mNorm.includes("doppia chance 1x")) {
-      return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance", odd: val };
+      return { key: "dc1X", label: "1X (Casa o Pareggio)", shortLabel: "1X", cat: "dc", catName: "Doppia Chance", odd: val, oddsConfidence };
     }
     if (lNorm === "X2" || lNorm === "X-2" || mNorm.includes("doppia chance x2")) {
-      return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance", odd: val };
+      return { key: "dcX2", label: "X2 (Pareggio o Ospite)", shortLabel: "X2", cat: "dc", catName: "Doppia Chance", odd: val, oddsConfidence };
     }
     if (lNorm === "12" || lNorm === "1-2" || mNorm.includes("doppia chance 12")) {
-      return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance", odd: val };
+      return { key: "dc12", label: "12 (Casa o Ospite)", shortLabel: "12", cat: "dc", catName: "Doppia Chance", odd: val, oddsConfidence };
     }
 
     // Goal / No Goal
     if (lNorm === "GOAL" || lNorm === "GOL" || lNorm === "GG" || (mNorm.includes("goal") && (lNorm === "SI" || lNorm === "SÌ"))) {
-      return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol", odd: val };
+      return { key: "bttsYes", label: "Gol (Entrambe segnano)", shortLabel: "Gol", cat: "btts", catName: "Gol / No Gol", odd: val, oddsConfidence };
     }
     if (lNorm === "NOGOAL" || lNorm === "NO GOAL" || lNorm === "NO GOL" || lNorm === "NG" || (mNorm.includes("goal") && lNorm === "NO")) {
-      return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol", odd: val };
+      return { key: "bttsNo", label: "No Gol (Almeno una a secco)", shortLabel: "No Gol", cat: "btts", catName: "Gol / No Gol", odd: val, oddsConfidence };
     }
 
     // Under / Over
@@ -1228,28 +1246,28 @@
 
       if (line === "1.5") {
         return isOver ?
-          { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over", odd: val } :
-          { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over", odd: val };
+          { key: "over15", label: "Over 1.5 Gol", shortLabel: "Over 1.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence } :
+          { key: "under15", label: "Under 1.5 Gol", shortLabel: "Under 1.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence };
       }
       if (line === "3.5") {
         return isOver ?
-          { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over", odd: val } :
-          { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over", odd: val };
+          { key: "over35", label: "Over 3.5 Gol", shortLabel: "Over 3.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence } :
+          { key: "under35", label: "Under 3.5 Gol", shortLabel: "Under 3.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence };
       }
       return isOver ?
-        { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over", odd: val } :
-        { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over", odd: val };
+        { key: "over25", label: "Over 2.5 Gol", shortLabel: "Over 2.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence } :
+        { key: "under25", label: "Under 2.5 Gol", shortLabel: "Under 2.5", cat: "uo", catName: "Under / Over", odd: val, oddsConfidence };
     }
 
     // 1X2 Finale
     if (lNorm === "1") {
-      return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
+      return { key: "home", label: "1 (Vittoria Casa)", shortLabel: "1", cat: "1x2", catName: "Esito Finale (1X2)", odd: val, oddsConfidence };
     }
     if (lNorm === "X") {
-      return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
+      return { key: "draw", label: "X (Pareggio)", shortLabel: "X", cat: "1x2", catName: "Esito Finale (1X2)", odd: val, oddsConfidence };
     }
     if (lNorm === "2") {
-      return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)", odd: val };
+      return { key: "away", label: "2 (Vittoria Ospite)", shortLabel: "2", cat: "1x2", catName: "Esito Finale (1X2)", odd: val, oddsConfidence };
     }
 
     return null;
