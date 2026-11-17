@@ -15,7 +15,7 @@ const nba = readFileSync(resolve(ROOT, "nba.js"), "utf8");
 
 test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () => {
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.5\.0$/m);
+  assert.match(script, /^\/\/ @version\s+3\.5\.2$/m);
   assert.match(script, /^\/\/ @noframes$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse\*$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/www\.sisal\.it\/scommesse-matchpoint\/\*$/m);
@@ -24,13 +24,15 @@ test("Sisal userscript v3 is scoped to Sisal, top frame only, and parses", () =>
   assert.doesNotMatch(script, /@match\s+https:\/\/.*matchmind/);
 });
 
-test("QuotaLab bridge captures Sisal odds and returns them only to the QuotaLab origin", () => {
+test("Sisal capture returns visible odds to the MatchMind opener and keeps legacy QuotaLab compatibility", () => {
   assert.match(script, /function decodeQuotaLabHash\(\)/);
   assert.match(script, /function quotaLabMarketKey\(key\)/);
   assert.match(script, /function scanQuotaLabOdds\(\)/);
-  assert.match(script, /type:"QUOTALAB_SISAL_ODDS"/);
+  assert.match(script, /type:targetOrigin === MATCHMIND_APP_ORIGIN \? "MATCHMIND_SISAL_ODDS" : "QUOTALAB_SISAL_ODDS"/);
   assert.match(script, /window\.opener\.postMessage/);
-  assert.match(script, /https:\/\/sonostevecazzo\.github\.io/);
+  assert.match(script, /https:\/\/matchmind-3te\.pages\.dev/);
+  assert.match(script, /CAPTURE_SESSION_KEY/);
+  assert.match(script, /sessionStorage\.setItem\(CAPTURE_SESSION_KEY/);
   assert.match(script, /function quotaLabOddsFromButton\(button\)/);
 });
 
@@ -230,14 +232,13 @@ test("NBA transfer matches team names and abbreviations, recognizes moneyline an
   assert.match(script, /const monthFirst = \/\\b\(january\|jan/);
   assert.match(script, /key === "nbaMoneyline:home" \|\| key === "nbaMoneyline:away"/);
 });
-test("color ranking remains green probability, blue best Sisal odds, red lowest probability", () => {
-  assert.match(script, /mm-best\{border-color:#16a34a/);
-  assert.match(script, /mm-value\{border-color:#2563eb/);
-  assert.match(script, /mm-avoid\{border-color:#dc2626/);
-  assert.match(script, /quota più alta tra le alternative confrontabili/);
-  assert.match(script, /probabilità più alta tra le alternative confrontabili/);
-  assert.match(script, /probabilità più bassa tra le alternative confrontabili/);
-  assert.match(script, /function marketFamily\(key\)/);
+test("Sisal overlay colors are based on model expected value and sample sufficiency", () => {
+  assert.match(script, /mm-positive-ev\{border-color:#16a34a/);
+  assert.match(script, /mm-negative-ev\{border-color:#dc2626/);
+  assert.match(script, /entry\.prediction\.sampleEnough === true && entry\.odds !== null/);
+  assert.match(script, /expectedValue >= 0\.03 \? 'positive-ev' : expectedValue < 0 \? 'negative-ev'/);
+  assert.match(script, /" · EV "/);
+  assert.doesNotMatch(script, /quota più alta tra le alternative confrontabili/);
 });
 test("Sisal displays limited-sample model estimates without relabelling them as calibrated", () => {
   assert.match(script, /badge\.dataset\.mmLimited/);
@@ -246,15 +247,40 @@ test("Sisal displays limited-sample model estimates without relabelling them as 
   assert.doesNotMatch(script, /TEAM_RATINGS|isCalibratedTeamRating|forecastUnavailable/);
 });
 
+test("MatchMind can open Sisal for all configured football fixtures, receive live odds, and show EV analysis", () => {
+  assert.match(betsHtml, /id="captureSisalOdds"/);
+  assert.match(betsHtml, /id="sisalCaptureAnalysis"/);
+  assert.match(bets, /async function startSisalOddsCapture\(\)/);
+  assert.match(bets, /window\.open\("about:blank","matchmind-sisal-capture"\)/);
+  assert.match(bets, /appOrigin:location\.origin/);
+  assert.match(bets, /type!=="MATCHMIND_SISAL_ODDS"/);
+  assert.match(bets, /event\.source!==activeSisalCapture\.popup/);
+  assert.match(bets, /probability\*odds-1/);
+  assert.match(bets, /item\.ev>=0\.03/);
+  assert.match(bets, /SISAL_CAPTURE_ORIGINS/);
+});
 test("Sisal script never clicks, adds, confirms or submits a wager", () => {
   assert.doesNotMatch(script, /\.click\s*\(/);
   assert.doesNotMatch(script, /placeBet|submitBet|confirmBet|autoAddIndexes/i);
   assert.match(script, /addPredictionBadge\(button/);
 });
 
-test("Sisal scanner is event-driven and has no polling loop", () => {
+test("Sisal EV scanner reads the decimal price, not the 1X2 outcome or Over/Under line", () => {
+  const start = script.indexOf("  function oddsFromButton(button) {");
+  const end = script.indexOf("\n\n", start);
+  assert.ok(start >= 0 && end > start);
+  const readOdds = new Function("buttonText", script.slice(start, end) + "; return oddsFromButton;");
+  const parser = readOdds(button => button.text);
+  assert.equal(parser({ text: "2 1,85" }), 1.85);
+  assert.equal(parser({ text: "Over 2,5 1,80" }), 1.8);
+  assert.equal(parser({ text: "Under 3,5 2,05" }), 2.05);
+  assert.equal(parser({ text: "Esito 1" }), null);
+});
+
+test("Sisal scanner captures lazily-loaded markets on DOM changes and scroll without polling", () => {
   assert.match(script, /new MutationObserver/);
   assert.match(script, /scheduleScan\(450\)/);
+  assert.match(script, /scheduleQuotaLabCapture\(850\)/);
   assert.match(script, /visibilitychange/);
   assert.doesNotMatch(script, /setInterval\s*\(/);
   assert.doesNotMatch(script, /setInterval\(\(\) => scanPage/);
@@ -288,7 +314,7 @@ test("Sisal highlights the exact selected market, including combined markets", (
   assert.match(script, /const comboTotal = compactOutcome\.match/);
   assert.match(script, /const comboBtts = compactOutcome\.match/);
   assert.match(script, /return "combo:" \+ resultKey \+ ":" \+ comboTotal\[2\] \+ comboTotal\[3\]/);
-  assert.match(script, /badge\.textContent = selected \? "MM ✓ " \+ formatPercent/);
+  assert.match(script, /badge\.textContent = \(selected \? "MM ✓ " : "MM "\) \+ formatPercent/);
   assert.match(script, /matchedSelections = selectionsSeen/);
   assert.match(script, /mercati selezionati riconosciuti/);
 });

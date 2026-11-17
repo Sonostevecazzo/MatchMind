@@ -5,7 +5,7 @@
 <meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261113-compact-nav-1">
 <title>MatchMind · Scommesse</title>
-<script defer src="./bets-engine.js"></script><script defer src="./site-core.js?v=20261111-drawer-refresh"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./sports-switch.js?v=20261116-espn-window"></script><script defer src="./bets.js?v=20261114-market-filter-1"></script>
+<script defer src="./bets-engine.js"></script><script defer src="./site-core.js?v=20261111-drawer-refresh"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./sports-switch.js?v=20261116-espn-window"></script><script defer src="./bets.js?v=20261117-sisal-live-capture"></script>
 </head>
 <body data-page="bets" data-title="Schedine" data-subtitle="Crea, monitora e archivia le tue schedine.">
 <div id="siteHeader"></div>
@@ -66,6 +66,12 @@
   <div id="manualSlipSummary"><div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div></div>
   <div class="manual-summary-actions"><button id="saveManualSlip" type="button" class="primary" style="flex:1;margin-top:10px">Salva schedina</button><button id="cancelEditTicket" type="button" class="secondary" style="margin-top:10px" hidden>Annulla modifica</button></div>
   <p class="bet-slip-helper">Salvare registra la schedina in MatchMind: non invia una scommessa al bookmaker.</p>
+  <section class="sisal-capture-panel" aria-labelledby="sisalCaptureTitle">
+   <div class="sisal-capture-heading"><div><strong id="sisalCaptureTitle">Acquisizione e analisi quote Sisal</strong><small>Apri Sisal dalla finestra collegata. Le quote vengono importate man mano che carichi o scorri gli eventi.</small></div><button id="captureSisalOdds" type="button" class="secondary">Acquisisci quote</button></div>
+   <p id="sisalCaptureStatus" class="status-line" aria-live="polite">Pronto. MatchMind analizzerà le partite presenti nei suoi calendari supportati.</p>
+   <div id="sisalCaptureAnalysis"><p class="sisal-capture-empty">Le quote raccolte e i relativi valori attesi appariranno qui.</p></div>
+   <p class="sisal-capture-footnote">Copertura attuale del modello calcio: Serie A, Champions League, Europa League e Nations League. Altri campionati Sisal non vengono classificati finché MatchMind non dispone di calendario e storico adeguati.</p>
+  </section>
   <div class="sisal-transfer-controls">
    <a id="sendSelectionsToSisal" class="button-like primary sisal-transfer-link" aria-disabled="true" tabindex="-1" target="_blank" rel="noopener noreferrer">Apri Sisal con le selezioni</a>
    <p id="sisalBridgeStatus" class="status-line" aria-live="polite">Aggiungi selezioni per attivare il trasferimento manuale verso Sisal.</p>
