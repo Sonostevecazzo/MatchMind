@@ -1719,7 +1719,7 @@
       const queued = readPlayQueue().filter(q => q.status !== "added").length;
       const countBadge = currentView === "all_markets"
         ? `${allMarketsList.length} Mercati`
-        : `${activePicks.length} Consigliate`;
+        : `${activePicks.length} Da verificare`;
 
       widget.innerHTML = `
         <div id="mm-widget-min-bar" style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;line-height:1;user-select:none;">
@@ -1805,7 +1805,7 @@
                 ${matchTitle ? `<div class="mm-item-match">${matchTitle}</div>` : ''}
               </div>
               <div class="mm-card-actions">
-                ${item.hasRealOdd ? `<span class="mm-odd-badge" title="Rilevata nel DOM Sisal · ${item.oddsConfidence === "high" ? "valore isolato" : "testo del pulsante"}">Quota <b>${oddVal.toFixed(2)}</b>${item.oddsConfidence === "medium" ? " · verifica" : ""}</span>` : `<span class="mm-odd-badge muted" title="Quota equa teorica">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
+                ${item.hasRealOdd ? `<span class="mm-odd-badge" title="Rilevata nel DOM Sisal · ${item.oddsConfidence === "high" ? "valore isolato" : "testo del pulsante"}">Quota <b>${oddVal.toFixed(2)}</b>${item.oddsConfidence === "medium" ? " · verifica" : ""}</span>` : `<span class="mm-odd-badge muted" title="Quota teorica non validata">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
                 ${item.hasRealOdd ? `<button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${item.home.replace(/'/g, "\\'")}', '${item.away.replace(/'/g, "\\'")}', '${item.key}', '${item.label.replace(/'/g, "\\'")}', ${sendOdd})">⚡ MM</button>` : ''}
               </div>
             </div>
@@ -1817,7 +1817,7 @@
 
             <div class="mm-card-metrics">
               <span>Stima: <b>${ev.pct}%</b></span>
-              <span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span>
+              <span>Quota teorica: <b>${ev.fairOdds.toFixed(2)}</b></span>
               ${item.hasRealOdd ? `<span style="color:#fbbf24;font-size:9px;font-weight:800;">EV sospeso · modello non validato</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
             </div>
 
@@ -1866,7 +1866,7 @@
                 <div class="mm-card-actions"><span class="mm-odd-badge">Quota <b>${c.odd.toFixed(2)}</b></span><button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${c.home.replace(/'/g, "\\'")}', '${c.away.replace(/'/g, "\\'")}', '${c.key}', '${c.label.replace(/'/g, "\\'")}', ${c.odd})">⚡ MM</button></div>
               </div>
               <div class="mm-verdict-row"><span class="mm-verdict-badge ${ev.badgeClass}">${ev.badgeText}</span><span class="mm-verdict-short">${ev.shortVerdict}</span></div>
-              <div class="mm-card-metrics"><span>Stima: <b>${ev.pct}%</b></span><span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span><span style="color:#fbbf24;font-size:9px;font-weight:800;">EV sospeso</span></div>
+              <div class="mm-card-metrics"><span>Stima: <b>${ev.pct}%</b></span><span>Quota teorica: <b>${ev.fairOdds.toFixed(2)}</b></span><span style="color:#fbbf24;font-size:9px;font-weight:800;">EV sospeso</span></div>
               <div class="mm-card-reason"><div class="mm-reason-desc">💡 ${ev.explanation}</div>${ev.tacticalNote ? `<div class="mm-reason-tactical">⚽ ${ev.tacticalNote}</div>` : ''}</div>
             </div>
           `;
@@ -1902,7 +1902,7 @@
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
-      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Modello pre-partita basato su coefficienti statici non calibrati. Quote sospese/anomale escluse; EV disattivato finché le probabilità non saranno validate.</div>
+      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Stime da coefficienti statici non calibrati: solo orientative, non predittive validate. EV sospeso. Quote sospese, anomale e partite live escluse.</div>
       ${!isMulti && currentAnalysis.home && currentAnalysis.away ? (() => {
         const curCtx = getMatchContext(currentAnalysis.home, currentAnalysis.away);
         const isCustom = Boolean(curCtx.attackingAbsencesHome || curCtx.defensiveAbsencesHome || curCtx.motivationHome || curCtx.attackingAbsencesAway || curCtx.defensiveAbsencesAway || curCtx.motivationAway);
@@ -1935,7 +1935,7 @@
       })() : ''}
       <div class="mm-view-tabs">
         <button class="mm-view-tab ${currentView === 'all_markets' ? 'active' : ''}" data-view="all_markets">📋 Tutti i Mercati (${allMarketsList.length})</button>
-        <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">⭐ Solo Consigliate (${activePicks.length})</button>
+        <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">🔎 Da Da verificare (${activePicks.length})</button>
       </div>
       ${mainContentHtml}
       <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px;">
@@ -2015,7 +2015,7 @@
         if (!tag) { tag = document.createElement("div"); tag.className = "mm-prob-tag"; btn.appendChild(tag); }
         tag.className = `mm-prob-tag is-${evRes.type}`;
         tag.innerHTML = evRes.tagText;
-        tag.title = `${c.label} · ${evRes.shortVerdict} (Stima: ${evRes.pct}%, Sisal: ${c.odd.toFixed(2)}, Equa: ${c.fairOdds.toFixed(2)})`;
+        tag.title = `${c.label} · ${evRes.shortVerdict} (Stima indicativa: ${evRes.pct}%, Sisal: ${c.odd.toFixed(2)}, lettura quota: ${c.oddsConfidence || "non disponibile"}, EV non validato)`;
         btn.querySelectorAll(".mm-send-btn").forEach(el => el.remove());
       });
     } finally { isMutatingDOM = false; }
@@ -2265,10 +2265,12 @@
   }
   function resolveNbaWinner(btn, item, context) {
     const market = nbaMarketText(btn);
-    if (!nbaWinnerMarket(market)) return null;
+    if (!nbaWinnerMarket(market) || isUnavailableOddsButton(btn)) return null;
     const raw = (btn.innerText || Array.from(btn.children).map(c => c.textContent).join(" ") || btn.textContent || "").trim();
-    const odd = parseOddsValue(raw + " " + (btn.getAttribute("aria-label") || ""));
-    if (!odd) return null;
+    const oddsTokens = (raw + " " + (btn.getAttribute("aria-label") || "")).split(/[\r\n\s]+/);
+    const oddsFound = Array.from(new Set(oddsTokens.map(parseOddsValue).filter(value => value !== null)));
+    if (oddsFound.length !== 1) return null;
+    const odd = oddsFound[0];
     const label = (btn.getAttribute('data-outcome') || btn.getAttribute('data-selection-name') || raw.replace(/\b\d+[.,]\d{2}\b/g, "")).trim();
     const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
     let side = nbaTeamPosition(label, h) >= 0 ? "home" : nbaTeamPosition(label, a) >= 0 ? "away" : null;
