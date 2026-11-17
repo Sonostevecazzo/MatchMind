@@ -159,3 +159,10 @@ Le probabilità delle schedine riutilizzano il modello Poisson esistente. Il con
 - Il piano gratuito API-Football dichiara 100 richieste al giorno. MatchMind aggiorna il punteggio live ogni 5 minuti e mette in cache la lista e il dettaglio partita per 5 minuti. Il dettaglio partita usa una sola richiesta `/fixtures?id=` per punteggio, eventi, statistiche e formazioni. Il monitoraggio schedine si aggiorna ogni 15 minuti solo quando la vista è aperta e ci sono eventi previsti nella data corrente. Il Live è adattivo: 5 minuti durante il gioco, 15 minuti prima del calcio d'inizio, 30 minuti se non ci sono eventi live e nessun polling dopo la fine.
 - Il campo 2D è una rappresentazione tattica illustrativa basata sulle formazioni iniziali (se disponibili) e su statistiche aggregate per pressione/pallone. Sotto il campo sono elencati titolari e riserve forniti dal provider. Non è tracking GPS/optical né una ricostruzione della posizione live dei calciatori.
 - Senza il secret, il Live mostra una condizione non disponibile, mentre calendario e analisi storiche continuano a funzionare.
+
+
+### Sisal userscript quality safeguards (v3.6.1)
+- The restored Lovable Poisson engine still uses embedded static team ratings and is not independently calibrated; displayed probabilities and EV are exploratory, not a proven edge.
+- The userscript quarantines quotes when the implied bookmaker probability and model probability differ by more than 35 percentage points, when a computed EV exceeds +100%, or when a double-chance quote exceeds 8. Such selections are marked for verification, excluded from recommended picks, and cannot be transferred from the recommendation card.
+- Generic page titles and fixtures without an embedded team rating are not analyzed as known matches.
+- The mobile widget uses a vertically scrollable market list, horizontally swipeable market tabs, and a compact viewport-aware panel.
