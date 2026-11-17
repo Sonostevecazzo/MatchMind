@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      2.4.2
-// @description  Valutazione statistica chiara per tutti i mercati Sisal supportati, non solo quelli consigliati.
+// @version      3.6.0
+// @description  Motore Lovable 2.4.2 ripristinato · analisi mercati Sisal e trasferimento MatchMind.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -25,7 +25,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "2.4.2";
+  const MM_SCRIPT_VERSION = "3.6.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
