@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.0
+// @version      3.6.1
 // @description  Motore Lovable 2.4.2 ripristinato · analisi mercati Sisal e trasferimento MatchMind.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -25,7 +25,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.0";
+  const MM_SCRIPT_VERSION = "3.6.1";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -181,7 +181,7 @@
 
   function isKnownTeamName(name) {
     const key = canonicalTeam(name);
-    return Boolean(key && (TEAM_RATINGS[key] || TEAM_ALIASES[key]));
+    return Boolean(key && TEAM_RATINGS[key]);
   }
 
   // Cache dei calcoli Poisson per evitare ricalcoli inutili
