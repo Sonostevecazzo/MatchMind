@@ -1805,7 +1805,7 @@
                 ${matchTitle ? `<div class="mm-item-match">${matchTitle}</div>` : ''}
               </div>
               <div class="mm-card-actions">
-                ${item.hasRealOdd ? `<span class="mm-odd-badge" title="Rilevata nel DOM Sisal · ${item.oddsConfidence === "high" ? "valore isolato" : "testo del pulsante"}">Quota <b>${oddVal.toFixed(2)}</b>${item.oddsConfidence === "medium" ? " · verifica" : ""}</span>` : `<span class="mm-odd-badge muted" title="Quota teorica non validata">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
+                ${item.hasRealOdd ? `<span class="mm-odd-badge" title="Rilevata nel DOM Sisal · ${item.oddsConfidence === "high" ? "valore isolato" : "testo del pulsante"}">Quota <b>${oddVal.toFixed(2)}</b>${item.oddsConfidence === "medium" ? " · verifica" : ""}</span>` : `<span class="mm-odd-badge muted" title="Quota teorica non validata">Teorica <b>${item.fairOdds.toFixed(2)}</b></span>`}
                 ${item.hasRealOdd ? `<button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${item.home.replace(/'/g, "\\'")}', '${item.away.replace(/'/g, "\\'")}', '${item.key}', '${item.label.replace(/'/g, "\\'")}', ${sendOdd})">⚡ MM</button>` : ''}
               </div>
             </div>
@@ -1935,7 +1935,7 @@
       })() : ''}
       <div class="mm-view-tabs">
         <button class="mm-view-tab ${currentView === 'all_markets' ? 'active' : ''}" data-view="all_markets">📋 Tutti i Mercati (${allMarketsList.length})</button>
-        <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">🔎 Da Da verificare (${activePicks.length})</button>
+        <button class="mm-view-tab ${currentView === 'recommended' ? 'active' : ''}" data-view="recommended">🔎 Da verificare (${activePicks.length})</button>
       </div>
       ${mainContentHtml}
       <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px;">
