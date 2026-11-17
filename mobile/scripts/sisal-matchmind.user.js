@@ -773,7 +773,7 @@
       box-shadow: 0 8px 30px rgba(0,0,0,0.85), 0 0 0 1px rgba(56,189,248,0.2);
       width: 320px;
       max-width: calc(100vw - 24px);
-      max-height: 52vh;
+      max-height: 48vh;
       display: flex;
       flex-direction: column;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -952,7 +952,7 @@
       flex-direction: column !important;
       gap: 5px !important;
       overflow-y: auto !important;
-      max-height: 280px !important;
+      max-height: min(22vh, 210px) !important;
       padding-right: 2px !important;
       touch-action: pan-y !important;
     }
@@ -1064,7 +1064,13 @@
   
 
     /* Mercati completi e valutazioni leggibili */
-    .mm-view-tabs { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; background:#081224 !important; padding:3px !important; border-radius:8px !important; }
+    .mm-view-tabs { display:grid !important; grid-template-columns:1fr 1fr !important; gap:4px !important; background:#081224 !important; padding:3px !important; border-radius:8px !important; position:sticky !important; top:0 !important; z-index:8 !important; box-shadow:0 3px 8px rgba(0,0,0,.28) !important; }
+    .mm-options-drawer { background:#0f172a !important; border:1px solid #1e293b !important; border-radius:8px !important; padding:5px 7px !important; }
+    .mm-options-drawer > summary { display:flex !important; justify-content:space-between !important; align-items:center !important; gap:8px !important; cursor:pointer !important; color:#7dd3fc !important; font-size:10px !important; font-weight:800 !important; list-style:none !important; }
+    .mm-options-drawer > summary::-webkit-details-marker { display:none !important; }
+    .mm-options-drawer > summary small { color:#94a3b8 !important; font-size:9px !important; font-weight:600 !important; text-align:right !important; }
+    .mm-options-body { display:flex !important; flex-direction:column !important; gap:5px !important; margin-top:7px !important; }
+    .mm-strat-tab:disabled { opacity:.4 !important; cursor:not-allowed !important; filter:grayscale(1) !important; }
     .mm-view-tab { background:transparent !important; color:#94a3b8 !important; border:0 !important; border-radius:6px !important; padding:5px 3px !important; font-size:9px !important; font-weight:800 !important; cursor:pointer !important; }
     .mm-view-tab.active { background:#0284c7 !important; color:white !important; }
     .mm-cat-row { display:flex !important; gap:3px !important; overflow-x:auto !important; padding:1px 0 3px !important; }
@@ -1611,6 +1617,7 @@
   }
 
   function setStrategy(strat) {
+    if (strat === "value" && !MODEL_EVIDENCE_VALIDATED) return;
     currentStrategy = strat;
     localStorage.setItem("mm_widget_strategy", strat);
     renderWidget();
@@ -1739,8 +1746,8 @@
 
     widget.classList.remove("mm-is-minimized");
     widget.style.height = "auto";
-    widget.style.maxHeight = "58vh";
-    widget.style.width = "335px";
+    widget.style.maxHeight = "48vh";
+    widget.style.width = "min(335px, calc(100vw - 16px))";
     widget.onclick = null;
 
     if (!calculations.length && !allMarketsList.length) {
@@ -1753,7 +1760,7 @@
           </div>
         </div>
         <div style="font-size:11px;color:#94a3b8;padding:10px 0;text-align:center;">
-          Nessuna quota calcistica rilevata.<br/><span style="font-size:10px;color:#64748b;">Apri una singola partita o il palinsesto.</span>
+          ${currentAnalysis?.notice || "Nessuna partita supportata rilevata."}<br/><span style="font-size:10px;color:#64748b;">Le squadre non riconosciute e i mercati sospesi/anomali non vengono valutati.</span>
         </div>
         <button id="mm-send-cart-btn" class="mm-btn-cart">📥 Invia carrello Sisal</button>
         <div style="display:flex;justify-content:space-between;margin-top:2px;">
@@ -1798,7 +1805,7 @@
                 ${matchTitle ? `<div class="mm-item-match">${matchTitle}</div>` : ''}
               </div>
               <div class="mm-card-actions">
-                ${item.hasRealOdd ? `<span class="mm-odd-badge">Quota <b>${oddVal.toFixed(2)}</b></span>` : `<span class="mm-odd-badge muted" title="Quota equa teorica">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
+                ${item.hasRealOdd ? `<span class="mm-odd-badge" title="Rilevata nel DOM Sisal · ${item.oddsConfidence === "high" ? "valore isolato" : "testo del pulsante"}">Quota <b>${oddVal.toFixed(2)}</b>${item.oddsConfidence === "medium" ? " · verifica" : ""}</span>` : `<span class="mm-odd-badge muted" title="Quota equa teorica">Equa <b>${item.fairOdds.toFixed(2)}</b></span>`}
                 ${item.hasRealOdd ? `<button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${item.home.replace(/'/g, "\\'")}', '${item.away.replace(/'/g, "\\'")}', '${item.key}', '${item.label.replace(/'/g, "\\'")}', ${sendOdd})">⚡ MM</button>` : ''}
               </div>
             </div>
@@ -1811,7 +1818,7 @@
             <div class="mm-card-metrics">
               <span>Stima: <b>${ev.pct}%</b></span>
               <span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span>
-              ${item.hasRealOdd ? `<span style="color:${ev.evPct > 0 ? '#34d399' : (ev.evPct < -8 ? '#f87171' : '#fbbf24')};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
+              ${item.hasRealOdd ? `<span style="color:#fbbf24;font-size:9px;font-weight:800;">EV sospeso · modello non validato</span>` : '<span style="color:#64748b;font-size:9px;">Stima preventiva</span>'}
             </div>
 
             <div class="mm-card-reason">
@@ -1831,10 +1838,8 @@
           <button class="mm-cat-btn ${currentCategoryFilter === 'dc' ? 'active' : ''}" data-cat="dc">🛡️ Doppia Chance</button>
         </div>
         <div class="mm-legend-bar">
-          <span class="mm-legend-item"><i class="dot-val"></i> Valore</span>
-          <span class="mm-legend-item"><i class="dot-high"></i> Probabile</span>
-          <span class="mm-legend-item"><i class="dot-neu"></i> Neutra</span>
-          <span class="mm-legend-item"><i class="dot-trap"></i> Rischiosa</span>
+          <span class="mm-legend-item"><i class="dot-neu"></i> Stima indicativa</span>
+          <span class="mm-legend-item">Quote sospese/anomale escluse</span>
         </div>
         <div class="mm-list-container">
           ${cardsHtml || '<div style="font-size:11px;color:#94a3b8;padding:12px;text-align:center;">Nessun mercato in questa categoria.</div>'}
@@ -1861,7 +1866,7 @@
                 <div class="mm-card-actions"><span class="mm-odd-badge">Quota <b>${c.odd.toFixed(2)}</b></span><button class="mm-send-btn" title="Invia questa giocata a MatchMind" onclick="window.sendToMatchMind(event, '${c.home.replace(/'/g, "\\'")}', '${c.away.replace(/'/g, "\\'")}', '${c.key}', '${c.label.replace(/'/g, "\\'")}', ${c.odd})">⚡ MM</button></div>
               </div>
               <div class="mm-verdict-row"><span class="mm-verdict-badge ${ev.badgeClass}">${ev.badgeText}</span><span class="mm-verdict-short">${ev.shortVerdict}</span></div>
-              <div class="mm-card-metrics"><span>Stima: <b>${ev.pct}%</b></span><span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span><span style="color:${ev.evPct > 0 ? '#34d399' : '#94a3b8'};font-weight:800;">${ev.evPct > 0 ? '+' : ''}${ev.evPct}% EV</span></div>
+              <div class="mm-card-metrics"><span>Stima: <b>${ev.pct}%</b></span><span>Quota Equa: <b>${ev.fairOdds.toFixed(2)}</b></span><span style="color:#fbbf24;font-size:9px;font-weight:800;">EV sospeso</span></div>
               <div class="mm-card-reason"><div class="mm-reason-desc">💡 ${ev.explanation}</div>${ev.tacticalNote ? `<div class="mm-reason-tactical">⚽ ${ev.tacticalNote}</div>` : ''}</div>
             </div>
           `;
@@ -1871,10 +1876,13 @@
       }
 
       mainContentHtml = `
+        <details class="mm-options-drawer">
+          <summary><span>⚙️ Strategia e filtri</span><small>${currentStrategy === "balanced" ? "Bilanciata" : currentStrategy === "accurate" ? "Accuratezza" : currentStrategy === "doubling" ? "Raddoppio" : "Valore"} · soglia ${minProbThreshold}%</small></summary>
+          <div class="mm-options-body">
         <div class="mm-strategy-tabs">
           <button class="mm-strat-tab ${currentStrategy === 'balanced' ? 'active' : ''}" data-strat="balanced">⚖️ Bilanciata</button>
           <button class="mm-strat-tab ${currentStrategy === 'accurate' ? 'active' : ''}" data-strat="accurate">🎯 Accuratezza</button>
-          <button class="mm-strat-tab ${currentStrategy === 'value' ? 'active strat-value' : ''}" data-strat="value">💎 +EV Valore</button>
+          <button class="mm-strat-tab ${currentStrategy === 'value' ? 'active strat-value' : ''}" data-strat="value" ${MODEL_EVIDENCE_VALIDATED ? "" : "disabled title='Non disponibile: probabilità non calibrate'"}>💎 EV non validato</button>
           <button class="mm-strat-tab ${currentStrategy === 'doubling' ? 'active' : ''}" data-strat="doubling">✌️ Raddoppio</button>
         </div>
         <div class="mm-filter-bar">
@@ -1882,6 +1890,8 @@
           <div class="mm-chips-row">${presets.map(p => `<button class="mm-chip ${minProbThreshold === p.val ? 'active' : ''}" data-val="${p.val}">${p.label}</button>`).join("")}</div>
           <input type="range" class="mm-slider" id="mm-prob-slider" min="30" max="90" step="5" value="${minProbThreshold}">
         </div>
+          </div>
+        </details>
         <div class="mm-list-container">${recItemsHtml}</div>
       `;
     }
@@ -1892,7 +1902,7 @@
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
-      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Stime indicative del modello MatchMind, non validate per questa partita. EV teorico, non garanzia.</div>
+      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Modello pre-partita basato su coefficienti statici non calibrati. Quote sospese/anomale escluse; EV disattivato finché le probabilità non saranno validate.</div>
       ${!isMulti && currentAnalysis.home && currentAnalysis.away ? (() => {
         const curCtx = getMatchContext(currentAnalysis.home, currentAnalysis.away);
         const isCustom = Boolean(curCtx.attackingAbsencesHome || curCtx.defensiveAbsencesHome || curCtx.motivationHome || curCtx.attackingAbsencesAway || curCtx.defensiveAbsencesAway || curCtx.motivationAway);
@@ -1982,8 +1992,16 @@
   function updatePageBadges() {
     if (!currentAnalysis || !currentAnalysis.calculations) return;
     const { calculations } = currentAnalysis;
+    const activeButtons = new Set(calculations.map(c => c.btn).filter(Boolean));
     isMutatingDOM = true;
     try {
+      document.querySelectorAll(".mm-prob-tag").forEach(tag => {
+        const owner = tag.parentElement;
+        if (!activeButtons.has(owner)) {
+          tag.remove();
+          owner?.classList?.remove("mm-highlight-valore", "mm-highlight-highprob", "mm-highlight-trap");
+        }
+      });
       calculations.forEach(c => {
         const btn = c.btn;
         if (!btn || !document.body.contains(btn)) return;
