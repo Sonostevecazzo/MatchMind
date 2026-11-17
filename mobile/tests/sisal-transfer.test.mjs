@@ -45,3 +45,31 @@ test("removes the unwanted live-odds capture panel and its disconnected handler"
   assert.doesNotMatch(bets, /startSisalOddsCapture|handleSisalOddsMessage/);
   assert.doesNotMatch(script, /MATCHMIND_SISAL_ODDS|CAPTURE_SESSION_KEY/);
 });
+
+test("extreme quote/model gaps are quarantined and cannot become value recommendations", () => {
+  const start = script.indexOf("  function validateQuoteData(prob, odd, marketKey) {");
+  const end = script.indexOf("\n  function applyQuoteQuality", start);
+  assert.ok(start >= 0 && end > start, "quote validator exists");
+  const validate = new Function(script.slice(start, end) + "; return validateQuoteData;")();
+  const anomaly = validate(0.74, 13, "dc1X");
+  assert.equal(anomaly.valid, false);
+  assert.match(anomaly.reason, /anomala|estremo/i);
+  assert.equal(validate(0.74, 1.35, "dc1X").valid, true);
+  assert.equal(validate(0.50, 10, "home").valid, false);
+  assert.equal(validate(0.50, 2.10, "home").valid, true);
+});
+
+test("unknown or generic page titles cannot be treated as a known fixture", () => {
+  assert.match(script, /function isKnownTeamName\(name\)/);
+  assert.match(script, /TEAM_RATINGS\[key\]/);
+  assert.match(script, /detectedSingleMatch && isKnownTeamName/);
+  assert.match(script, /detectMultipleMatches\(\)\.filter\(item => isKnownTeamName/);
+});
+
+test("mobile widget navigation supports touch scrolling, horizontal market tabs and a scrollable list", () => {
+  assert.match(script, /touch-action: pan-y/);
+  assert.match(script, /scroll-snap-type:x proximity/);
+  assert.match(script, /\.mm-list-container \{ flex:1 1 auto/);
+  assert.match(script, /max-height: min\(56dvh, 520px\)/);
+  assert.match(script, /mm-verdict-invalid/);
+});
