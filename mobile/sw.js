@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v158-20261117-lovable-sisal-242';
+const CACHE='matchmind-pwa-v159-20261117-sisal-quality-nav';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html','./nba.html',
