@@ -1335,10 +1335,10 @@
       matches.push({ container, home, away });
     };
 
-    const containers = Array.from(document.querySelectorAll(\`
+    const containers = Array.from(document.querySelectorAll(`
       [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
       [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
-    \`));
+    `));
     containers.forEach(container => {
       const text = container.innerText || container.textContent || "";
       const m = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
