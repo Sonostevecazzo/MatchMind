@@ -10,10 +10,10 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("restores the last Lovable Sisal userscript, version 3.6.0 (Lovable 2.4.2 core), with valid metadata and syntax", () => {
+test("restores the last Lovable Sisal userscript, version 3.6.1 (Lovable 2.4.2 core), with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.6\.0$/m);
+  assert.match(script, /^\/\/ @version\s+3\.6\.1$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
@@ -44,4 +44,12 @@ test("removes the unwanted live-odds capture panel and its disconnected handler"
   assert.doesNotMatch(betsHtml, /captureSisalOdds|sisalCaptureAnalysis/);
   assert.doesNotMatch(bets, /startSisalOddsCapture|handleSisalOddsMessage/);
   assert.doesNotMatch(script, /MATCHMIND_SISAL_ODDS|CAPTURE_SESSION_KEY/);
+});
+
+test("detects palinsesto fixtures when Sisal changes or removes event-card CSS classes", () => {
+  assert.match(script, /function normalizeTeamText\(value\)/);
+  assert.match(script, /const ambiguousAliases = new Set/);
+  assert.match(script, /const odds = Array\.from\(document\.querySelectorAll/);
+  assert.match(script, /if \(teamHits\.length === 2\)/);
+  assert.match(script, /if \(!matches\.length\)/);
 });
