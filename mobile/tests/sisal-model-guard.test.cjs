@@ -18,7 +18,7 @@ test("Sisal overlay uses the existing Lovable engine without claiming calibratio
 test("unrated teams do not receive generic model probabilities", () => {
   assert.match(script, /function isSupportedModelTeam\(name\)/);
   assert.match(script, /if \(!h \|\| !a\) return null/);
-  assert.match(script, /isSupportedModelTeam\(home\) \|\| !isSupportedModelTeam\(away\)/);
+  assert.match(script, /!isSupportedModelTeam\(home\) \|\| !isSupportedModelTeam\(away\)/);
 });
 
 test("the overlay does not show expected value while model evidence is unvalidated", () => {
