@@ -1285,83 +1285,74 @@
     return null;
   }
 
-  // Rilevamento partita singola con fallback su URL pathname, title e DOM
+  // Rileva solo partite realmente riconosciute dal motore: niente banner o intestazioni generiche.
   function detectSingleMatch() {
     const teamSepRegex = /([A-Za-z0-9\s]{3,22})\s*(?:[-–—/]|[\r\n]+|\bvs\b|\bv\b|\bvs\.)\s*([A-Za-z0-9\s]{3,22})/i;
+    const validPair = (home, away) => home && away && home !== away &&
+      isSupportedModelTeam(home) && isSupportedModelTeam(away);
 
-    // 1. Fallback su pathname URL Sisal (es. /scommesse-matchpoint/.../roma-sassuolo o /roma-sassuolo-2026...)
     try {
-      const path = (window.location.pathname || "").toLowerCase();
+      const path = String(window.location.pathname || "").toLowerCase();
       const segments = path.split("/").filter(Boolean);
       for (let i = segments.length - 1; i >= 0; i--) {
-        const seg = segments[i].replace(/-\d{6,}$/, "");
-        const parts = seg.split("-");
+        const parts = segments[i].replace(/-\d{6,}$/, "").split("-");
         if (parts.length >= 2) {
-          const h = parts[0].trim();
-          const a = parts[1].trim();
-          if (h.length >= 3 && a.length >= 3 && h !== a && isSupportedModelTeam(h) && isSupportedModelTeam(a) && !h.includes("scommesse") && !h.includes("evento") && !h.includes("calcio")) {
-            return { home: h, away: a };
-          }
+          const home = parts[0].trim();
+          const away = parts[1].trim();
+          if (home.length >= 3 && away.length >= 3 && validPair(home, away)) return { home, away };
         }
       }
     } catch (e) {}
 
-    // 2. Title della pagina
-    const titleMatch = document.title.match(teamSepRegex);
+    const titleMatch = String(document.title || "").match(teamSepRegex);
     if (titleMatch) {
-      let h = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
-      let a = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a && isSupportedModelTeam(h) && isSupportedModelTeam(a)) return { home: h, away: a };
+      const home = titleMatch[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
+      const away = titleMatch[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
+      if (validPair(home, away)) return { home, away };
     }
 
-    // 3. Headings e titoli evento
     const headEls = document.querySelectorAll("h1, h2, [class*='title'], [class*='match-name'], [class*='scoreboard'], [data-qa*='match']");
     for (const el of headEls) {
-      const txt = (el.innerText || "").trim();
-      const m = txt.match(teamSepRegex);
-      if (m) {
-        let h = m[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
-        let a = m[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a) return { home: h, away: a };
-      }
+      const match = String(el.innerText || "").trim().match(teamSepRegex);
+      if (!match) continue;
+      const home = match[1].replace(/^(quote|scommesse|partita|live)\s+/i, "").trim();
+      const away = match[2].replace(/\s+(scommesse|quote|sisal|calcio|serie).*$/i, "").replace(/\s*\|.*$/, "").trim();
+      if (validPair(home, away)) return { home, away };
     }
 
-    // 4. Selettori squadre concorrenti
     const teamEls = Array.from(document.querySelectorAll("[class*='competitor'], [class*='team-name'], [class*='teamName'], [class*='participant']"));
     if (teamEls.length >= 2) {
-      const h = (teamEls[0].innerText || "").trim();
-      const a = (teamEls[1].innerText || "").trim();
-      if (h.length >= 3 && a.length >= 3 && h !== a && isSupportedModelTeam(h) && isSupportedModelTeam(a)) {
-        return { home: h, away: a };
-      }
+      const home = String(teamEls[0].innerText || "").trim();
+      const away = String(teamEls[1].innerText || "").trim();
+      if (validPair(home, away)) return { home, away };
     }
-
     return null;
   }
 
-  // Rilevamento partite multiple (Palinsesto / Serie A / Coppe)
+  // Rilevamento partite multiple: deduplica contenitori annidati e scarta partite live/non supportate.
   function detectMultipleMatches() {
-    const containers = Array.from(document.querySelectorAll(`
-      [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
-      [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
-    `));
-
+    const containers = Array.from(document.querySelectorAll(
+      "[data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'], " +
+      "[class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']"
+    ));
     const matches = new Map();
     containers.forEach(container => {
-      const text = container.innerText || "";
+      const text = String(container.innerText || "").trim();
       if (!text || text.length > 2400 || isLikelyLiveEvent(container)) return;
       const buttonCount = container.querySelectorAll("button, [role='button']").length;
       if (buttonCount > 60) return;
-      const m = text.match(/([A-Za-z0-9\\s]{3,20})\\s*[-–vsVS\\n]+\\s*([A-Za-z0-9\\s]{3,20})/);
-      if (!m) return;
-      const h = m[1].trim();
-      const a = m[2].trim();
-      if (h.length < 3 || a.length < 3 || h === a || !isSupportedModelTeam(h) || !isSupportedModelTeam(a)) return;
-      const key = canonicalTeam(h) + "|" + canonicalTeam(a);
+      const match = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
+      if (!match) return;
+      const home = match[1].trim();
+      const away = match[2].trim();
+      if (home.length < 3 || away.length < 3 || home === away ||
+          !isSupportedModelTeam(home) || !isSupportedModelTeam(away)) return;
+      const key = canonicalTeam(home) + "|" + canonicalTeam(away);
       const previous = matches.get(key);
-      if (!previous || buttonCount > previous.buttonCount) matches.set(key, { container, home: h, away: a, buttonCount });
+      if (!previous || buttonCount > previous.buttonCount) {
+        matches.set(key, { container, home, away, buttonCount });
+      }
     });
-
     return Array.from(matches.values()).map(({ buttonCount, ...match }) => match);
   }
 
