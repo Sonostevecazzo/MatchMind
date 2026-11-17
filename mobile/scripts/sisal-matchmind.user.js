@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.1
+// @version      3.6.2
 // @description  Motore Lovable 2.4.2 ripristinato · analisi mercati Sisal e trasferimento MatchMind.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -25,7 +25,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.1";
+  const MM_SCRIPT_VERSION = "3.6.2";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -1325,25 +1325,72 @@
 
   // Rilevamento partite multiple (Palinsesto / Serie A / Coppe)
   function detectMultipleMatches() {
+    const matches = [];
+    const seen = new Set();
+    const addMatch = (container, home, away) => {
+      if (!home || !away || home === away || !isKnownTeamName(home) || !isKnownTeamName(away)) return;
+      const key = canonicalTeam(home) + "|" + canonicalTeam(away);
+      if (seen.has(key)) return;
+      seen.add(key);
+      matches.push({ container, home, away });
+    };
+
     const containers = Array.from(document.querySelectorAll(`
       [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
       [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
     `));
-
-    const matches = [];
     containers.forEach(container => {
-      const text = container.innerText || "";
+      const text = container.innerText || container.textContent || "";
       const m = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (m) {
-        const h = m[1].trim();
-        const a = m[2].trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a && !h.toLowerCase().includes("quote")) {
-          matches.push({ container, home: h, away: a });
-        }
-      }
+      if (m) addMatch(container, m[1].trim(), m[2].trim());
     });
 
+    // Fallback strutturale: funziona anche quando Sisal rimuove le classi evento note.
+    if (!matches.length) {
+      const ambiguousAliases = new Set(["real", "madrid", "city", "paris", "united", "villa", "spurs"]);
+      const aliases = Object.entries(TEAM_ALIASES).filter(([key]) => TEAM_RATINGS[key]).map(([key, values]) => ({
+        key,
+        values: Array.from(new Set([key, ...values])).filter(value => {
+          const alias = normalizeTeamText(value);
+          return alias.length >= 4 && !ambiguousAliases.has(alias);
+        })
+      }));
+      const knownTeamsIn = text => {
+        const clean = " " + normalizeTeamText(text) + " ";
+        const found = [];
+        aliases.forEach(entry => {
+          let first = -1;
+          entry.values.forEach(alias => {
+            const index = clean.indexOf(" " + alias + " ");
+            if (index >= 0 && (first < 0 || index < first)) first = index;
+          });
+          if (first >= 0) found.push({ key: entry.key, index: first });
+        });
+        return found.sort((a, b) => a.index - b.index);
+      };
+      const odds = Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection'], [data-outcome]"))
+        .filter(node => !node.closest("#mm-widget") && node.getClientRects().length &&
+          /\b\d+[.,]\d{2}\b/.test(node.innerText || node.textContent || ""));
+      odds.forEach(node => {
+        let current = node.parentElement;
+        for (let depth = 0; depth < 9 && current && current !== document.body; depth++, current = current.parentElement) {
+          const text = current.innerText || current.textContent || "";
+          if (text.length > 1800) break;
+          const teamHits = knownTeamsIn(text);
+          if (teamHits.length === 2) {
+            addMatch(current, teamHits[0].key, teamHits[1].key);
+            break;
+          }
+          if (teamHits.length > 2) break;
+        }
+      });
+    }
     return matches;
+  }
+
+  function normalizeTeamText(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
   }
 
   // Invia selezione singola a MatchMind
