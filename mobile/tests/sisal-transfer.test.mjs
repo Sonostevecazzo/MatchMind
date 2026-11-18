@@ -10,10 +10,10 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("restores the last Lovable Sisal userscript, version 3.6.0 (Lovable 2.4.2 core), with valid metadata and syntax", () => {
+test("restores the last Lovable Sisal userscript, version 3.6.3, with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.6\.0$/m);
+  assert.match(script, /^\/\/ @version\s+3\.6\.3$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
@@ -29,6 +29,9 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.match(script, /function detectSingleMatch\(\)/);
   assert.match(script, /function detectMultipleMatches\(\)/);
   assert.match(script, /new MutationObserver/);
+  assert.match(script, /hasVisibleEventRows/);
+  assert.match(script, /multiMatches.length === 0 && !hasVisibleEventRows/);
+  assert.match(script, /text.length < previous.textLength/);
 });
 
 test("keeps the existing football and NBA transfer path compatible with the current v3 fragment", () => {
