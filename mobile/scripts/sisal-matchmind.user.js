@@ -1994,16 +1994,6 @@
   // Scansione principale della pagina Sisal
   function scanPage() {
     captureIncomingPlays();
-    const nbaQueue = readPlayQueue().filter(q => q.sport === "nba");
-    if (nbaQueue.length) {
-      autoPlayQueue(scanNbaSelections(nbaQueue));
-    }
-    if (nbaQueue.length && (/basket|nba/i.test(location.pathname + " " + document.title) || !readPlayQueue().some(q => q.sport !== "nba" && q.status !== "added"))) {
-      // Non applicare le probabilità calcio alle quote basket.
-      currentAnalysis = { isMulti: true, matchCount: nbaQueue.length, calculations: [], allMarketsList: [] };
-      renderWidget();
-      return;
-    }
     syncCartState();
     const detectedSingleMatch = detectSingleMatch();
     const singleMatch = detectedSingleMatch && isKnownTeamName(detectedSingleMatch.home) && isKnownTeamName(detectedSingleMatch.away) ? detectedSingleMatch : null;
@@ -2114,7 +2104,7 @@
     if (!todo.length) return found;
     const buttons = Array.from(new Set(Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection'], [data-outcome]"))
       .map(b => b.closest('button,[role="button"]') || b)))
-      .filter(b => !b.closest("#mm-widget") && !b.closest(NBA_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 60 && /\b\d+[.,]\d{2}\b/.test(b.innerText || b.textContent || ""));
+      .filter(b => !b.closest("#mm-widget") && !b.closest(SISAL_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 60 && /\b\d+[.,]\d{2}\b/.test(b.innerText || b.textContent || ""));
     for (const item of todo) {
       let eventSeen = false;
       for (const btn of buttons) {
@@ -2137,7 +2127,7 @@
   function syncCartState() {
     try {
       const rows = new Set();
-      document.querySelectorAll(NBA_CART_SELECTOR).forEach(cart => {
+      document.querySelectorAll(SISAL_CART_SELECTOR).forEach(cart => {
         if (cart.closest("#mm-widget") || !cart.getClientRects().length) return;
         cart.querySelectorAll('[class*="betslip-item" i],[class*="selection" i],[data-testid*="selection" i],li').forEach(r => { if (/\d+[.,]\d{2}/.test(r.textContent || "") && (r.textContent || "").length < 600) rows.add((r.textContent || "").trim().slice(0, 120)); });
       });
@@ -2159,115 +2149,6 @@
     const raw = JSON.stringify(list.slice(0, 30));
     try { if (typeof GM_setValue === "function") GM_setValue(PLAY_KEY, raw); } catch (e) {}
     try { localStorage.setItem(PLAY_KEY, raw); } catch (e) {}
-  }
-  function nbaButtonSelected(btn) {
-    return btn.getAttribute("aria-pressed") === "true" || btn.getAttribute("aria-checked") === "true" ||
-      /^(?:selected|is-selected|checked|is-active)$/.test(btn.getAttribute("data-state") || "") ||
-      Array.from(btn.classList || []).some(c => /^(?:selected|is-selected|checked|is-active|active)$/.test(c));
-  }
-  const NBA_CART_SELECTOR = '[class*="betslip" i], [id*="betslip" i], [data-qa*="betslip" i], [class*="coupon" i], [class*="carrello" i], [class*="biglietto" i], [data-testid*="betslip" i]';
-  function nbaMarketText(btn) {
-    const parts = [];
-    let node = btn;
-    for (let depth = 0; node && node !== document.body && depth < 8; depth++, node = node.parentElement) {
-      for (const attr of ['data-market-name', 'data-market', 'aria-label', 'title']) {
-        const value = node.getAttribute(attr);
-        if (value) parts.push(value);
-      }
-      const title = Array.from(node.querySelectorAll('h3,h4,h5,[class*="market-title" i],[class*="marketTitle" i],[data-qa*="market-name" i],[data-testid*="market-name" i],legend'))
-        .find(t => !t.closest('button,[role="button"]') && (t.textContent || '').length < 140);
-      if (title) { parts.push(title.textContent); break; }
-      if (node.matches('td')) {
-        const th = node.closest('table')?.querySelectorAll('thead th')[node.cellIndex];
-        if (th) { parts.push(th.textContent); break; }
-      }
-    }
-    return parts.join(' ').toLowerCase().replace(/[–—]/g, '-');
-  }
-  function nbaWinnerMarket(market) {
-    return !/handicap|spread|under|over|quarto|quarter|tempo|half|regolament|senza.*supplement|1x2|parziale/.test(market) &&
-      /vincente|vincitore|money\s*line|winner|testa\s+a\s+testa|esito finale|risultato finale|\b1\s*[-/]\s*2\b/.test(market);
-  }
-  function nbaCartContains(item, hit) {
-    const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
-    const side = item.marketKey.split(':')[1], selected = side === 'home' ? h : a;
-    const containers = Array.from(document.querySelectorAll(NBA_CART_SELECTOR)).filter(c => !c.closest('#mm-widget') && c.getClientRects().length);
-    return containers.some(cart => {
-      const rows = Array.from(cart.querySelectorAll('[class*="item" i],[class*="selection" i],[class*="event" i],li,[data-testid*="selection" i]'));
-      return rows.some(row => {
-        const text = row.innerText || row.textContent || '';
-        if (text.length > 1600 || nbaTeamPosition(text,h) < 0 || nbaTeamPosition(text,a) < 0 || !nbaWinnerMarket(text.toLowerCase())) return false;
-        const outcome = row.querySelector('[data-outcome],[class*="outcome" i],[class*="selection-name" i],[data-testid*="outcome" i]');
-        const label = outcome?.getAttribute('data-outcome') || outcome?.innerText || outcome?.textContent || '';
-        if (label) return nbaTeamPosition(label,selected) >= 0 || (hit?.outcome && label.trim() === hit.outcome);
-        return text.split(/[\r\n]+/).some(line => /vince|vincente\s*:|esito\s*:/i.test(line) && nbaTeamPosition(line,selected) >= 0 && nbaTeamPosition(line,side === 'home' ? a : h) < 0);
-      });
-    });
-  }
-  const NBA_TEAMS = [
-    ["Atlanta Hawks", "ATL"], ["Boston Celtics", "BOS"], ["Brooklyn Nets", "BKN"],
-    ["Charlotte Hornets", "CHA"], ["Chicago Bulls", "CHI"], ["Cleveland Cavaliers", "CLE"],
-    ["Dallas Mavericks", "DAL"], ["Denver Nuggets", "DEN"], ["Detroit Pistons", "DET"],
-    ["Golden State Warriors", "GSW"], ["Houston Rockets", "HOU"], ["Indiana Pacers", "IND"],
-    ["LA Clippers", "LAC"], ["Los Angeles Lakers", "LAL"], ["Memphis Grizzlies", "MEM"],
-    ["Miami Heat", "MIA"], ["Milwaukee Bucks", "MIL"], ["Minnesota Timberwolves", "MIN"],
-    ["New Orleans Pelicans", "NOP"], ["New York Knicks", "NYK"], ["Oklahoma City Thunder", "OKC"],
-    ["Orlando Magic", "ORL"], ["Philadelphia 76ers", "PHI"], ["Phoenix Suns", "PHX"],
-    ["Portland Trail Blazers", "POR"], ["Sacramento Kings", "SAC"], ["San Antonio Spurs", "SAS"],
-    ["Toronto Raptors", "TOR"], ["Utah Jazz", "UTA"], ["Washington Wizards", "WAS"]
-  ];
-  function nbaTeamAliases(name, abbr) {
-    const row = NBA_TEAMS.find(t => norm(t[0]) === norm(name) || t[1] === abbr ||
-      (norm(name).includes("clippers") && t[1] === "LAC"));
-    return Array.from(new Set([name, abbr, ...(row ? [row[0], row[1], row[0].split(" ").slice(row[1] === "POR" ? 1 : -1).join(" "), row[1] === "LAC" ? "Los Angeles Clippers" : ""] : [])].filter(Boolean)))
-      .map(v => String(v).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim());
-  }
-  function nbaTeamPosition(text, aliases) {
-    const clean = " " + String(text).toLowerCase().replace(/[^a-z0-9]+/g, " ") + " ";
-    const indexes = aliases.map(a => clean.indexOf(" " + a + " ")).filter(i => i >= 0);
-    return indexes.length ? Math.min(...indexes) : -1;
-  }
-  function resolveNbaWinner(btn, item, context) {
-    const market = nbaMarketText(btn);
-    if (!nbaWinnerMarket(market)) return null;
-    const raw = (btn.innerText || Array.from(btn.children).map(c => c.textContent).join(" ") || btn.textContent || "").trim();
-    const odd = parseOddsValue(raw + " " + (btn.getAttribute("aria-label") || ""));
-    if (!odd) return null;
-    const label = (btn.getAttribute('data-outcome') || btn.getAttribute('data-selection-name') || raw.replace(/\b\d+[.,]\d{2}\b/g, "")).trim();
-    const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
-    let side = nbaTeamPosition(label, h) >= 0 ? "home" : nbaTeamPosition(label, a) >= 0 ? "away" : null;
-    if (!side && /^[12]$/.test(label)) {
-      const hp = nbaTeamPosition(context, h), ap = nbaTeamPosition(context, a);
-      if (hp >= 0 && ap >= 0) side = (label === "1") === (hp < ap) ? "home" : "away";
-    }
-    return side ? { key: "nbaMoneyline:" + side, odd, outcome: /^[12]$/.test(label) ? label : null } : null;
-  }
-  function scanNbaSelections(queue) {
-    const found = [];
-    const buttons = Array.from(new Set(Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection'], [data-outcome]"))
-      .map(b => b.closest('button,[role="button"],a[data-outcome]') || b)))
-      .filter(b => !b.closest("#mm-widget") && !b.closest(NBA_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 140);
-    for (const item of queue) {
-      const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
-      let eventSeen = false;
-      for (const btn of buttons) {
-        let container = btn.parentElement;
-        for (let depth = 0; depth < 7 && container && container !== document.body; depth++, container = container.parentElement) {
-          const text = container.innerText || container.textContent || "";
-          if (text.length > 4000 || container.querySelectorAll("button, [role='button']").length > 60) break;
-          if (nbaTeamPosition(text, h) < 0 || nbaTeamPosition(text, a) < 0) continue;
-          const dated = container.closest("[data-start], [data-date]") || container.querySelector("time[datetime]");
-          const date = dated?.getAttribute("data-start") || dated?.getAttribute("data-date") || dated?.getAttribute("datetime");
-          if (date && item.start && Date.parse(date) !== Date.parse(item.start) && date.slice(0, 10) !== item.date) break;
-          eventSeen = true;
-          const resolved = resolveNbaWinner(btn, item, text);
-          if (resolved && !found.some(c => c.btn === btn && c.start === item.start)) found.push({ ...resolved, btn, home: item.home, away: item.away, sport: "nba", start: item.start });
-          break;
-        }
-      }
-      if (eventSeen) found.push({ home: item.home, away: item.away, sport: "nba", start: item.start, key: "event", btn: null });
-    }
-    return found;
   }
   function captureIncomingPlays() {
     const m = String(location.hash || "").match(/[#&]mmplay=([^&]+)/);
@@ -2307,7 +2188,7 @@
     const queue = readPlayQueue();
     let changed = false;
     for (const item of queue) {
-      if (item.sport === "nba" || item.status === "added") continue;
+      if (item.status === "added") continue;
       const sameMatch = (calculations || []).filter(c =>
         c.sport !== "nba" &&
         canonicalTeam(c.home) === canonicalTeam(item.home) &&
