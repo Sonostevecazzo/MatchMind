@@ -183,7 +183,7 @@ function selectedRows(){
   const odds=Number.isFinite(Number(p.odds))&&Number(p.odds)>1&&Number(p.odds)<=1000?Number(p.odds):null;
   return{match,marketKey,marketLabel:label,probability,forecast:null,odds,bookmaker:p.bookmaker||null,sport:"nba",removeKey:"nba|"+id,nbaPickId:id,sampleEnough:p.sampleEnough===true,historyCount:Number(p.historyCount)||0,predictionMethod:p.predictionMethod||"NBA Elo"};
  }).filter(Boolean);
- return footballRows.concat(nbaRows);
+ return footballRows;
 }
 function updateSlipCalculations(){
  const rows=selectedRows();if(!rows.length)return;
@@ -257,9 +257,9 @@ function updateSisalTransfer(rows=[]){
 }
 function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
- const allPicks=readPicks(),count=$("betWorkspacePickCount"),saveButton=$("saveManualSlip");
- if(count)count.textContent=String(allPicks.length);
- if(saveButton)saveButton.disabled=allPicks.length===0;
+ const count=$("betWorkspacePickCount"),saveButton=$("saveManualSlip");
+ if(count)count.textContent=String(picks.length);
+ if(saveButton)saveButton.disabled=picks.length===0;
  updateSisalTransfer(rows);
  if(!rows.length){target.innerHTML='<div class="empty-state">La schedina è vuota. Aggiungi una previsione dal costruttore della competizione selezionata.</div>';slipExpanded=false;return;}
  const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
