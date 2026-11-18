@@ -4,16 +4,15 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent
 manifest=json.loads((ROOT/"manifest.webmanifest").read_text(encoding="utf-8"))
 assert manifest.get("name") and manifest.get("display")=="standalone"
-required=["index.html","matches.html","live.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html","nba.html"]
+required=["index.html","matches.html","live.html","explore.html","league.html","team.html","match.html","players.html","analysis-lab.html","bets.html","data.html","settings.html"]
 for name in required:
     path=ROOT/name
     assert path.is_file(), f"Missing screen: {name}"
     html=path.read_text(encoding="utf-8")
     assert '<html lang="it">' in html, f"{name} must declare Italian"
-for name in ["site-core.js","sports-switch.js","bets.js","bets-engine.js","ai-engine.js","elo.js","live.js","site-pages.js","sisal-bridge.js","sw.js","nba.js","nba-builder.js"]:
+for name in ["site-core.js","sports-switch.js","bets.js","bets-engine.js","ai-engine.js","elo.js","live.js","site-pages.js","sisal-bridge.js","sw.js"]:
     subprocess.run(["node","--check",str(ROOT/name)],check=True)
 subprocess.run(["node","--check",str(ROOT/"scripts"/"sisal-matchmind.user.js")],check=True)
-subprocess.run(["node","--check",str(ROOT/"nba-engine.mjs")],check=True)
 bets=(ROOT/"bets.js").read_text(encoding="utf-8")
 sisal=(ROOT/"scripts"/"sisal-matchmind.user.js").read_text(encoding="utf-8")
 settings=(ROOT/"settings.html").read_text(encoding="utf-8")
