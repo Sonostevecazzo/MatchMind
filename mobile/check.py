@@ -40,16 +40,13 @@ assert "function nationsLeagueOfficialFallback" in core
 assert 'const official=nationsLeagueOfficialFallback()' in core
 assert "Calendario futuro: fallback ufficiale UEFA" in core
 
-assert "football-only interface" in (ROOT/"sports-switch.js").read_text(encoding="utf-8")
-assert "nbaIntegratedView" not in (ROOT/"matches.html").read_text(encoding="utf-8")
-assert "nbaIntegratedView" not in (ROOT/"live.html").read_text(encoding="utf-8")
-assert "nbaIntegratedView" not in (ROOT/"bets.html").read_text(encoding="utf-8")
-# The standalone NBA page must load the Sisal bridge before its transfer handler.
-nba_html=(ROOT/"nba.html").read_text(encoding="utf-8")
-assert nba_html.index("sisal-bridge.js") < nba_html.index("nba.js")
+# Prediction-only PWA: the installed shell must not preload Live, Archive or NBA assets.
+bets_html=(ROOT/"bets.html").read_text(encoding="utf-8")
+assert 'data-title="Previsioni"' in bets_html
+assert 'data-bets-tab="live"' not in bets_html and 'data-bets-tab="archive"' not in bets_html
 sw=(ROOT/"sw.js").read_text(encoding="utf-8")
-for asset in ["./nba.html","./nba.css","./nba.js","./nba-builder.js","./nba-engine.mjs"]:
-    assert asset in sw, f"Missing NBA PWA cache asset: {asset}"
+for asset in ["./live.html","./nba.html","./nba.css","./nba.js","./nba-builder.js","./nba-engine.mjs"]:
+    assert asset not in sw, f"Obsolete asset still preloaded by prediction-only PWA: {asset}"
 # Execute every unit/regression test, not only syntax checks.
 test_files=sorted((ROOT/"tests").glob("*.test.mjs"))+sorted((ROOT/"tests").glob("*.test.cjs"))
 assert test_files, "No JavaScript regression tests discovered"
