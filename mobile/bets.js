@@ -154,7 +154,7 @@ function marketLabel(key){
  return item?item.label:String(key||"Mercato");
 }
 function selectedRows(){
- const storedFootball=readPicks().filter(p=>p&&p.sport!=="nba");
+ const storedFootball=readPicks().filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
  const footballRows=storedFootball.map(p=>{
   const competition=p.competition||"serie-a";
   const sourceMatches=[...(allData?.matches||fixtures),...(allData?.history||[])];
