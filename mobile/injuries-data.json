@@ -1,6 +1,6 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-17T16:38:19Z",
+  "last_updated": "2026-11-18T16:07:38Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
@@ -15,13 +15,13 @@
           "role": "Difesa"
         },
         {
-          "player": "Pompei",
-          "detail": "Il portiere fermo da inizio ottobre per la frattura della falange della mano destra, out nel prossimo turno di campionato. Recuperabile da dicembre.",
+          "player": "Hien",
+          "detail": "il difensore operato a fine giugno per una lesione del tendine prossimale del muscolo semimembranoso della coscia sinistra, in recupero e pronto a tornare in campo dalla fine di novembre.",
           "role": "Difesa"
         },
         {
-          "player": "Hien",
-          "detail": "il difensore operato a fine giugno per una lesione del tendine prossimale del muscolo semimembranoso della coscia sinistra, in recupero e pronto a tornare in campo dalla fine di novembre.",
+          "player": "Pompei",
+          "detail": "Il portiere fermo da inizio ottobre per la frattura della falange della mano destra, out nel prossimo turno di campionato. Recuperabile da dicembre.",
           "role": "Difesa"
         }
       ],
@@ -62,7 +62,7 @@
     },
     "Cagliari": {
       "team": "Cagliari",
-      "totale_assenze": 6,
+      "totale_assenze": 5,
       "assenze_attacco": 1,
       "assenze_difesa": 1,
       "infortunati": [
@@ -85,11 +85,6 @@
           "player": "Felici",
           "detail": "il centrocampista KO il 7 settembre contro il Lecce in casa vittima della rottura del legamento crociato anteriore. Verrà operato e costretto a un lungo stop (ipotizziamo un rientro da marzo).",
           "role": "Centrocampo"
-        },
-        {
-          "player": "Mina",
-          "detail": "il colombiano condizionato da una vecchia ferita alla gamba (microlesione muscolare al bicipite femorale), out nel turno precedente contro il Frosinone. Da valutare durante la sosta per le Nazionali in vista della ripresa del campionato contro il Como.",
-          "role": "Altro"
         }
       ],
       "squalificati": [
@@ -100,7 +95,7 @@
         }
       ],
       "diffidati": [],
-      "summary": "5 infortunati, 1 squalificati"
+      "summary": "4 infortunati, 1 squalificati"
     },
     "Como": {
       "team": "Como",
@@ -120,7 +115,7 @@
         },
         {
           "player": "Kean",
-          "detail": "l'attaccante si sottoporrà a nuove cure per il perdurare del fastidio alla tibia che lo affligge da diverse settimane. Appare recuperabile dall'inizio di dicembre.",
+          "detail": "l'attaccante si sottoporrà a nuove cure per il perdurare del fastidio alla tibia che lo affligge da diverse settimane. Appare recuperabile non prima della fine di dicembre.",
           "role": "Attacco"
         }
       ],
@@ -162,7 +157,7 @@
         },
         {
           "player": "Grillitsch",
-          "detail": "il centrocampista non convocato dalla gara di Genova (12 settembre) a causa di una sindrome retto-adduttoria, ha poi deciso di operarsi. Stop di circa sei settimane, può tornare convocabile dalla seconda metà di novembre.",
+          "detail": "il centrocampista non convocato dalla gara di Genova (12 settembre) a causa di una sindrome retto-adduttoria, ha poi deciso di operarsi. Può tornare convocabile dalla fine di novembre.",
           "role": "Centrocampo"
         },
         {
@@ -225,6 +220,11 @@
       "assenze_difesa": 2,
       "infortunati": [
         {
+          "player": "Kalulu",
+          "detail": "Il terzino bianconero ai box per una lesione ai muscoli ischiocrurali della gamba sinistra, recuperabile dalla fine di novembre.",
+          "role": "Difesa"
+        },
+        {
           "player": "Locatelli",
           "detail": "il metronomo del centrocampo bianconero ha rimediato la rottura del menisco esterno del ginocchio. Verrà operato a Lione a stretto giro. Lungo stop e possibilità di rivederlo in campo da febbraio.",
           "role": "Centrocampo"
@@ -242,11 +242,6 @@
         {
           "player": "Grabara",
           "detail": "Il portiere out dal 20 settembre per una lesione al crociato anteriore del ginocchio destro. Operazione chirurgica e lungo stop, rientro da aprile.",
-          "role": "Difesa"
-        },
-        {
-          "player": "Kalulu",
-          "detail": "Il terzino bianconero ai box per una lesione ai muscoli ischiocrurali della gamba sinistra, recuperabile dalla fine di novembre.",
           "role": "Difesa"
         }
       ],
@@ -267,7 +262,7 @@
         },
         {
           "player": "Zaccagni",
-          "detail": "Il capitano dei biancocelesti in rapido recupero da una lesione del quadricipite femorale sinistro, proverà a tornare arruolabile già alla ripresa del campionato contro il Lecce. Condizioni da valutare quotidianamente a Formello in vista della 12a di A.",
+          "detail": "Il capitano dei biancocelesti in rapido recupero da una lesione del quadricipite femorale sinistro, proverà a tornare arruolabile già alla ripresa del campionato. Condizioni da valutare quotidianamente a Formello in vista di sabato contro il Lecce nella 12a di A.",
           "role": "Altro"
         },
         {
@@ -292,8 +287,8 @@
       "assenze_difesa": 0,
       "infortunati": [
         {
-          "player": "Pierotti",
-          "detail": "l'ala offensiva dei salentini ferma ai box per la frattura composta del malleolo mediale della caviglia destra rimediata nella seconda metà di ottobre, poi operato a inizio novembre. Lungo stop, ipotizziamo un rientro in campo da gennaio.",
+          "player": "Monteiro J.",
+          "detail": "l'ala offensiva dei salentini KO l'1 novembre contro il Bologna vittima di una lesione di primo grado al polpaccio sinistro. Recuperabile dall'inizio di dicembre.",
           "role": "Attacco"
         },
         {
@@ -302,8 +297,8 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Monteiro J.",
-          "detail": "l'ala offensiva dei salentini KO l'1 novembre contro il Bologna vittima di una lesione di primo grado al polpaccio sinistro. Recuperabile dall'inizio di dicembre.",
+          "player": "Pierotti",
+          "detail": "l'ala offensiva dei salentini ferma ai box per la frattura composta del malleolo mediale della caviglia destra rimediata nella seconda metà di ottobre, poi operato a inizio novembre. Lungo stop, ipotizziamo un rientro in campo da gennaio.",
           "role": "Attacco"
         }
       ],
@@ -329,7 +324,7 @@
         },
         {
           "player": "Tomori",
-          "detail": "Il difensore KO il 28 ottobre contro il Bologna vittima di una lesione a carico del muscolo flessore mediale della coscia destra. Recuperabile dalla seconda metà di novembre.",
+          "detail": "Il difensore KO il 28 ottobre contro il Bologna vittima di una lesione a carico del muscolo flessore mediale della coscia destra. Recuperabile dalla seconda metà di novembre, ma non ci sarà domenica contro il Frosinone.",
           "role": "Difesa"
         },
         {
@@ -339,7 +334,7 @@
         },
         {
           "player": "Loftus-Cheek",
-          "detail": "il centrocampista non al meglio per una lesione muscolare al flessore ravvisato sul finire del match di Udine (25 ottobre). Recuperabile dalla seconda metà di novembre.",
+          "detail": "il centrocampista non al meglio per una lesione muscolare al flessore ravvisato sul finire del match di Udine (25 ottobre). Recuperabile dalla fine di novembre.",
           "role": "Centrocampo"
         },
         {
@@ -354,18 +349,13 @@
     },
     "Monza": {
       "team": "Monza",
-      "totale_assenze": 3,
+      "totale_assenze": 2,
       "assenze_attacco": 0,
-      "assenze_difesa": 2,
+      "assenze_difesa": 1,
       "infortunati": [
         {
-          "player": "Birindelli",
-          "detail": "Il cursore di fascia dei brianzoli out nel turno precedente di A contro l'Atalanta per un problema fisico lamentato nella rifinitura. Da valutare durante la sosta in vista della 12a di campionato contro la Fiorentina.",
-          "role": "Difesa"
-        },
-        {
           "player": "Maye",
-          "detail": "Il difensore ai box per noie fisiche, assente nelle ultime sfide di campionato e ora da valutare in vista della 12a giornata di campionato.",
+          "detail": "Il difensore ai box per noie fisiche, assente nelle ultime sfide di campionato e ora da valutare in vista della 13a giornata di campionato.",
           "role": "Difesa"
         },
         {
@@ -376,7 +366,7 @@
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "3 infortunati, 0 squalificati"
+      "summary": "2 infortunati, 0 squalificati"
     },
     "Napoli": {
       "team": "Napoli",
@@ -385,14 +375,14 @@
       "assenze_difesa": 2,
       "infortunati": [
         {
-          "player": "Santos A.",
-          "detail": "l'ala offensiva azzurra KO il 18 ottobre a Venezia, vittima di una lesione distrattiva di medio grado del bicipite femorale sinistro. Recuperabile dall'inizio di dicembre.",
-          "role": "Attacco"
-        },
-        {
           "player": "Badiashile",
           "detail": "il difensore KO il 24 ottobre contro la Roma per una lesione distrattiva di medio grado del retto femorale destro, recuperabile dalla fine di novembre.",
           "role": "Difesa"
+        },
+        {
+          "player": "Santos A.",
+          "detail": "l'ala offensiva azzurra KO il 18 ottobre a Venezia, vittima di una lesione distrattiva di medio grado del bicipite femorale sinistro. Recuperabile dall'inizio di dicembre.",
+          "role": "Attacco"
         },
         {
           "player": "Di Lorenzo",
@@ -495,7 +485,7 @@
         },
         {
           "player": "Berardi",
-          "detail": "il capitano dei neroverdi out a Roma il 7 novembre a causa di un problema fisico. Condizioni da valutare in questa sosta delle Nazionali, ma rischia il forfait anche alla ripresa del campionato contro il Genoa.",
+          "detail": "il capitano dei neroverdi out a Roma il 7 novembre a causa di un problema fisico. Condizioni da valutare nei prossimi allenamenti, ma rischia il forfait anche alla ripresa del campionato contro il Genoa.",
           "role": "Altro"
         },
         {
@@ -526,18 +516,13 @@
     },
     "Udinese": {
       "team": "Udinese",
-      "totale_assenze": 4,
+      "totale_assenze": 3,
       "assenze_attacco": 1,
-      "assenze_difesa": 2,
+      "assenze_difesa": 1,
       "infortunati": [
         {
           "player": "Bertola",
           "detail": "Il difensore alle prese con un problema muscolare alla coscia destra dalla metà di novembre, condizioni da valutare ma sarà out nel prossimo turno di campionato.",
-          "role": "Difesa"
-        },
-        {
-          "player": "Zanoli",
-          "detail": "Il cursore di fascia dei friulani frenato da noie muscolari alla gamba, recuperabile dalla metà di novembre e ora da valutare il rientro tra i convocati già nel prossimo turno a Bologna in campionato.",
           "role": "Difesa"
         },
         {
@@ -554,7 +539,7 @@
         }
       ],
       "diffidati": [],
-      "summary": "3 infortunati, 1 squalificati"
+      "summary": "2 infortunati, 1 squalificati"
     },
     "Venezia": {
       "team": "Venezia",
