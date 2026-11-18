@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.1
-// @description  Motore Lovable 2.4.2 ripristinato · analisi mercati Sisal e trasferimento MatchMind.
+// @version      3.6.2
+// @description  Motore Sisal 3.6.2 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -25,7 +25,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.1";
+  const MM_SCRIPT_VERSION = "3.6.2";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2282,10 +2282,12 @@
               selectedMarketKey: row[18]
             }))
           : [];
-      const items = incomingItems.filter(x => x && x.home && x.away && x.marketKey)
-        .map(x => ({ home: String(x.home), away: String(x.away), marketKey: String(x.marketKey), label: String(x.label || x.marketKey), odds: Number(x.odds) || null, date: x.date || "", sport: x.sport === "nba" ? "nba" : "football", eventId: String(x.eventId || ""), start: x.start || "", homeAbbr: x.homeAbbr || "", awayAbbr: x.awayAbbr || "", status: "pending", sentAt: Number(incoming.sentAt || incoming.t) || Date.now() }));
+      // MatchMind 2026-11-18 trasferisce solo calcio: scarta payload NBA
+      // residui e conserva la competizione per evitare collisioni tra tornei.
+      const items = incomingItems.filter(x => x && x.home && x.away && x.marketKey && x.sport !== "nba")
+        .map(x => ({ home: String(x.home), away: String(x.away), marketKey: String(x.marketKey), label: String(x.label || x.marketKey), odds: Number(x.odds) || null, date: x.date || "", competition: String(x.competition || "serie-a"), sport: "football", eventId: String(x.eventId || ""), start: "", homeAbbr: "", awayAbbr: "", status: "pending", sentAt: Number(incoming.sentAt || incoming.t) || Date.now() }));
       if (items.length) {
-        const k = q => q.sport + "|" + canonicalTeam(q.home) + "|" + canonicalTeam(q.away) + "|" + q.marketKey + "|" + (q.start || q.date || "");
+        const k = q => q.sport + "|" + (q.competition || "serie-a") + "|" + canonicalTeam(q.home) + "|" + canonicalTeam(q.away) + "|" + q.marketKey + "|" + (q.date || "");
         const prev = incoming.retry ? readPlayQueue() : [];
         const next = incoming.retry
           ? prev.map(q => q.status === "added" ? q : (items.find(i => k(i) === k(q)) || q)).concat(items.filter(i => !prev.some(q => k(q) === k(i))))
