@@ -808,7 +808,6 @@ function eventForecast(match,history){
     const icons={
       matches:'<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="mmBall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9ff83"/><stop offset="1" stop-color="#8fcb35"/></linearGradient></defs><circle cx="12" cy="12" r="10" fill="url(#mmBall)" stroke="none"/><path d="m12 6 3.4 2.5-1.3 4h-4.2l-1.3-4L12 6Zm-3.4 6.5-3.1 2.2m9.9-2.2 3.1 2.2M9.9 20l1-7.5m3.2 7.5-1-7.5" stroke="#15211b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
       live:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="5" fill="#182d32" stroke="#4dd6b0" stroke-width="1.5"/><path d="M7 12h2l1.5-4 3 8 1.5-4H17" fill="none" stroke="#69edc6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="7" r="2" fill="#ff6b72"/></svg>',
-      nba:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3v18M5.6 5.6c4 2.4 8.8 10.4 12.8 12.8M18.4 5.6C14.4 8 9.6 16 5.6 18.4"/></svg>',
       bets:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" fill="#25311c" stroke="#c4f36a" stroke-width="1.6"/><path d="m8 12 2.5 2.5L16.5 8.5" fill="none" stroke="#d8ff91" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
       league:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3Z"/><path d="m4.5 8 7.5 4 7.5-4M12 12v8.5M8.5 5l3.5 4 3.5-4"/></svg>',
       more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
@@ -850,7 +849,6 @@ function eventForecast(match,history){
       const all=read(),rows=all.map((item,index)=>({...item,_globalIndex:index}));
       dock.hidden=!rows.length;
       if(!rows.length){dock.classList.remove('is-expanded');return;}
-      const nba=0,football=rows.length;
       dock.querySelector('[data-slip-title]').textContent='Schedina · '+rows.length+' '+(rows.length===1?'selezione':'selezioni');
       dock.querySelector('[data-slip-subtitle]').textContent=(new Set(rows.map(x=>x.competition||'serie-a')).size>1?'Più competizioni':'Calcio');
       const body=dock.querySelector('[data-slip-body]'),expanded=!body.hidden;
@@ -860,7 +858,6 @@ function eventForecast(match,history){
       toggle.setAttribute('aria-expanded',String(expanded));
       dock.classList.toggle('is-expanded',expanded);
       dock.querySelector('[data-slip-hint]').textContent=expanded?'Chiudi':'Apri';
-      const onlyNba=false;
       const href='./bets.html#manualBuilder';
       dock.querySelectorAll('[data-slip-confirm]').forEach(link=>{link.href=href;link.textContent='Conferma';});
       const bodyLink=dock.querySelector('[data-slip-confirm-body]');
@@ -960,7 +957,7 @@ function eventForecast(match,history){
     }
     $('globalRefresh')?.addEventListener('click',async()=>{const b=$('globalRefresh');b.disabled=true;b.classList.add('spinning');try{await loadData(true);location.reload();}catch(e){const s=$('globalStatus');if(s)s.textContent=e.message;}finally{b.disabled=false;b.classList.remove('spinning');}});
   }
-  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=(page==='home'||page==='matches'||page==='match'||page==='league')?'matches':page==='live'?'live':page==='nba'?'nba':(page==='mind'||page==='analysis-lab')?'mind':page==='bets'?'bets':(['explore','players','data','settings','team'].includes(page)?'more':'home');mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});/* Forced periodic reload disabled: it interrupted scrolling and mobile navigation. Use the explicit refresh control. */});
+  document.addEventListener('DOMContentLoaded',()=>{const page=document.body.dataset.page||'home';const active=(page==='home'||page==='matches'||page==='match'||page==='league')?'matches':page==='live'?'live':(page==='mind'||page==='analysis-lab')?'mind':page==='bets'?'bets':(['explore','players','data','settings','team'].includes(page)?'more':'home');mountShell(active,document.body.dataset.title||'MatchMind',document.body.dataset.subtitle||'');if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});let installPrompt=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const b=$('installApp');if(b)b.hidden=false;});$('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});/* Forced periodic reload disabled: it interrupted scrolling and mobile navigation. Use the explicit refresh control. */});
   
   const ODDS_MAX_AGE_MS=24*60*60*1000;
   let oddsList = [],oddsMeta={source:null,updatedAt:null,fresh:false,count:0,ageHours:null};
