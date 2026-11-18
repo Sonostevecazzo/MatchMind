@@ -2014,7 +2014,8 @@
     const hasVisibleEventRows = Array.from(document.querySelectorAll(eventRowSelector)).some(el => el.getClientRects().length > 0);
     const calculations = [];
 
-    // Nel palinsesto prevalgono le singole righe evento: il titolo globale può essere obsoleto.\n    if (singleMatch && multiMatches.length === 0 && !hasVisibleEventRows) {
+    // Nel palinsesto prevalgono le singole righe evento: il titolo globale può essere obsoleto.
+    if (singleMatch && multiMatches.length === 0 && !hasVisibleEventRows) {
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
       const mmProbs = forecast.probabilities;
       const foundOddsByMarket = new Map();
