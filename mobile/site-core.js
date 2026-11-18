@@ -205,7 +205,7 @@
       matches.push(...results,...fixtures);
       if(league.history)history.push(...results);
     }
-    const histJobs=[y-1,y-2,y-3,y-4,y-5].map(async year=>{
+    const histJobs=selectedId==="serie-a"?[y-1,y-2,y-3,y-4,y-5].map(async year=>{
       const folder=year+'-'+String(year+1).slice(-2);
       const res=await fetch(HISTORY_ROOT+folder+'/it.1.json',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)}).catch(()=>null);
       if(!res||!res.ok)return [];
@@ -220,7 +220,7 @@
           status:done?'FT':'NS',statusLong:done?'Terminata':'In programma',competition:'serie-a',source:'openfootball · archivio storico'
         };
       }).filter(m=>m.date&&m.home&&m.away&&m.hg!==null&&m.ag!==null);
-    });
+    }):[];
     const histSettled=await Promise.allSettled(histJobs);
     histSettled.forEach(result=>{if(result.status==='fulfilled')history.push(...result.value);});
     if(selectedId==="nations-league"){
@@ -821,19 +821,10 @@ function eventForecast(match,history){
       install:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>'
     };
     const primary=[
-      ['matches.html','matches','Home'],
-      ['live.html','live','Live'],
-      ['analysis-lab.html','mind','Analisi'],
-      ['bets.html','bets','Schedina']
+      ['matches.html','matches','Previsioni'],
+      ['bets.html','bets','Costruttore']
     ];
-    const secondary=[
-      ['league.html','league','Classifiche','league'],
-      ['nba.html','nba','NBA','nba'],
-      ['explore.html','teams','Squadre','explore'],
-      ['players.html','players','Giocatori','players'],
-      ['data.html','data','Dati','data'],
-      ['settings.html','settings','Impostazioni','settings']
-    ];
+    const secondary=[];
     const page=document.body.dataset.page||'';
     const activeSecondary=page==='league'?'league':page==='explore'||page==='team'?'explore':page==='mind'||page==='analysis-lab'?'analysis-lab':page;
     const item=([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>';
