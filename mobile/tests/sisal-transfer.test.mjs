@@ -13,7 +13,7 @@ const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 test("checks the current Sisal userscript release, version 3.6.5, with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.6\.4$/m);
+  assert.match(script, /^\/\/ @version\s+3\.6\.5$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
