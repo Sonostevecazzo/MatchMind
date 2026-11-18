@@ -1323,27 +1323,26 @@
     return null;
   }
 
-  // Rilevamento partite multiple (Palinsesto / Serie A / Coppe)
+  // Rilevamento eventi: conserva il contenitore più piccolo per ogni coppia di squadre.
+  // Evita che un contenitore padre del palinsesto venga scambiato per una singola partita.
   function detectMultipleMatches() {
-    const containers = Array.from(document.querySelectorAll(`
-      [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
-      [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
-    `));
-
-    const matches = [];
-    containers.forEach(container => {
-      const text = container.innerText || "";
-      const m = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (m) {
-        const h = m[1].trim();
-        const a = m[2].trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a && !h.toLowerCase().includes("quote")) {
-          matches.push({ container, home: h, away: a });
-        }
-      }
-    });
-
-    return matches;
+    const selector = "[data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'], [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']";
+    const best = new Map();
+    for (const container of document.querySelectorAll(selector)) {
+      if (!container.getClientRects().length) continue;
+      const text = spacedText(container);
+      if (!text || text.length > 2500) continue;
+      const m = text.match(/([A-Za-z0-9À-ÿ.'’&()\\s]{3,35}?)\\s*(?:[-–—]|\\bvs\\.?\\b)\\s*([A-Za-z0-9À-ÿ.'’&()\\s]{3,35}?)(?=\\s+(?:1\\s|X\\s|2\\s|\\d+[.,]\\d{2})|$)/i);
+      if (!m) continue;
+      const home = m[1].trim(), away = m[2].trim();
+      if (home === away || !isKnownTeamName(home) || !isKnownTeamName(away)) continue;
+      const buttons = container.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']");
+      if (!buttons.length || buttons.length > 40) continue;
+      const key = canonicalTeam(home) + "|" + canonicalTeam(away);
+      const previous = best.get(key);
+      if (!previous || text.length < previous.textLength) best.set(key, { container, home, away, textLength: text.length });
+    }
+    return Array.from(best.values()).map(({container,home,away}) => ({container,home,away}));
   }
 
   // Invia selezione singola a MatchMind
@@ -2011,7 +2010,7 @@
     const multiMatches = detectMultipleMatches().filter(item => isKnownTeamName(item.home) && isKnownTeamName(item.away));
     const calculations = [];
 
-    if (singleMatch) {
+    // Nel palinsesto prevalgono le singole righe evento: il titolo globale può essere obsoleto.\n    if (singleMatch && multiMatches.length === 0) {
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
       const mmProbs = forecast.probabilities;
       const foundOddsByMarket = new Map();
