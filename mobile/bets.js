@@ -9,7 +9,6 @@ const curr=v=>Number.isFinite(v)?v.toLocaleString("it-IT",{minimumFractionDigits
 const fmtOdds=v=>Number.isFinite(v)&&v>0?v.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}):"—";
 const fmtEv=v=>Number.isFinite(v)?(v>=0?"+":"")+(v*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 let data=null,allData=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12,slipExpanded=false,proposalGenerated=false,editingTicketId=null,editingPreviousPicks=null;
-let sisalCalendarCache={at:0,rows:[],counts:{football:0,nba:0},errors:[]},sisalCalendarPromise=null;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -1090,7 +1089,6 @@ function initEvents(){
   variantCycleIndex++;
   buildProposal();
  });
- $("refreshArchive").addEventListener("click",updateArchive);
  ["slipArchive","openTickets"].forEach(id=>$(id)?.addEventListener("click",event=>{
   const editBtn=event.target.closest("[data-edit-ticket]");if(editBtn){const ticket=archive.find(x=>x.id===editBtn.dataset.editTicket);if(ticket)startEditTicket(ticket);return;}
   const duplicateBtn=event.target.closest("[data-duplicate-ticket]");if(duplicateBtn){const ticket=archive.find(x=>x.id===duplicateBtn.dataset.duplicateTicket);if(ticket)duplicateTicket(ticket);return;}
