@@ -10,7 +10,7 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("restores the last Lovable Sisal userscript, version 3.6.3, with valid metadata and syntax", () => {
+test("checks the current Sisal userscript release, version 3.6.4, with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
   assert.match(script, /^\/\/ @version\s+3\.6\.4$/m);
