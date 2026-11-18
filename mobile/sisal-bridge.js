@@ -48,7 +48,7 @@
     });
     const selectedKey = String(row && row.marketKey || "");
     const selectedProbability = probability(row && row.probability);
-    if (selectedKey && supportedMarket(selectedKey, sport) && selectedProbability !== null && !seen.has(selectedKey)) {
+    if (selectedKey && supportedMarket(selectedKey) && selectedProbability !== null && !seen.has(selectedKey)) {
       result.push({
         marketKey: selectedKey,
         label: String(row.marketLabel || row.label || selectedKey),
