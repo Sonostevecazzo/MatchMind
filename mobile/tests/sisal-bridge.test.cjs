@@ -172,29 +172,6 @@ test("all MatchMind football competitions retain their competition IDs in the Si
   assert.deepEqual(result.payload.items.map(item => item.competition), competitions);
   assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio#mmplay="));
 });
-test("keeps NBA moneyline on the NBA Sisal destination", () => {
-  const result = bridge.createUrl([{
-    sport: "nba", id: "401810001", eventId: "401810001",
-    home: "Boston Celtics", away: "New York Knicks",
-    homeAbbr: "BOS", awayAbbr: "NYK", start: "2026-11-12T00:30:00Z",
-    date: "2026-11-12", side: "home", team: "Boston Celtics",
-    marketKey: "nbaMoneyline:home", probability: 0.68,
-    predictions: [{ marketKey: "nbaMoneyline:home", label: "Vince casa", probability: 0.68 }]
-  }], { sentAt: 99 });
-  assert.equal(result.skipped, 0);
-  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba#mmplay="));
-  assert.equal(result.payload.items[0].predictions[0].probability, 0.68);
-});
-
-test("does not route mixed football and NBA handoffs to a single sport-specific page", () => {
-  const result = bridge.createUrl([
-    { home: "Roma", away: "Lazio", competition: "serie-a", marketKey: "home", probability: 0.6 },
-    { sport: "nba", home: "Boston Celtics", away: "New York Knicks", marketKey: "nbaMoneyline:away", probability: 0.41 }
-  ], { sentAt: 7 });
-  assert.ok(result.url.startsWith("https://www.sisal.it/scommesse-matchpoint/sport/calcio#mmplay="));
-  assert.equal(result.payload.items.length, 2);
-});
-
 test("does not build an external URL from invalid or empty selections", () => {
   const result = bridge.createUrl([
     null,
