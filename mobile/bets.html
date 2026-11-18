@@ -5,19 +5,14 @@
 <meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261113-compact-nav-1">
 <title>MatchMind · Scommesse</title>
-<script defer src="./bets-engine.js"></script><script defer src="./site-core.js?v=20261111-drawer-refresh"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./sports-switch.js?v=20261116-espn-window"></script><script defer src="./bets.js?v=20261114-market-filter-1"></script>
+<script defer src="./bets-engine.js?v=20261118-prediction-only-1"></script><script defer src="./site-core.js?v=20261118-prediction-only-1"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./notifications.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js?v=20261118-prediction-only-1"></script>
 </head>
-<body data-page="bets" data-title="Schedine" data-subtitle="Crea, monitora e archivia le tue schedine.">
+<body data-page="bets" data-title="Schedine" data-subtitle="Previsioni calcistiche e costruttore per le partite future.">
 <div id="siteHeader"></div>
 <main class="page-wrap">
  <div class="page-intro"><div class="eyebrow">MATCHMIND / BET MANAGER</div><h1 id="pageTitle">Schedine</h1><p id="pageSubtitle">Costruisci le combinazioni e gestisci tutte le selezioni in un unico posto.</p></div>
- <div class="bets-tabs" role="tablist" aria-label="Gestione schedine">
-  <button type="button" class="bets-tab active" role="tab" aria-selected="true" id="betsTabCreateButton" aria-controls="betsTabCreate" data-bets-tab="create">Costruisci</button>
-  <button type="button" class="bets-tab" role="tab" aria-selected="false" id="betsTabLiveButton" aria-controls="betsTabLive" data-bets-tab="live">In corso</button>
-  <button type="button" class="bets-tab" role="tab" aria-selected="false" id="betsTabArchiveButton" aria-controls="betsTabArchive" data-bets-tab="archive">Archivio</button>
- </div>
+ 
  <div id="betsTabCreate" class="bets-tab-panel" role="tabpanel">
-  <div id="sportSwitchMount"></div>
   <div class="bet-workspace-tabs" role="tablist" aria-label="Costruttore e schedina">
    <button type="button" class="bet-workspace-tab active" id="betWorkspaceBuilderButton" role="tab" aria-selected="true" aria-controls="betWorkspaceBuilder" data-bet-workspace-tab="builder">Costruttore</button>
    <button type="button" class="bet-workspace-tab" id="betWorkspaceSlipButton" role="tab" aria-selected="false" aria-controls="betWorkspaceSlip" data-bet-workspace-tab="slip">La tua schedina <span id="betWorkspacePickCount">0</span></button>
@@ -74,19 +69,6 @@
  </section>
  </section>
  </div>
- <section id="betsTabLive" class="bets-tab-panel" role="tabpanel" hidden>
-  <section class="section panel panel-pad">
-   <div class="section-head"><div><div class="eyebrow">MONITORAGGIO</div><h2>Schedine aperte</h2><p>Stato degli eventi, punteggio live e risultati. Aggiorna solo quando ti serve.</p></div><button id="refreshArchive" type="button" class="secondary">Aggiorna</button></div>
-   <div id="archiveStatus" class="status-line" aria-live="polite"></div>
-   <div id="openTickets"><div class="empty-state">Nessuna schedina da monitorare. Salva una schedina dalla scheda Crea.</div></div>
-  </section>
- </section>
- <section id="betsTabArchive" class="bets-tab-panel" role="tabpanel" hidden>
-  <section class="section panel panel-pad">
-   <div class="section-head"><div><div class="eyebrow">ARCHIVIO LOCALE</div><h2>Schedine concluse</h2><p>Storico delle schedine con tutti gli eventi conclusi.</p></div></div>
-   <div id="slipArchive"><div class="empty-state">Nessuna schedina conclusa.</div></div>
-  </section>
- </section>
  <div class="notice warning">Le percentuali sono stime statistiche, non garanzie. Il valore combinato è un prodotto delle probabilità delle singole partite e assume indipendenza tra eventi; la correlazione può cambiare il risultato. MatchMind non conosce automaticamente le formazioni ufficiali, gli infortuni o le squalifiche: inserisci solo indisponibilità verificate.</div>
  <div id="globalStatus" class="status-line" aria-live="polite"></div><footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
 <style>.sisal-transfer-controls{display:grid;gap:8px;margin-top:12px}.sisal-transfer-link[aria-disabled="true"]{opacity:.5;pointer-events:none;cursor:not-allowed}.manual-slip-dropdown{margin-top:10px;border:1px solid #40543a;border-radius:14px;background:#111b24;overflow:hidden}.manual-slip-dropdown>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;cursor:pointer;font-weight:800;list-style:none}.manual-slip-dropdown>summary::-webkit-details-marker{display:none}.manual-slip-dropdown>summary b{color:#c4f36a}.manual-slip-dropdown .manual-summary-card{border:0;border-top:1px solid #2a3842;border-radius:0;box-shadow:none}.fixture-market-options{display:block;margin-top:10px}.fixture-market-group{margin-top:12px}.fixture-market-group h4{margin:0 0 7px;color:var(--muted,#9aa9b8);font-size:.76rem;letter-spacing:.06em;text-transform:uppercase}.fixture-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}@media(max-width:560px){.fixture-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
