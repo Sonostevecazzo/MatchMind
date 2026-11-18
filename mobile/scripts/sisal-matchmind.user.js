@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.4
-// @description  Motore Sisal 3.6.4 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
+// @version      3.6.5
+// @description  Motore Sisal 3.6.5 · scansione leggera e reattiva, solo calcio.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
 // @match        https://scommesse.sisal.it/*
-// @match        https://*.sisal.it/*
-// @match        https://sisal.it/*
+// @match        https://sisal.it/scommesse*
 // @match        https://*.lovable.app/*
 // @match        https://matchmind-3te.pages.dev/*
 // @match        https://sonostevecazzo.github.io/MatchMind/*
@@ -25,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.4";
+  const MM_SCRIPT_VERSION = "3.6.5";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2238,58 +2237,53 @@
   function escapeHtml(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 
-  // Dichiarate qui: prima mancavano e l'osservatore andava in errore a ogni modifica della pagina Sisal.
+  // Scansione reattiva: osserva solo le aree evento/quote, senza polling continuo.
   let lastScanTime = 0;
   let scanTimer = null;
+  const EVENT_SELECTOR = "[data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'], [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']";
+  const RELEVANT_SELECTOR = EVENT_SELECTOR + ", button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']";
+  function scheduleScan(delay = 350) {
+    if (document.hidden || scanTimer) return;
+    scanTimer = setTimeout(() => {
+      scanTimer = null;
+      const now = Date.now();
+      if (now - lastScanTime < 1800) {
+        scheduleScan(1800 - (now - lastScanTime));
+        return;
+      }
+      lastScanTime = now;
+      scanPage();
+    }, delay);
+  }
+  function hasRelevantMutation(mutation) {
+    const target = mutation.target && (mutation.target.nodeType === 1 ? mutation.target : mutation.target.parentElement);
+    if (target && target.closest && target.closest(RELEVANT_SELECTOR)) return true;
+    for (const node of mutation.addedNodes || []) {
+      if (node.nodeType !== 1) continue;
+      if (node.matches?.(EVENT_SELECTOR) || node.querySelector?.(EVENT_SELECTOR)) return true;
+      if (node.matches?.("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']")) return true;
+    }
+    return false;
+  }
   const observer = new MutationObserver((mutations) => {
     if (isMutatingDOM) return;
-
-    let shouldScan = false;
-    for (const m of mutations) {
-      if (m.addedNodes.length > 0) {
-        for (const n of m.addedNodes) {
-          if (n.nodeType === 1 && (n.id === "mm-widget" || n.classList?.contains("mm-prob-tag") || n.classList?.contains("mm-badge-recommended") || n.classList?.contains("mm-send-btn"))) {
-            continue;
-          }
-          shouldScan = true;
-          break;
-        }
-      }
-      if (shouldScan) break;
-    }
-
-    if (shouldScan) {
-      const now = Date.now();
-      if (now - lastScanTime < 1000) return; // Limita frequenza massima
-      if (scanTimer) clearTimeout(scanTimer);
-      scanTimer = setTimeout(() => {
-        lastScanTime = Date.now();
-        scanPage();
-      }, 600);
-    }
+    if (mutations.some(hasRelevantMutation)) scheduleScan();
   });
+  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-  observer.observe(document.body, { childList: true, subtree: true });
-
-
-  // --- GESTIONE ISPETTORE QUOTA INTERATTIVO AL TAP ---
-  
-  // Click/tap sulle quote Sisal non intercettati: nessun popup o apertura automatica di MatchMind,
-  // il click rimane 100% nativo per comporre la schedina Sisal in tranquillità.
-
-
-  window.addEventListener("load", () => {
-    setTimeout(scanPage, 1000);
-  });
+  // Click/tap sulle quote resta nativo: nessuna selezione o puntata automatica.
+  window.addEventListener("load", () => scheduleScan(500), { once: true });
   captureIncomingPlays();
-  window.addEventListener('hashchange', () => { captureIncomingPlays(); scanPage(); });
-  setTimeout(scanPage, 1200);
-
-
-  // Scansione periodica ogni 2.5 secondi per gestire la Single Page App di Sisal durante scroll e navigazione
-  setInterval(() => {
-    if (document.hidden) return;
-    scanPage();
-  }, 2500);
+  syncCartState();
+  window.addEventListener("hashchange", () => {
+    captureIncomingPlays();
+    scheduleScan(100);
+  });
+  window.addEventListener("pageshow", () => scheduleScan(500));
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) scheduleScan(300);
+    else if (scanTimer) { clearTimeout(scanTimer); scanTimer = null; }
+  });
+  scheduleScan(900);
 
 })();
