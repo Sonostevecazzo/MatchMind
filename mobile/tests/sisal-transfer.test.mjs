@@ -10,7 +10,7 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("checks the current Sisal userscript release, version 3.6.4, with valid metadata and syntax", () => {
+test("checks the current Sisal userscript release, version 3.6.5, with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
   assert.match(script, /^\/\/ @version\s+3\.6\.4$/m);
@@ -29,6 +29,9 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.match(script, /function detectSingleMatch\(\)/);
   assert.match(script, /function detectMultipleMatches\(\)/);
   assert.match(script, /new MutationObserver/);
+  assert.match(script, /function scheduleScan\(/);
+  assert.match(script, /mutations\.some\(hasRelevantMutation\)/);
+  assert.doesNotMatch(script, /setInterval\(\(\) => \{[\s\S]{0,120}scanPage\(\);[\s\S]{0,80}2500\)/);
   assert.match(script, /hasVisibleEventRows/);
   assert.match(script, /multiMatches.length === 0 && !hasVisibleEventRows/);
   assert.match(script, /text.length < previous.textLength/);
