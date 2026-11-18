@@ -824,14 +824,7 @@ function eventForecast(match,history){
       ['matches.html','matches','Previsioni'],
       ['bets.html','bets','Costruttore']
     ];
-    const secondary=[
-      ['league.html','league','Classifiche','league'],
-      ['nba.html','nba','NBA','nba'],
-      ['explore.html','teams','Squadre','explore'],
-      ['players.html','players','Giocatori','players'],
-      ['data.html','data','Dati','data'],
-      ['settings.html','settings','Impostazioni','settings']
-    ];
+    const secondary=[];
     const page=document.body.dataset.page||'';
     const activeSecondary=page==='league'?'league':page==='explore'||page==='team'?'explore':page==='mind'||page==='analysis-lab'?'analysis-lab':page;
     const item=([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>';
