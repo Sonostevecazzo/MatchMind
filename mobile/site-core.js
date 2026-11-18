@@ -205,7 +205,7 @@
       matches.push(...results,...fixtures);
       if(league.history)history.push(...results);
     }
-    const histJobs=[y-1,y-2,y-3,y-4,y-5].map(async year=>{
+    const histJobs=selectedId==="serie-a"?[y-1,y-2,y-3,y-4,y-5].map(async year=>{
       const folder=year+'-'+String(year+1).slice(-2);
       const res=await fetch(HISTORY_ROOT+folder+'/it.1.json',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)}).catch(()=>null);
       if(!res||!res.ok)return [];
@@ -220,7 +220,7 @@
           status:done?'FT':'NS',statusLong:done?'Terminata':'In programma',competition:'serie-a',source:'openfootball · archivio storico'
         };
       }).filter(m=>m.date&&m.home&&m.away&&m.hg!==null&&m.ag!==null);
-    });
+    }):[];
     const histSettled=await Promise.allSettled(histJobs);
     histSettled.forEach(result=>{if(result.status==='fulfilled')history.push(...result.value);});
     if(selectedId==="nations-league"){
