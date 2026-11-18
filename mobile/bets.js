@@ -1144,7 +1144,7 @@ function initEvents(){
  }));
  window.addEventListener("hashchange",handleUrlImport);
 }
-let monitorTimer=null;
+
 function hasTodayOpenTicket(){
  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
  return archive.some(ticket=>(ticket.selections||[]).some(selection=>selection.date===today&&!terminalStatus(selection.status||"Da giocare")));
@@ -1176,7 +1176,6 @@ document.addEventListener("DOMContentLoaded",async()=>{
   handleUrlImport();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
-  monitorTimer=window.setInterval(()=>{const active=document.querySelector("[data-bets-tab=\"live\"]")?.getAttribute("aria-selected")==="true";if(active&&!document.hidden&&hasTodayOpenTicket())updateArchive();},900000);
  }catch(e){$("globalStatus").textContent="Dati non disponibili: "+(e.message||"errore sconosciuto");$("manualBuilderStatus").textContent="Calendario non disponibile: impossibile calcolare le probabilità delle selezioni.";}
 });
 
