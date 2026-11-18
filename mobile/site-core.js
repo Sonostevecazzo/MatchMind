@@ -821,10 +821,8 @@ function eventForecast(match,history){
       install:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></svg>'
     };
     const primary=[
-      ['matches.html','matches','Home'],
-      ['live.html','live','Live'],
-      ['analysis-lab.html','mind','Analisi'],
-      ['bets.html','bets','Schedina']
+      ['matches.html','matches','Previsioni'],
+      ['bets.html','bets','Costruttore']
     ];
     const secondary=[
       ['league.html','league','Classifiche','league'],
