@@ -264,7 +264,8 @@ async function getCalendar(request) {
     else historyErrors.push("Archivio Serie A " + seasonFolder(year - 1 - index) + " non disponibile");
   });
   history.sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-  if (!matches.length) return json({ configured: true, type: "calendar", matches: [], history: [], errors: entries.map(x => x.error).filter(Boolean), error: "Nessuna partita disponibile dalla fonte selezionata. Verificare il feed della competizione." }, 503);
+  if (!matches.length && entries.some(x => x.error)) return json({ configured: true, type: "calendar", matches: [], history: [], errors: entries.map(x => x.error).filter(Boolean), error: "Feed della competizione temporaneamente non disponibile. Riprovare più tardi." }, 503);
+  if (!matches.length) return json({ configured: true, type: "calendar", matches: [], history: [], errors: [], message: "Nessuna partita in programma nel periodo consultato." }, 200);
   const counts = Object.fromEntries(entries.map(x => [x.id, x.matches.length]));
   const statFields = ["ht", "at", "hs", "as", "hst", "ast", "hf", "af", "hc", "ac", "hy", "ay", "hr", "ar", "goalMinutes"];
   const selectedMatches = entries[0].matches;

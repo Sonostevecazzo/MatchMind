@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.2
-// @description  Motore Sisal 3.6.2 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
+// @version      3.6.4
+// @description  Motore Sisal 3.6.4 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -25,7 +25,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.2";
+  const MM_SCRIPT_VERSION = "3.6.4";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -1323,27 +1323,26 @@
     return null;
   }
 
-  // Rilevamento partite multiple (Palinsesto / Serie A / Coppe)
+  // Rilevamento eventi: conserva il contenitore più piccolo per ogni coppia di squadre.
+  // Evita che un contenitore padre del palinsesto venga scambiato per una singola partita.
   function detectMultipleMatches() {
-    const containers = Array.from(document.querySelectorAll(`
-      [data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'],
-      [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']
-    `));
-
-    const matches = [];
-    containers.forEach(container => {
-      const text = container.innerText || "";
-      const m = text.match(/([A-Za-z0-9\s]{3,20})\s*[-–vsVS\n]+\s*([A-Za-z0-9\s]{3,20})/);
-      if (m) {
-        const h = m[1].trim();
-        const a = m[2].trim();
-        if (h.length >= 3 && a.length >= 3 && h !== a && !h.toLowerCase().includes("quote")) {
-          matches.push({ container, home: h, away: a });
-        }
-      }
-    });
-
-    return matches;
+    const selector = "[data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'], [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']";
+    const best = new Map();
+    for (const container of document.querySelectorAll(selector)) {
+      if (!container.getClientRects().length) continue;
+      const text = spacedText(container);
+      if (!text || text.length > 2500) continue;
+      const m = text.match(/([A-Za-z0-9À-ÿ.'’&()\\s]{3,35}?)\\s*(?:[-–—]|\\bvs\\.?\\b)\\s*([A-Za-z0-9À-ÿ.'’&()\\s]{3,35}?)(?=\\s+(?:1\\s|X\\s|2\\s|\\d+[.,]\\d{2})|$)/i);
+      if (!m) continue;
+      const home = m[1].trim(), away = m[2].trim();
+      if (home === away || !isKnownTeamName(home) || !isKnownTeamName(away)) continue;
+      const buttons = container.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection']");
+      if (!buttons.length || buttons.length > 40) continue;
+      const key = canonicalTeam(home) + "|" + canonicalTeam(away);
+      const previous = best.get(key);
+      if (!previous || text.length < previous.textLength) best.set(key, { container, home, away, textLength: text.length });
+    }
+    return Array.from(best.values()).map(({container,home,away}) => ({container,home,away}));
   }
 
   // Invia selezione singola a MatchMind
@@ -1995,23 +1994,18 @@
   // Scansione principale della pagina Sisal
   function scanPage() {
     captureIncomingPlays();
-    const nbaQueue = readPlayQueue().filter(q => q.sport === "nba");
-    if (nbaQueue.length) {
-      autoPlayQueue(scanNbaSelections(nbaQueue));
-    }
-    if (nbaQueue.length && (/basket|nba/i.test(location.pathname + " " + document.title) || !readPlayQueue().some(q => q.sport !== "nba" && q.status !== "added"))) {
-      // Non applicare le probabilità calcio alle quote basket.
-      currentAnalysis = { isMulti: true, matchCount: nbaQueue.length, calculations: [], allMarketsList: [] };
-      renderWidget();
-      return;
-    }
     syncCartState();
     const detectedSingleMatch = detectSingleMatch();
     const singleMatch = detectedSingleMatch && isKnownTeamName(detectedSingleMatch.home) && isKnownTeamName(detectedSingleMatch.away) ? detectedSingleMatch : null;
     const multiMatches = detectMultipleMatches().filter(item => isKnownTeamName(item.home) && isKnownTeamName(item.away));
+    // Su pagine palinsesto il title/path può riferirsi a un evento precedente.
+    // In presenza di righe evento visibili, non usare mai il fallback della partita singola.
+    const eventRowSelector = "[data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'], [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']";
+    const hasVisibleEventRows = Array.from(document.querySelectorAll(eventRowSelector)).some(el => el.getClientRects().length > 0);
     const calculations = [];
 
-    if (singleMatch) {
+    // Nel palinsesto prevalgono le singole righe evento: il titolo globale può essere obsoleto.
+    if (singleMatch && multiMatches.length === 0 && !hasVisibleEventRows) {
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
       const mmProbs = forecast.probabilities;
       const foundOddsByMarket = new Map();
@@ -2110,7 +2104,7 @@
     if (!todo.length) return found;
     const buttons = Array.from(new Set(Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection'], [data-outcome]"))
       .map(b => b.closest('button,[role="button"]') || b)))
-      .filter(b => !b.closest("#mm-widget") && !b.closest(NBA_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 60 && /\b\d+[.,]\d{2}\b/.test(b.innerText || b.textContent || ""));
+      .filter(b => !b.closest("#mm-widget") && !b.closest(SISAL_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 60 && /\b\d+[.,]\d{2}\b/.test(b.innerText || b.textContent || ""));
     for (const item of todo) {
       let eventSeen = false;
       for (const btn of buttons) {
@@ -2133,7 +2127,7 @@
   function syncCartState() {
     try {
       const rows = new Set();
-      document.querySelectorAll(NBA_CART_SELECTOR).forEach(cart => {
+      document.querySelectorAll(SISAL_CART_SELECTOR).forEach(cart => {
         if (cart.closest("#mm-widget") || !cart.getClientRects().length) return;
         cart.querySelectorAll('[class*="betslip-item" i],[class*="selection" i],[data-testid*="selection" i],li').forEach(r => { if (/\d+[.,]\d{2}/.test(r.textContent || "") && (r.textContent || "").length < 600) rows.add((r.textContent || "").trim().slice(0, 120)); });
       });
@@ -2155,115 +2149,6 @@
     const raw = JSON.stringify(list.slice(0, 30));
     try { if (typeof GM_setValue === "function") GM_setValue(PLAY_KEY, raw); } catch (e) {}
     try { localStorage.setItem(PLAY_KEY, raw); } catch (e) {}
-  }
-  function nbaButtonSelected(btn) {
-    return btn.getAttribute("aria-pressed") === "true" || btn.getAttribute("aria-checked") === "true" ||
-      /^(?:selected|is-selected|checked|is-active)$/.test(btn.getAttribute("data-state") || "") ||
-      Array.from(btn.classList || []).some(c => /^(?:selected|is-selected|checked|is-active|active)$/.test(c));
-  }
-  const NBA_CART_SELECTOR = '[class*="betslip" i], [id*="betslip" i], [data-qa*="betslip" i], [class*="coupon" i], [class*="carrello" i], [class*="biglietto" i], [data-testid*="betslip" i]';
-  function nbaMarketText(btn) {
-    const parts = [];
-    let node = btn;
-    for (let depth = 0; node && node !== document.body && depth < 8; depth++, node = node.parentElement) {
-      for (const attr of ['data-market-name', 'data-market', 'aria-label', 'title']) {
-        const value = node.getAttribute(attr);
-        if (value) parts.push(value);
-      }
-      const title = Array.from(node.querySelectorAll('h3,h4,h5,[class*="market-title" i],[class*="marketTitle" i],[data-qa*="market-name" i],[data-testid*="market-name" i],legend'))
-        .find(t => !t.closest('button,[role="button"]') && (t.textContent || '').length < 140);
-      if (title) { parts.push(title.textContent); break; }
-      if (node.matches('td')) {
-        const th = node.closest('table')?.querySelectorAll('thead th')[node.cellIndex];
-        if (th) { parts.push(th.textContent); break; }
-      }
-    }
-    return parts.join(' ').toLowerCase().replace(/[–—]/g, '-');
-  }
-  function nbaWinnerMarket(market) {
-    return !/handicap|spread|under|over|quarto|quarter|tempo|half|regolament|senza.*supplement|1x2|parziale/.test(market) &&
-      /vincente|vincitore|money\s*line|winner|testa\s+a\s+testa|esito finale|risultato finale|\b1\s*[-/]\s*2\b/.test(market);
-  }
-  function nbaCartContains(item, hit) {
-    const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
-    const side = item.marketKey.split(':')[1], selected = side === 'home' ? h : a;
-    const containers = Array.from(document.querySelectorAll(NBA_CART_SELECTOR)).filter(c => !c.closest('#mm-widget') && c.getClientRects().length);
-    return containers.some(cart => {
-      const rows = Array.from(cart.querySelectorAll('[class*="item" i],[class*="selection" i],[class*="event" i],li,[data-testid*="selection" i]'));
-      return rows.some(row => {
-        const text = row.innerText || row.textContent || '';
-        if (text.length > 1600 || nbaTeamPosition(text,h) < 0 || nbaTeamPosition(text,a) < 0 || !nbaWinnerMarket(text.toLowerCase())) return false;
-        const outcome = row.querySelector('[data-outcome],[class*="outcome" i],[class*="selection-name" i],[data-testid*="outcome" i]');
-        const label = outcome?.getAttribute('data-outcome') || outcome?.innerText || outcome?.textContent || '';
-        if (label) return nbaTeamPosition(label,selected) >= 0 || (hit?.outcome && label.trim() === hit.outcome);
-        return text.split(/[\r\n]+/).some(line => /vince|vincente\s*:|esito\s*:/i.test(line) && nbaTeamPosition(line,selected) >= 0 && nbaTeamPosition(line,side === 'home' ? a : h) < 0);
-      });
-    });
-  }
-  const NBA_TEAMS = [
-    ["Atlanta Hawks", "ATL"], ["Boston Celtics", "BOS"], ["Brooklyn Nets", "BKN"],
-    ["Charlotte Hornets", "CHA"], ["Chicago Bulls", "CHI"], ["Cleveland Cavaliers", "CLE"],
-    ["Dallas Mavericks", "DAL"], ["Denver Nuggets", "DEN"], ["Detroit Pistons", "DET"],
-    ["Golden State Warriors", "GSW"], ["Houston Rockets", "HOU"], ["Indiana Pacers", "IND"],
-    ["LA Clippers", "LAC"], ["Los Angeles Lakers", "LAL"], ["Memphis Grizzlies", "MEM"],
-    ["Miami Heat", "MIA"], ["Milwaukee Bucks", "MIL"], ["Minnesota Timberwolves", "MIN"],
-    ["New Orleans Pelicans", "NOP"], ["New York Knicks", "NYK"], ["Oklahoma City Thunder", "OKC"],
-    ["Orlando Magic", "ORL"], ["Philadelphia 76ers", "PHI"], ["Phoenix Suns", "PHX"],
-    ["Portland Trail Blazers", "POR"], ["Sacramento Kings", "SAC"], ["San Antonio Spurs", "SAS"],
-    ["Toronto Raptors", "TOR"], ["Utah Jazz", "UTA"], ["Washington Wizards", "WAS"]
-  ];
-  function nbaTeamAliases(name, abbr) {
-    const row = NBA_TEAMS.find(t => norm(t[0]) === norm(name) || t[1] === abbr ||
-      (norm(name).includes("clippers") && t[1] === "LAC"));
-    return Array.from(new Set([name, abbr, ...(row ? [row[0], row[1], row[0].split(" ").slice(row[1] === "POR" ? 1 : -1).join(" "), row[1] === "LAC" ? "Los Angeles Clippers" : ""] : [])].filter(Boolean)))
-      .map(v => String(v).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim());
-  }
-  function nbaTeamPosition(text, aliases) {
-    const clean = " " + String(text).toLowerCase().replace(/[^a-z0-9]+/g, " ") + " ";
-    const indexes = aliases.map(a => clean.indexOf(" " + a + " ")).filter(i => i >= 0);
-    return indexes.length ? Math.min(...indexes) : -1;
-  }
-  function resolveNbaWinner(btn, item, context) {
-    const market = nbaMarketText(btn);
-    if (!nbaWinnerMarket(market)) return null;
-    const raw = (btn.innerText || Array.from(btn.children).map(c => c.textContent).join(" ") || btn.textContent || "").trim();
-    const odd = parseOddsValue(raw + " " + (btn.getAttribute("aria-label") || ""));
-    if (!odd) return null;
-    const label = (btn.getAttribute('data-outcome') || btn.getAttribute('data-selection-name') || raw.replace(/\b\d+[.,]\d{2}\b/g, "")).trim();
-    const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
-    let side = nbaTeamPosition(label, h) >= 0 ? "home" : nbaTeamPosition(label, a) >= 0 ? "away" : null;
-    if (!side && /^[12]$/.test(label)) {
-      const hp = nbaTeamPosition(context, h), ap = nbaTeamPosition(context, a);
-      if (hp >= 0 && ap >= 0) side = (label === "1") === (hp < ap) ? "home" : "away";
-    }
-    return side ? { key: "nbaMoneyline:" + side, odd, outcome: /^[12]$/.test(label) ? label : null } : null;
-  }
-  function scanNbaSelections(queue) {
-    const found = [];
-    const buttons = Array.from(new Set(Array.from(document.querySelectorAll("button, [role='button'], [class*='odd'], [class*='quota'], [class*='selection'], [data-outcome]"))
-      .map(b => b.closest('button,[role="button"],a[data-outcome]') || b)))
-      .filter(b => !b.closest("#mm-widget") && !b.closest(NBA_CART_SELECTOR) && b.getClientRects().length && (b.textContent || "").length < 140);
-    for (const item of queue) {
-      const h = nbaTeamAliases(item.home, item.homeAbbr), a = nbaTeamAliases(item.away, item.awayAbbr);
-      let eventSeen = false;
-      for (const btn of buttons) {
-        let container = btn.parentElement;
-        for (let depth = 0; depth < 7 && container && container !== document.body; depth++, container = container.parentElement) {
-          const text = container.innerText || container.textContent || "";
-          if (text.length > 4000 || container.querySelectorAll("button, [role='button']").length > 60) break;
-          if (nbaTeamPosition(text, h) < 0 || nbaTeamPosition(text, a) < 0) continue;
-          const dated = container.closest("[data-start], [data-date]") || container.querySelector("time[datetime]");
-          const date = dated?.getAttribute("data-start") || dated?.getAttribute("data-date") || dated?.getAttribute("datetime");
-          if (date && item.start && Date.parse(date) !== Date.parse(item.start) && date.slice(0, 10) !== item.date) break;
-          eventSeen = true;
-          const resolved = resolveNbaWinner(btn, item, text);
-          if (resolved && !found.some(c => c.btn === btn && c.start === item.start)) found.push({ ...resolved, btn, home: item.home, away: item.away, sport: "nba", start: item.start });
-          break;
-        }
-      }
-      if (eventSeen) found.push({ home: item.home, away: item.away, sport: "nba", start: item.start, key: "event", btn: null });
-    }
-    return found;
   }
   function captureIncomingPlays() {
     const m = String(location.hash || "").match(/[#&]mmplay=([^&]+)/);
@@ -2298,44 +2183,39 @@
     } catch (e) {}
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
   }
+  // MatchMind non clicca mai le quote: identifica l'esito e lascia la conferma all'utente.
   function autoPlayQueue(calculations) {
     const queue = readPlayQueue();
-    if (!queue.some(q => ["pending", "error", "adding"].includes(q.status))) return;
     let changed = false;
     for (const item of queue) {
       if (item.status === "added") continue;
-      const h = canonicalTeam(item.home), a = canonicalTeam(item.away);
-      const sameMatch = (calculations || []).filter(c => canonicalTeam(c.home) === h && canonicalTeam(c.away) === a && (item.sport !== "nba" || (c.sport === "nba" && c.start === item.start)));
-      const candidate = sameMatch.find(c => c.btn && c.key === item.marketKey);
-      if (item.sport === 'nba' && nbaCartContains(item, candidate || {outcome:item.sisalOutcome})) {
-        item.status = 'added'; item.error = ''; item.errorType = ''; item.updatedAt = Date.now(); item.sisalOdds = candidate?.odd || item.sisalOdds; changed = true; continue;
-      }
-      if (item.sport === 'nba' && item.status === 'adding') {
-        if (Date.now() - item.clickedAt < 15000) continue;
-        item.status = 'error'; item.errorType = 'failed'; item.error = 'Quota cliccata, ma la selezione non è stata confermata nel biglietto Sisal. Apri il biglietto per controllare e ritenta.'; changed = true; continue;
-      }
+      const sameMatch = (calculations || []).filter(c =>
+        c.sport !== "nba" &&
+        canonicalTeam(c.home) === canonicalTeam(item.home) &&
+        canonicalTeam(c.away) === canonicalTeam(item.away)
+      );
       if (!sameMatch.length) continue;
       const hit = sameMatch.find(c => c.btn && c.key === item.marketKey);
       if (!hit) {
-        item.errorType = "notfound"; const msg = "Partita trovata su Sisal, ma la quota «" + item.label + "» non è presente o è sospesa.";
-        if (item.error !== msg) { item.status = "error"; item.error = msg; item.updatedAt = Date.now(); changed = true; }
-        continue;
-      }
-      const already = item.sport === "nba" ? nbaButtonSelected(hit.btn) : /selected|active|is-selected|checked/i.test(String(hit.btn.className || "")) || hit.btn.getAttribute("aria-pressed") === "true";
-      if (item.sport === "nba") {
-        if (hit.btn.disabled || hit.btn.getAttribute("aria-disabled") === "true") {
-          item.status = "error"; item.errorType = "notfound"; item.error = "La quota NBA è sospesa o non disponibile."; changed = true; continue;
+        const msg = "Partita trovata su Sisal, ma la quota «" + item.label + "» non è presente o è sospesa.";
+        if (item.status !== "error" || item.error !== msg) {
+          item.status = "error"; item.errorType = "notfound"; item.error = msg;
+          item.updatedAt = Date.now(); changed = true;
         }
-        if (item.errorType === "failed") continue;
-        try { if (!already) hit.btn.click(); item.clickedAt = Date.now(); item.status = "adding"; item.sisalOutcome = hit.outcome; item.sisalOdds = hit.odd; item.error = ""; changed = true; }
-        catch (e) { item.status = "error"; item.errorType = "failed"; item.error = "Impossibile selezionare la quota NBA: ritenta o aggiungila a mano."; changed = true; }
         continue;
       }
-      if (!already) {
-        try { hit.btn.click(); }
-        catch (e) { item.errorType = "failed"; item.status = "error"; item.error = "Quota trovata ma il click non è riuscito: aggiungila a mano."; item.updatedAt = Date.now(); changed = true; continue; }
+      const already = /selected|active|is-selected|checked/i.test(String(hit.btn.className || "")) ||
+        hit.btn.getAttribute("aria-pressed") === "true" ||
+        hit.btn.getAttribute("aria-checked") === "true";
+      const nextStatus = already ? "added" : "ready";
+      if (item.status !== nextStatus || item.sisalOdds !== hit.odd || item.error) {
+        item.status = nextStatus;
+        item.error = already ? "" : "Quota individuata. Se vuoi inserirla, conferma manualmente su Sisal.";
+        item.errorType = "";
+        item.sisalOdds = hit.odd;
+        item.updatedAt = Date.now();
+        changed = true;
       }
-      item.status = "added"; item.error = ""; item.errorType = ""; item.sisalOdds = hit.odd; item.updatedAt = Date.now(); changed = true;
     }
     if (changed) { writePlayQueue(queue); if (typeof syncCartState === "function") syncCartState(); }
   }
@@ -2344,14 +2224,14 @@
     let box = document.getElementById("mm-play-queue");
     if (!queue.length) { if (box) box.remove(); return; }
     if (!box) { box = document.createElement("div"); box.id = "mm-play-queue"; }
-    const done = queue.filter(q => q.status === "added").length;
+    const done = queue.filter(q => q.status === "added" || q.status === "ready").length;
     box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:12px;margin-bottom:4px;">' +
-      '<span>🎯 Giocate da MatchMind: ' + done + '/' + queue.length + ' in schedina Sisal</span>' +
+      '<span>🎯 Selezioni riconosciute: ' + done + '/' + queue.length + ' in schedina Sisal</span>' +
       '<button type="button" id="mm-play-clear" class="mm-icon-btn" title="Svuota elenco">🗑</button></div>' +
-      '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">Apri su Sisal la pagina della partita (o il palinsesto del campionato): la quota viene aggiunta da sola.</div>' +
+      '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">Apri la partita o il palinsesto: MatchMind individua la quota, ma non la seleziona. Conferma tu su Sisal.</div>' +
       queue.map(q => '<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;padding:3px 0;border-top:1px solid #1e293b;">' +
         '<span>' + escapeHtml(q.home) + ' – ' + escapeHtml(q.away) + ' · <b>' + escapeHtml(q.label) + '</b></span>' +
-        '<span style="color:' + (q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24") + ';white-space:nowrap;" title="' + escapeHtml(q.error || "") + '">' + (q.status === "added" ? "✓ aggiunta" + (q.sisalOdds ? " @" + Number(q.sisalOdds).toFixed(2) : "") : q.status === "error" ? "⚠ errore" : "in attesa") + '</span></div>' + (q.status === "error" && q.error ? '<div style="font-size:10.5px;color:#fca5a5;padding:0 0 3px;">' + escapeHtml(q.error) + '</div>' : '')).join("");
+        '<span style="color:' + (q.status === "added" ? "#34d399" : q.status === "error" ? "#f87171" : "#fbbf24") + ';white-space:nowrap;" title="' + escapeHtml(q.error || "") + '">' + (q.status === "added" ? "✓ già selezionata" + (q.sisalOdds ? " @" + Number(q.sisalOdds).toFixed(2) : "") : q.status === "ready" ? "quota trovata" + (q.sisalOdds ? " @" + Number(q.sisalOdds).toFixed(2) : "") : q.status === "error" ? "⚠ errore" : "in attesa") + '</span></div>' + (q.status === "error" && q.error ? '<div style="font-size:10.5px;color:#fca5a5;padding:0 0 3px;">' + escapeHtml(q.error) + '</div>' : '')).join("");
     widget.insertBefore(box, document.getElementById("mm-resize-grip"));
     box.querySelector("#mm-play-clear").onclick = (e) => { e.stopPropagation(); writePlayQueue([]); renderWidget(); };
   }

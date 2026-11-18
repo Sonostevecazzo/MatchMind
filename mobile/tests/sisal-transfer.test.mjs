@@ -10,10 +10,10 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("restores the last Lovable Sisal userscript, version 3.6.0 (Lovable 2.4.2 core), with valid metadata and syntax", () => {
+test("checks the current Sisal userscript release, version 3.6.4, with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.6\.0$/m);
+  assert.match(script, /^\/\/ @version\s+3\.6\.4$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
@@ -29,15 +29,21 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.match(script, /function detectSingleMatch\(\)/);
   assert.match(script, /function detectMultipleMatches\(\)/);
   assert.match(script, /new MutationObserver/);
+  assert.match(script, /hasVisibleEventRows/);
+  assert.match(script, /multiMatches.length === 0 && !hasVisibleEventRows/);
+  assert.match(script, /text.length < previous.textLength/);
 });
 
-test("keeps the existing football and NBA transfer path compatible with the current v3 fragment", () => {
+test("keeps the football transfer path compatible with the current v3 fragment and never clicks odds automatically", () => {
   assert.match(script, /function captureIncomingPlays\(\)/);
   assert.match(script, /incoming\.v === 3/);
   assert.match(script, /incoming\.i\.map\(row/);
   assert.match(script, /function autoPlayQueue\(/);
   assert.match(bridge, /base \+ "#mmplay=" \+ encoded/);
-  assert.match(bets, /#mmplay=/);
+  assert.match(bets, /function handleUrlImport\(\)/);
+  assert.match(bets, /hash\.startsWith\("#import="\)/);
+  assert.match(script, /Quota individuata\. Se vuoi inserirla, conferma manualmente su Sisal/);
+  assert.doesNotMatch(script, /hit\.btn\.click\(\)/);
 });
 
 test("removes the unwanted live-odds capture panel and its disconnected handler", () => {
