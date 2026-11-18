@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.3
-// @description  Motore Sisal 3.6.3 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
+// @version      3.6.4
+// @description  Motore Sisal 3.6.4 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -25,7 +25,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.3";
+  const MM_SCRIPT_VERSION = "3.6.4";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
