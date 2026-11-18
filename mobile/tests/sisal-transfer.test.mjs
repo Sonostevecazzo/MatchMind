@@ -34,13 +34,14 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.match(script, /text.length < previous.textLength/);
 });
 
-test("keeps the existing football and NBA transfer path compatible with the current v3 fragment", () => {
+test("keeps the football transfer path compatible with the current v3 fragment", () => {
   assert.match(script, /function captureIncomingPlays\(\)/);
   assert.match(script, /incoming\.v === 3/);
   assert.match(script, /incoming\.i\.map\(row/);
   assert.match(script, /function autoPlayQueue\(/);
   assert.match(bridge, /base \+ "#mmplay=" \+ encoded/);
-  assert.match(bets, /#mmplay=/);
+  assert.match(bets, /function handleUrlImport\(\)/);
+  assert.match(bets, /hash\.startsWith\("#import="\)/);
 });
 
 test("removes the unwanted live-odds capture panel and its disconnected handler", () => {
