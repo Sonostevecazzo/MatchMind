@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.2
-// @description  Motore Sisal 3.6.2 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
+// @version      3.6.3
+// @description  Motore Sisal 3.6.3 · trasferimento MatchMind limitato al calcio e alla competizione selezionata.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -25,7 +25,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.2";
+  const MM_SCRIPT_VERSION = "3.6.3";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2008,9 +2008,13 @@
     const detectedSingleMatch = detectSingleMatch();
     const singleMatch = detectedSingleMatch && isKnownTeamName(detectedSingleMatch.home) && isKnownTeamName(detectedSingleMatch.away) ? detectedSingleMatch : null;
     const multiMatches = detectMultipleMatches().filter(item => isKnownTeamName(item.home) && isKnownTeamName(item.away));
+    // Su pagine palinsesto il title/path può riferirsi a un evento precedente.
+    // In presenza di righe evento visibili, non usare mai il fallback della partita singola.
+    const eventRowSelector = "[data-qa*='event'], [class*='event-card'], [class*='match-row'], [class*='match-item'], [class*='single-event'], [class*='eventItem'], [class*='eventRow'], [class*='row-event']";
+    const hasVisibleEventRows = Array.from(document.querySelectorAll(eventRowSelector)).some(el => el.getClientRects().length > 0);
     const calculations = [];
 
-    // Nel palinsesto prevalgono le singole righe evento: il titolo globale può essere obsoleto.\n    if (singleMatch && multiMatches.length === 0) {
+    // Nel palinsesto prevalgono le singole righe evento: il titolo globale può essere obsoleto.\n    if (singleMatch && multiMatches.length === 0 && !hasVisibleEventRows) {
       const forecast = calculateMatchMindForecast(singleMatch.home, singleMatch.away);
       const mmProbs = forecast.probabilities;
       const foundOddsByMarket = new Map();
