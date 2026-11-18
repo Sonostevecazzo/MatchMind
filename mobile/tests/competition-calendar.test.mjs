@@ -67,7 +67,7 @@ test("configured competitions use the current-season Open Matchday feeds and ESP
   if(url.endsWith("results_2627.csv"))return new Response(csvResults,{status:200});
   if(url.endsWith("fixtures_2627.csv"))return new Response(csvFixtures,{status:200});
   if(url.includes("/it.1.json"))return new Response(JSON.stringify({matches:[]}),{status:200});
-  if(url.includes("/uefa.nations/scoreboard"))return new Response(JSON.stringify({events:[]}),{status:200});
+  if(url.includes("/uefa.nations/scoreboard"))return new Response(JSON.stringify({events:[{id:"test-nations-2027",date:"2027-01-10T19:45:00Z",competitions:[{status:{type:{state:"pre",completed:false,shortDetail:"Scheduled"}},competitors:[{homeAway:"home",team:{displayName:"Italy"}},{homeAway:"away",team:{displayName:"France"}}]}]}]}),{status:200});
   return new Response("not found",{status:404});
  };
  for(const [id,folder] of [
