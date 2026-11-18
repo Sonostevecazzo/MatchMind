@@ -7,8 +7,6 @@
   "use strict";
 
   const SISAL_URL = "https://www.sisal.it/scommesse-matchpoint/sport/calcio";
-  const NBA_SISAL_URL = "https://www.sisal.it/scommesse-matchpoint/sport/basket/usa/nba";
-  const NBA_MARKETS = new Set(["nbaMoneyline:home", "nbaMoneyline:away"]);
   const FOOTBALL_MARKETS = new Set([
     "home", "draw", "away", "dc1X", "dcX2", "dc12",
     "over15", "under15", "over25", "under25", "over35", "under35",
@@ -29,13 +27,12 @@
     return Number.isFinite(number) && number >= 0 && number <= 1 ? number : null;
   }
 
-  function supportedMarket(key, sport) {
+  function supportedMarket(key) {
     const value = String(key || "");
-    return sport === "nba" ? NBA_MARKETS.has(value) :
-      FOOTBALL_MARKETS.has(value) || COMBO_MARKET.test(value);
+    return FOOTBALL_MARKETS.has(value) || COMBO_MARKET.test(value);
   }
 
-  function cleanPredictions(row, sport) {
+  function cleanPredictions(row) {
     const entries = Array.isArray(row && row.predictions) ? row.predictions : [];
     const result = [];
     const seen = new Set();
@@ -43,7 +40,7 @@
       if (!entry) return;
       const marketKey = String(entry.marketKey || entry.key || "");
       const value = probability(entry.probability);
-      if (!supportedMarket(marketKey, sport) || value === null || seen.has(marketKey)) return;
+      if (!supportedMarket(marketKey) || value === null || seen.has(marketKey)) return;
       seen.add(marketKey);
       // Per-market metadata is inherited from the match item. Repeating it
       // for every market multiplies the handoff URL for multi-match slips.
@@ -58,7 +55,7 @@
         probability: selectedProbability,
         sampleEnough: row.sampleEnough === true,
         historyCount: Number.isFinite(Number(row.historyCount)) ? Math.max(0, Number(row.historyCount)) : 0,
-        model: String(row.predictionMethod || (sport === "nba" ? "NBA Elo" : "MatchMind"))
+        model: String(row.predictionMethod || "MatchMind")
       });
     }
     return result;
@@ -69,7 +66,8 @@
     const items = [];
     source.forEach(row => {
       const match = row && row.match ? row.match : row;
-      const sport = row && row.sport === "nba" ? "nba" : "football";
+      if (row && row.sport === "nba") return;
+      const sport = "football";
       const marketKey = String(row && row.marketKey || "");
       const home = String(match && match.home || "").trim();
       const away = String(match && match.away || "").trim();
@@ -77,10 +75,10 @@
       const rawDate = String(match.date || row.date || "").trim();
       const date = validDate(rawDate);
       const selectedProbability = probability(row && row.probability);
-      const predictions = cleanPredictions(row, sport);
+      const predictions = cleanPredictions(row);
       const selected = predictions.find(entry => entry.marketKey === marketKey);
       const label = String(row.marketLabel || row.label || selected?.label || marketKey).trim() || marketKey;
-      const competition = sport === "nba" ? "nba" : String(match.competition || row.competition || "serie-a");
+      const competition = String(match.competition || row.competition || "serie-a");
       const eventId = String(match.id || row.eventId || row.id || "");
       const sampleEnough = row.sampleEnough === true || Boolean(row.forecast && row.forecast.sampleEnough);
       const historyCount = Number.isFinite(Number(row.historyCount)) ? Number(row.historyCount) :
@@ -99,13 +97,6 @@
         historyCount: Math.max(0, historyCount),
         predictionMethod: String(row.predictionMethod || (row.forecast && row.forecast.predictionMethod) || (sport === "nba" ? "NBA Elo" : "MatchMind"))
       };
-      if (sport === "nba") {
-        item.start = String(match.start || row.start || "");
-        item.homeAbbr = String(match.homeAbbr || row.homeAbbr || "");
-        item.awayAbbr = String(match.awayAbbr || row.awayAbbr || "");
-        item.side = marketKey.endsWith(":home") ? "home" : "away";
-        item.team = String(row.team || (item.side === "home" ? home : away));
-      }
       items.push(item);
     });
     const timestamp = Number(sentAt);
@@ -120,9 +111,7 @@
   function createUrl(rows, options) {
     const result = prepare(rows, options && options.sentAt);
     if (!result.payload.items.length) return { ...result, url: null };
-    const hasFootball = result.payload.items.some(item => item.sport !== "nba");
-    const hasNba = result.payload.items.some(item => item.sport === "nba");
-    const base = hasNba && !hasFootball ? NBA_SISAL_URL : SISAL_URL;
+    const base = SISAL_URL;
     // Tuple-based wire format avoids repeating verbose JSON property names
     // across every event and market in a multi-selection slip.
     const wire = {
