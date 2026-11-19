@@ -1,13 +1,13 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-18T16:07:38Z",
+  "last_updated": "2026-11-19T16:14:50Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
       "team": "Atalanta",
-      "totale_assenze": 3,
+      "totale_assenze": 5,
       "assenze_attacco": 0,
-      "assenze_difesa": 3,
+      "assenze_difesa": 4,
       "infortunati": [
         {
           "player": "Kossounou",
@@ -23,23 +23,28 @@
           "player": "Pompei",
           "detail": "Il portiere fermo da inizio ottobre per la frattura della falange della mano destra, out nel prossimo turno di campionato. Recuperabile da dicembre.",
           "role": "Difesa"
+        },
+        {
+          "player": "Kristensen T.",
+          "detail": "il difensore costretto al cambio il 29 ottobre a Firenze dopo pochi minuti di gara a causa di una distrazione di basso grado ai muscoli flessori della coscia sinistra. Recuperabile dalla seconda metà di novembre, ma sta provando a esserci già alla ripresa del campionato contro l'Inter.",
+          "role": "Difesa"
+        },
+        {
+          "player": "Gaetano",
+          "detail": "il centrocampista frenato nella gara di fine ottobre a Firenze per una distrazione di medio grado ai muscoli adduttori della coscia destra, sta provando a recuperare già per la sfida contro l'Inter alla ripresa del campionato.",
+          "role": "Centrocampo"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "3 infortunati, 0 squalificati"
+      "summary": "5 infortunati, 0 squalificati"
     },
     "Bologna": {
       "team": "Bologna",
-      "totale_assenze": 4,
+      "totale_assenze": 3,
       "assenze_attacco": 1,
-      "assenze_difesa": 2,
+      "assenze_difesa": 1,
       "infortunati": [
-        {
-          "player": "De Silvestri",
-          "detail": "Il difensore out nelle ultime settimane per un risentimento muscolare ai flessori della coscia destra, non ci sarà neppure nel prossimo turno di campionato contro l'Udinese. Da valutare in vista della 13a giornata.",
-          "role": "Difesa"
-        },
         {
           "player": "Holm",
           "detail": "Lo svedese KO in Nazionale il 26 settembre vittima di un problema al tendine della coscia destra. Ha deciso di operarsi e affronterà un lungo stop. Ipotesi di rientro in campo da fine febbraio.",
@@ -52,13 +57,13 @@
         },
         {
           "player": "Enem",
-          "detail": "Lavoro a parte negli ultimi giorni per l'attaccante a causa di un lieve affaticamento muscolare alla gamba. Out contro Parma, Milan e Monza, da valutare in vista della sfida contro l'Udinese alla ripresa del campionato nella 12a giornata.",
+          "detail": "Lavoro a parte negli ultimi giorni per l'attaccante a causa di un affaticamento muscolare alla gamba. Out contro Parma, Milan e Monza, forfait anche per domenica contro l'Udinese. Da valutare rientro tra i convocati in vista della sfida di campionato nella 13a giornata.",
           "role": "Attacco"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "4 infortunati, 0 squalificati"
+      "summary": "3 infortunati, 0 squalificati"
     },
     "Cagliari": {
       "team": "Cagliari",
@@ -72,11 +77,6 @@
           "role": "Attacco"
         },
         {
-          "player": "Fadera",
-          "detail": "il centrocampista offensivo dei sardi fermo dalla gara contro la Lazio (1 novembre) per una lesione muscolare al bicipite femorale, rientro dalla seconda metà di novembre.",
-          "role": "Centrocampo"
-        },
-        {
           "player": "Aurelio",
           "detail": "il difensore alle prese con un affaticamento al soleo della gamba sinistra, out nel turno precedente contro il Frosinone. Da valutare durante la sosta per le Nazionali in vista della trasferta di Como.",
           "role": "Difesa"
@@ -84,6 +84,11 @@
         {
           "player": "Felici",
           "detail": "il centrocampista KO il 7 settembre contro il Lecce in casa vittima della rottura del legamento crociato anteriore. Verrà operato e costretto a un lungo stop (ipotizziamo un rientro da marzo).",
+          "role": "Centrocampo"
+        },
+        {
+          "player": "Winks",
+          "detail": "Il regista dei sardi in tribuna nel turno precedente di A contro il Frosinone per il perdurare di una fastidiosa lombalgia. A rischio la sua presenza anche per sabato alla ripresa del campionato contro il Como.",
           "role": "Centrocampo"
         }
       ],
@@ -99,8 +104,8 @@
     },
     "Como": {
       "team": "Como",
-      "totale_assenze": 3,
-      "assenze_attacco": 1,
+      "totale_assenze": 4,
+      "assenze_attacco": 2,
       "assenze_difesa": 0,
       "infortunati": [
         {
@@ -114,6 +119,11 @@
           "role": "Altro"
         },
         {
+          "player": "Diao",
+          "detail": "L'attaccante KO il 14 ottobre in Champions League, costretto al cambio per una lesione muscolare al flessore della gamba, rientro tra i convocati dalla seconda metà di novembre ma proverà già a esserci sabato contro il Cagliari alla ripresa del campionato.",
+          "role": "Attacco"
+        },
+        {
           "player": "Kean",
           "detail": "l'attaccante si sottoporrà a nuove cure per il perdurare del fastidio alla tibia che lo affligge da diverse settimane. Appare recuperabile non prima della fine di dicembre.",
           "role": "Attacco"
@@ -121,7 +131,7 @@
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "3 infortunati, 0 squalificati"
+      "summary": "4 infortunati, 0 squalificati"
     },
     "Fiorentina": {
       "team": "Fiorentina",
@@ -215,7 +225,7 @@
     },
     "Juventus": {
       "team": "Juventus",
-      "totale_assenze": 5,
+      "totale_assenze": 6,
       "assenze_attacco": 1,
       "assenze_difesa": 2,
       "infortunati": [
@@ -243,11 +253,16 @@
           "player": "Grabara",
           "detail": "Il portiere out dal 20 settembre per una lesione al crociato anteriore del ginocchio destro. Operazione chirurgica e lungo stop, rientro da aprile.",
           "role": "Difesa"
+        },
+        {
+          "player": "Gonzalez N.",
+          "detail": "L'argentino sta ultimando il recupero dal problema muscolare al polpaccio destro che lo ha frenato nelle ultime settimane. Da valutare, ma difficile la convocazione già domenica contro il Venezia.",
+          "role": "Altro"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "5 infortunati, 0 squalificati"
+      "summary": "6 infortunati, 0 squalificati"
     },
     "Lazio": {
       "team": "Lazio",
@@ -287,8 +302,8 @@
       "assenze_difesa": 0,
       "infortunati": [
         {
-          "player": "Monteiro J.",
-          "detail": "l'ala offensiva dei salentini KO l'1 novembre contro il Bologna vittima di una lesione di primo grado al polpaccio sinistro. Recuperabile dall'inizio di dicembre.",
+          "player": "Pierotti",
+          "detail": "l'ala offensiva dei salentini ferma ai box per la frattura composta del malleolo mediale della caviglia destra rimediata nella seconda metà di ottobre, poi operato a inizio novembre. Lungo stop, ipotizziamo un rientro in campo da gennaio.",
           "role": "Attacco"
         },
         {
@@ -297,8 +312,8 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Pierotti",
-          "detail": "l'ala offensiva dei salentini ferma ai box per la frattura composta del malleolo mediale della caviglia destra rimediata nella seconda metà di ottobre, poi operato a inizio novembre. Lungo stop, ipotizziamo un rientro in campo da gennaio.",
+          "player": "Monteiro J.",
+          "detail": "l'ala offensiva dei salentini KO l'1 novembre contro il Bologna vittima di una lesione di primo grado al polpaccio sinistro. Recuperabile dall'inizio di dicembre.",
           "role": "Attacco"
         }
       ],
@@ -500,19 +515,13 @@
     },
     "Torino": {
       "team": "Torino",
-      "totale_assenze": 1,
+      "totale_assenze": 0,
       "assenze_attacco": 0,
-      "assenze_difesa": 1,
-      "infortunati": [
-        {
-          "player": "Fortini",
-          "detail": "Il cursore di fascia dei granata rientrato in anticipo dagli impegni con l'U21 azzurra a inizio ottobre a causa di un affaticamento muscolare all'adduttore. Recuperabile dalla seconda metà di novembre, da valutare la convocazione già a Napoli nel prossimo turno.",
-          "role": "Difesa"
-        }
-      ],
+      "assenze_difesa": 0,
+      "infortunati": [],
       "squalificati": [],
       "diffidati": [],
-      "summary": "1 infortunati, 0 squalificati"
+      "summary": "Nessuna assenza segnalata"
     },
     "Udinese": {
       "team": "Udinese",
