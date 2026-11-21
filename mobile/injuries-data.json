@@ -1,11 +1,11 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-20T15:52:42Z",
+  "last_updated": "2026-11-21T15:02:59Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
       "team": "Atalanta",
-      "totale_assenze": 5,
+      "totale_assenze": 4,
       "assenze_attacco": 0,
       "assenze_difesa": 4,
       "infortunati": [
@@ -13,11 +13,6 @@
           "player": "Kossounou",
           "detail": "Il difensore frenato da una lesione muscolare di medio-alto grado del bicipite femorale della coscia sinistra alla vigilia della sfida di campionato contro la Juventus (del 20 settembre). Lungo stop, rientro dalla fine di novembre.",
           "role": "Difesa"
-        },
-        {
-          "player": "Gaetano",
-          "detail": "il centrocampista frenato nella gara di fine ottobre a Firenze per una distrazione di medio grado ai muscoli adduttori della coscia destra, sta provando a recuperare già per la sfida contro l'Inter alla ripresa del campionato.",
-          "role": "Centrocampo"
         },
         {
           "player": "Kristensen T.",
@@ -37,7 +32,7 @@
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "5 infortunati, 0 squalificati"
+      "summary": "4 infortunati, 0 squalificati"
     },
     "Bologna": {
       "team": "Bologna",
@@ -77,11 +72,6 @@
       "assenze_difesa": 0,
       "infortunati": [
         {
-          "player": "Mina",
-          "detail": "il colombiano condizionato da una vecchia ferita alla gamba (microlesione muscolare al bicipite femorale), out anche alla ripresa del campionato contro il Como. Da valutare in vista della 13a giornata di A.",
-          "role": "Altro"
-        },
-        {
           "player": "Felici",
           "detail": "il centrocampista KO il 7 settembre contro il Lecce in casa vittima della rottura del legamento crociato anteriore. Verrà operato e costretto a un lungo stop (ipotizziamo un rientro da marzo).",
           "role": "Centrocampo"
@@ -95,6 +85,11 @@
           "player": "Liteta",
           "detail": "il centrocampista out a Como sabato per noie fisiche, da valutare in vista della 13a di campionato.",
           "role": "Centrocampo"
+        },
+        {
+          "player": "Mina",
+          "detail": "il colombiano condizionato da una vecchia ferita alla gamba (microlesione muscolare al bicipite femorale), out anche alla ripresa del campionato contro il Como. Da valutare in vista della 13a giornata di A.",
+          "role": "Altro"
         }
       ],
       "squalificati": [
@@ -145,13 +140,13 @@
       "assenze_difesa": 2,
       "infortunati": [
         {
-          "player": "Parisi",
-          "detail": "il cursore di fascia della Viola sta svolgendo l'iter di recupero dall'infortunio al legamento crociato al ginocchio, punta a tornare convocabile da fine dicembre.",
+          "player": "Pongracic",
+          "detail": "il difensore il 15 ottobre contro l'Inter ha rimediato una lesione mio-fasciale a carico del capo lungo del bicipite femorale della coscia destra, rientro dalla fine di novembre.",
           "role": "Difesa"
         },
         {
-          "player": "Pongracic",
-          "detail": "il difensore il 15 ottobre contro l'Inter ha rimediato una lesione mio-fasciale a carico del capo lungo del bicipite femorale della coscia destra, rientro dalla fine di novembre.",
+          "player": "Parisi",
+          "detail": "il cursore di fascia della Viola sta svolgendo l'iter di recupero dall'infortunio al legamento crociato al ginocchio, punta a tornare convocabile da fine dicembre.",
           "role": "Difesa"
         }
       ],
@@ -166,9 +161,9 @@
       "assenze_difesa": 1,
       "infortunati": [
         {
-          "player": "Raimondo",
-          "detail": "l'attaccante KO l'1 novembre contro il Toro vittima di una lesione multilegamentosa contusivo-distorsiva della caviglia sinistra. Iniziate le cure del caso, proverà a tornare già da metà dicembre in campo.",
-          "role": "Attacco"
+          "player": "Terzic",
+          "detail": "il terzino out nel turno precedente di campionato a Cagliari per un fastidio fisico che rimane da valutare in vista della trasferta di Milano alla ripresa del campionato.",
+          "role": "Difesa"
         },
         {
           "player": "Grillitsch",
@@ -176,9 +171,9 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Terzic",
-          "detail": "il terzino out nel turno precedente di campionato a Cagliari per un fastidio fisico che rimane da valutare in vista della trasferta di Milano alla ripresa del campionato.",
-          "role": "Difesa"
+          "player": "Raimondo",
+          "detail": "l'attaccante KO l'1 novembre contro il Toro vittima di una lesione multilegamentosa contusivo-distorsiva della caviglia sinistra. Iniziate le cure del caso, proverà a tornare già da metà dicembre in campo.",
+          "role": "Attacco"
         }
       ],
       "squalificati": [
@@ -230,9 +225,9 @@
       "assenze_difesa": 2,
       "infortunati": [
         {
-          "player": "Kalulu",
-          "detail": "Il terzino bianconero ai box per una lesione ai muscoli ischiocrurali della gamba sinistra, recuperabile dalla fine di novembre.",
-          "role": "Difesa"
+          "player": "Locatelli",
+          "detail": "il metronomo del centrocampo bianconero ha rimediato la rottura del menisco esterno del ginocchio. Verrà operato a Lione a stretto giro. Lungo stop e possibilità di rivederlo in campo da febbraio.",
+          "role": "Centrocampo"
         },
         {
           "player": "Gonzalez N.",
@@ -250,9 +245,9 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Locatelli",
-          "detail": "il metronomo del centrocampo bianconero ha rimediato la rottura del menisco esterno del ginocchio. Verrà operato a Lione a stretto giro. Lungo stop e possibilità di rivederlo in campo da febbraio.",
-          "role": "Centrocampo"
+          "player": "Kalulu",
+          "detail": "Il terzino bianconero ai box per una lesione ai muscoli ischiocrurali della gamba sinistra, recuperabile dalla fine di novembre.",
+          "role": "Difesa"
         },
         {
           "player": "Yildiz",
@@ -431,8 +426,8 @@
           "role": "Attacco"
         },
         {
-          "player": "Diego Carlos",
-          "detail": "Il difensore sabato scorso in allenamento ha lamentato un fastidio muscolare alla gamba e ora a forte rischio la sua convocazione in campionato contro la Roma.",
+          "player": "Drobnic",
+          "detail": "Il difensore non ha recuperato da un problema al piede e non è tra i convocati per sabato contro la Roma. Da valutare in vista della 13a giornata di campionato.",
           "role": "Difesa"
         }
       ],
@@ -479,18 +474,8 @@
       "assenze_difesa": 1,
       "infortunati": [
         {
-          "player": "Leysen F.",
-          "detail": "il difensore KO l'11 ottobre contro il Milan vittima di una lesione al crociato anteriore del ginocchio sinistro. Lungo stop, ipotesi rientro in campo da aprile.",
-          "role": "Difesa"
-        },
-        {
-          "player": "Volpato",
-          "detail": "l'ala offensiva dei neroverdi out dal match del 2 novembre contro la Fiorentina per un problema muscolare alla gamba. Da valutare, forfait anche nel prossimo turno di campionato contro il Genoa.",
-          "role": "Attacco"
-        },
-        {
-          "player": "Adzic",
-          "detail": "Il centrocampista fermo da metà novembre a causa di un fastidio al ginocchio e non ci sarà nel prossimo turno di campionato. Tempi di recupero da valutare.",
+          "player": "Boloca",
+          "detail": "il centrocampista fuori causa per un problema al ginocchio e fuori causa in questo inizio di campionato. Da valutare rientro da fine novembre.",
           "role": "Centrocampo"
         },
         {
@@ -499,9 +484,19 @@
           "role": "Attacco"
         },
         {
-          "player": "Boloca",
-          "detail": "il centrocampista fuori causa per un problema al ginocchio e fuori causa in questo inizio di campionato. Da valutare rientro da fine novembre.",
+          "player": "Adzic",
+          "detail": "Il centrocampista fermo da metà novembre a causa di un fastidio al ginocchio e non ci sarà nel prossimo turno di campionato. Tempi di recupero da valutare.",
           "role": "Centrocampo"
+        },
+        {
+          "player": "Volpato",
+          "detail": "l'ala offensiva dei neroverdi out dal match del 2 novembre contro la Fiorentina per un problema muscolare alla gamba. Da valutare, forfait anche nel prossimo turno di campionato contro il Genoa.",
+          "role": "Attacco"
+        },
+        {
+          "player": "Leysen F.",
+          "detail": "il difensore KO l'11 ottobre contro il Milan vittima di una lesione al crociato anteriore del ginocchio sinistro. Lungo stop, ipotesi rientro in campo da aprile.",
+          "role": "Difesa"
         }
       ],
       "squalificati": [],
