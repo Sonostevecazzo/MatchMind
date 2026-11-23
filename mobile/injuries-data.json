@@ -1,6 +1,6 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-22T15:00:14Z",
+  "last_updated": "2026-11-23T18:56:17Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
@@ -10,11 +10,6 @@
       "assenze_difesa": 3,
       "infortunati": [
         {
-          "player": "Kossounou",
-          "detail": "Il difensore frenato da una lesione muscolare di medio-alto grado del bicipite femorale della coscia sinistra alla vigilia della sfida di campionato contro la Juventus (del 20 settembre). Lungo stop, rientro dalla fine di novembre.",
-          "role": "Difesa"
-        },
-        {
           "player": "Hien",
           "detail": "il difensore operato a fine giugno per una lesione del tendine prossimale del muscolo semimembranoso della coscia sinistra, in recupero e pronto a tornare in campo dalla fine di novembre.",
           "role": "Difesa"
@@ -22,6 +17,11 @@
         {
           "player": "Pompei",
           "detail": "Il portiere fermo da inizio ottobre per la frattura della falange della mano destra, out nel prossimo turno di campionato. Recuperabile da dicembre.",
+          "role": "Difesa"
+        },
+        {
+          "player": "Kossounou",
+          "detail": "Il difensore frenato da una lesione muscolare di medio-alto grado del bicipite femorale della coscia sinistra alla vigilia della sfida di campionato contro la Juventus (del 20 settembre). Lungo stop, rientro dalla fine di novembre.",
           "role": "Difesa"
         }
       ],
@@ -349,8 +349,8 @@
     },
     "Monza": {
       "team": "Monza",
-      "totale_assenze": 2,
-      "assenze_attacco": 0,
+      "totale_assenze": 3,
+      "assenze_attacco": 1,
       "assenze_difesa": 1,
       "infortunati": [
         {
@@ -359,14 +359,19 @@
           "role": "Difesa"
         },
         {
+          "player": "Ngonge",
+          "detail": "L'attaccante out lunedì contro la Fiorentina per noie fisiche. Da valutare.",
+          "role": "Attacco"
+        },
+        {
           "player": "Folorunsho",
-          "detail": "Il centrocampista alle prese con noie muscolari al polpaccio, da valutare nella sosta in vista della 12a giornata contro la Fiorentina.",
+          "detail": "Il centrocampista alle prese con noie muscolari al polpaccio, da valutare in vista della 13a giornata di campionato.",
           "role": "Centrocampo"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "2 infortunati, 0 squalificati"
+      "summary": "3 infortunati, 0 squalificati"
     },
     "Napoli": {
       "team": "Napoli",
