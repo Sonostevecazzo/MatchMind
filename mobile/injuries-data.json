@@ -1,13 +1,13 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-23T18:56:17Z",
+  "last_updated": "2026-11-24T18:34:45Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
       "team": "Atalanta",
-      "totale_assenze": 3,
+      "totale_assenze": 4,
       "assenze_attacco": 0,
-      "assenze_difesa": 3,
+      "assenze_difesa": 4,
       "infortunati": [
         {
           "player": "Hien",
@@ -15,8 +15,13 @@
           "role": "Difesa"
         },
         {
+          "player": "Carnesecchi",
+          "detail": "il portiere KO per un lesione del menisco mediale del ginocchio sinistro dalla sfida del 22 novembre contro l'Inter. Recuperabile da gennaio.",
+          "role": "Difesa"
+        },
+        {
           "player": "Pompei",
-          "detail": "Il portiere fermo da inizio ottobre per la frattura della falange della mano destra, out nel prossimo turno di campionato. Recuperabile da dicembre.",
+          "detail": "Il portiere fermo da inizio ottobre per la frattura della falange della mano destra, out nel prossimo turno di campionato. Recuperabile da metà dicembre.",
           "role": "Difesa"
         },
         {
@@ -27,7 +32,7 @@
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "3 infortunati, 0 squalificati"
+      "summary": "4 infortunati, 0 squalificati"
     },
     "Bologna": {
       "team": "Bologna",
@@ -41,14 +46,9 @@
           "role": "Difesa"
         },
         {
-          "player": "Enem",
-          "detail": "Lavoro a parte negli ultimi giorni per l'attaccante a causa di un affaticamento muscolare alla gamba. Out contro Parma, Milan e Monza, forfait anche per domenica contro l'Udinese. Da valutare rientro tra i convocati in vista della sfida di campionato nella 13a giornata.",
-          "role": "Attacco"
-        },
-        {
-          "player": "El Azzouzi O.",
-          "detail": "il centrocampista ai box per una lesione all'adduttore della coscia sinistra, recuperabile da inizio dicembre.",
-          "role": "Centrocampo"
+          "player": "Holm",
+          "detail": "Lo svedese KO in Nazionale il 26 settembre vittima di un problema al tendine della coscia destra. Ha deciso di operarsi e affronterà un lungo stop. Ipotesi di rientro in campo da fine febbraio.",
+          "role": "Altro"
         },
         {
           "player": "Miranda J.",
@@ -56,9 +56,14 @@
           "role": "Difesa"
         },
         {
-          "player": "Holm",
-          "detail": "Lo svedese KO in Nazionale il 26 settembre vittima di un problema al tendine della coscia destra. Ha deciso di operarsi e affronterà un lungo stop. Ipotesi di rientro in campo da fine febbraio.",
-          "role": "Altro"
+          "player": "El Azzouzi O.",
+          "detail": "il centrocampista ai box per una lesione all'adduttore della coscia sinistra, recuperabile da inizio dicembre.",
+          "role": "Centrocampo"
+        },
+        {
+          "player": "Enem",
+          "detail": "Lavoro a parte negli ultimi giorni per l'attaccante a causa di un problema al tendine d'Achille. Out contro Udinese, Parma, Milan e Monza, forfait anche per venerdì a Venezia. Da valutare rientro tra i convocati in vista della sfida di campionato nella 14a giornata.",
+          "role": "Attacco"
         }
       ],
       "squalificati": [],
@@ -68,27 +73,27 @@
     "Cagliari": {
       "team": "Cagliari",
       "totale_assenze": 5,
-      "assenze_attacco": 0,
+      "assenze_attacco": 1,
       "assenze_difesa": 0,
       "infortunati": [
+        {
+          "player": "Mendy P.",
+          "detail": "L'attaccante è da valutare con appositi esami medici dopo un problema muscolare alla gamba accusato nel turno precedente di campionato.",
+          "role": "Attacco"
+        },
         {
           "player": "Felici",
           "detail": "il centrocampista KO il 7 settembre contro il Lecce in casa vittima della rottura del legamento crociato anteriore. Verrà operato e costretto a un lungo stop (ipotizziamo un rientro da marzo).",
           "role": "Centrocampo"
         },
         {
-          "player": "Winks",
-          "detail": "Il regista dei sardi in tribuna nel turno precedente di A contro il Frosinone per il perdurare di una fastidiosa lombalgia. Assente anche alla ripresa del campionato contro il Como, da valutare in vista della 13a di campionato.",
+          "player": "Liteta",
+          "detail": "il centrocampista out a Como sabato scorso per noie fisiche, da valutare in vista di lunedì nella 13a di campionato contro il Milan.",
           "role": "Centrocampo"
         },
         {
-          "player": "Mina",
-          "detail": "il colombiano condizionato da una vecchia ferita alla gamba (microlesione muscolare al bicipite femorale), out anche alla ripresa del campionato contro il Como. Da valutare in vista della 13a giornata di A.",
-          "role": "Altro"
-        },
-        {
-          "player": "Liteta",
-          "detail": "il centrocampista out a Como sabato per noie fisiche, da valutare in vista della 13a di campionato.",
+          "player": "Winks",
+          "detail": "Il regista dei sardi out contro Como e Frosinone per il perdurare di una fastidiosa lombalgia. Da valutare in vista di lunedì sera nella 13a di campionato contro il Milan.",
           "role": "Centrocampo"
         }
       ],
@@ -104,24 +109,19 @@
     },
     "Como": {
       "team": "Como",
-      "totale_assenze": 4,
-      "assenze_attacco": 2,
+      "totale_assenze": 3,
+      "assenze_attacco": 1,
       "assenze_difesa": 0,
       "infortunati": [
         {
           "player": "Addai",
-          "detail": "l'esterno offensivo in recupero da un problema muscolare alla gamba, assente nel prossimo turno contro il Cagliari. Proverà a tornare arruolabile dalla 13a di campionato.",
+          "detail": "l'esterno offensivo in recupero da un problema muscolare alla gamba, assente nel prossimo turno contro il Cagliari. Proverà a tornare arruolabile dalla 13a di campionato domenica contro la Juventus.",
           "role": "Centrocampo"
         },
         {
           "player": "Rodriguez Je.",
           "detail": "Il calciatore si è infortunato in allenamento il 20 ottobre vittima di un problema muscolare al quadricipite alto. Rimane da valutare per stabilire i tempi di recupero, si ipotizza un ritorno in campo da metà dicembre.",
           "role": "Altro"
-        },
-        {
-          "player": "Diao",
-          "detail": "L'attaccante KO il 14 ottobre in Champions League, costretto al cambio per una lesione muscolare al flessore della gamba, rientro tra i convocati dalla seconda metà di novembre e proverà a esserci dunque dalla 13a giornata.",
-          "role": "Attacco"
         },
         {
           "player": "Kean",
@@ -131,17 +131,22 @@
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "4 infortunati, 0 squalificati"
+      "summary": "3 infortunati, 0 squalificati"
     },
     "Fiorentina": {
       "team": "Fiorentina",
-      "totale_assenze": 2,
+      "totale_assenze": 3,
       "assenze_attacco": 0,
-      "assenze_difesa": 2,
+      "assenze_difesa": 3,
       "infortunati": [
         {
           "player": "Pongracic",
           "detail": "il difensore il 15 ottobre contro l'Inter ha rimediato una lesione mio-fasciale a carico del capo lungo del bicipite femorale della coscia destra, rientro dalla fine di novembre.",
+          "role": "Difesa"
+        },
+        {
+          "player": "Viery",
+          "detail": "il difensore costretto al cambio il 23 novembre a Monza per noie muscolari che restano da valutare. Out per domenica a Udine.",
           "role": "Difesa"
         },
         {
@@ -152,12 +157,12 @@
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "2 infortunati, 0 squalificati"
+      "summary": "3 infortunati, 0 squalificati"
     },
     "Frosinone": {
       "team": "Frosinone",
       "totale_assenze": 3,
-      "assenze_attacco": 1,
+      "assenze_attacco": 2,
       "assenze_difesa": 0,
       "infortunati": [
         {
@@ -169,24 +174,29 @@
           "player": "Grillitsch",
           "detail": "il centrocampista non convocato dalla gara di Genova (12 settembre) a causa di una sindrome retto-adduttoria, ha poi deciso di operarsi. Può tornare convocabile dalla fine di novembre.",
           "role": "Centrocampo"
-        }
-      ],
-      "squalificati": [
+        },
         {
-          "player": "Bracaglia",
-          "detail": "",
-          "role": "Altro"
+          "player": "Birligea",
+          "detail": "l'attaccante alle prese con un guaio muscolare al bicipite femorale destro, non ci sarà sabato contro il Parma. Tempi di recupero da valutare.",
+          "role": "Attacco"
         }
       ],
+      "squalificati": [],
       "diffidati": [],
-      "summary": "2 infortunati, 1 squalificati"
+      "summary": "3 infortunati, 0 squalificati"
     },
     "Genoa": {
       "team": "Genoa",
-      "totale_assenze": 1,
-      "assenze_attacco": 0,
+      "totale_assenze": 2,
+      "assenze_attacco": 1,
       "assenze_difesa": 0,
-      "infortunati": [],
+      "infortunati": [
+        {
+          "player": "Colombo",
+          "detail": "L'attaccante KO il 22 novembre sul campo del Sassuolo vittima di una lesione del legamento crociato anteriore del ginocchio destro, campionato chiuso anzitempo.",
+          "role": "Attacco"
+        }
+      ],
       "squalificati": [
         {
           "player": "Ostigard",
@@ -195,11 +205,11 @@
         }
       ],
       "diffidati": [],
-      "summary": "0 infortunati, 1 squalificati"
+      "summary": "1 infortunati, 1 squalificati"
     },
     "Inter": {
       "team": "Inter",
-      "totale_assenze": 1,
+      "totale_assenze": 2,
       "assenze_attacco": 1,
       "assenze_difesa": 0,
       "infortunati": [
@@ -207,22 +217,37 @@
           "player": "Bonny",
           "detail": "L'attaccante ai box per un risentimento muscolare ai flessori della coscia destra, rientro possibile dall'inizio di dicembre.",
           "role": "Attacco"
+        },
+        {
+          "player": "Calhanoglu",
+          "detail": "il turco il 22 novembre a Bergamo ha ravvisato un risentimento muscolare ai flessori della coscia destra, rientro in campo dalla seconda metà di dicembre.",
+          "role": "Altro"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "1 infortunati, 0 squalificati"
+      "summary": "2 infortunati, 0 squalificati"
     },
     "Juventus": {
       "team": "Juventus",
-      "totale_assenze": 6,
+      "totale_assenze": 5,
       "assenze_attacco": 1,
       "assenze_difesa": 2,
       "infortunati": [
         {
-          "player": "Gonzalez N.",
-          "detail": "L'argentino sta ultimando il recupero dal problema muscolare al polpaccio destro che lo ha frenato nelle ultime settimane. Da valutare, può tornare convocabile dalla 13a giornata di campionato.",
-          "role": "Altro"
+          "player": "Locatelli",
+          "detail": "il metronomo del centrocampo bianconero ha rimediato la rottura del menisco esterno del ginocchio. Verrà operato a Lione a stretto giro. Lungo stop e possibilità di rivederlo in campo da febbraio.",
+          "role": "Centrocampo"
+        },
+        {
+          "player": "Thuram K.",
+          "detail": "il centrocampista condizionato da una sindrome femoro-rotulea e, dopo un consulto medico a fine agosto, è stato sottoposto il 3 settembre a operazione chirurgica. Lungo stop, ipotizziamo un rientro da gennaio.",
+          "role": "Centrocampo"
+        },
+        {
+          "player": "Yildiz",
+          "detail": "l'attaccante turco, dopo la gara di Frosinone (23 agosto), ha lamentato un problema al piede. Operato il 31 agosto di osteosintesi della frattura della base del V metatarso del piede sinistro. Rientro in campo dalla fine di dicembre.",
+          "role": "Attacco"
         },
         {
           "player": "Grabara",
@@ -230,39 +255,24 @@
           "role": "Difesa"
         },
         {
-          "player": "Yildiz",
-          "detail": "l'attaccante turco, dopo la gara di Frosinone (23 agosto), ha lamentato un problema al piede. Operato il 31 agosto di osteosintesi della frattura della base del V metatarso del piede sinistro. Rientro in campo da fine di dicembre.",
-          "role": "Attacco"
-        },
-        {
-          "player": "Locatelli",
-          "detail": "il metronomo del centrocampo bianconero ha rimediato la rottura del menisco esterno del ginocchio. Verrà operato a Lione a stretto giro. Lungo stop e possibilità di rivederlo in campo da febbraio.",
-          "role": "Centrocampo"
-        },
-        {
           "player": "Kalulu",
           "detail": "Il terzino bianconero ai box per una lesione ai muscoli ischiocrurali della gamba sinistra, recuperabile dalla fine di novembre.",
           "role": "Difesa"
-        },
-        {
-          "player": "Thuram K.",
-          "detail": "il centrocampista condizionato da una sindrome femoro-rotulea e, dopo un consulto medico a fine agosto, è stato sottoposto il 3 settembre a operazione chirurgica. Lungo stop, ipotizziamo un rientro da gennaio.",
-          "role": "Centrocampo"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "6 infortunati, 0 squalificati"
+      "summary": "5 infortunati, 0 squalificati"
     },
     "Lazio": {
       "team": "Lazio",
-      "totale_assenze": 4,
+      "totale_assenze": 3,
       "assenze_attacco": 0,
       "assenze_difesa": 2,
       "infortunati": [
         {
-          "player": "Tavares N.",
-          "detail": "il terzino dei biancocelesti costretto al cambio l'8 novembre a Napoli a causa di un guaio muscolare al flessore della gamba. Recuperabile dalla metà di dicembre, proverà a esserci nel derby.",
+          "player": "Sutalo J.",
+          "detail": "il difensore KO l'8 novembre a Napoli vittima di una lesione muscolare di secondo grado al flessore della gamba. Recuperabile dalla fine di dicembre.",
           "role": "Difesa"
         },
         {
@@ -271,23 +281,18 @@
           "role": "Altro"
         },
         {
-          "player": "Zaccagni",
-          "detail": "Il capitano dei biancocelesti in rapido recupero da una lesione del quadricipite femorale sinistro, tornerà arruolabile dalla 13a di A.",
-          "role": "Altro"
-        },
-        {
-          "player": "Sutalo J.",
-          "detail": "il difensore KO l'8 novembre a Napoli vittima di una lesione muscolare di secondo grado al flessore della gamba. Recuperabile dalla fine di dicembre.",
+          "player": "Tavares N.",
+          "detail": "il terzino dei biancocelesti costretto al cambio l'8 novembre a Napoli a causa di un guaio muscolare al flessore della gamba. Recuperabile dalla metà di dicembre, proverà a esserci nel derby.",
           "role": "Difesa"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "4 infortunati, 0 squalificati"
+      "summary": "3 infortunati, 0 squalificati"
     },
     "Lecce": {
       "team": "Lecce",
-      "totale_assenze": 2,
+      "totale_assenze": 4,
       "assenze_attacco": 1,
       "assenze_difesa": 0,
       "infortunati": [
@@ -302,24 +307,40 @@
           "role": "Centrocampo"
         }
       ],
-      "squalificati": [],
+      "squalificati": [
+        {
+          "player": "Siebert",
+          "detail": "",
+          "role": "Altro"
+        },
+        {
+          "player": "Veiga D.",
+          "detail": "",
+          "role": "Altro"
+        }
+      ],
       "diffidati": [],
-      "summary": "2 infortunati, 0 squalificati"
+      "summary": "2 infortunati, 2 squalificati"
     },
     "Milan": {
       "team": "Milan",
-      "totale_assenze": 6,
+      "totale_assenze": 5,
       "assenze_attacco": 0,
-      "assenze_difesa": 3,
+      "assenze_difesa": 2,
       "infortunati": [
+        {
+          "player": "Terracciano",
+          "detail": "il portiere non al meglio per noie fisiche, a rischio forfait anche nel prossimo turno di campionato contro il Cagliari. Condizioni da valutare nei prossimi allenamenti.",
+          "role": "Difesa"
+        },
         {
           "player": "Gabbia",
           "detail": "il difensore KO l'11 ottobre contro il Sassuolo vittima di una lesione del flessore della coscia sinistra con parziale interessamento tendineo. Lo stop sarà lungo, anche con la terapia conservativa. Ipotesi rientro in campo da fine febbraio.",
           "role": "Difesa"
         },
         {
-          "player": "Chukwueze",
-          "detail": "Il nigeriano dal 21 ottobre fermato dalla rottura del tendine del muscolo tensore della fascia lata dell'anca sinistra. Operato il 4 novembre, lungo stop. Ipotesi di rientro in campo da aprile.",
+          "player": "Saelemaekers",
+          "detail": "Il belga fermo da inizio ottobre per un problema alla caviglia destra e operata il 13 ottobre. Stop lungo e lo rivedremo in campo nel 2027 inoltrato (ipotesi da febbraio).",
           "role": "Altro"
         },
         {
@@ -328,24 +349,14 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Saelemaekers",
-          "detail": "Il belga fermo da inizio ottobre per un problema alla caviglia destra e operata il 13 ottobre. Stop lungo e lo rivedremo in campo nel 2027 inoltrato (ipotesi da febbraio).",
+          "player": "Chukwueze",
+          "detail": "Il nigeriano dal 21 ottobre fermato dalla rottura del tendine del muscolo tensore della fascia lata dell'anca sinistra. Operato il 4 novembre, lungo stop. Ipotesi di rientro in campo da aprile.",
           "role": "Altro"
-        },
-        {
-          "player": "Tomori",
-          "detail": "Il difensore KO il 28 ottobre contro il Bologna vittima di una lesione a carico del muscolo flessore mediale della coscia destra. Recuperabile dalla seconda metà di novembre, ma non ci sarà domenica contro il Frosinone.",
-          "role": "Difesa"
-        },
-        {
-          "player": "Terracciano",
-          "detail": "il portiere non al meglio per noie fisiche, a rischio forfait anche nel prossimo turno di campionato contro il Frosinone. Condizioni da valutare durante la sosta.",
-          "role": "Difesa"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "6 infortunati, 0 squalificati"
+      "summary": "5 infortunati, 0 squalificati"
     },
     "Monza": {
       "team": "Monza",
@@ -355,17 +366,17 @@
       "infortunati": [
         {
           "player": "Maye",
-          "detail": "Il difensore ai box per noie fisiche, assente nelle ultime sfide di campionato e ora da valutare in vista della 13a giornata di campionato.",
+          "detail": "Il difensore ai box per noie fisiche, assente nelle ultime sfide di campionato e ora da valutare in vista della 14a giornata di campionato.",
           "role": "Difesa"
         },
         {
           "player": "Ngonge",
-          "detail": "L'attaccante out lunedì contro la Fiorentina per noie fisiche. Da valutare.",
+          "detail": "L'attaccante out lunedì scorso contro la Fiorentina per noie fisiche. Da valutare in vista del prossimo turno di campionato.",
           "role": "Attacco"
         },
         {
           "player": "Folorunsho",
-          "detail": "Il centrocampista alle prese con noie muscolari al polpaccio, da valutare in vista della 13a giornata di campionato.",
+          "detail": "Il centrocampista alle prese con noie muscolari al polpaccio, da valutare in vista della 14a giornata di campionato.",
           "role": "Centrocampo"
         }
       ],
@@ -375,10 +386,15 @@
     },
     "Napoli": {
       "team": "Napoli",
-      "totale_assenze": 6,
+      "totale_assenze": 7,
       "assenze_attacco": 1,
       "assenze_difesa": 3,
       "infortunati": [
+        {
+          "player": "Vergara",
+          "detail": "il centrocampista azzurro fermo dal 21 novembre per una lesione di alto grado del bicipite femorale della coscia sinistra. Lungo stop e ipotizziamo un rientro da febbraio.",
+          "role": "Centrocampo"
+        },
         {
           "player": "Badiashile",
           "detail": "il difensore KO il 24 ottobre contro la Roma per una lesione distrattiva di medio grado del retto femorale destro, recuperabile dalla fine di novembre.",
@@ -390,33 +406,33 @@
           "role": "Attacco"
         },
         {
-          "player": "Lobotka",
-          "detail": "lo slovacco il 28 ottobre vittima a Monza di una lesione della sindesmosi tibio-peroneale senza instabilità, associata a lesione di basso grado del LPAA della caviglia sinistra. Recuperabile dalla metà di dicembre.",
+          "player": "Di Lorenzo",
+          "detail": "il capitano azzurro costretto al cambio l'1 novembre contro la Juve per una lesione distrattiva del muscolo adduttore lungo della coscia sinistra, tentativo di recupero dalla fine di novembre.",
           "role": "Altro"
         },
         {
-          "player": "Buongiorno",
-          "detail": "il difensore operato nella seconda metà di luglio al menisco del ginocchio destro. Sta recuperando lentamente, ipotizziamo possa tornare arruolabile da fine dicembre.",
-          "role": "Difesa"
-        },
-        {
-          "player": "Di Lorenzo",
-          "detail": "il capitano azzurro costretto al cambio l'1 novembre contro la Juve per una lesione distrattiva del muscolo adduttore lungo della coscia sinistra, tentativo di recupero dalla fine di novembre.",
+          "player": "Lobotka",
+          "detail": "lo slovacco il 28 ottobre vittima a Monza di una lesione della sindesmosi tibio-peroneale senza instabilità, associata a lesione di basso grado del LPAA della caviglia sinistra. Recuperabile dalla metà di dicembre.",
           "role": "Altro"
         },
         {
           "player": "Meret",
           "detail": "Il portiere KO il 19 novembre in allenamento vittima della frattura della quinta vertebra lombare e ipotizziamo un rientro in campo da gennaio.",
           "role": "Difesa"
+        },
+        {
+          "player": "Buongiorno",
+          "detail": "il difensore operato nella seconda metà di luglio al menisco del ginocchio destro. Sta recuperando lentamente, ipotizziamo possa tornare arruolabile da fine dicembre.",
+          "role": "Difesa"
         }
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "6 infortunati, 0 squalificati"
+      "summary": "7 infortunati, 0 squalificati"
     },
     "Parma": {
       "team": "Parma",
-      "totale_assenze": 4,
+      "totale_assenze": 3,
       "assenze_attacco": 1,
       "assenze_difesa": 1,
       "infortunati": [
@@ -427,16 +443,11 @@
         },
         {
           "player": "Drobnic",
-          "detail": "Il difensore non ha recuperato da un problema al piede e non è tra i convocati per sabato contro la Roma. Da valutare in vista della 13a giornata di campionato.",
+          "detail": "Il difensore in recupero da un problema al piede e rimane da valutare in vista di sabato a Frosinone nella 13a giornata di campionato.",
           "role": "Difesa"
         }
       ],
       "squalificati": [
-        {
-          "player": "Ndiaye",
-          "detail": "",
-          "role": "Altro"
-        },
         {
           "player": "Troilo",
           "detail": "",
@@ -444,7 +455,7 @@
         }
       ],
       "diffidati": [],
-      "summary": "2 infortunati, 2 squalificati"
+      "summary": "2 infortunati, 1 squalificati"
     },
     "Roma": {
       "team": "Roma",
@@ -454,7 +465,7 @@
       "infortunati": [
         {
           "player": "Rensch",
-          "detail": "Il difensore KO a Manchester in Champions League il 3 novembre per una lesione di primo grado dell'adduttore lungo di destra, rientro in campo dalla seconda metà di novembre.",
+          "detail": "Il difensore KO a Manchester in Champions League il 3 novembre per una lesione di primo grado dell'adduttore lungo di destra, poi il 24 novembre nuovo stop muscolare (lesione di secondo grado all'addutore sinistro). Rientro in campo dalla seconda metà di dicembre.",
           "role": "Difesa"
         },
         {
@@ -469,7 +480,7 @@
     },
     "Sassuolo": {
       "team": "Sassuolo",
-      "totale_assenze": 5,
+      "totale_assenze": 6,
       "assenze_attacco": 2,
       "assenze_difesa": 1,
       "infortunati": [
@@ -485,12 +496,17 @@
         },
         {
           "player": "Adzic",
-          "detail": "Il centrocampista fermo da metà novembre a causa di un fastidio al ginocchio e non ci sarà nel prossimo turno di campionato. Tempi di recupero da valutare.",
+          "detail": "Il centrocampista fermo da metà novembre a causa di un fastidio al ginocchio e non ci sarà nel prossimo turno di campionato. Tempi di recupero da valutare, si teme un lungo stop.",
+          "role": "Centrocampo"
+        },
+        {
+          "player": "Bakola",
+          "detail": "forfait del centrocampista nel turno precedente contro il Genoa per noie fisiche che restano da valutare in vista di domenica contro il Napoli.",
           "role": "Centrocampo"
         },
         {
           "player": "Volpato",
-          "detail": "l'ala offensiva dei neroverdi out dal match del 2 novembre contro la Fiorentina per un problema muscolare alla gamba. Da valutare, forfait anche nel prossimo turno di campionato contro il Genoa.",
+          "detail": "l'ala offensiva dei neroverdi out dal match del 2 novembre contro la Fiorentina per un problema muscolare alla gamba. Da valutare in vista del prossimo turno di campionato contro il Napoli.",
           "role": "Attacco"
         },
         {
@@ -501,17 +517,23 @@
       ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "5 infortunati, 0 squalificati"
+      "summary": "6 infortunati, 0 squalificati"
     },
     "Torino": {
       "team": "Torino",
-      "totale_assenze": 0,
+      "totale_assenze": 1,
       "assenze_attacco": 0,
-      "assenze_difesa": 0,
-      "infortunati": [],
+      "assenze_difesa": 1,
+      "infortunati": [
+        {
+          "player": "Ismajli",
+          "detail": "il difensore ai box per una distrazione di basso grado agli adduttori della coscia sinistra, tentativo di rientro dalla seconda metà di dicembre.",
+          "role": "Difesa"
+        }
+      ],
       "squalificati": [],
       "diffidati": [],
-      "summary": "Nessuna assenza segnalata"
+      "summary": "1 infortunati, 0 squalificati"
     },
     "Udinese": {
       "team": "Udinese",
@@ -526,7 +548,7 @@
         },
         {
           "player": "Davis K.",
-          "detail": "l'attaccante condizionato da noie muscolari e out a Bologna domenica in campionato.",
+          "detail": "l'attaccante condizionato da noie muscolari all'adduttore e, dopo aver saltato il match di Bologna, rischia di star fuori anche nel prossimo turno di campionato contro la Fiorentina. Da valutare.",
           "role": "Attacco"
         },
         {
@@ -558,12 +580,12 @@
         },
         {
           "player": "Basic",
-          "detail": "Il centrocampista non convocato per domenica contro la Juventus per un affaticamento muscolare alla gamba. Da valutare in vista della 13a di campionato.",
+          "detail": "Il centrocampista non convocato domenica scorsa contro la Juventus per un affaticamento muscolare alla gamba. Da valutare in vista di venerdì sera nella 13a di campionato.",
           "role": "Centrocampo"
         },
         {
           "player": "Correia T.",
-          "detail": "Il difensore assente domenica contro la Juventus per noie fisiche. Da valutare in vista della prossima giornata di campionato.",
+          "detail": "Il difensore assente domenica scorsa contro la Juventus per noie fisiche. Da valutare in vista della prossima giornata di campionato.",
           "role": "Difesa"
         },
         {
@@ -573,7 +595,7 @@
         },
         {
           "player": "Mazzocchi",
-          "detail": "Il cursore di fascia dei lagunari non convocato per domenica contro la Juventus per un risentimento muscolare alla gamba. Da valutare.",
+          "detail": "Il cursore di fascia dei lagunari non convocato domenica scorsa contro la Juventus per un risentimento muscolare alla gamba. Da valutare nei prossimi allenamenti verso la sfida di venerdì contro il Bologna.",
           "role": "Difesa"
         }
       ],
