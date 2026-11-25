@@ -69,7 +69,7 @@
    $('homeStatus').textContent=d.source==='cache'?'Dati locali salvati · fonte non aggiornata':'Calendario '+competition.name+' caricato · '+new Date(d.updatedAt||Date.now()).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
    $('homeDot').classList.toggle('ok',d.source!=='cache');
    const homeTarget=$('homeNextMatches');
-   if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,5).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';
+   if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,3).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';
    const favs=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]')}catch{return []}})();
    $('homeFavorites').innerHTML=favs.length?favs.map(n=>'<a class="team-tile" href="'+MM().teamUrl(n)+'">'+MM().badge(n)+'<b>'+esc(n)+'</b></a>').join(''):'<div class="empty-state" style="grid-column:1/-1">Non hai ancora salvato squadre. Apri Esplora e tocca la stella accanto a un club.</div>';
  }
@@ -261,15 +261,19 @@ function backtestHTML(r,e){
   const forecasts=upcoming.map(match=>({match,forecast:MM().forecast(match,d.history)}));
   const adequate=forecasts.filter(item=>item.forecast.sampleEnough).length;
   const limited=forecasts.length-adequate;
-  const meanHistory=forecasts.length?forecasts.reduce((sum,item)=>sum+(item.forecast.historyCount||0),0)/forecasts.length:0;
+  const counts=forecasts.map(item=>Number(item.forecast.historyCount)||0).sort((a,b)=>a-b);
+  const mean=counts.length?counts.reduce((sum,value)=>sum+value,0)/counts.length:0;
+  const middle=Math.floor(counts.length/2);
+  const median=!counts.length?0:counts.length%2?counts[middle]:(counts[middle-1]+counts[middle])/2;
+  const coverage=forecasts.length?adequate/forecasts.length*100:0;
   const overview=$('analysisOverview');
   if(overview){
    overview.innerHTML='<div class="analysis-summary-grid">'+
-    '<article class="analysis-summary"><span>Partite future</span><b>'+fmt(upcoming.length)+'</b><small>Competizione selezionata</small></article>'+
-    '<article class="analysis-summary"><span>Campione adeguato</span><b>'+fmt(adequate)+'</b><small>Almeno 10 partite per squadra</small></article>'+
-    '<article class="analysis-summary"><span>Campione limitato</span><b>'+fmt(limited)+'</b><small>Stime da leggere con cautela</small></article>'+
-    '<article class="analysis-summary"><span>Storico medio</span><b>'+fmt(meanHistory,1)+'</b><small>Partite precedenti per incontro</small></article></div>'+
-    '<div class="notice">'+(limited?'Sono presenti '+limited+' partite con campione insufficiente.':'Tutte le partite future hanno superato la soglia minima del campione.')+' La soglia è un controllo di copertura, non una misura di accuratezza o calibrazione.</div>';
+    '<article class="analysis-summary"><span>Copertura del campione</span><b>'+fmt(coverage,0)+'%</b><small>'+adequate+' su '+forecasts.length+' stime con almeno 10 gare per squadra</small></article>'+
+    '<article class="analysis-summary"><span>Campione insufficiente</span><b>'+fmt(limited)+'</b><small>stime da leggere con cautela</small></article>'+
+    '<article class="analysis-summary"><span>Storico medio</span><b>'+fmt(mean,1)+'</b><small>partite precedenti per incontro</small></article>'+
+    '<article class="analysis-summary"><span>Storico mediano</span><b>'+fmt(median,1)+'</b><small>valore centrale del campione</small></article></div>'+
+    '<div class="notice">'+(limited?'Sono presenti '+limited+' partite con campione insufficiente.':'Tutte le stime future hanno superato la soglia minima del campione.')+' La soglia è un controllo di copertura, non una misura di accuratezza o calibrazione.</div>';
   }
   const target=$('forecastBacktest');
   if(target){

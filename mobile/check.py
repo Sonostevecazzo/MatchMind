@@ -50,7 +50,7 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v63-20261104-fallback-live-nav" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v64-20261125-mobile-ux" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
@@ -74,4 +74,23 @@ assert "Sisal" not in bets_js and "playerApi" not in bets_js
 assert "matchStandingsContext" in core and "pointsPerGame" in core
 
 assert "home_corners_1h" in calendar and "home_yellow" in calendar
+site_css=(ROOT/"site.css").read_text(encoding="utf-8")
+readable_css=(ROOT/"mobile-readable.css").read_text(encoding="utf-8")
+site_pages=(ROOT/"site-pages.js").read_text(encoding="utf-8")
+assert "height:100dvh;overflow:hidden" not in site_css
+assert "height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto" in site_css
+assert "repeat(5,minmax(0,1fr))" in site_css
+assert ":is(p, span, b, strong, a, label, small" not in readable_css
+assert "font-size:16px!important" in readable_css
+assert "next.slice(0,3).map(matchCard)" in site_pages
+assert "Copertura del campione" in site_pages
+assert 'id="betsPeriod"' in bets_html and 'id="betsSample"' in bets_html
+assert 'id="betsOnlySelected"' in bets_html and 'id="clearBetsFilters"' in bets_html
+assert "betsPeriod" in bets_js and "betsSample" in bets_js and "betsOnlySelected" in bets_js
+all_mobile_html="\n".join(p.read_text(encoding="utf-8") for p in ROOT.glob("*.html"))
+assert not re.search(r"\\bcapture\\s*=",all_mobile_html,re.IGNORECASE)
+for file_input in re.findall(r"<input\\b[^>]*type=[\\"']file[\\"'][^>]*>",all_mobile_html,re.IGNORECASE):
+ assert re.search(r"accept=[\\"']image/\\*[\\"']",file_input,re.IGNORECASE), "Image imports must allow image/*"
+ assert not re.search(r"\\bcapture\\b",file_input,re.IGNORECASE), "Do not force camera capture; gallery selection must remain available"
+
 print("MatchMind PWA, public data source, optional Live provider, syntax and model checks passed.")

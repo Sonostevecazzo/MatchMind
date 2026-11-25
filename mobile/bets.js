@@ -40,10 +40,23 @@ function renderFixture(match){
  '<div class="fixture-market-options">'+buttons+'</div><details class="manual-other-markets"><summary>Contesto squadra: assenze, infortuni e motivazione</summary><div class="context-controls"><div class="context-grid">'+absenceHtml+'</div>'+motivationHtml+'<small>Inserisci solo titolari realmente indisponibili. Le assenze sono una correzione indicativa, non una valutazione del valore individuale del giocatore. La motivazione automatica deriva dalla classifica; l’impostazione manuale è una tua valutazione.</small></div></details></article>';
 }
 function renderFixtures(){
- const target=$("manualFixtures"),query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
- const rows=fixtures.filter(m=>(!query||norm(m.home).includes(query)||norm(m.away).includes(query))&&(!date||m.date===date)&&(!team||norm(m.home)===norm(team)||norm(m.away)===norm(team))&&(!round||String(m.round||"")===round));
+ const target=$("manualFixtures");
+ const query=norm($("matchSearch").value),date=$("betsDate")?.value||"",team=$("betsTeam")?.value||"",round=$("betsRound")?.value||"";
+ const period=$("betsPeriod")?.value||"7",sample=$("betsSample")?.value||"all",onlySelected=Boolean($("betsOnlySelected")?.checked);
+ const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+ const dayIndex=value=>Math.floor(Date.parse(value+"T12:00:00")/86400000),todayIndex=dayIndex(today);
+ const rows=fixtures.filter(m=>{
+  if(query&&!norm(m.home).includes(query)&&!norm(m.away).includes(query))return false;
+  if(date&&m.date!==date)return false;
+  if(!date&&period!=="all"){const ahead=dayIndex(m.date)-todayIndex;if(ahead<0||ahead>Number(period))return false;}
+  if(team&&norm(m.home)!==norm(team)&&norm(m.away)!==norm(team))return false;
+  if(round&&String(m.round||"")!==round)return false;
+  if(sample!=="all"){const adequate=Boolean(getForecast(m).sampleEnough);if(sample==="adequate"&&!adequate)return false;if(sample==="limited"&&adequate)return false;}
+  if(onlySelected&&!selectedFor(m))return false;
+  return true;
+ });
  const visible=rows.slice(0,visibleFixtureLimit);
- target.innerHTML=visible.length?visible.map(renderFixture).join(""):'<div class="empty-state">Nessuna partita corrisponde ai filtri. Modifica la ricerca.</div>';
+ target.innerHTML=visible.length?visible.map(renderFixture).join(""):'<div class="empty-state">Nessuna partita corrisponde ai filtri. Prova a cambiare periodo, squadra o qualità del campione.</div>';
  const count=$("betsFixtureCount");if(count)count.textContent=rows.length+" partite trovate · visualizzate "+visible.length;
  const more=$("moreBetFixtures");if(more)more.hidden=rows.length<=visibleFixtureLimit;
 }
@@ -153,8 +166,12 @@ async function shareTicket(ticket){
 function initEvents(){
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
  $("matchSearch").addEventListener("input",()=>{visibleFixtureLimit=12;renderFixtures();});
- ["betsDate","betsTeam","betsRound"].forEach(id=>$(id)?.addEventListener("change",()=>{visibleFixtureLimit=12;renderFixtures();}));
- $("clearBetsFilters")?.addEventListener("click",()=>{$("matchSearch").value="";$("betsDate").value="";$("betsTeam").value="";$("betsRound").value="";visibleFixtureLimit=12;renderFixtures();});
+ ["betsDate","betsTeam","betsRound","betsPeriod","betsSample","betsOnlySelected"].forEach(id=>$(id)?.addEventListener("change",()=>{visibleFixtureLimit=12;renderFixtures();}));
+ $("clearBetsFilters")?.addEventListener("click",()=>{
+  $("matchSearch").value="";$("betsDate").value="";$("betsTeam").value="";$("betsRound").value="";
+  $("betsPeriod").value="7";$("betsSample").value="all";$("betsOnlySelected").checked=false;
+  visibleFixtureLimit=12;renderFixtures();
+ });
  $("moreBetFixtures")?.addEventListener("click",()=>{visibleFixtureLimit+=12;renderFixtures();});
  $("manualFixtures").addEventListener("click",event=>{
   const b=event.target.closest("[data-pick]");if(!b)return;

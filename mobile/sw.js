@@ -1,4 +1,4 @@
-const CACHE='matchmind-pwa-v63-20261104-fallback-live-nav';
+const CACHE='matchmind-pwa-v64-20261125-mobile-ux';
 const APP_SHELL=[
  './','./index.html','./matches.html','./live.html','./explore.html','./league.html',
  './team.html','./match.html','./players.html','./analysis-lab.html','./bets.html','./data.html','./settings.html',
@@ -40,7 +40,8 @@ self.addEventListener('fetch',event=>{
     }
     return response;
    }catch(error){
-    const cached=await caches.match(request);
+    const normalized=new URL(request.url);normalized.search="";normalized.hash="";
+    const cached=await caches.match(request)||await caches.match(new Request(normalized.toString(),{method:"GET"}));
     if(cached)return cached;
     if(request.mode==='navigate')return caches.match('./index.html');
     throw error;

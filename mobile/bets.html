@@ -26,7 +26,26 @@
  </section>
  <section class="section panel panel-pad" id="manualBuilder">
   <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Seleziona gli esiti sulle partite future. Puoi anche specificare indisponibilità e motivazione quando hai informazioni attendibili.</p></div></div>
-  <div class="field"><label for="matchSearch">Cerca squadra o partita</label><input id="matchSearch" type="search" placeholder="Es. Inter, Milan, Roma…"></div><div class="match-advanced-grid bets-fixture-filters"><div class="field"><label for="betsDate">Data</label><input id="betsDate" type="date"></div><div class="field"><label for="betsTeam">Squadra</label><select id="betsTeam"><option value="">Tutte le squadre</option></select></div><div class="field"><label for="betsRound">Giornata</label><select id="betsRound"><option value="">Tutte le giornate</option></select></div></div><div class="match-filter-toolbar"><small id="betsFixtureCount" class="status-line">Partite disponibili</small><button id="clearBetsFilters" class="ghost" type="button">Azzera filtri</button></div>
+  <div class="bets-filter-panel">
+   <div class="field"><label for="matchSearch">Cerca squadra o partita</label><input id="matchSearch" type="search" placeholder="Es. Inter, Milan, Roma…" autocomplete="off"></div>
+   <div class="bets-filter-quick">
+    <div class="field"><label for="betsPeriod">Periodo</label><select id="betsPeriod"><option value="7" selected>Prossimi 7 giorni</option><option value="30">Prossimi 30 giorni</option><option value="all">Tutte le date</option></select></div>
+    <div class="field"><label for="betsTeam">Squadra</label><select id="betsTeam"><option value="">Tutte le squadre</option></select></div>
+   </div>
+   <details class="bets-filter-advanced"><summary>Altri filtri: data, giornata e campione</summary>
+    <div class="match-advanced-grid bets-fixture-filters">
+     <div class="field"><label for="betsDate">Data precisa</label><input id="betsDate" type="date"></div>
+     <div class="field"><label for="betsRound">Giornata</label><select id="betsRound"><option value="">Tutte le giornate</option></select></div>
+     <div class="field"><label for="betsSample">Qualità del campione</label><select id="betsSample"><option value="all">Tutti i campioni</option><option value="adequate">Solo adeguato</option><option value="limited">Solo limitato</option></select></div>
+    </div>
+   </details>
+   <div class="match-filter-toolbar">
+    <small id="betsFixtureCount" class="status-line">Partite disponibili</small>
+    <label class="bets-only-selected"><input id="betsOnlySelected" type="checkbox"> Solo selezionate</label>
+    <a class="text-link" href="matches.html">Calendario completo ↗</a>
+    <button id="clearBetsFilters" class="ghost" type="button">Azzera filtri</button>
+   </div>
+  </div>
   <div id="manualFixtures" class="manual-fixture-list"><div class="loading-state">Caricamento calendario…</div></div><div style="text-align:center;margin-top:12px"><button id="moreBetFixtures" class="ghost" type="button" hidden>Carica altre partite</button></div>
   <div class="section-head" style="margin-top:18px"><div><h3>Riepilogo schedina</h3></div></div>
   <div id="manualSlipSummary"><div class="empty-state">Non hai ancora selezionato partite.</div></div>
