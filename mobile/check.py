@@ -79,7 +79,9 @@ share=manifest.get("share_target",{})
 assert share.get("action")=="./share-target" and share.get("method")=="POST"
 assert any(x.get("name")=="screenshot" and "image/*" in x.get("accept",[]) for x in share.get("params",{}).get("files",[]))
 assert "consumeSharedScreenshot" in bets and "previewScreenshot" in bets
-assert "matchmind-pwa-v161-mobile-ux-20261125" in sw
+assert "matchmind-pwa-v162-mobile-offline-shell" in sw
 assert "normalized.search=''" in sw and "analysis-lab.html" in sw
+for asset in ["./site-core.js","./analysis.css","./research-engine.js","./rounds.js","./analysis-lab.html","./league.html","./explore.html","./players.html","./data.html","./settings.html"]:
+ assert asset in sw, f"Secondary PWA route or dependency is not precached: {asset}"
 
 print(f"MatchMind PWA checks and {len(test_files)} JavaScript test files passed.")

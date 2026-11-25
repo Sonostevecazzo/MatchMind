@@ -1,9 +1,9 @@
-const CACHE='matchmind-pwa-v161-mobile-ux-20261125';
+const CACHE='matchmind-pwa-v162-mobile-offline-shell';
 const APP_SHELL=[
  './','./index.html','./matches.html','./bets.html',
  './analysis-lab.html','./league.html','./explore.html','./players.html','./data.html','./settings.html','./team.html','./match.html',
- './site.css','./mobile-readable.css','./matches-redesign.css',
- './site-core.js?v=20261118-prediction-only-1','./site-pages.js','./elo.js',
+ './site.css','./mobile-readable.css','./matches-redesign.css','./analysis.css',
+ './site-core.js?v=20261118-prediction-only-1','./site-core.js','./site-pages.js','./elo.js','./research-engine.js','./rounds.js',
  './ai-engine.js','./bets-engine.js?v=20261118-prediction-only-1',
  './sisal-bridge.js','./bets.js?v=20261118-prediction-only-1',
  './manifest.webmanifest','./icon.svg','./brand-full.svg'
