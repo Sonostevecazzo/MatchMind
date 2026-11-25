@@ -1,5 +1,5 @@
 """Structural and regression checks for the MatchMind mobile PWA."""
-import json, subprocess
+import json, re, subprocess
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent
 manifest=json.loads((ROOT/"manifest.webmanifest").read_text(encoding="utf-8"))
@@ -52,4 +52,36 @@ for asset in ["./live.html","./nba.html","./nba.css","./nba.js","./nba-builder.j
 test_files=sorted((ROOT/"tests").glob("*.test.mjs"))+sorted((ROOT/"tests").glob("*.test.cjs"))
 assert test_files, "No JavaScript regression tests discovered"
 subprocess.run(["node","--test",*[str(path) for path in test_files]],cwd=ROOT,check=True)
+
+# Screen roles, mobile navigation and filter-first builder.
+home_html=(ROOT/"index.html").read_text(encoding="utf-8")
+analysis_html=(ROOT/"analysis-lab.html").read_text(encoding="utf-8")
+core=(ROOT/"site-core.js").read_text(encoding="utf-8")
+pages=(ROOT/"site-pages.js").read_text(encoding="utf-8")
+site_css=(ROOT/"site.css").read_text(encoding="utf-8")
+readable_css=(ROOT/"mobile-readable.css").read_text(encoding="utf-8")
+assert 'data-page="home"' in home_html and 'id="homeNextMatches"' in home_html
+assert 'data-page="mind"' in analysis_html and 'id="analysisOverview"' in analysis_html
+assert "Le tue partite" not in analysis_html
+assert "next.slice(0,3).map(matchCard)" in pages
+assert "const secondary=[" in core and "analysis-lab.html" in core and "settings.html" in core
+assert 'href="index.html" aria-label="MatchMind Home"' in core
+assert 'id="builderTeam"' in bets_html and 'id="builderDate"' in bets_html
+assert 'id="builderRound"' in bets_html and 'id="builderSample"' in bets_html
+assert "builderCandidateSet" in bets and "builderSample" in bets
+assert "height:100dvh;overflow:hidden" not in site_css
+assert ":is(p, span, b, strong, a, label, small" not in readable_css
+assert manifest.get("start_url")=="./"
+all_mobile_html="\n".join(p.read_text(encoding="utf-8") for p in ROOT.glob("*.html"))
+assert not re.search(r"\bcapture\s*=",all_mobile_html,re.IGNORECASE)
+assert 'id="ticketScreenshot"' in bets_html and 'accept="image/*"' in bets_html
+share=manifest.get("share_target",{})
+assert share.get("action")=="./share-target" and share.get("method")=="POST"
+assert any(x.get("name")=="screenshot" and "image/*" in x.get("accept",[]) for x in share.get("params",{}).get("files",[]))
+assert "consumeSharedScreenshot" in bets and "previewScreenshot" in bets
+assert "matchmind-pwa-v162-mobile-offline-shell" in sw
+assert "normalized.search=''" in sw and "analysis-lab.html" in sw
+for asset in ["./site-core.js","./analysis.css","./research-engine.js","./rounds.js","./analysis-lab.html","./league.html","./explore.html","./players.html","./data.html","./settings.html"]:
+ assert asset in sw, f"Secondary PWA route or dependency is not precached: {asset}"
+
 print(f"MatchMind PWA checks and {len(test_files)} JavaScript test files passed.")

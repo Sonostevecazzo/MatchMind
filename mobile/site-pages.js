@@ -100,9 +100,9 @@
    $('homeStatus').textContent=d.source==='cache'?'Dati locali salvati · fonte non aggiornata':'Calendario '+competition.name+' caricato · '+new Date(d.updatedAt||Date.now()).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
    $('homeDot').classList.toggle('ok',d.source!=='cache');
    const homeTarget=$('homeNextMatches');
-   if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,5).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';
-   window.addEventListener('matchmind:ai-updated',()=>{if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,5).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';},{once:true});
-   window.addEventListener('matchmind:odds-updated',()=>{if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,5).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';},{once:true});
+   if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,3).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';
+   window.addEventListener('matchmind:ai-updated',()=>{if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,3).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';},{once:true});
+   window.addEventListener('matchmind:odds-updated',()=>{if(homeTarget)homeTarget.innerHTML=next.length?next.slice(0,3).map(matchCard).join(''):'<div class="empty-state">Nessuna partita futura disponibile.</div>';},{once:true});
    const favs=(()=>{try{return JSON.parse(localStorage.getItem('matchmind-favorites-v1')||'[]')}catch{return []}})();
    $('homeFavorites').innerHTML=favs.length?favs.map(n=>'<a class="team-tile" href="'+MM().teamUrl(n)+'">'+MM().badge(n)+'<b>'+esc(MM().displayTeamName(n))+'</b></a>').join(''):'<div class="empty-state" style="grid-column:1/-1">Non hai ancora salvato squadre. Apri Esplora e tocca la stella accanto a un club.</div>';
  }
@@ -393,25 +393,24 @@ function backtestHTML(r,e){
    '<small style="display:block;color:#7f8d9b;font-size:9px;line-height:1.5">Baseline: frequenze 1X2 delle sole partite antecedenti, con smoothing Laplace. Esclusi i casi con meno di 10 gare storiche per una delle squadre. Non è un test di redditività: non include quote, margini, stake o commissioni.</small>';
  }
  async function initMind(d){
- const target=$('analysisOverview');if(!target)return;
- const shadow=window.MatchMindResearch?.simulate(d.history,d.competition)||null,base=shadow&&shadow.currentModel;
- const simulationHtml=shadow?'<section class="panel panel-pad" style="margin-bottom:12px"><div class="eyebrow">RESEARCH ENGINE · SIMULAZIONE CRONOLOGICA</div><h2>Confronto in modalità shadow</h2><div class="data-row"><span>Partite archiviate</span><b>'+shadow.played+'</b></div><div class="data-row"><span>Previsioni valutabili · modello attuale</span><b>'+(base?.count||0)+'</b></div><div class="data-row"><span>Accuratezza modello attuale</span><b>'+ (base?fmt(base.model.accuracy*100,2)+'%':'Campione insufficiente')+'</b></div><div class="data-row"><span>Log loss / Brier attuali</span><b>'+(base?fmt(base.model.logLoss,4)+' / '+fmt(base.model.brier,4):'—')+'</b></div><div class="data-row"><span>Campione adeguato per le due squadre</span><b>'+shadow.adequateSamples+'/'+shadow.walkForwardCases+'</b></div><div class="data-row"><span>Partite con statistiche aggiuntive</span><b>'+fmt(shadow.advancedStatsRate*100,1)+'%</b></div><div class="notice">Il Research Engine è in shadow mode: raccoglie e controlla evidenze, ma non genera ancora probabilità alternative e non modifica il modello. Questo confronto misura la copertura dei dati, non un miglioramento predittivo.</div></section>':'';
- let saved=[];
- try{const parsed=JSON.parse(localStorage.getItem('matchmind-manual-selections-v1')||'[]');if(Array.isArray(parsed))saved=parsed.slice(-100);}catch(_){}
- const key=m=>[(m.competition||'serie-a'),m.date,MM().norm(m.home),MM().norm(m.away)].join('|');
- const all=[...(d.matches||[]),...(d.history||[])],matchIndex=new Map(all.map(match=>[key(match),match]));
- const seen=new Set(),selected=saved.map(p=>({p,m:matchIndex.get(key(p))})).filter(x=>{if(!x.m)return false;const token=key(x.p)+'|'+String(x.p.marketKey||'');if(seen.has(token))return false;seen.add(token);return true;});
- if(!selected.length){target.innerHTML=simulationHtml+'<div class="empty-state">Scegli i pronostici nella sezione Scommesse per aggiungere l’analisi delle selezioni.</div>';return}
- const names={home:'1',draw:'X',away:'2',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol'},rows=[];let i=0;
- target.innerHTML='<div class="loading-state">Analisi in corso…</div>';
- const next=()=>{const x=selected[i];try{const f=MM().forecast(x.m,d.history),v=window.MatchMindBets.marketProbability(f,x.p.marketKey);rows.push({m:x.m,label:names[x.p.marketKey]||x.p.marketKey,v,f})}catch(_){rows.push({m:x.m,label:names[x.p.marketKey]||x.p.marketKey,v:null,f:null})}
- i++;if(i<selected.length){target.innerHTML='<div class="loading-state">Analisi partita '+i+' di '+selected.length+'…</div>';setTimeout(next,0);return}
- const ok=rows.filter(x=>Number.isFinite(x.v)),total=ok.length===rows.length?ok.reduce((n,x)=>n*x.v,1):null;
- const totalLabel=total===null?'—':total>0&&total*100<0.1?'<0,1%':fmt(total*100,1)+'%';
- target.innerHTML=simulationHtml+'<div class="analysis-selected-summary"><div><span>Partite</span><b>'+rows.length+'</b></div><div><span>Probabilità combinata</span><b>'+totalLabel+'</b></div></div>'+rows.map(x=>'<article class="panel panel-pad"><b>'+esc(MM().displayTeamName(x.m.home))+' – '+esc(MM().displayTeamName(x.m.away))+'</b><div class="data-row"><span>'+esc(x.label)+'</span><strong>'+(Number.isFinite(x.v)?fmt(x.v*100,1)+'%':'—')+'</strong></div><small>'+esc(MM().shortDate(x.m))+' · '+(x.f&&x.f.sampleEnough?'Campione sufficiente':'Campione limitato')+'</small></article>').join('')+'<p class="notice">La probabilità combinata deriva dalle singole selezioni e assume indipendenza tra partite.</p><a class="text-link" href="bets.html">Modifica selezioni ↗</a>';
- window.addEventListener('matchmind:ai-updated',()=>initMind(d),{once:true});
-};
- setTimeout(next,0);
+  const target=$('analysisOverview');if(!target)return;
+  const shadow=window.MatchMindResearch?.simulate(d.history,d.competition)||null;
+  if(!shadow){
+   target.innerHTML='<div class="notice warning">La validazione del modello non è disponibile per questa competizione o per lo storico attualmente caricato.</div>';
+   return;
+  }
+  const base=shadow.currentModel,model=base&&base.model||{};
+  const coverage=shadow.walkForwardCases?shadow.adequateSamples/shadow.walkForwardCases*100:0;
+  const metric=(label,value,detail)=>'<article class="analysis-summary"><span>'+label+'</span><b>'+value+'</b><small>'+detail+'</small></article>';
+  target.innerHTML='<div class="analysis-summary-grid">'+
+   metric('Partite archiviate',fmt(shadow.played),'risultati storici disponibili')+
+   metric('Previsioni valutabili',fmt(base?.count||0),'casi inclusi nella verifica cronologica')+
+   metric('Accuratezza 1X2',base?fmt(model.accuracy*100,2)+'%':'—','quota di esiti classificati correttamente')+
+   metric('Log loss',base?fmt(model.logLoss,4):'—','penalizza le probabilità troppo sicure e sbagliate')+
+   metric('Brier score',base?fmt(model.brier,4):'—','errore quadratico delle probabilità')+
+   metric('Copertura del campione',fmt(coverage,1)+'%',shadow.adequateSamples+' su '+shadow.walkForwardCases+' casi con storico sufficiente')+
+   metric('Statistiche avanzate',fmt(shadow.advancedStatsRate*100,1)+'%','partite con dati aggiuntivi disponibili')+
+   '</div><div class="notice">Il Research Engine lavora in shadow mode: raccoglie e valida evidenze, ma non sostituisce il modello attivo. Accuratezza, Log loss e Brier misurano la qualità statistica; non dimostrano redditività, non includono quote e non sono una promessa di rendimento.</div>';
  }
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';

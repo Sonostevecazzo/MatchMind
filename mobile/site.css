@@ -389,7 +389,7 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
  .home-side .shortcut{min-height:68px}
 }
 @media(max-width:700px){
- body{height:100dvh;overflow:hidden}
+ body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto}
  #siteHeader{height:59px;flex:0 0 59px}
  .site-header{height:59px;padding:0 15px;gap:8px}
  .brand-mark{width:34px;height:34px;border-radius:12px}
@@ -1319,3 +1319,24 @@ body[data-page="bets"] .archive-ticket{padding:15px}
 @media(prefers-reduced-motion:reduce){
   .mobile-primary-nav .nav-item{transition:none!important}
 }
+
+
+/* Filter-first builder and gallery-safe screenshot preview. */
+.builder-filter-panel{margin:12px 0 16px;padding:13px;border:1px solid #2b3c46;border-radius:14px;background:#101a22}
+.builder-filter-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.builder-filter-heading b{font-size:13px;color:#e3eddf}
+.builder-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.builder-filter-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.builder-filter-footer small{font-size:12px;color:#98a7b0}
+.builder-filter-footer button{min-height:36px}
+.screenshot-import-panel{display:grid;gap:10px;margin:0 0 14px;padding:14px;border:1px dashed #52626e;border-radius:14px;background:#101820}
+.screenshot-import-panel h3{margin:3px 0;font-size:16px}
+.screenshot-import-panel p{margin:3px 0 0;color:var(--muted,#93a1b0);font-size:13px;line-height:1.5}
+.screenshot-import-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.screenshot-import-status{color:var(--muted,#93a1b0);font-size:13px;line-height:1.45}
+.screenshot-import-preview{display:grid;gap:8px;min-width:0}
+.screenshot-import-preview img{display:block;width:100%;max-height:280px;object-fit:contain;border:1px solid var(--line,#344253);border-radius:10px;background:#080d12}
+.screenshot-import-preview small{display:block;color:var(--muted,#93a1b0)}
+.screenshot-import-actions .button-like{cursor:pointer}
+@media(max-width:700px){.builder-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.builder-filter-heading{align-items:flex-start;flex-direction:column}}
+@media(max-width:360px){.builder-filter-grid{grid-template-columns:1fr}}
