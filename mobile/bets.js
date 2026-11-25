@@ -4,6 +4,7 @@
 const $=id=>document.getElementById(id),ENGINE=()=>window.MatchMindBets;
 const PICKS_KEY="matchmind-manual-selections-v1",CONTEXT_KEY="matchmind-match-context-v2",ARCHIVE_KEY="matchmind-slip-archive-v2";
 let data=null,fixtures=[],picks=[],contexts={},archive=[],proposal=[],visibleFixtureLimit=12;
+let screenshotPreviewUrl=null;
 const esc=value=>window.MM.esc(String(value==null?"":value));
 const pct=value=>Number.isFinite(value)?(value*100).toLocaleString("it-IT",{maximumFractionDigits:1})+"%":"—";
 const norm=value=>window.MM.norm(value);
@@ -163,8 +164,42 @@ async function shareTicket(ticket){
  const body=["MatchMind · Schedina",...ticket.selections.map(x=>x.home+" – "+x.away+" | "+x.market+" | "+pct(x.probability)),"Probabilità combinata stimata: "+pct(ticket.probability)].join("\n");
  try{if(navigator.share)await navigator.share({title:"Schedina MatchMind",text:body});else{await navigator.clipboard.writeText(body);$("archiveStatus").textContent="Schedina copiata negli appunti.";}}catch(e){if(e.name!=="AbortError")$("archiveStatus").textContent="Condivisione non disponibile in questo browser.";}
 }
+
+function previewScreenshot(file,source){
+ const status=$("ticketScreenshotStatus"),preview=$("ticketScreenshotPreview");
+ if(!status||!preview||!file)return;
+ if(!String(file.type||"").startsWith("image/")){status.textContent="File non riconosciuto come immagine. Scegli un'immagine dalla galleria.";return;}
+ if(screenshotPreviewUrl)URL.revokeObjectURL(screenshotPreviewUrl);
+ screenshotPreviewUrl=URL.createObjectURL(file);
+ preview.innerHTML='<img src="'+screenshotPreviewUrl+'" alt="Anteprima dello screenshot della schedina"><div><b>'+esc(file.name||"Screenshot condiviso")+'</b><small>'+Math.max(1,Math.round((file.size||0)/1024))+' KB</small></div>';
+ preview.hidden=false;
+ status.textContent=(source||"Immagine selezionata")+" · anteprima pronta. L'estrazione automatica di partite e quote non è attiva in questa versione.";
+}
+async function consumeSharedScreenshot(){
+ const params=new URLSearchParams(location.search),mode=params.get("import");
+ if(mode==="failed"){$("ticketScreenshotStatus").textContent="Ricezione non riuscita. Seleziona direttamente lo screenshot dalla galleria.";return;}
+ if(mode!=="shared")return;
+ try{
+  const db=await new Promise((resolve,reject)=>{
+   const request=indexedDB.open("matchmind-shared-imports",1);
+   request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("items"))request.result.createObjectStore("items",{keyPath:"id",autoIncrement:true});};
+   request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+  });
+  const item=await new Promise((resolve,reject)=>{
+   const tx=db.transaction("items","readwrite"),store=tx.objectStore("items"),request=store.getAll();
+   request.onsuccess=()=>{const rows=(request.result||[]).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));const latest=rows[rows.length-1]||null;if(latest)store.delete(latest.id);resolve(latest);};
+   request.onerror=()=>reject(request.error);
+  });
+  if(item&&item.file)previewScreenshot(item.file,"Screenshot ricevuto dal menu Condividi di Android");
+  else $("ticketScreenshotStatus").textContent="Condivisione ricevuta senza un file immagine. Seleziona lo screenshot dalla galleria.";
+  db.close();
+ }catch(error){$("ticketScreenshotStatus").textContent="Impossibile leggere lo screenshot condiviso. Selezionalo dalla galleria.";}
+ const clean=new URL(location.href);clean.searchParams.delete("import");history.replaceState({}, "", clean.toString());
+}
 function initEvents(){
  document.querySelectorAll("[data-bets-tab]").forEach(button=>button.addEventListener("click",()=>{setBetTab(button.dataset.betsTab);if(button.dataset.betsTab==="live")updateArchive();}));
+ $("ticketScreenshot")?.addEventListener("change",event=>previewScreenshot(event.target.files&&event.target.files[0],"Immagine selezionata"));
+ 
  $("matchSearch").addEventListener("input",()=>{visibleFixtureLimit=12;renderFixtures();});
  ["betsDate","betsTeam","betsRound","betsPeriod","betsSample","betsOnlySelected"].forEach(id=>$(id)?.addEventListener("change",()=>{visibleFixtureLimit=12;renderFixtures();}));
  $("clearBetsFilters")?.addEventListener("click",()=>{
@@ -206,7 +241,7 @@ function hasTodayOpenTicket(){
  return archive.some(ticket=>(ticket.selections||[]).some(selection=>selection.date===today&&!terminalStatus(selection.status||"Da giocare")));
 }
 document.addEventListener("DOMContentLoaded",async()=>{
- initEvents();$("globalStatus").textContent="Carico calendario e risultati storici…";
+ initEvents();await consumeSharedScreenshot();$("globalStatus").textContent="Carico calendario e risultati storici…";
  try{
   data=window.MM.forCompetition(await window.MM.loadData());
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));

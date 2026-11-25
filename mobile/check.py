@@ -50,7 +50,7 @@ assert "function backtest(rows)" in core
 assert "scoreMatrix" in core
 assert "sampleEnough:minTeamSample>=10" in core and "matchStandingsContext" in core
 assert "buildAssistant" in (ROOT/"rounds.js").read_text(encoding="utf-8")
-assert "matchmind-pwa-v64-20261125-mobile-ux" in (ROOT/"sw.js").read_text(encoding="utf-8")
+assert "matchmind-pwa-v65-20261125-screenshot-share" in (ROOT/"sw.js").read_text(encoding="utf-8")
 assert "home:'homeNextMatches'" in (ROOT/"site-pages.js").read_text(encoding="utf-8")
 assert "site.api.espn.com" in (ROOT/"functions"/"api"/"live-match.js").read_text(encoding="utf-8")
 assert "./live.html" in (ROOT/"sw.js").read_text(encoding="utf-8")
@@ -88,9 +88,15 @@ assert 'id="betsPeriod"' in bets_html and 'id="betsSample"' in bets_html
 assert 'id="betsOnlySelected"' in bets_html and 'id="clearBetsFilters"' in bets_html
 assert "betsPeriod" in bets_js and "betsSample" in bets_js and "betsOnlySelected" in bets_js
 all_mobile_html="\n".join(p.read_text(encoding="utf-8") for p in ROOT.glob("*.html"))
-assert not re.search(r"\\bcapture\\s*=",all_mobile_html,re.IGNORECASE)
-for file_input in re.findall(r"<input\\b[^>]*type=[\\"']file[\\"'][^>]*>",all_mobile_html,re.IGNORECASE):
- assert re.search(r"accept=[\\"']image/\\*[\\"']",file_input,re.IGNORECASE), "Image imports must allow image/*"
- assert not re.search(r"\\bcapture\\b",file_input,re.IGNORECASE), "Do not force camera capture; gallery selection must remain available"
+assert not re.search(r"\bcapture\s*=",all_mobile_html,re.IGNORECASE)
+for file_input in re.findall(r"<input\b[^>]*type=['\"]file['\"][^>]*>",all_mobile_html,re.IGNORECASE):
+ assert re.search(r"accept=['\"]image/\*['\"]",file_input,re.IGNORECASE), "Image imports must allow image/*"
+ assert not re.search(r"\bcapture\b",file_input,re.IGNORECASE), "Do not force camera capture; gallery selection must remain available"
+share=manifest.get("share_target",{})
+assert share.get("action")=="./share-target" and share.get("method")=="POST"
+shared_files=share.get("params",{}).get("files",[])
+assert any(item.get("name")=="screenshot" and "image/*" in item.get("accept",[]) for item in shared_files)
+assert 'id="ticketScreenshot"' in bets_html and 'accept="image/*"' in bets_html
+assert "previewScreenshot" in bets_js and "consumeSharedScreenshot" in bets_js
 
 print("MatchMind PWA, public data source, optional Live provider, syntax and model checks passed.")

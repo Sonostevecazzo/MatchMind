@@ -26,6 +26,11 @@
  </section>
  <section class="section panel panel-pad" id="manualBuilder">
   <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Seleziona gli esiti sulle partite future. Puoi anche specificare indisponibilità e motivazione quando hai informazioni attendibili.</p></div></div>
+  <div class="screenshot-import-panel">
+   <div><div class="eyebrow">IMPORTA IMMAGINE</div><h3>Screenshot schedina</h3><p>Puoi scegliere un'immagine dalla galleria oppure condividerla con MatchMind. L'app non forza l'apertura della fotocamera.</p></div>
+   <div class="screenshot-import-actions"><label class="button-like secondary" for="ticketScreenshot">Scegli screenshot</label><input id="ticketScreenshot" type="file" accept="image/*" hidden><span id="ticketScreenshotStatus" class="screenshot-import-status">Nessuna immagine selezionata. L'anteprima è disponibile; l'estrazione automatica dei mercati non è attiva.</span></div>
+   <div id="ticketScreenshotPreview" class="screenshot-import-preview" hidden></div>
+  </div>
   <div class="bets-filter-panel">
    <div class="field"><label for="matchSearch">Cerca squadra o partita</label><input id="matchSearch" type="search" placeholder="Es. Inter, Milan, Roma…" autocomplete="off"></div>
    <div class="bets-filter-quick">

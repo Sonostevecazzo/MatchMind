@@ -1082,3 +1082,15 @@ body[data-page="bets"] .archive-ticket{padding:15px}
  .page-wrap{height:auto!important;min-height:0!important;overflow:visible!important;max-height:none!important;padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
  .mobile-nav{touch-action:manipulation}
 }
+
+
+/* Screenshot import: standard file picker, no camera capture constraint. */
+.screenshot-import-panel{display:grid;gap:10px;margin:0 0 14px;padding:14px;border:1px dashed #52626e;border-radius:14px;background:#101820}
+.screenshot-import-panel h3{margin:3px 0;font-size:16px}
+.screenshot-import-panel p{margin:3px 0 0;color:var(--muted,#93a1b0);font-size:13px;line-height:1.5}
+.screenshot-import-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.screenshot-import-status{color:var(--muted,#93a1b0);font-size:13px;line-height:1.45}
+.screenshot-import-preview{display:grid;gap:8px;min-width:0}
+.screenshot-import-preview img{display:block;width:100%;max-height:280px;object-fit:contain;border:1px solid var(--line,#344253);border-radius:10px;background:#080d12}
+.screenshot-import-preview small{display:block;color:var(--muted,#93a1b0)}
+.screenshot-import-actions .button-like{cursor:pointer}
