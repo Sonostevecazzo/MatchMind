@@ -42,6 +42,16 @@
     <option value="combo-btts">Combinati · 1X2 + Gol / No Gol</option>
    </select><small>Le combinazioni sulla stessa partita sono calcolate sulla distribuzione dei risultati, tenendo conto della correlazione tra gli eventi.</small></div>
   <div class="field"><label for="builderPeriod">Periodo da analizzare</label><select id="builderPeriod"><option value="next-round" selected>Prossima giornata / turno</option><option value="7">Prossimi 7 giorni</option><option value="14">Prossimi 14 giorni</option><option value="30">Prossimi 30 giorni</option><option value="all">Tutte le partite future della competizione</option></select><small>La competizione è quella selezionata nel menu in alto. Le proposte usano soltanto partite di quel torneo e del periodo scelto.</small></div>
+  <section class="builder-filter-panel" aria-label="Filtri delle partite candidate">
+   <div class="builder-filter-heading"><span class="eyebrow">FILTRI PARTITE</span><b>Riduci il campo di analisi</b></div>
+   <div class="builder-filter-grid">
+    <div class="field"><label for="builderTeam">Squadra</label><select id="builderTeam"><option value="">Tutte le squadre</option></select></div>
+    <div class="field"><label for="builderDate">Data precisa</label><input id="builderDate" type="date"></div>
+    <div class="field"><label for="builderRound">Giornata</label><select id="builderRound"><option value="">Tutte le giornate</option></select></div>
+    <div class="field"><label for="builderSample">Campione statistico</label><select id="builderSample"><option value="all">Tutti</option><option value="adequate">Solo adeguato</option><option value="limited">Solo limitato</option></select></div>
+   </div>
+   <div class="builder-filter-footer"><small id="builderFilterCount" aria-live="polite">Calcolo partite compatibili…</small><button id="clearBuilderFilters" type="button" class="ghost">Azzera filtri</button></div>
+  </section>
   <div class="field"><label for="maxLegs">Numero massimo di partite</label><select id="maxLegs"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option></select></div>
   <div class="builder-action-row" style="display:flex;gap:10px;flex-wrap:wrap">
    <button id="buildTicket" type="button" class="primary" style="flex:1;min-width:180px">Genera proposta statistica</button>
@@ -58,6 +68,11 @@
 
  <section class="section panel panel-pad" id="manualBuilder">
   <div class="section-head"><div><div class="eyebrow">SCHEDINA PERSONALE</div><h2>Le tue selezioni</h2><p>Qui trovi le selezioni di calcio. Puoi modificare le quote, rimuovere gli eventi e salvare la schedina.</p></div></div>
+  <div class="screenshot-import-panel">
+   <div><div class="eyebrow">IMPORTA IMMAGINE</div><h3>Screenshot schedina</h3><p>Scegli un'immagine dalla galleria o condividila con MatchMind. Il selettore non forza la fotocamera.</p></div>
+   <div class="screenshot-import-actions"><label class="button-like secondary" for="ticketScreenshot">Scegli screenshot</label><input id="ticketScreenshot" type="file" accept="image/*" hidden><span id="ticketScreenshotStatus" class="screenshot-import-status">Anteprima disponibile. La lettura automatica di partite e quote non è ancora attiva.</span></div>
+   <div id="ticketScreenshotPreview" class="screenshot-import-preview" hidden></div>
+  </div>
   <div id="manualSlipSummary"><div class="empty-state">Nessuna selezione. Vai su <a href="./matches.html">Partite</a> e aggiungi gli esiti che vuoi inserire nella schedina.</div></div>
   <div class="manual-summary-actions"><button id="saveManualSlip" type="button" class="primary" style="flex:1;margin-top:10px">Salva schedina</button><button id="cancelEditTicket" type="button" class="secondary" style="margin-top:10px" hidden>Annulla modifica</button></div>
   <p class="bet-slip-helper">Salvare registra la schedina in MatchMind: non invia una scommessa al bookmaker.</p>

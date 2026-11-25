@@ -1,6 +1,7 @@
-const CACHE='matchmind-pwa-v160-prediction-only';
+const CACHE='matchmind-pwa-v161-mobile-ux-20261125';
 const APP_SHELL=[
  './','./index.html','./matches.html','./bets.html',
+ './analysis-lab.html','./league.html','./explore.html','./players.html','./data.html','./settings.html','./team.html','./match.html',
  './site.css','./mobile-readable.css','./matches-redesign.css',
  './site-core.js?v=20261118-prediction-only-1','./site-pages.js','./elo.js',
  './ai-engine.js','./bets-engine.js?v=20261118-prediction-only-1',
@@ -51,7 +52,9 @@ self.addEventListener('fetch',event=>{
     }
     return response;
    }catch(error){
-    const cached=await caches.match(request);
+    const normalized=new URL(request.url);normalized.search='';
+    normalized.hash='';
+    const cached=await caches.match(request)||await caches.match(new Request(normalized.toString(),{method:'GET'}));
     if(cached)return cached;
     if(request.mode==='navigate')return caches.match('./index.html');
     throw error;

@@ -166,3 +166,15 @@ Le probabilità delle schedine riutilizzano il modello Poisson esistente. Il con
 - The userscript quarantines quotes when the implied bookmaker probability and model probability differ by more than 35 percentage points, when a computed EV exceeds +100%, or when a double-chance quote exceeds 8. Such selections are marked for verification, excluded from recommended picks, and cannot be transferred from the recommendation card.
 - Generic page titles and fixtures without an embedded team rating are not analyzed as known matches.
 - The mobile widget uses a vertically scrollable market list, horizontally swipeable market tabs, and a compact viewport-aware panel.
+
+
+## Ruolo delle schermate
+
+- **Home (index.html)**: riepilogo della competizione, tre prossimi incontri, squadre preferite e collegamenti rapidi.
+- **Partite (matches.html)**: calendario completo, risultati, ricerca e filtri; è l'unico punto per esplorare tutte le gare.
+- **Costruttore (bets.html)**: seleziona periodo, squadra, data, giornata e qualità del campione; genera e confronta proposte senza duplicare il calendario.
+- **Schedina (La tua schedina)**: gestisce selezioni, quote e trasferimento manuale; non replica l'elenco delle partite.
+- **Analisi (analysis-lab.html)**: metriche del modello e validazione storica; non ripete la schedina personale.
+- **Esplora, Classifiche, Giocatori, Dati e Impostazioni**: consultazione e configurazione, accessibili dal menu mobile Altro.
+
+L'import screenshot accetta immagini da galleria/file picker e dalla condivisione Android. Non viene impostato capture, quindi la fotocamera non è forzata. In questa versione l'immagine è mostrata in anteprima: OCR e conversione automatica in selezioni non sono ancora disponibili.
