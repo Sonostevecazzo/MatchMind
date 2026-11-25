@@ -1,6 +1,6 @@
 {
   "source": "Fantacalcio.it (bollettino medico ufficiale Serie A)",
-  "last_updated": "2026-11-24T18:34:45Z",
+  "last_updated": "2026-11-25T17:45:15Z",
   "league": "Serie A",
   "teams": {
     "Atalanta": {
@@ -87,13 +87,13 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Liteta",
-          "detail": "il centrocampista out a Como sabato scorso per noie fisiche, da valutare in vista di lunedì nella 13a di campionato contro il Milan.",
+          "player": "Winks",
+          "detail": "Il regista dei sardi out contro Como e Frosinone per il perdurare di una fastidiosa lombalgia. Da valutare in vista di lunedì sera nella 13a di campionato contro il Milan.",
           "role": "Centrocampo"
         },
         {
-          "player": "Winks",
-          "detail": "Il regista dei sardi out contro Como e Frosinone per il perdurare di una fastidiosa lombalgia. Da valutare in vista di lunedì sera nella 13a di campionato contro il Milan.",
+          "player": "Liteta",
+          "detail": "il centrocampista out a Como sabato scorso per noie fisiche, da valutare in vista di lunedì nella 13a di campionato contro il Milan.",
           "role": "Centrocampo"
         }
       ],
@@ -396,14 +396,14 @@
           "role": "Centrocampo"
         },
         {
-          "player": "Badiashile",
-          "detail": "il difensore KO il 24 ottobre contro la Roma per una lesione distrattiva di medio grado del retto femorale destro, recuperabile dalla fine di novembre.",
-          "role": "Difesa"
-        },
-        {
           "player": "Santos A.",
           "detail": "l'ala offensiva azzurra KO il 18 ottobre a Venezia, vittima di una lesione distrattiva di medio grado del bicipite femorale sinistro. Recuperabile dall'inizio di dicembre.",
           "role": "Attacco"
+        },
+        {
+          "player": "Badiashile",
+          "detail": "il difensore KO il 24 ottobre contro la Roma per una lesione distrattiva di medio grado del retto femorale destro, recuperabile dalla fine di novembre.",
+          "role": "Difesa"
         },
         {
           "player": "Di Lorenzo",
