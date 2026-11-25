@@ -4,17 +4,64 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050a25">
-<meta name="description" content="MatchMind · Sports Intelligence e analisi statistiche">
-<meta http-equiv="refresh" content="0; url=./matches.html">
-<title>MatchMind · Partite</title>
-<script>
-(function(){
-  var target='./matches.html'+location.search+location.hash;
-  if(location.pathname.endsWith('/index.html')||location.pathname.endsWith('/'))location.replace(target);
-})();
-</script>
+<meta name="description" content="MatchMind · riepilogo del calcio, calendario e analisi">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./site.css">
+<link rel="stylesheet" href="./mobile-readable.css?v=20261125-home-dashboard">
+<title>MatchMind · Home</title>
+<script defer src="./bets-engine.js?v=20261118-prediction-only-1"></script>
+<script defer src="./site-core.js?v=20261118-prediction-only-1"></script>
+<script defer src="./ai-engine.js"></script>
+<script defer src="./elo.js"></script>
+<script defer src="./site-pages.js?v=20261114-bullet-center-1"></script>
 </head>
-<body>
-<p>MatchMind si apre nella Home. <a href="matches.html">Vai alle partite</a>.</p>
+<body data-page="home" data-title="Home" data-subtitle="Il riepilogo della competizione selezionata.">
+<div id="siteHeader"></div>
+<main class="page-wrap home-page">
+ <section class="home-hero" aria-labelledby="homeTitle">
+  <div class="home-hero-copy">
+   <div class="hero-kicker"><i></i> MATCHMIND · SPORTS INTELLIGENCE</div>
+   <h1 id="homeTitle">MatchMind.<br><em>Dentro i numeri.</em></h1>
+   <p>Un riepilogo essenziale: stato del calendario, prossimi incontri e accesso diretto agli strumenti. Per consultare tutte le partite usa la sezione Partite.</p>
+   <div class="home-hero-actions">
+    <a href="matches.html">Apri Partite <span aria-hidden="true">↗</span></a>
+    <a class="secondary" href="analysis-lab.html">Analisi modello</a>
+   </div>
+   <div class="home-hero-status"><i id="homeDot" class="status-dot"></i><span id="homeStatus">Caricamento dati…</span></div>
+  </div>
+  <div class="home-hero-art" aria-hidden="true">
+   <div class="pitch-art"><div class="pitch-center"></div><div class="pitch-box left"></div><div class="pitch-box right"></div><i class="pitch-dot one"></i><i class="pitch-dot two"></i><span class="pitch-label top">MATCH DATA</span><span class="pitch-label bottom">MODEL INSIGHT</span></div>
+  </div>
+ </section>
+ <section class="stat-strip home-stats" aria-label="Riepilogo competizione">
+  <div class="stat-cell"><b id="homePlayed">—</b><span>RISULTATI DISPONIBILI</span></div>
+  <div class="stat-cell"><b id="homeUpcoming">—</b><span>PARTITE FUTURE</span></div>
+  <div class="stat-cell"><b id="homeTeams">—</b><span>SQUADRE</span></div>
+ </section>
+ <div class="home-layout">
+  <section class="section home-upcoming-section">
+   <div class="section-head"><div><div class="eyebrow">PROSSIMI INCONTRI</div><h2>Le prossime tre partite</h2><p>Anteprima rapida. Cerca, filtra e seleziona gli esiti nella sezione Partite.</p></div><a class="text-link" href="matches.html">Calendario completo ↗</a></div>
+   <div id="homeNextMatches" class="fixture-list"><div class="loading-state">Caricamento…</div></div>
+  </section>
+  <aside class="home-side">
+   <section class="section">
+    <div class="section-head"><div><div class="eyebrow">ACCESSO RAPIDO</div><h2>Strumenti</h2><p>Ogni area ha una funzione distinta.</p></div></div>
+    <div class="shortcut-grid">
+     <a class="shortcut" href="matches.html"><span class="shortcut-icon">⚽</span><span><b>Partite</b><small>Calendario, risultati e filtri</small></span></a>
+     <a class="shortcut" href="bets.html"><span class="shortcut-icon">▣</span><span><b>Costruttore</b><small>Strategie e proposte</small></span></a>
+     <a class="shortcut" href="analysis-lab.html"><span class="shortcut-icon">⌁</span><span><b>Analisi</b><small>Validazione del modello</small></span></a>
+     <a class="shortcut" href="explore.html"><span class="shortcut-icon">◎</span><span><b>Squadre</b><small>Club e profili</small></span></a>
+    </div>
+   </section>
+   <section class="section">
+    <div class="section-head"><div><div class="eyebrow">PERSONALIZZAZIONE</div><h2>Le tue squadre</h2><p>Accesso rapido ai club salvati.</p></div><a class="text-link" href="explore.html">Gestisci ↗</a></div>
+    <div id="homeFavorites" class="team-grid"><div class="empty-state" style="grid-column:1/-1">Nessuna squadra salvata.</div></div>
+   </section>
+  </aside>
+ </div>
+ <div class="status-line" id="globalStatus" aria-live="polite"></div>
+ <footer class="site-footer">MatchMind · Le statistiche dipendono dalla copertura delle fonti. Le probabilità sono stime, non certezze.</footer>
+</main>
 </body>
 </html>

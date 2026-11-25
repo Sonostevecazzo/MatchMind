@@ -389,7 +389,7 @@ button.ghost{border-color:#34434d;color:#c4cdd2}
  .home-side .shortcut{min-height:68px}
 }
 @media(max-width:700px){
- body{height:100dvh;overflow:hidden}
+ body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto}
  #siteHeader{height:59px;flex:0 0 59px}
  .site-header{height:59px;padding:0 15px;gap:8px}
  .brand-mark{width:34px;height:34px;border-radius:12px}
