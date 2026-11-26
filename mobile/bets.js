@@ -56,7 +56,7 @@ function isSameMatch(h1, a1, h2, a2) {
 const fixtureKey=m=>[(m.competition||"serie-a"),m.date,norm(m.home),norm(m.away)].join("|");
 const engineKey=m=>[norm(m.home),norm(m.away)].sort().join("|")+"|"+m.date;
 const read=(key,fallback)=>{try{const value=JSON.parse(localStorage.getItem(key)||"null");return value==null?fallback:value;}catch(_){return fallback;}};
-const save=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch(_){$("globalStatus").textContent="Spazio locale insufficiente per salvare i dati."; }};
+const save=(key,value)=>{try{const raw=JSON.stringify(value);localStorage.setItem(key,raw);return localStorage.getItem(key)===raw;}catch(error){const status=$("globalStatus")||$("manualBuilderStatus")||$("archiveStatus");if(status)status.textContent="Salvataggio non riuscito: memoria locale non disponibile o piena.";console.error("MatchMind storage error",key,error);return false;}};
 const markets=()=>ENGINE().marketChoices();
 function getContext(match){
   const key = fixtureKey(match);
@@ -259,7 +259,7 @@ function renderSlip(){
  const target=$("manualSlipSummary"),rows=selectedRows();
  const count=$("betWorkspacePickCount"),saveButton=$("saveManualSlip");
  if(count)count.textContent=String(picks.length);
- if(saveButton)saveButton.disabled=picks.length===0;
+ if(saveButton)saveButton.disabled=rows.length===0;
  updateSisalTransfer(rows);
  if(!rows.length){target.innerHTML='<div class="empty-state">La schedina è vuota. Aggiungi una previsione dal costruttore della competizione selezionata.</div>';slipExpanded=false;return;}
  const hasAllProbabilities=rows.every(x=>Number.isFinite(x.probability)&&x.probability>0&&x.probability<1);
@@ -509,6 +509,7 @@ function renderArchive(){
  }).join("");
 
  target.innerHTML=bankrollCard+ticketsHtml;
+ const savedCount=$("savedTicketCount");if(savedCount)savedCount.textContent=String(closed.length);
 }
 function setBetTab(tab){
  const selected=["create","live","archive"].includes(tab)?tab:"create";
@@ -517,15 +518,17 @@ function setBetTab(tab){
 }
 
 function setBetWorkspaceTab(tab){
- const selected=tab==="slip"?"slip":"builder";
+ const selected=["slip","saved"].includes(tab)?tab:"builder";
  document.querySelectorAll("[data-bet-workspace-tab]").forEach(button=>{
   const active=button.dataset.betWorkspaceTab===selected;
   button.classList.toggle("active",active);
   button.setAttribute("aria-selected",String(active));
  });
- const builder=$("betWorkspaceBuilder"),slip=$("betWorkspaceSlip");
+ const builder=$("betWorkspaceBuilder"),slip=$("betWorkspaceSlip"),saved=$("betWorkspaceSaved");
  if(builder)builder.hidden=selected!=="builder";
  if(slip)slip.hidden=selected!=="slip";
+ if(saved)saved.hidden=selected!=="saved";
+ if(selected==="saved"){renderOpenTickets();renderArchive();}
 }
 function saveCurrentSlip(){
  const rows=selectedRows();if(!rows.length){$("manualBuilderStatus").textContent="Non ci sono selezioni da salvare. Aggiungi prima una giocata da Partite.";return;}
@@ -576,7 +579,7 @@ bookmaker:x.bookmaker||null,
  };
  if(editingTicketId){const index=archive.findIndex(ticket=>ticket.id===editingTicketId);if(index>=0)archive[index]=item;else archive.unshift(item);}
  else archive.unshift(item);
- archive=archive.slice(0,100);save(ARCHIVE_KEY,archive);
+ archive=archive.slice(0,100);if(!save(ARCHIVE_KEY,archive)){archive=read(ARCHIVE_KEY,[]);return;}
  const wasEditing=Boolean(editingTicketId),restorePicks=wasEditing&&Array.isArray(editingPreviousPicks)?editingPreviousPicks:[];
  editingTicketId=null;editingPreviousPicks=null;
  save(PICKS_KEY,wasEditing?restorePicks:[]);
@@ -584,7 +587,7 @@ bookmaker:x.bookmaker||null,
  const saveButton=$("saveManualSlip");if(saveButton)saveButton.textContent="Salva schedina";
  const cancelButton=$("cancelEditTicket");if(cancelButton)cancelButton.hidden=true;
  window.dispatchEvent(new Event("matchmind:picks-updated"));renderSlip();renderOpenTickets();renderArchive();
- $("manualBuilderStatus").textContent=wasEditing?"Modifiche salvate nella schedina esistente.":"Schedina salvata con puntata e quote registrate.";setBetTab("live");
+ $("manualBuilderStatus").textContent=wasEditing?"Modifiche salvate nella schedina esistente.":"Schedina salvata correttamente nell’archivio.";setBetWorkspaceTab("saved");setBetTab("create");
 }
 let currentBuilderStrategy='balanced';
 let proposalTarget=0.55,proposalPeriodLabel='prossima giornata';
@@ -1157,6 +1160,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
  const initialPicks=readPicks();
  setBetWorkspaceTab(location.hash.includes("manualBuilder")||location.hash.includes("saveManualSlip")||initialPicks.length?"slip":"builder");
  $("globalStatus").textContent="Carico calendario e risultati storici…";
+ const savedTabButton=document.querySelector('[data-bet-workspace-tab="saved"]');if(savedTabButton)savedTabButton.innerHTML='Schedine <span id="savedTicketCount">0</span>';
  try{
   // Carica soltanto calendario e storico della competizione selezionata. Quote e infermeria restano su richiesta.
   allData=await window.MM.loadData();data=window.MM.forCompetition(allData);
@@ -1176,6 +1180,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   if(teamSelect)teamSelect.innerHTML='<option value="">Tutte le squadre</option>'+window.MM.getTeams(fixtures).map(t=>'<option value="'+esc(t)+'">'+esc(displayTeam(t))+'</option>').join("");
   if(roundSelect){const rounds=[...new Set(fixtures.map(m=>String(m.round||"")).filter(Boolean))].sort((a,b)=>Number(a)-Number(b));roundSelect.innerHTML='<option value="">Tutte le giornate</option>'+rounds.map(n=>'<option value="'+esc(n)+'">Giornata '+esc(n)+'</option>').join("");}
   renderFixtures();renderSlip();renderOpenTickets();renderArchive();
+  const savedCount=$("savedTicketCount");if(savedCount)savedCount.textContent=String(archive.filter(ticket=>(ticket.selections||[]).length).length);
   handleUrlImport();
   $("globalStatus").textContent=(data.source==="cache"?"Dati caricati dalla cache locale":"Dati aggiornati")+" · "+fixtures.length+" partite future · "+data.history.length+" risultati storici.";
   $("targetProbabilityLabel").textContent=$("targetProbability").value+"%";
