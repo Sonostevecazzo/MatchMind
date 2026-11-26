@@ -45,10 +45,10 @@ test("all configured club competitions map to current-season open-matchday feeds
 test("an unsupported competition is rejected instead of silently returning another league",async t=>{
  const originalFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=originalFetch;});
  globalThis.fetch=async()=>new Response("missing",{status:404});
- const response=await onRequestGet({request:request("premier-league")}),body=await response.json();
+ const response=await onRequestGet({request:request("not-a-real-competition")}),body=await response.json();
  assert.equal(response.status,400);
  assert.equal(body.matches.length,0);
- assert.ok(body.errors.some(error=>error.includes("premier-league")));
+ assert.ok(body.errors.some(error=>error.includes("not-a-real-competition")));
  assert.match(body.error,/non supportata/i);
 });
 
