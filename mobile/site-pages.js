@@ -414,6 +414,16 @@ function backtestHTML(r,e){
 };
  setTimeout(next,0);
  }
+ window.addEventListener('matchmind:data-updated',()=>{
+  const page=document.body.dataset.page||'home';
+  if(!['home','matches','explore','league','team','match','mind'].includes(page))return;
+  const active=document.activeElement;
+  if(active&&['INPUT','SELECT','TEXTAREA'].includes(active.tagName)){
+    document.addEventListener('focusout',()=>window.location.reload(),{once:true});
+    return;
+  }
+  window.location.reload();
+ });
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
   try{const d=MM().forCompetition(await MM().loadData());const retrieved=d.updatedAt?new Date(d.updatedAt).toLocaleString('it-IT'):'orario non disponibile';setStatus(d.source==='cache'?'Offline · dati salvati localmente.':'Fonti: '+(d.source||'fonti pubbliche')+' · scaricati '+retrieved,d.source==='cache'?'':'ok');
