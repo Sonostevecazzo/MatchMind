@@ -1878,7 +1878,7 @@
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
-      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;background:#29200b;border:1px solid #854d0e;padding:4px 6px;line-height:1.3;">${(currentAnalysis.calculations || []).some(c => c.predictionSource === "MatchMind PWA") ? "Probabilità della PWA MatchMind applicate alle partite trasferite. Le partite senza dati trasferiti usano il motore legacy." : "Motore legacy con rating interni statici e Poisson non calibrato: stime esplorative, non prova di vantaggio."} Quote anomale escluse; EV non garantisce redditività.</div>
+      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">${(currentAnalysis.calculations || []).some(c => c.predictionSource === "MatchMind PWA") ? "Probabilità della PWA MatchMind applicate alle partite trasferite. Le partite senza dati trasferiti usano il motore legacy." : "Motore legacy con rating interni statici e Poisson non calibrato: stime esplorative, non prova di vantaggio."} Quote anomale escluse; EV non garantisce redditività.</div>
       ${!isMulti && currentAnalysis.home && currentAnalysis.away ? (() => {
         const curCtx = getMatchContext(currentAnalysis.home, currentAnalysis.away);
         const isCustom = Boolean(curCtx.attackingAbsencesHome || curCtx.defensiveAbsencesHome || curCtx.motivationHome || curCtx.attackingAbsencesAway || curCtx.defensiveAbsencesAway || curCtx.motivationAway);
@@ -2163,7 +2163,7 @@
               predictions: Array.isArray(row[9]) ? row[9].map(p => ({ marketKey: p[0], probability: p[1] })) : [],
               sampleEnough: row[10] === 1, historyCount: row[11], predictionMethod: row[12],
               start: row[13], homeAbbr: row[14], awayAbbr: row[15], side: row[16], team: row[17],
-              selectedMarketKey: row[18]
+              selectedMarketKey: row[18], homeXg: row[19], awayXg: row[20]
             }))
           : [];
       // MatchMind 2026-11-18 trasferisce solo calcio: scarta payload NBA
@@ -2182,6 +2182,8 @@
             .map(p => ({ marketKey: p.marketKey, probability: Number(p.probability) })) : [],
           sampleEnough: x.sampleEnough === true,
           historyCount: Number.isFinite(Number(x.historyCount)) ? Number(x.historyCount) : 0,
+          homeXg: x.homeXg == null || !Number.isFinite(Number(x.homeXg)) ? null : Number(x.homeXg),
+          awayXg: x.awayXg == null || !Number.isFinite(Number(x.awayXg)) ? null : Number(x.awayXg),
           predictionMethod: String(x.predictionMethod || "")
         }));
       if (items.length) {
@@ -2220,6 +2222,10 @@
         if (!Number.isFinite(probability) || probability <= 0 || probability >= 1) continue;
         calculation.modelProb = probability;
         calculation.fairOdds = 1 / probability;
+        if (item.homeXg != null && item.awayXg != null) {
+          calculation.homeXg = item.homeXg;
+          calculation.awayXg = item.awayXg;
+        }
         calculation.predictionSource = "MatchMind PWA";
         const ev = probability * calculation.odd - 1;
         const quality = item.sampleEnough === true
@@ -2231,7 +2237,7 @@
         calculation.evaluation = applyQuoteQuality(
           evaluateMarketSelection(probability, calculation.odd, calculation.fairOdds, ev,
             calculation.key, calculation.label, item.home, item.away,
-            calculation.homeXg || 0, calculation.awayXg || 0),
+            calculation.homeXg ?? 1.2, calculation.awayXg ?? 1.2),
           quality
         );
       }
