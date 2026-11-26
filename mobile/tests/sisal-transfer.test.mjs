@@ -11,12 +11,12 @@ const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
 test("checks the current Sisal userscript release, version 4.1.0, with valid metadata and syntax", () => {
-  assert.doesNotMatch(script, /\\[truncated/i);
+  assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
   assert.match(script, /^\/\/ @version\s+4\.1\.0$/m);
   assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/restore\/matchmind-4\.0-20261126\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
   assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/restore\/matchmind-4\.0-20261126\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
-  assert.match(script, /^\/\/ @match\s+https:\/\/\\*\.sisal\.it\/\\*$/m);
+  assert.ok(script.includes("// @match        https://*.sisal.it/*"));
   assert.match(script, /const MATCHMIND_URL = "https:\/\/restore-matchmind-4-0-202611\.matchmind-3te\.pages\.dev\/bets\.html"/);
 });
 
