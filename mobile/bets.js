@@ -473,9 +473,11 @@ function renderArchive(){
   '</div>';
 
  const ticketsHtml=closed.map(ticket=>{
-  const isWon=(ticket.selections||[]).every(s=>s.status==="Vinta");
-  const isLost=(ticket.selections||[]).some(s=>s.status==="Persa");
-  const ticketStatusLabel=isWon?"Vinta":isLost?"Persa":"Conclusa";
+  const selections=ticket.selections||[];
+  const isWon=selections.length>0&&selections.every(s=>s.status==="Vinta");
+  const isLost=selections.some(s=>s.status==="Persa");
+  const isClosed=selections.length>0&&selections.every(s=>terminalStatus(s.status||"Da giocare"));
+  const ticketStatusLabel=isWon?"Vinta":isLost?"Persa":isClosed?"Conclusa":selections.some(s=>s.status==="In corso")?"In corso":"Da giocare";
   const ticketStatusClass=isWon?"ticket-state-won":isLost?"ticket-state-lost":"";
   const stake=Number(ticket.stake)||null,potWin=Number(ticket.potentialWin)||null,totalOdds=Number(ticket.totalOdds)||null;
   const profitLoss=isWon?(potWin!=null&&stake!=null?potWin-stake:null):isLost?(stake!=null?-stake:null):null;
@@ -485,7 +487,7 @@ function renderArchive(){
     '<span>Puntata: <b>'+curr(stake)+'</b></span>'+
     (totalOdds?'<span>Quota: <b>'+fmtOdds(totalOdds)+'</b></span>':'')+
     (potWin?'<span>Incasso potenziale: <b>'+curr(potWin)+'</b></span>':'')+
-    (ticket.actualPayout!=null?'<span>Incasso effettivo: <b class="profit-pos">'+curr(Number(ticket.actualPayout))+'</b></span>':(isWon&&potWin?'<span>Incasso: <b class="profit-pos">'+curr(potWin)+'</b></span>':'<span>Incasso: <b>0,00 €</b></span>'))+
+    (ticket.actualPayout!=null?'<span>Incasso effettivo: <b class="profit-pos">'+curr(Number(ticket.actualPayout))+'</b></span>':(isWon&&potWin?'<span>Incasso: <b class="profit-pos">'+curr(potWin)+'</b></span>':(isLost?'<span>Incasso: <b>0,00 €</b></span>':'<span>Incasso: <b>—</b></span>')))+
     (profitLoss!=null?'<span>Bilancio: <b class="'+(profitLoss>=0?'profit-pos':'profit-neg')+'">'+(profitLoss>=0?'+':'')+curr(profitLoss)+'</b></span>':'')+
     (ticket.bookmaker?'<span>Bookmaker: <b>'+esc(ticket.bookmaker)+'</b></span>':'')+
    '</div>':'';
