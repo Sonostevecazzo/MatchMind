@@ -1106,7 +1106,7 @@ function eventForecast(match,history){
       window.dispatchEvent(new CustomEvent("matchmind:data-refresh-error",{detail:{reason,message:String(error&&error.message||error)}}));
     }finally{dataRefreshInProgress=false;}
   }
-  window.setInterval(()=>refreshImportantData("interval"),DATA_REFRESH_INTERVAL_MS);
-  window.addEventListener("focus",()=>refreshImportantData("focus"));
-  document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshImportantData("visibility")});
+  if(typeof window.setInterval==="function")window.setInterval(()=>refreshImportantData("interval"),DATA_REFRESH_INTERVAL_MS);
+  if(typeof window.addEventListener==="function")window.addEventListener("focus",()=>refreshImportantData("focus"));
+  if(typeof document.addEventListener==="function")document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshImportantData("visibility")});
 })();
