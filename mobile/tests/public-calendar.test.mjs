@@ -29,7 +29,10 @@ test("public calendar merges club competitions and keyless ESPN Nations League f
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.source, "open-matchday + openfootball + ESPN Nations League");
-  assert.deepEqual([...new Set(body.matches.map(x => x.competition))].sort(), ["champions-league", "europa-league", "nations-league", "serie-a"]);
+  assert.deepEqual([...new Set(body.matches.map(x => x.competition))].sort(), [
+    "bundesliga", "champions-league", "conference-league", "europa-league",
+    "la-liga", "ligue-1", "nations-league", "premier-league", "serie-a", "serie-b"
+  ]);
   const serieResult = body.matches.find(x => x.competition === "serie-a" && x.hg === 2);
   assert.equal(serieResult.hc, 6);
   assert.equal(serieResult.hs, 12);
