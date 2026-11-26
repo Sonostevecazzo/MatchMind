@@ -438,8 +438,8 @@ function renderOpenTickets(){
 }
 function renderArchive(){
  const target=$("slipArchive");if(!target)return;
- const closed=archive.filter(ticket=>(ticket.selections||[]).length&&(ticket.selections||[]).every(selection=>terminalStatus(selection.status||"Da giocare")));
- if(!closed.length){target.innerHTML='<div class="empty-state">Le schedine concluse appariranno qui dopo l’aggiornamento dei risultati.</div>';return;}
+ const closed=archive.filter(ticket=>(ticket.selections||[]).length);
+ if(!closed.length){target.innerHTML='<div class="empty-state">Non hai ancora salvato schedine. Salva una schedina per ritrovarla qui.</div>';return;}
 
  const settled=closed.filter(ticket=>(ticket.selections||[]).every(selection=>selection.status==="Vinta"||selection.status==="Persa")&&Number.isFinite(Number(ticket.stake))&&Number(ticket.stake)>0);
  let totalStaked=0,totalWon=0,wonCount=0,lostCount=0;
@@ -911,9 +911,12 @@ function handleUrlImport(){
    const home=String(item.home).trim(),away=String(item.away).trim();
    const candidates=catalog.filter(m=>isSameMatch(m.home,m.away,home,away));
    const requestedCompetition=String(item.competition||"");
-   const match=(requestedCompetition?candidates.find(m=>(m.competition||"serie-a")===requestedCompetition):null)||candidates[0]||null;
-   const comp=requestedCompetition||(match&&match.competition)||window.MM.getSelectedCompetition()||"serie-a";
-   const date=(match&&match.date)||String(item.date||"");
+   const activeCompetition=window.MM.getSelectedCompetition()||"serie-a";
+   const dateHint=String(item.date||payload.date||"");
+   const pool=candidates.filter(m=>(m.competition||"serie-a")===(requestedCompetition||activeCompetition));
+   const match=pool.find(m=>dateHint&&m.date===dateHint)||pool[0]||null;
+   const comp=requestedCompetition||(match&&match.competition)||activeCompetition;
+   const date=(match&&match.date)||dateHint;
    const oddsNum=Number(item.odds);
    const odds=Number.isFinite(oddsNum)&&oddsNum>1&&oddsNum<=1000?oddsNum:null;
    const bkmk=String(item.bookmaker||defaultBkmk);
@@ -1156,7 +1159,7 @@ document.addEventListener("DOMContentLoaded",async()=>{
   // Carica soltanto calendario e storico della competizione selezionata. Quote e infermeria restano su richiesta.
   allData=await window.MM.loadData();data=window.MM.forCompetition(allData);
   fixtures=(data.matches||[]).filter(window.MM.upcoming).slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
-  picks=readPicks().filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition()&&fixtures.some(m=>fixtureKey(m)===fixtureKey(p)));
+  picks=readPicks().filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
   contexts=read(CONTEXT_KEY,{});
   archive=read(ARCHIVE_KEY,[]);
   if(!Array.isArray(archive))archive=[];
