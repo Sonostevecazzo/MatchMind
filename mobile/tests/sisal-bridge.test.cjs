@@ -11,6 +11,7 @@ test("exports the selected match and every valid MatchMind market forecast", () 
     sampleEnough: false,
     historyCount: 7,
     predictionMethod: "poisson",
+    forecast: { homeXg: 1.63, awayXg: 0.92 },
     predictions: [
       { marketKey: "home", label: "1", probability: 0.41, sampleEnough: false, historyCount: 7, model: "elo-1x2-poisson-goals" },
       { marketKey: "draw", label: "X", probability: 0.28, sampleEnough: false, historyCount: 7, model: "elo-1x2-poisson-goals" },
@@ -35,6 +36,8 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.equal(item.probability, 0.522);
   assert.equal(item.sampleEnough, false);
   assert.equal(item.historyCount, 7);
+  assert.equal(item.homeXg, 1.63);
+  assert.equal(item.awayXg, 0.92);
   assert.deepEqual(item.predictions.map(x => x.marketKey), [
     "home", "draw", "away", "bttsYes", "over25", "combo:home:over25"
   ]);
@@ -56,6 +59,8 @@ test("exports the selected match and every valid MatchMind market forecast", () 
   assert.equal(decoded.i[0][10], 0);
   assert.equal(decoded.i[0][11], item.historyCount);
   assert.equal(decoded.i[0][18], "bttsYes");
+  assert.equal(decoded.i[0][19], 1.63);
+  assert.equal(decoded.i[0][20], 0.92);
 });
 
 test("supports complete match forecasts without marking any market as selected", () => {
