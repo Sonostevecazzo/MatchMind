@@ -110,7 +110,7 @@
       }));
       settled.forEach(result=>{if(result.status==="fulfilled")batches.push(...result.value);});
     }
-    if(!batches.length)throw new Error("ESPN Nations League: nessuna finestra storica accessibile");
+    if(!batches.length)throw new Error("ESPN "+competitionId+": nessuna finestra accessibile");
     const events=[...new Map(batches.map(event=>[String(event.id),event])).values()];
     return events.map(event=>{
       const comp=event?.competitions?.[0]||{},teams=Array.isArray(comp.competitors)?comp.competitors:[];
@@ -121,7 +121,7 @@
       const done=Boolean(status.completed)||String(status.state||"").toLowerCase()==="post";
       if(!date||!homeName||!awayName)return null;
       const score=value=>value===null||value===undefined||value===""?null:num(value);
-      return {id:String(event?.id||""),date,time:localDateTime?.time||"",round:null,stage:"UEFA Nations League",home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:competitionId,source:"ESPN"};
+      return {id:String(event?.id||""),date,time:localDateTime?.time||"",round:null,stage:COMPETITIONS[competitionId]?.name||competitionId,home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:competitionId,source:"ESPN"};
     }).filter(Boolean);
   }
 
@@ -1077,4 +1077,36 @@ function eventForecast(match,history){
   }
 
   window.MM={loadOdds,matchOdds,getOddsMeta:()=>({...oddsMeta}),trainAvailableModels,loadInjuries,getInjuryFeedStatus:()=>({...injuryDataFreshness()}),getMatchInjuries,findTeamInjuries,$,esc,norm,sameTeam,loadData,backtest,getSelectedCompetition,getCompetitions:()=>Object.values(COMPETITIONS).map(item=>({...item})),competitionInfo,filterCompetition,forCompetition,get data(){return data;},hasScore,upcoming,dateLabel,shortDate,matchUrl,teamUrl,teamInitials,displayTeamName,badge,getTeams,groupByDate,standings,forecast,eventForecast,matchStandingsContext,teamStats,probs,isFavorite,toggleFavorite,seasonStart,formatNumber:(n,d=0)=>Number(n||0).toLocaleString('it-IT',{maximumFractionDigits:d}),status:m=>hasScore(m)?'Terminata':upcoming(m)?'In programma':'Da aggiornare'};
+
+  // Background polling is conditional: no traffic while hidden, and the UI
+  // receives an event only when fixtures, results, statuses or kickoff times change.
+  const DATA_REFRESH_INTERVAL_MS=10*60*1000;
+  let dataRefreshInProgress=false,lastDataRefreshAt=0;
+  const dataFingerprint=payload=>(Array.isArray(payload?.matches)?payload.matches:[])
+    .concat(Array.isArray(payload?.history)?payload.history:[])
+    .map(match=>[match.competition||"serie-a",match.date,match.time,match.home,match.away,match.status,match.hg,match.ag,match.source].join("~"))
+    .sort().join("|");
+  async function refreshImportantData(reason){
+    if(dataRefreshInProgress||document.hidden||!data||!data.updatedAt)return;
+    const now=Date.now();
+    if(now-lastDataRefreshAt<2*60*1000)return;
+    dataRefreshInProgress=true;lastDataRefreshAt=now;
+    try{
+      const previous=dataFingerprint(data),previousOdds=JSON.stringify(oddsMeta);
+      const refreshed=await loadData(true);
+      const changed=previous!==dataFingerprint(refreshed);
+      await loadOdds(true);
+      const oddsChanged=previousOdds!==JSON.stringify(oddsMeta);
+      if(changed){
+        forecastMemo.clear();
+        window.dispatchEvent(new CustomEvent("matchmind:data-updated",{detail:{reason,competition:getSelectedCompetition(),updatedAt:refreshed.updatedAt}}));
+      }
+      if(oddsChanged)window.dispatchEvent(new Event("matchmind:odds-updated"));
+    }catch(error){
+      window.dispatchEvent(new CustomEvent("matchmind:data-refresh-error",{detail:{reason,message:String(error&&error.message||error)}}));
+    }finally{dataRefreshInProgress=false;}
+  }
+  window.setInterval(()=>refreshImportantData("interval"),DATA_REFRESH_INTERVAL_MS);
+  window.addEventListener("focus",()=>refreshImportantData("focus"));
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshImportantData("visibility")});
 })();
