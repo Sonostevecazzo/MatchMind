@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      3.6.5
+// @version      4.0.0
 // @description  Motore Sisal 3.6.5 · scansione leggera e reattiva, solo calcio.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
@@ -24,7 +24,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "3.6.5";
+  const MM_SCRIPT_VERSION = "4.0.0";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
