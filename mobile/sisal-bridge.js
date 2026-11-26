@@ -88,6 +88,10 @@
         : marketKey;
       const selectedMarketKey = requestedSelection && predictions.some(entry => entry.marketKey === requestedSelection)
         ? requestedSelection : (Object.prototype.hasOwnProperty.call(row || {}, "selectedMarketKey") ? null : marketKey);
+      const rawHomeXg = row.homeXg ?? (row.forecast && row.forecast.homeXg);
+      const rawAwayXg = row.awayXg ?? (row.forecast && row.forecast.awayXg);
+      const homeXg = rawHomeXg == null ? null : Number(rawHomeXg);
+      const awayXg = rawAwayXg == null ? null : Number(rawAwayXg);
       const item = {
         home, away, marketKey, label, date, competition, eventId, sport,
         probability: selected ? selected.probability : selectedProbability,
@@ -95,6 +99,8 @@
         selectedMarketKey,
         sampleEnough,
         historyCount: Math.max(0, historyCount),
+        homeXg: Number.isFinite(homeXg) && homeXg >= 0 && homeXg <= 10 ? homeXg : null,
+        awayXg: Number.isFinite(awayXg) && awayXg >= 0 && awayXg <= 10 ? awayXg : null,
         predictionMethod: String(row.predictionMethod || (row.forecast && row.forecast.predictionMethod) || (sport === "nba" ? "NBA Elo" : "MatchMind"))
       };
       items.push(item);
@@ -123,7 +129,8 @@
         item.predictions.map(prediction => [prediction.marketKey, prediction.probability]),
         item.sampleEnough ? 1 : 0, item.historyCount, item.predictionMethod,
         item.start || "", item.homeAbbr || "", item.awayAbbr || "",
-        item.side || "", item.team || "", item.selectedMarketKey
+        item.side || "", item.team || "", item.selectedMarketKey,
+        item.homeXg, item.awayXg
       ])
     };
     const encoded = encodeURIComponent(JSON.stringify(wire));
