@@ -1,11 +1,19 @@
 /* MatchMind shared data and navigation layer. No forecast output is fabricated. */
 (function(){
-  const CACHE_KEY='matchmind-multipage-cache-v16-cornerflick-nations-history';
+  const CACHE_KEY='matchmind-multipage-cache-v17-competition-catalogue';
   const COMPETITIONS = {
-    "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", calendarYear: false },
-    "champions-league": { id: "champions-league", name: "UEFA Champions League", country: "Europa", kind: "club", logo: null, fallback: "UCL", feed: "UEFA_1_champions-league", calendarYear: false },
-    "europa-league": { id: "europa-league", name: "UEFA Europa League", country: "Europa", kind: "club", logo: null, fallback: "UEL", feed: "UEFA_1_europa-league", calendarYear: false },
-    "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, calendarYear: true }
+    "serie-a": { id: "serie-a", name: "Serie A", country: "Italia", kind: "club", logo: null, fallback: "SA", feed: "ITA_1_serie-a", slug: "ita.1", calendarYear: false },
+    "serie-b": { id: "serie-b", name: "Serie B", country: "Italia", kind: "club", logo: null, fallback: "SB", feed: "ITA_2_serie-b", slug: "ita.2", calendarYear: false },
+    "champions-league": { id: "champions-league", name: "UEFA Champions League", country: "Europa", kind: "club", logo: null, fallback: "UCL", feed: "UEFA_1_champions-league", slug: "uefa.champions", calendarYear: false },
+    "europa-league": { id: "europa-league", name: "UEFA Europa League", country: "Europa", kind: "club", logo: null, fallback: "UEL", feed: "UEFA_1_europa-league", slug: "uefa.europa", calendarYear: false },
+    "conference-league": { id: "conference-league", name: "UEFA Conference League", country: "Europa", kind: "club", logo: null, fallback: "UECL", feed: "UEFA_1_conference-league", slug: "uefa.europa.conf", calendarYear: false },
+    "nations-league": { id: "nations-league", name: "UEFA Nations League", country: "Nazionali", kind: "national", logo: null, fallback: "NL", feed: null, slug: "uefa.nations", calendarYear: true },
+    "premier-league": { id: "premier-league", name: "Premier League", country: "Inghilterra", kind: "club", logo: null, fallback: "EPL", feed: "ENG_1_premier-league", slug: "eng.1", calendarYear: false },
+    "la-liga": { id: "la-liga", name: "La Liga", country: "Spagna", kind: "club", logo: null, fallback: "LL", feed: "ESP_1_la-liga", slug: "esp.1", calendarYear: false },
+    "bundesliga": { id: "bundesliga", name: "Bundesliga", country: "Germania", kind: "club", logo: null, fallback: "BUN", feed: "GER_1_bundesliga", slug: "ger.1", calendarYear: false },
+    "ligue-1": { id: "ligue-1", name: "Ligue 1", country: "Francia", kind: "club", logo: null, fallback: "L1", feed: "FRA_1_ligue-1", slug: "fra.1", calendarYear: false },
+    "world-cup": { id: "world-cup", name: "Mondiali FIFA", country: "Nazionali", kind: "national", logo: null, fallback: "WC", feed: null, slug: "fifa.world", calendarYear: true },
+    "european-championship": { id: "european-championship", name: "Campionato Europeo UEFA", country: "Nazionali", kind: "national", logo: null, fallback: "EURO", feed: null, slug: "uefa.euro", calendarYear: true }
   };
   function getSelectedCompetition(){
     const params=new URLSearchParams(location.search),requested=params.get('competition');
@@ -41,7 +49,7 @@
       id:competition.id,
       folder:competition.feed,
       calendarYear:Boolean(competition.calendarYear),
-      history:["serie-a","champions-league","europa-league"].includes(competition.id)
+      history:true
     }));
 
   function parseCsvRows(input){
@@ -83,8 +91,8 @@
     const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(date).filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
     return {date:parts.year+'-'+parts.month+'-'+parts.day,time:parts.hour+':'+parts.minute};
   }
-  async function fetchDirectNationsLeague(year){
-    const now=new Date(),start=new Date(Date.UTC(now.getUTCFullYear(),8,1)),end=new Date(now);end.setDate(end.getDate()+92);
+  async function fetchDirectESPNCompetition(competitionId,slug){
+    const now=new Date(),start=competitionId==="nations-league"?new Date(Date.UTC(now.getUTCFullYear(),8,1)):new Date(now.getTime()-2*86400000),end=new Date(now);end.setDate(end.getDate()+92);
     const windows=[];
     for(let cursor=new Date(start);cursor<=end;){
       const from=new Date(cursor),to=new Date(cursor);to.setUTCDate(to.getUTCDate()+27);if(to>end)to.setTime(end.getTime());
@@ -96,8 +104,8 @@
     const batches=[];
     for(let offset=0;offset<windows.length;offset+=3){
       const settled=await Promise.allSettled(windows.slice(offset,offset+3).map(async([from,to])=>{
-        const response=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard?dates="+from+"-"+to+"&limit=500",{signal:AbortSignal.timeout(18000)});
-        if(!response.ok)throw new Error("ESPN Nations League HTTP "+response.status);
+        const response=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/"+encodeURIComponent(slug)+"/scoreboard?dates="+from+"-"+to+"&limit=500",{signal:AbortSignal.timeout(18000)});
+        if(!response.ok)throw new Error("ESPN "+competitionId+" HTTP "+response.status);
         const payload=await response.json();return Array.isArray(payload.events)?payload.events:[];
       }));
       settled.forEach(result=>{if(result.status==="fulfilled")batches.push(...result.value);});
@@ -113,9 +121,11 @@
       const done=Boolean(status.completed)||String(status.state||"").toLowerCase()==="post";
       if(!date||!homeName||!awayName)return null;
       const score=value=>value===null||value===undefined||value===""?null:num(value);
-      return {id:String(event?.id||""),date,time:localDateTime?.time||"",round:null,stage:"UEFA Nations League",home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:"nations-league",source:"ESPN"};
+      return {id:String(event?.id||""),date,time:localDateTime?.time||"",round:null,stage:"UEFA Nations League",home:homeName,away:awayName,hg:done?score(home?.score):null,ag:done?score(away?.score):null,ht:null,at:null,hs:null,as:null,hst:null,ast:null,hf:null,af:null,hc:null,ac:null,hy:null,ay:null,hr:null,ar:null,goalMinutes:"",status:done?"FT":String(status.state||"").toLowerCase()==="in"?"LIVE":"NS",statusLong:status.shortDetail||status.detail||(done?"Terminata":"In programma"),competition:competitionId,source:"ESPN"};
     }).filter(Boolean);
   }
+
+  async function fetchDirectNationsLeague(year){return fetchDirectESPNCompetition("nations-league","uefa.nations");}
 
   function cornerflickRows(payload){
     if(Array.isArray(payload))return payload;
@@ -241,10 +251,16 @@
       history.push(...resultMap.values());
       if(!nations.length)feedErrors.push("Calendario futuro: fallback ufficiale UEFA; ESPN storico non disponibile.");
       if(!cornerHistory.length)feedErrors.push("Archivio risultati Cornerflick non disponibile: il modello userà solo i risultati ESPN presenti.");
+    } else if(selectedFeeds.length===0 && COMPETITIONS[selectedId]?.slug){
+      try{
+        const international=await fetchDirectESPNCompetition(selectedId,COMPETITIONS[selectedId].slug);
+        matches.push(...international);
+        history.push(...international.filter(match=>match.status==="FT"&&match.hg!==null&&match.ag!==null));
+      }catch(error){feedErrors.push("ESPN "+selectedId+": "+String(error&&error.message||error));}
     }
     matches.sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
     history.sort((a,b)=>a.date.localeCompare(b.date));
-    if(!matches.length)throw new Error('I dataset pubblici non contengono partite accessibili per questa stagione.');
+    if(!matches.length&&feedErrors.length)throw new Error(feedErrors.join(" · ")||"Nessuna partita disponibile nella finestra di calendario.");
     const counts=Object.fromEntries(LEAGUE_SOURCES.map(league=>[league.id,matches.filter(match=>match.competition===league.id).length]));
     return {
       matches,history,season:y,counts,errors:feedErrors,
