@@ -34,7 +34,7 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.doesNotMatch(script, /setInterval\(\(\) => \{[\s\S]{0,120}scanPage\(\);[\s\S]{0,80}2500\)/);
   assert.match(script, /hasVisibleEventRows/);
   assert.match(script, /multiMatches.length === 0/);
-  assert.match(script, /textLength<previous.textLength/);
+  assert.match(script, /text\.length<previous\.textLength/);
 });
 
 test("keeps the football transfer path compatible with the current v3 fragment and never clicks odds automatically", () => {
