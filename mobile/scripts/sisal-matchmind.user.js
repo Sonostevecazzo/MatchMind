@@ -4,10 +4,8 @@
 // @version      4.0.0
 // @description  MatchMind 4.0 · analisi calcio, sincronizzazione PWA e quote Sisal.
 // @author       Simone Sedda & MatchMind
-// @match        https://www.sisal.it/scommesse*
-// @match        https://www.sisal.it/scommesse-matchpoint*
-// @match        https://scommesse.sisal.it/*
-// @match        https://sisal.it/scommesse*
+// @match        https://sisal.it/*
+// @match        https://*.sisal.it/*
 // @match        https://*.lovable.app/*
 // @match        https://matchmind-3te.pages.dev/*
 // @match        https://restore-matchmind-4-0-202611.matchmind-3te.pages.dev/*
