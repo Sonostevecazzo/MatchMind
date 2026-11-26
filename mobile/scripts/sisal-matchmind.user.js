@@ -1878,7 +1878,7 @@
         <div class="mm-head-actions"><button id="mm-btn-minimize" class="mm-icon-btn" title="Riduci a pillola">—</button><button id="mm-btn-close-w" class="mm-icon-btn" title="Nascondi">✕</button></div>
       </div>
       <div class="mm-match-title">${headerTitle}</div>
-      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;padding:4px 6px;line-height:1.3;">Rating interni statici + modello Poisson non calibrato. Le quote anomale vengono escluse; EV esplorativo, non prova di vantaggio.</div>
+      <div style="font-size:9px;color:#fbbf24;background:#29200b;border:1px solid #854d0e;border-radius:5px;background:#29200b;border:1px solid #854d0e;padding:4px 6px;line-height:1.3;">${(currentAnalysis.calculations || []).some(c => c.predictionSource === "MatchMind PWA") ? "Probabilità della PWA MatchMind applicate alle partite trasferite. Le partite senza dati trasferiti usano il motore legacy." : "Motore legacy con rating interni statici e Poisson non calibrato: stime esplorative, non prova di vantaggio."} Quote anomale escluse; EV non garantisce redditività.</div>
       ${!isMulti && currentAnalysis.home && currentAnalysis.away ? (() => {
         const curCtx = getMatchContext(currentAnalysis.home, currentAnalysis.away);
         const isCustom = Boolean(curCtx.attackingAbsencesHome || curCtx.defensiveAbsencesHome || curCtx.motivationHome || curCtx.attackingAbsencesAway || curCtx.defensiveAbsencesAway || curCtx.motivationAway);
@@ -2169,7 +2169,21 @@
       // MatchMind 2026-11-18 trasferisce solo calcio: scarta payload NBA
       // residui e conserva la competizione per evitare collisioni tra tornei.
       const items = incomingItems.filter(x => x && x.home && x.away && x.marketKey && x.sport !== "nba")
-        .map(x => ({ home: String(x.home), away: String(x.away), marketKey: String(x.marketKey), label: String(x.label || x.marketKey), odds: Number(x.odds) || null, date: x.date || "", competition: String(x.competition || "serie-a"), sport: "football", eventId: String(x.eventId || ""), start: "", homeAbbr: "", awayAbbr: "", status: "pending", sentAt: Number(incoming.sentAt || incoming.t) || Date.now() }));
+        .map(x => ({
+          home: String(x.home), away: String(x.away), marketKey: String(x.marketKey),
+          label: String(x.label || x.marketKey), odds: Number(x.odds) || null,
+          date: x.date || "", competition: String(x.competition || "serie-a"),
+          sport: "football", eventId: String(x.eventId || ""), start: "",
+          homeAbbr: "", awayAbbr: "", status: "pending",
+          sentAt: Number(incoming.sentAt || incoming.t) || Date.now(),
+          modelProbability: Number.isFinite(Number(x.probability)) ? Number(x.probability) : null,
+          predictions: Array.isArray(x.predictions) ? x.predictions
+            .filter(p => p && typeof p.marketKey === "string" && Number.isFinite(Number(p.probability)))
+            .map(p => ({ marketKey: p.marketKey, probability: Number(p.probability) })) : [],
+          sampleEnough: x.sampleEnough === true,
+          historyCount: Number.isFinite(Number(x.historyCount)) ? Number(x.historyCount) : 0,
+          predictionMethod: String(x.predictionMethod || "")
+        }));
       if (items.length) {
         const k = q => q.sport + "|" + (q.competition || "serie-a") + "|" + canonicalTeam(q.home) + "|" + canonicalTeam(q.away) + "|" + q.marketKey + "|" + (q.date || "");
         const prev = incoming.retry ? readPlayQueue() : [];
@@ -2194,6 +2208,33 @@
         canonicalTeam(c.away) === canonicalTeam(item.away)
       );
       if (!sameMatch.length) continue;
+      // Prefer the central PWA forecast for every market transferred with this
+      // fixture. The legacy embedded ratings remain only as a fallback when no
+      // MatchMind PWA prediction was included in the handoff.
+      const centralPredictions = Array.isArray(item.predictions) ? item.predictions : [];
+      for (const calculation of sameMatch) {
+        if (!calculation.btn || !calculation.key) continue;
+        const central = centralPredictions.find(p => p.marketKey === calculation.key);
+        if (!central) continue;
+        const probability = Number(central.probability);
+        if (!Number.isFinite(probability) || probability <= 0 || probability >= 1) continue;
+        calculation.modelProb = probability;
+        calculation.fairOdds = 1 / probability;
+        calculation.predictionSource = "MatchMind PWA";
+        const ev = probability * calculation.odd - 1;
+        const quality = item.sampleEnough === true
+          ? validateQuoteData(probability, calculation.odd, calculation.key)
+          : { valid: false, reason: "Campione storico MatchMind insufficiente: il valore atteso resta disattivato." };
+        calculation.ev = quality.valid ? ev : null;
+        calculation.dataValid = quality.valid;
+        calculation.dataIssue = quality.valid ? "" : quality.reason;
+        calculation.evaluation = applyQuoteQuality(
+          evaluateMarketSelection(probability, calculation.odd, calculation.fairOdds, ev,
+            calculation.key, calculation.label, item.home, item.away,
+            calculation.homeXg || 0, calculation.awayXg || 0),
+          quality
+        );
+      }
       const hit = sameMatch.find(c => c.btn && c.key === item.marketKey);
       if (!hit) {
         const msg = "Partita trovata su Sisal, ma la quota «" + item.label + "» non è presente o è sospesa.";
