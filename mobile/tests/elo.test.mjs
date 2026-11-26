@@ -30,3 +30,11 @@ test("Elo pre-match prediction refuses insufficient team samples",()=>{
  const rows=Array.from({length:35},(_,i)=>({date:new Date(Date.UTC(2023,0,1+i)).toISOString().slice(0,10),home:'Alpha FC',away:'Beta FC',hg:1,ag:0,competition:'serie-a'}));
  assert.equal(predict({date:'2023-03-01',home:'New FC',away:'Beta FC',competition:'serie-a'},rows),null);
 });
+
+test("uses a separate provisional home-advantage prior for national-team competitions",()=>{
+ assert.equal(window.MM.eloProbabilities({home:"Italy",away:"France",date:"2026-11-20",competition:"nations-league"},[],{}),null);
+ assert.equal(window.MatchMindElo.defaultHomeAdvantage("serie-a"),40);
+ assert.equal(window.MatchMindElo.defaultHomeAdvantage("nations-league"),25);
+ assert.equal(window.MatchMindElo.defaultHomeAdvantage("world-cup"),25);
+ assert.equal(window.MatchMindElo.defaultHomeAdvantage("european-championship"),25);
+});
