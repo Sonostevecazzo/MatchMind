@@ -195,3 +195,32 @@ test("fair odds and expected value use decimal odds and reject invalid inputs", 
   assert.equal(bets.expectedValue(0.5, 1), null);
   assert.equal(bets.expectedValue(null, 2), null);
 });
+
+
+test("calculates double-chance probabilities from the 1X2 distribution", () => {
+  const f = { probabilities: { home: 0.42, draw: 0.28, away: 0.30 } };
+  assert.ok(Math.abs(bets.marketProbability(f, "dc1X") - 0.70) < 1e-12);
+  assert.ok(Math.abs(bets.marketProbability(f, "dcX2") - 0.58) < 1e-12);
+  assert.ok(Math.abs(bets.marketProbability(f, "dc12") - 0.72) < 1e-12);
+  assert.deepEqual(bets.marketCandidates("double-chance").map(item => item.key), ["dc1X", "dcX2", "dc12"]);
+});
+
+test("parses double-chance labels without confusing them with single 1X2 outcomes", () => {
+  assert.equal(bets.parseMarket("Doppia chance 1X").key, "dc1X");
+  assert.equal(bets.parseMarket("X2").key, "dcX2");
+  assert.equal(bets.parseMarket("Doppia chance 12").key, "dc12");
+});
+
+test("exposes top exact-score selections from the score matrix", () => {
+  const f = {
+    probabilities: { home: 0.42, draw: 0.28, away: 0.30 },
+    scoreMatrix: [
+      { homeGoals: 1, awayGoals: 0, probability: 0.18 },
+      { homeGoals: 1, awayGoals: 1, probability: 0.14 },
+      { homeGoals: 2, awayGoals: 0, probability: 0.13 }
+    ]
+  };
+  assert.deepEqual(bets.marketCandidates("exact-score", f).map(item => item.key), ["score:1-0", "score:1-1", "score:2-0"]);
+  assert.equal(bets.marketProbability(f, "score:1-0"), 0.18);
+  assert.equal(bets.marketProbability(f, "score:1-1"), 0.14);
+});
