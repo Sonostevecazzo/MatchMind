@@ -28,8 +28,7 @@
     ["over25", "Over 2,5"], ["under25", "Under 2,5"],
     ["over35", "Over 3,5"], ["under35", "Under 3,5"],
     ["bttsYes", "Gol"], ["bttsNo", "No Gol"],
-    ["home", "1"], ["draw", "X"], ["away", "2"],
-    ["dc1X", "Doppia chance 1X"], ["dcX2", "Doppia chance X2"], ["dc12", "Doppia chance 12"]
+    ["home", "1"], ["draw", "X"], ["away", "2"]
   ];
 
   function marketChoices() {
@@ -151,7 +150,11 @@
         label: cell.homeGoals + "-" + cell.awayGoals
       }));
     }
-    if (mode === "double-chance") return singles.filter(item => ["dc1X", "dcX2", "dc12"].includes(item.key));
+    if (mode === "double-chance") return [
+      { key: "dc1X", label: "Doppia chance 1X" },
+      { key: "dcX2", label: "Doppia chance X2" },
+      { key: "dc12", label: "Doppia chance 12" }
+    ];
     if (mode === "single") return singles;
     if (mode === "1x2") return singles.filter(item => ["home", "draw", "away"].includes(item.key));
     if (mode === "goals") return singles.filter(item => /^(over|under)/.test(item.key));
