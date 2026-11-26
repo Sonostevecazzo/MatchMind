@@ -5,7 +5,7 @@
 <meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261113-compact-nav-1">
 <title>MatchMind · Previsioni</title>
-<script defer src="./bets-engine.js?v=20261118-prediction-only-1"></script><script defer src="./site-core.js?v=20261118-prediction-only-1"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js?v=20261118-prediction-only-1"></script>
+<script defer src="./bets-engine.js?v=20261127-builder-import-1"></script><script defer src="./site-core.js?v=20261127-builder-import-1"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js?v=20261127-builder-import-1"></script>
 </head>
 <body data-page="bets" data-title="Previsioni" data-subtitle="Previsioni calcistiche e costruttore per le partite future.">
 <div id="siteHeader"></div>
@@ -181,6 +181,29 @@ body[data-page="bets"] .bet-sisal-details[open]>summary{padding-bottom:12px;bord
  body[data-page="bets"] .bet-workspace-tabs{position:sticky;top:6px;z-index:15;box-shadow:0 8px 22px #0005}
  body[data-page="bets"] .bet-workspace-tab{min-height:42px;padding:8px 6px;font-size:12px}
  body[data-page="bets"] .bet-sisal-details{padding:13px}
+}
+
+
+/* MatchMind 4.1: clearer builder sequence and saved-ticket cards. */
+body[data-page="bets"] #automaticBuilder{display:flex;flex-direction:column;gap:14px}
+body[data-page="bets"] #automaticBuilder>.section-head{margin:0}
+body[data-page="bets"] #automaticBuilder>.section-head p{max-width:58ch;margin:0;color:var(--muted,#9aa9b8);line-height:1.5}
+body[data-page="bets"] #automaticBuilder>.field{margin:0;padding:12px;border:1px solid #253744;border-radius:12px;background:#0d151d}
+body[data-page="bets"] #automaticBuilder>.field>label{display:block;margin-bottom:9px;font-weight:800}
+body[data-page="bets"] #automaticBuilder .builder-strategy-pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+body[data-page="bets"] #automaticBuilder .builder-strategy-pills .pill{min-height:43px;white-space:normal;line-height:1.25;text-align:center}
+body[data-page="bets"] #automaticBuilder .builder-strategy-hint{display:block;margin-top:9px;line-height:1.45}
+body[data-page="bets"] #automaticBuilder #ticketResults{margin-top:0!important}
+body[data-page="bets"] .archive-ticket{margin:12px 0;padding:14px;border:1px solid #273a48;border-radius:14px;background:#101923}
+body[data-page="bets"] .archive-ticket-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+body[data-page="bets"] .archive-ticket .settings-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+body[data-page="bets"] .archive-ticket .settings-actions button{flex:1 1 130px;min-height:38px}
+body[data-page="bets"] .bankroll-dashboard-card{margin-top:12px}
+body[data-page="bets"] .bet-workspace-panel{min-width:0}
+@media(max-width:560px){
+ body[data-page="bets"] #automaticBuilder>.field{padding:10px}
+ body[data-page="bets"] #automaticBuilder .builder-strategy-pills .pill{font-size:11px;padding:9px 6px}
+ body[data-page="bets"] .archive-ticket .settings-actions button{flex:1 1 calc(50% - 7px);font-size:11px}
 }
 
 </style></main>
