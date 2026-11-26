@@ -34,7 +34,7 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.doesNotMatch(script, /setInterval\(\(\) => \{[\s\S]{0,120}scanPage\(\);[\s\S]{0,80}2500\)/);
   assert.match(script, /hasVisibleEventRows/);
   assert.match(script, /multiMatches.length === 0/);
-  assert.match(script, /text.length < previous.textLength/);
+  assert.match(script, /textLength<previous.textLength/);
 });
 
 test("keeps the football transfer path compatible with the current v3 fragment and never clicks odds automatically", () => {
@@ -71,8 +71,10 @@ test("extreme quote/model gaps are quarantined and cannot become value recommend
 test("unknown or generic page titles cannot be treated as a known fixture", () => {
   assert.match(script, /function isKnownTeamName\(name\)/);
   assert.match(script, /TEAM_RATINGS\[key\]/);
-  assert.match(script, /detectedSingleMatch && isKnownTeamName/);
-  assert.match(script, /detectMultipleMatches\(\)\.filter\(item => isKnownTeamName/);
+  assert.match(script, /detectedSingleMatch && isPlausibleTeamName/);
+  assert.match(script, /function extractTeamPair\(container\)/);
+  assert.match(script, /function isPlausibleTeamName\(name\)/);
+  assert.match(script, /GENERIC_TEAM_LABELS/);
 });
 
 test("mobile widget navigation supports touch scrolling, horizontal market tabs and a scrollable list", () => {
