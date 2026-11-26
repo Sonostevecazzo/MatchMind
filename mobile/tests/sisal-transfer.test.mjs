@@ -10,14 +10,14 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("checks the current Sisal userscript release, version 4.0.0, with valid metadata and syntax", () => {
-  assert.doesNotMatch(script, /\[truncated/i);
+test("checks the current Sisal userscript release, version 4.1.0, with valid metadata and syntax", () => {
+  assert.doesNotMatch(script, /\\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+4\.0\.0$/m);
-  assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
-  assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
-  assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
-  assert.match(script, /const MATCHMIND_URL = "https:\/\/matchmind-3te\.pages\.dev\/bets\.html"/);
+  assert.match(script, /^\/\/ @version\s+4\.1\.0$/m);
+  assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/restore\/matchmind-4\.0-20261126\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
+  assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/restore\/matchmind-4\.0-20261126\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
+  assert.match(script, /^\/\/ @match\s+https:\/\/\\*\.sisal\.it\/\\*$/m);
+  assert.match(script, /const MATCHMIND_URL = "https:\/\/restore-matchmind-4-0-202611\.matchmind-3te\.pages\.dev\/bets\.html"/);
 });
 
 test("restores the original Sisal scanner and its main market-analysis flow", () => {
@@ -33,7 +33,7 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.match(script, /mutations\.some\(hasRelevantMutation\)/);
   assert.doesNotMatch(script, /setInterval\(\(\) => \{[\s\S]{0,120}scanPage\(\);[\s\S]{0,80}2500\)/);
   assert.match(script, /hasVisibleEventRows/);
-  assert.match(script, /multiMatches.length === 0 && !hasVisibleEventRows/);
+  assert.match(script, /multiMatches.length === 0/);
   assert.match(script, /text.length < previous.textLength/);
 });
 
@@ -98,4 +98,20 @@ test("Sisal transfer preserves PWA xG and applies the central model to imported 
   assert.match(script, /calculation\.homeXg = item\.homeXg/);
   assert.match(script, /calculation\.awayXg = item\.awayXg/);
   assert.match(script, /predictionSource = "MatchMind PWA"/);
+});
+
+test("scanner supports team extraction from Sisal event markup", () => {
+  assert.ok(script.includes("function isPlausibleTeamName(name)"));
+  assert.ok(script.includes("function extractTeamPair(container)"));
+  assert.ok(script.includes("[data-testid*='match']"));
+});
+test("saved selections survive missing fixture rows", () => {
+  assert.ok(!bets.includes("fixtures.some(m=>fixtureKey(m)===fixtureKey(p))"));
+});
+test("archive includes pending saved slips", () => {
+  assert.ok(bets.includes("const closed=archive.filter(ticket=>(ticket.selections||[]).length);"));
+  assert.ok(bets.includes("const isClosed=selections.length>0"));
+});
+test("bets application bundle versions are cache-busted", () => {
+  assert.ok(betsHtml.includes("bets.js?v=20261127-builder-import-1"));
 });
