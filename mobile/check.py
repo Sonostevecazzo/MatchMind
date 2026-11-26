@@ -28,11 +28,13 @@ assert "does not call OddsPapi or any paid odds service" in readme and "returned
 assert "Il Live funziona solo se API_FOOTBALL_KEY" not in settings, "ESPN must remain available without API keys"
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
-assert all(name in core for name in ['"serie-a"','"champions-league"','"europa-league"','"nations-league"'])
-assert all(name in api for name in ['"serie-a"','"champions-league"','"europa-league"','"nations-league"'])
+competitions=['"serie-a"','"serie-b"','"champions-league"','"europa-league"','"conference-league"','"nations-league"','"premier-league"','"la-liga"','"bundesliga"','"ligue-1"','"world-cup"','"european-championship"']
+assert all(name in core for name in competitions), "The PWA must expose all 12 selected competitions"
+assert all(name in api for name in competitions), "The calendar API must accept all 12 selected competitions"
+assert 'history:true' in core, "Configured club feeds must contribute their own current-season history"
 assert 'slug: "uefa.nations"' in api
 assert "fetchDirectNationsLeague" in core and "fetchCompetitionFromEspn" in api and "slug: \"uefa.nations\"" in api
-assert "matchmind-multipage-cache-v16-cornerflick-nations-history" in core
+assert "matchmind-multipage-cache-v17-competition-catalogue" in core
 # The GitHub Pages data path must retain an official Nations League fallback.
 assert "fetchCornerflickNationsHistory" in core and "fetchCornerflickNationsHistory" in api
 assert "cornerflick.com/football/leagues/nations-league/results/season.json" in core
