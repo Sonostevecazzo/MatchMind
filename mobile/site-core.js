@@ -839,7 +839,7 @@ function eventForecast(match,history){
       ['matches.html','matches','Previsioni'],
       ['bets.html','bets','Costruttore']
     ];
-    const secondary=[];
+    const secondary=[["settings.html","settings","Impostazioni","settings"]];
     const page=document.body.dataset.page||'';
     const activeSecondary=page==='league'?'league':page==='explore'||page==='team'?'explore':page==='mind'||page==='analysis-lab'?'analysis-lab':page;
     const item=([href,key,label])=>'<a class="nav-item '+(active===key?'active':'')+'" href="'+href+'" '+(active===key?'aria-current="page"':'')+'><span class="nav-icon">'+icons[key]+'</span><span>'+label+'</span></a>';
