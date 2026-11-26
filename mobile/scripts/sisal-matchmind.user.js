@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
-// @version      4.0.0
+// @version      4.0.1
 // @description  MatchMind 4.0 · analisi calcio, sincronizzazione PWA e quote Sisal.
 // @author       Simone Sedda & MatchMind
 // @match        https://sisal.it/*
@@ -23,7 +23,7 @@
 
 (function() {
   'use strict';
-  const MM_SCRIPT_VERSION = "4.0.0";
+  const MM_SCRIPT_VERSION = "4.0.1";
   const gmGet = (k, d) => { try { return typeof GM_getValue === "function" ? GM_getValue(k, d) : d; } catch (e) { return d; } };
   const gmSet = (k, v) => { try { if (typeof GM_setValue === "function") GM_setValue(k, v); } catch (e) {} };
 
@@ -2311,11 +2311,17 @@
     }
     return false;
   }
+  // Sisal è una SPA: alcuni aggiornamenti sostituiscono interi contenitori
+  // e possono rimuovere nodi esterni aggiunti dagli userscript. Osserviamo
+  // documentElement e rimontiamo il widget se la pagina lo elimina.
   const observer = new MutationObserver((mutations) => {
     if (isMutatingDOM) return;
+    if (!document.getElementById("mm-widget") && !document.getElementById("mm-floating-badge") && document.body) {
+      renderWidget();
+    }
     if (mutations.some(hasRelevantMutation)) scheduleScan();
   });
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 
   // Click/tap sulle quote resta nativo: nessuna selezione o puntata automatica.
   window.addEventListener("load", () => scheduleScan(500), { once: true });
