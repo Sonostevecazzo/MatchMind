@@ -2,7 +2,7 @@
 // @name         MatchMind · Sisal Value Bets & Sync
 // @namespace    https://sonostevecazzo.github.io/MatchMind/
 // @version      4.0.0
-// @description  Motore Sisal 3.6.5 · scansione leggera e reattiva, solo calcio.
+// @description  MatchMind 4.0 · analisi calcio, sincronizzazione PWA e quote Sisal.
 // @author       Simone Sedda & MatchMind
 // @match        https://www.sisal.it/scommesse*
 // @match        https://www.sisal.it/scommesse-matchpoint*
@@ -10,10 +10,11 @@
 // @match        https://sisal.it/scommesse*
 // @match        https://*.lovable.app/*
 // @match        https://matchmind-3te.pages.dev/*
+// @match        https://restore-matchmind-4-0-202611.matchmind-3te.pages.dev/*
 // @match        https://sonostevecazzo.github.io/MatchMind/*
 // @match        http://localhost:8080/*
-// @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
-// @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/main/mobile/scripts/sisal-matchmind.user.js
+// @updateURL    https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/restore/matchmind-4.0-20261126/mobile/scripts/sisal-matchmind.user.js
+// @downloadURL  https://raw.githubusercontent.com/Sonostevecazzo/MatchMind/restore/matchmind-4.0-20261126/mobile/scripts/sisal-matchmind.user.js
 // @icon         https://sonostevecazzo.github.io/MatchMind/icon.svg
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
@@ -50,7 +51,7 @@
     return;
   }
 
-  const MATCHMIND_URL = "https://matchmind-3te.pages.dev/bets.html";
+  const MATCHMIND_URL = "https://restore-matchmind-4-0-202611.matchmind-3te.pages.dev/bets.html";
 
   // Alias squadre (Serie A, Serie B, Coppe Europee)
   const TEAM_ALIASES = {
