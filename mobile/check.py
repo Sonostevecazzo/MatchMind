@@ -24,7 +24,7 @@ assert 'const MATCHMIND_URL = "https://matchmind-3te.pages.dev/bets.html"' in si
 assert "// @version      3.6.5" in sisal and 'const MM_SCRIPT_VERSION = "3.6.5"' in sisal, "Sisal userscript release metadata must match"
 assert 'x.sport !== "nba"' in sisal and 'competition: String(x.competition || "serie-a")' in sisal, "MatchMind handoff must accept football only and retain competition"
 assert "non sono integrati: non è stato verificato un endpoint pubblico gratuito e stabile" in pages, "Unverified model providers must not be presented as active"
-assert "does not call OddsPapi or any paid odds service" in readme and "returned by OddsPapi" not in readme, "Do not document a paid/unverified odds integration as active"
+assert "does not call OddsPapi or a paid odds service" in readme and "no verified public Sisal odds API" in readme, "Document only verified odds sources and the actual Sisal handoff"
 assert "Il Live funziona solo se API_FOOTBALL_KEY" not in settings, "ESPN must remain available without API keys"
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
