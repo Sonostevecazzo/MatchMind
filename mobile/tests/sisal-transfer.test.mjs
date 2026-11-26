@@ -91,3 +91,11 @@ test("Sisal overlay prefers central MatchMind PWA probabilities for transferred 
   assert.match(script, /Campione storico MatchMind insufficiente/);
   assert.match(script, /Probabilità della PWA MatchMind applicate alle partite trasferite/);
 });
+
+
+test("Sisal transfer preserves PWA xG and applies the central model to imported fixtures", () => {
+  assert.match(script, /homeXg:\s*row\[19\],\s*awayXg:\s*row\[20\]/);
+  assert.match(script, /calculation\.homeXg = item\.homeXg/);
+  assert.match(script, /calculation\.awayXg = item\.awayXg/);
+  assert.match(script, /predictionSource = "MatchMind PWA"/);
+});
