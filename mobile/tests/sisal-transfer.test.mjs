@@ -82,3 +82,12 @@ test("mobile widget navigation supports touch scrolling, horizontal market tabs 
   assert.match(script, /max-height: min\(56dvh, 520px\)/);
   assert.match(script, /mm-verdict-invalid/);
 });
+
+
+test("Sisal overlay prefers central MatchMind PWA probabilities for transferred fixtures", () => {
+  assert.match(script, /modelProbability:\s*Number\.isFinite\(Number\(x\.probability\)\)/);
+  assert.match(script, /predictions:\s*Array\.isArray\(x\.predictions\)/);
+  assert.match(script, /predictionSource = "MatchMind PWA"/);
+  assert.match(script, /Campione storico MatchMind insufficiente/);
+  assert.match(script, /Probabilità della PWA MatchMind applicate alle partite trasferite/);
+});
