@@ -148,10 +148,15 @@ function renderFixtures(){
  const more=$("moreBetFixtures");if(more)more.hidden=rows.length<=visibleFixtureLimit;
 }
 function marketLabel(key){
- if(key==="nbaMoneyline:home")return "NBA · Vince casa";
- if(key==="nbaMoneyline:away")return "NBA · Vince trasferta";
+ if(key==="nbaMoneyline:home")return "Basket · Vittoria squadra di casa";
+ if(key==="nbaMoneyline:away")return "Basket · Vittoria squadra ospite";
+ const simple={home:"Vittoria squadra di casa (1)",draw:"Pareggio (X)",away:"Vittoria squadra ospite (2)",dc1X:"Doppia chance: casa o pareggio (1X)",dcX2:"Doppia chance: pareggio o ospite (X2)",dc12:"Doppia chance: vince una delle due (12)",over15:"Più di 1,5 gol",under15:"Meno di 1,5 gol",over25:"Più di 2,5 gol",under25:"Meno di 2,5 gol",over35:"Più di 3,5 gol",under35:"Meno di 3,5 gol",bttsYes:"Gol: entrambe le squadre segnano",bttsNo:"No Gol: almeno una squadra non segna"};
+ if(simple[key])return simple[key];
+ const parts=String(key||"").split(":");
+ if(parts[0]==="combo"&&parts.length===3)return marketLabel(parts[1])+" + "+marketLabel(parts[2]);
+ if(parts[0]==="score"&&parts[1])return "Risultato esatto: "+parts[1].replace("-", "–");
  const item=ENGINE().marketCandidates("auto").find(x=>x.key===key);
- return item?item.label:String(key||"Mercato");
+ return item?item.label:String(key||"Mercato non riconosciuto");
 }
 function selectedRows(){
  const storedFootball=readPicks().filter(p=>p&&p.sport!=="nba"&&(p.competition||"serie-a")===window.MM.getSelectedCompetition());
@@ -423,7 +428,7 @@ function renderOpenTickets(){
    financialMeta+
    selections.map(selection=>{
     const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
-    return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
+    return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(marketLabel(selection.marketKey)||selection.market||"Mercato")+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state">'+esc(selection.status||"Da giocare")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+
    '<div class="settings-actions">' +
     '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica</button>' +
