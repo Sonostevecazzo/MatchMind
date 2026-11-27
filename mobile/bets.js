@@ -501,7 +501,7 @@ function renderArchive(){
    financialMeta+
    ticket.selections.map(selection=>{
     const selOdds=selection.odds?' · quota '+fmtOdds(selection.odds):'';
-    return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(selection.market)+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
+    return '<div class="data-row"><span><b>'+esc(selection.home)+' – '+esc(selection.away)+'</b><small>'+esc(marketLabel(selection.marketKey)||selection.market||"Mercato")+selOdds+' · '+esc(selection.date)+'</small></span><b class="ticket-monitor-state '+(selection.status==="Vinta"?"won":selection.status==="Persa"?"lost":"")+'">'+esc(selection.status||"Conclusa")+(selection.result?' · '+esc(selection.result):'')+'</b></div>';
    }).join("")+'<div class="settings-actions">' +
     '<button type="button" class="secondary" data-edit-ticket="'+esc(ticket.id)+'">Modifica</button>' +
     '<button type="button" class="secondary" data-duplicate-ticket="'+esc(ticket.id)+'">Duplica</button>' +
