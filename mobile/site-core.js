@@ -858,8 +858,13 @@ function eventForecast(match,history){
     const key='matchmind-manual-selections-v1';
     const read=()=>{try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return[];}};
     const marketLabel=value=>{
-      const labels={home:'1',draw:'X',away:'2',dc1X:'1X',dcX2:'X2',dc12:'12',over15:'Over 1,5',under15:'Under 1,5',over25:'Over 2,5',under25:'Under 2,5',over35:'Over 3,5',under35:'Under 3,5',bttsYes:'Gol',bttsNo:'No Gol'};
-      return labels[value]||String(value||'Mercato');
+      const labels={home:'Vittoria casa (1)',draw:'Pareggio (X)',away:'Vittoria ospite (2)',dc1X:'Doppia chance casa o pareggio (1X)',dcX2:'Doppia chance pareggio o ospite (X2)',dc12:'Doppia chance: vince una delle due (12)',over15:'Più di 1,5 gol',under15:'Meno di 1,5 gol',over25:'Più di 2,5 gol',under25:'Meno di 2,5 gol',over35:'Più di 3,5 gol',under35:'Meno di 3,5 gol',bttsYes:'Gol: entrambe segnano',bttsNo:'No Gol: almeno una non segna'};
+      const key=String(value||'');
+      if(labels[key])return labels[key];
+      const parts=key.split(':');
+      if(parts[0]==='combo'&&parts.length===3)return marketLabel(parts[1])+' + '+marketLabel(parts[2]);
+      if(parts[0]==='score'&&parts[1])return 'Risultato esatto '+parts[1].replace('-', '–');
+      return key||'Mercato non specificato';
     };
     const render=()=>{
       const all=read(),rows=all.map((item,index)=>({...item,_globalIndex:index}));
