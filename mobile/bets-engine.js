@@ -10,6 +10,9 @@
     .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
   const MARKET_PATTERNS = [
+    { key: "dc1X", label: "Doppia chance 1X", re: /\b(?:doppia\s+chance\s*)?1\s*[-/]?\s*x\b/i },
+    { key: "dcX2", label: "Doppia chance X2", re: /\b(?:doppia\s+chance\s*)?x\s*[-/]?\s*2\b/i },
+    { key: "dc12", label: "Doppia chance 12", re: /\b(?:doppia\s+chance\s*)?1\s*[-/]?\s*2\b/i },
     { key: "over15", label: "Over 1,5", re: /(?:u\s*\/\s*o\s*1[,.]5\s*[:\-]?\s*over|over\s*1[,.]5)/i },
     { key: "under15", label: "Under 1,5", re: /(?:u\s*\/\s*o\s*1[,.]5\s*[:\-]?\s*under|under\s*1[,.]5)/i },
     { key: "over25", label: "Over 2,5", re: /(?:u\s*\/\s*o\s*2[,.]5\s*[:\-]?\s*over|over\s*2[,.]5)/i },
@@ -24,8 +27,8 @@
     ["over15", "Over 1,5"], ["under15", "Under 1,5"],
     ["over25", "Over 2,5"], ["under25", "Under 2,5"],
     ["over35", "Over 3,5"], ["under35", "Under 3,5"],
-    ["bttsYes", "Gol"], ["bttsNo", "No Gol"],
-    ["home", "1"], ["draw", "X"], ["away", "2"]
+    ["bttsYes", "Entrambe le squadre segnano (Gol)"], ["bttsNo", "Almeno una squadra non segna (No Gol)"],
+    ["home", "Vittoria squadra di casa (1)"], ["draw", "Pareggio (X)"], ["away", "Vittoria squadra ospite (2)"]
   ];
 
   function marketChoices() {
@@ -102,11 +105,21 @@
   function marketProbability(forecast, key) {
     const p = forecast && forecast.probabilities;
     if (!p) return null;
+    const exactScore = /^score:(\d{1,2})-(\d{1,2})$/.exec(String(key));
+    if (exactScore) {
+      const homeGoals = Number(exactScore[1]), awayGoals = Number(exactScore[2]);
+      const cell = Array.isArray(forecast.scoreMatrix) ? forecast.scoreMatrix.find(x => x.homeGoals === homeGoals && x.awayGoals === awayGoals) : null;
+      if (cell && Number.isFinite(cell.probability)) return Math.max(0, Math.min(1, cell.probability));
+      const hx = Number(forecast.homeXg), ax = Number(forecast.awayXg);
+      return Number.isFinite(hx) && Number.isFinite(ax) && hx >= 0 && ax >= 0 && homeGoals <= 20 && awayGoals <= 20
+        ? poisson(hx, homeGoals) * poisson(ax, awayGoals) : null;
+    }
     if (String(key).startsWith("combo:")) {
       const parts = String(key).split(":");
       return parts.length === 3 ? combinedMarketProbability(forecast, parts[1], parts[2]) : null;
     }
     const map = {
+      dc1X: p.home + p.draw, dcX2: p.draw + p.away, dc12: p.home + p.away,
       over15: p.o15, under15: 1 - p.o15,
       over25: p.o25, under25: 1 - p.o25,
       over35: p.o35, under35: 1 - p.o35,
@@ -118,9 +131,9 @@
   }
 
   function comboMarketChoices(mode) {
-    const outcomes = [["home", "1"], ["draw", "X"], ["away", "2"]];
+    const outcomes = [["home", "Vittoria casa (1)"], ["draw", "Pareggio (X)"], ["away", "Vittoria ospite (2)"]];
     const goals = [["over15", "Over 1,5"], ["under15", "Under 1,5"], ["over25", "Over 2,5"], ["under25", "Under 2,5"], ["over35", "Over 3,5"], ["under35", "Under 3,5"]];
-    const btts = [["bttsYes", "Gol"], ["bttsNo", "No Gol"]];
+    const btts = [["bttsYes", "Entrambe segnano (Gol)"], ["bttsNo", "Almeno una non segna (No Gol)"]];
     const secondary = mode === "combo-goals" ? goals : mode === "combo-btts" ? btts : goals.concat(btts);
     return outcomes.flatMap(([resultKey, resultLabel]) => secondary.map(([marketKey, marketLabel]) => ({
       key: "combo:" + resultKey + ":" + marketKey,
@@ -128,8 +141,20 @@
     })));
   }
 
-  function marketCandidates(mode) {
+  function marketCandidates(mode, forecast) {
     const singles = BET_MARKETS.map(([key, label]) => ({ key, label }));
+    if (mode === "exact-score") {
+      const cells = Array.isArray(forecast && forecast.scoreMatrix) ? forecast.scoreMatrix.slice() : [];
+      return cells.sort((a, b) => Number(b.probability) - Number(a.probability)).slice(0, 12).map(cell => ({
+        key: "score:" + cell.homeGoals + "-" + cell.awayGoals,
+        label: cell.homeGoals + "-" + cell.awayGoals
+      }));
+    }
+    if (mode === "double-chance") return [
+      { key: "dc1X", label: "Doppia chance 1X" },
+      { key: "dcX2", label: "Doppia chance X2" },
+      { key: "dc12", label: "Doppia chance 12" }
+    ];
     if (mode === "single") return singles;
     if (mode === "1x2") return singles.filter(item => ["home", "draw", "away"].includes(item.key));
     if (mode === "goals") return singles.filter(item => /^(over|under)/.test(item.key));

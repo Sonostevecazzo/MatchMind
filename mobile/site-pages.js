@@ -9,18 +9,19 @@
  const matchPickKey=m=>[(m.competition||"serie-a"),m.date,MM().norm(m.home),MM().norm(m.away)].join("|");
  const readMatchPicks=()=>{try{const rows=JSON.parse(localStorage.getItem(MATCH_PICKS_KEY)||"[]");return Array.isArray(rows)?rows.filter(x=>x&&x.date&&x.home&&x.away&&x.marketKey):[]}catch(_){return[]}};
  const writeMatchPicks=rows=>{try{localStorage.setItem(MATCH_PICKS_KEY,JSON.stringify(rows))}catch(_){};window.dispatchEvent(new Event("matchmind:picks-updated"));};
- const marketCategoryForKey=key=>String(key||"").startsWith("combo:")?(String(key).endsWith(":bttsYes")||String(key).endsWith(":bttsNo")?"combo-btts":"combo-goals"):key==="bttsYes"||key==="bttsNo"?"btts":/^(over|under)15$/.test(key)?"goals15":/^(over|under)25$/.test(key)?"goals25":/^(over|under)35$/.test(key)?"goals35":"1x2";
+ const marketCategoryForKey=key=>String(key||"").startsWith("combo:")?(String(key).endsWith(":bttsYes")||String(key).endsWith(":bttsNo")?"combo-btts":"combo-goals"):String(key||"").startsWith("score:")?"exact-score":["dc1X","dcX2","dc12"].includes(key)?"double-chance":key==="bttsYes"||key==="bttsNo"?"btts":/^(over|under)15$/.test(key)?"goals15":/^(over|under)25$/.test(key)?"goals25":/^(over|under)35$/.test(key)?"goals35":"1x2";
  const marketOptions=(forecast,category)=>{
   const p=forecast.probabilities;
   const map={
-   "1x2":[["home","1",p.home],["draw","X",p.draw],["away","2",p.away]],
+   "1x2":[["home","Vittoria casa (1)",p.home],["draw","Pareggio (X)",p.draw],["away","Vittoria ospite (2)",p.away]],
+   "double-chance":[["dc1X","Casa o pareggio (1X)",p.home+p.draw],["dcX2","Pareggio o ospite (X2)",p.draw+p.away],["dc12","Vittoria di una squadra (12)",p.home+p.away]],
    goals15:[["over15","Over 1,5",p.o15],["under15","Under 1,5",1-p.o15]],
    goals25:[["over25","Over 2,5",p.o25],["under25","Under 2,5",1-p.o25]],
    goals35:[["over35","Over 3,5",p.o35],["under35","Under 3,5",1-p.o35]],
-   btts:[["bttsYes","Gol",p.btts],["bttsNo","No Gol",1-p.btts]]
+   btts:[["bttsYes","Gol: entrambe segnano",p.btts],["bttsNo","No Gol: almeno una non segna",1-p.btts]]
   };
-  if(category==="combo-goals"||category==="combo-btts"){
-   return window.MatchMindBets.marketCandidates(category).map(item=>[item.key,item.label,window.MatchMindBets.marketProbability(forecast,item.key)]);
+  if(category==="combo-goals"||category==="combo-btts"||category==="exact-score"){
+   return window.MatchMindBets.marketCandidates(category,forecast).map(item=>[item.key,item.label,window.MatchMindBets.marketProbability(forecast,item.key)]);
   }
   return map[category]||map["1x2"];
  };
@@ -37,7 +38,7 @@
  };
  const marketPickerHtml=(m,forecast,selected,preferredCategory=null)=>{
   const key=matchPickKey(m),category=selected?marketCategoryForKey(selected.marketKey):(preferredCategory||"1x2"),id="market-"+MM().norm(key);
-  const options=[["1x2","1X2"],["goals15","Over/Under 1,5"],["goals25","Over/Under 2,5"],["goals35","Over/Under 3,5"],["btts","Gol / No Gol"],["combo-goals","1X2 + Over/Under"],["combo-btts","1X2 + Gol / No Gol"]];
+  const options=[["1x2","Esito partita: 1 / X / 2"],["double-chance","Doppia chance: 1X / X2 / 12"],["goals15","Totale gol: più o meno di 1,5"],["goals25","Totale gol: più ou meno di 2,5"],["goals35","Totale gol: più o meno di 3,5"],["btts","Gol: segnano entrambe? (Sì / No)"],["combo-goals","Combinata: esito + totale gol"],["combo-btts","Combinata: esito + Gol/No Gol"],["exact-score","Punteggio esatto"]];
   return '<div class="fixture-market-panel" data-market-panel="'+esc(key)+'"><div class="fixture-market-picker"><label for="'+esc(id)+'">Mercato</label><select id="'+esc(id)+'" data-market-picker data-match-key="'+esc(key)+'">'+options.map(([value,label])=>'<option value="'+value+'"'+(value===category?' selected':'')+'>'+label+'</option>').join('')+'</select></div>'+
    marketButtonsHtml(m,forecast,category,selected&&selected.marketKey)+
    '<small class="fixture-market-sample">'+(forecast.sampleEnough?'Storico adeguato':'Campione storico limitato')+'</small></div>';
@@ -46,9 +47,11 @@
   const dock=$('matchSlipActions');if(!dock)return;
   const competition=MM().getSelectedCompetition(),picks=readMatchPicks().filter(x=>(x.competition||"serie-a")===competition);
   dock.hidden=picks.length===0;$('matchSlipCount').textContent=String(picks.length);
-  const data=MM().data,labels={home:"1",draw:"X",away:"2",over15:"Over 1,5",under15:"Under 1,5",over25:"Over 2,5",under25:"Under 2,5",over35:"Over 3,5",under35:"Under 3,5",bttsYes:"Gol",bttsNo:"No Gol"};
+  const data=MM().data;
+  const labels={home:"Vittoria casa (1)",draw:"Pareggio (X)",away:"Vittoria ospite (2)",dc1X:"Doppia chance: casa o pareggio (1X)",dcX2:"Doppia chance: pareggio o ospite (X2)",dc12:"Doppia chance: vince una delle due (12)",over15:"Più di 1,5 gol",under15:"Meno di 1,5 gol",over25:"Più di 2,5 gol",under25:"Meno di 2,5 gol",over35:"Più di 3,5 gol",under35:"Meno di 3,5 gol",bttsYes:"Gol: entrambe le squadre segnano",bttsNo:"No Gol: almeno una squadra non segna"};
+  const marketName=key=>{const value=String(key||"");if(labels[value])return labels[value];const parts=value.split(":");if(parts[0]==="combo"&&parts.length===3)return marketName(parts[1])+" + "+marketName(parts[2]);if(parts[0]==="score"&&parts[1])return "Risultato esatto "+parts[1].replace("-", "–");return value||"Mercato non specificato";};
   let contexts={};try{contexts=JSON.parse(localStorage.getItem("matchmind-match-context-v2")||"{}")||{};}catch(_){}
-  const rows=picks.map(p=>{const m=(data&&data.matches||[]).find(x=>(x.competition||"serie-a")===(p.competition||"serie-a")&&x.date===p.date&&MM().norm(x.home)===MM().norm(p.home)&&MM().norm(x.away)===MM().norm(p.away));if(!m||!data.history||!window.MatchMindBets)return null;const key=[m.competition||"serie-a",m.date,MM().norm(m.home),MM().norm(m.away)].join("|");const probability=window.MatchMindBets.marketProbability(MM().forecast(m,data.history,contexts[key]||{}),p.marketKey);return{match:m,label:labels[p.marketKey]||p.marketKey,probability};}).filter(Boolean);
+  const rows=picks.map(p=>{const m=(data&&data.matches||[]).find(x=>(x.competition||"serie-a")===(p.competition||"serie-a")&&x.date===p.date&&MM().norm(x.home)===MM().norm(p.home)&&MM().norm(x.away)===MM().norm(p.away));if(!m||!data.history||!window.MatchMindBets)return null;const key=[m.competition||"serie-a",m.date,MM().norm(m.home),MM().norm(m.away)].join("|");const probability=window.MatchMindBets.marketProbability(MM().forecast(m,data.history,contexts[key]||{}),p.marketKey);return{match:m,label:marketName(p.marketKey),probability};}).filter(Boolean);
   const combined=rows.length===picks.length?rows.reduce((v,x)=>v*(Number.isFinite(x.probability)?x.probability:0),1):null;
   $('matchSlipProbability').textContent='Probabilità stimata: '+(combined===null?'—':fmt(combined*100,1)+'%');
   const preview=$('matchSlipPreview');if(preview)preview.innerHTML=rows.map(x=>'<div class="match-slip-preview-row"><span><b>'+esc(MM().displayTeamName(x.match.home))+' – '+esc(MM().displayTeamName(x.match.away))+'</b><small>'+esc(x.label)+' · '+esc(MM().shortDate(x.match))+'</small></span><b>'+fmt((x.probability||0)*100,1)+'%</b></div>').join('')+'<small>Quote non utilizzate. Probabilità combinate con ipotesi di indipendenza.</small>';
@@ -413,6 +416,16 @@ function backtestHTML(r,e){
 };
  setTimeout(next,0);
  }
+ window.addEventListener('matchmind:data-updated',()=>{
+  const page=document.body.dataset.page||'home';
+  if(!['home','matches','explore','league','team','match','mind'].includes(page))return;
+  const active=document.activeElement;
+  if(active&&['INPUT','SELECT','TEXTAREA'].includes(active.tagName)){
+    document.addEventListener('focusout',()=>window.location.reload(),{once:true});
+    return;
+  }
+  window.location.reload();
+ });
  document.addEventListener('DOMContentLoaded',async()=>{
   const page=document.body.dataset.page||'home';
   try{const d=MM().forCompetition(await MM().loadData());const retrieved=d.updatedAt?new Date(d.updatedAt).toLocaleString('it-IT'):'orario non disponibile';setStatus(d.source==='cache'?'Offline · dati salvati localmente.':'Fonti: '+(d.source||'fonti pubbliche')+' · scaricati '+retrieved,d.source==='cache'?'':'ok');

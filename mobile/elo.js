@@ -24,9 +24,12 @@
  const valid=m=>m&&m.date&&m.home&&m.away&&m.hg!==null&&m.hg!==undefined&&m.ag!==null&&m.ag!==undefined&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag));
  const actual=m=>Number(m.hg)>Number(m.ag)?'home':Number(m.hg)<Number(m.ag)?'away':'draw';
  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+ const NATIONAL_COMPETITIONS=new Set(["nations-league","world-cup","european-championship"]);
+ const defaultHomeAdvantage=competition=>NATIONAL_COMPETITIONS.has(String(competition||""))?25:40;
  function eloBacktest(rows,options={}){
+  const competition=String((rows||[]).find(valid)?.competition||"serie-a");
   const K=Number.isFinite(options.kFactor)?options.kFactor:20;
-  const homeAdvantage=Number.isFinite(options.homeAdvantage)?options.homeAdvantage:40;
+  const homeAdvantage=Number.isFinite(options.homeAdvantage)?options.homeAdvantage:defaultHomeAdvantage(competition);
   const initial=Number.isFinite(options.initialRating)?options.initialRating:1500;
   if(K<=0||homeAdvantage<0)throw new Error('Parametri Elo non validi');
   const played=rows.filter(valid).slice().sort((a,b)=>a.date.localeCompare(b.date));
@@ -76,11 +79,11 @@
  }
 
  function eloProbabilities(match,history,options={}){
+  const competition=match&&match.competition||'serie-a';
   const K=Number.isFinite(options.kFactor)?options.kFactor:20;
-  const homeAdvantage=Number.isFinite(options.homeAdvantage)?options.homeAdvantage:40;
+  const homeAdvantage=Number.isFinite(options.homeAdvantage)?options.homeAdvantage:defaultHomeAdvantage(competition);
   const initial=Number.isFinite(options.initialRating)?options.initialRating:1500;
   const eloShift=Number.isFinite(options.eloShift)?options.eloShift:0;
-  const competition=match&&match.competition||'serie-a';
   const played=(history||[]).filter(m=>valid(m)&&m.date<String(match.date||'')&&(m.competition||'serie-a')===competition).slice().sort((a,b)=>a.date.localeCompare(b.date));
   if(played.length<30)return null;
   const ratings=new Map(),counts=new Map();let priorDraws=0,priorMatches=0;
@@ -109,5 +112,5 @@
  }
 
  if(window.MM){window.MM.eloBacktest=eloBacktest;window.MM.eloProbabilities=eloProbabilities;}
- window.MatchMindElo={eloBacktest,eloProbabilities};
+ window.MatchMindElo={eloBacktest,eloProbabilities,defaultHomeAdvantage,NATIONAL_COMPETITIONS:[...NATIONAL_COMPETITIONS]};
 })();

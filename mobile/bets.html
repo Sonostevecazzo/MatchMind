@@ -3,9 +3,20 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080c11">
 <meta name="description" content="MatchMind · Analisi statistica e costruttore schedine">
-<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css"><link rel="stylesheet" href="./mobile-readable.css?v=20261113-compact-nav-1">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css?v=20261127-saved-tickets-ui2"><link rel="stylesheet" href="./mobile-readable.css?v=20261127-saved-tickets-ui2">
 <title>MatchMind · Previsioni</title>
-<script defer src="./bets-engine.js?v=20261118-prediction-only-1"></script><script defer src="./site-core.js?v=20261118-prediction-only-1"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js?v=20261118-prediction-only-1"></script>
+<script defer src="./bets-engine.js?v=20261127-readable-markets-1"></script><script defer src="./site-core.js?v=20261127-global-slip-markets-1"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js?v=20261127-archive-panel-sibling-1"></script>
+
+<style id="saved-tickets-mobile-ui">
+@media(max-width:700px){
+ .bet-workspace-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;padding:8px!important;align-items:stretch!important;}
+ .bet-workspace-tab{display:flex!important;min-width:0!important;min-height:58px!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:3px!important;padding:7px 4px!important;text-align:center!important;white-space:normal!important;font-size:12px!important;line-height:1.2!important;overflow-wrap:anywhere!important;}
+ .bet-workspace-tab span{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:20px!important;height:20px!important;padding:0 5px!important;border-radius:999px!important;font-size:11px!important;line-height:1!important;}
+ body[data-page="bets"] .global-slip-dock.is-expanded{max-height:58vh!important;}
+ body[data-page="bets"] .global-slip-dock.is-expanded .global-slip-list{max-height:36vh!important;}
+ body[data-page="bets"] .page-wrap{padding-bottom:calc(190px + env(safe-area-inset-bottom))!important;}
+}
+</style>
 </head>
 <body data-page="bets" data-title="Previsioni" data-subtitle="Previsioni calcistiche e costruttore per le partite future.">
 <div id="siteHeader"></div>
@@ -15,7 +26,8 @@
  <div id="betsTabCreate" class="bets-tab-panel" role="tabpanel">
   <div class="bet-workspace-tabs" role="tablist" aria-label="Costruttore e schedina">
    <button type="button" class="bet-workspace-tab active" id="betWorkspaceBuilderButton" role="tab" aria-selected="true" aria-controls="betWorkspaceBuilder" data-bet-workspace-tab="builder">Costruttore</button>
-   <button type="button" class="bet-workspace-tab" id="betWorkspaceSlipButton" role="tab" aria-selected="false" aria-controls="betWorkspaceSlip" data-bet-workspace-tab="slip">La tua schedina <span id="betWorkspacePickCount">0</span></button>
+   <button type="button" class="bet-workspace-tab" id="betWorkspaceSlipButton" role="tab" aria-selected="false" aria-controls="betWorkspaceSlip" data-bet-workspace-tab="slip">Schedina corrente <span id="betWorkspacePickCount">0</span></button>
+   <button type="button" class="bet-workspace-tab" id="betWorkspaceSavedButton" role="tab" aria-selected="false" aria-controls="betWorkspaceSaved" data-bet-workspace-tab="saved">Schedine <span id="savedTicketCount">0</span></button>
   </div>
   <section id="betWorkspaceBuilder" class="bet-workspace-panel" role="tabpanel" aria-labelledby="betWorkspaceBuilderButton">
   <div id="footballBuilderView">
@@ -67,7 +79,10 @@
   </div>
   <div id="manualBuilderStatus" class="status-line" aria-live="polite"></div>
  </section>
- </section>
+  </section>
+  <section id="betWorkspaceSaved" class="bet-workspace-panel" role="tabpanel" aria-labelledby="betWorkspaceSavedButton" hidden>
+   <section class="section panel panel-pad"><div class="section-head"><div><div class="eyebrow">ARCHIVIO PERSONALE</div><h2>Schedine salvate</h2><p>Le schedine registrate restano qui anche dopo aver chiuso o ricaricato MatchMind.</p></div></div><div id="archiveStatus" class="status-line" aria-live="polite"></div><div id="openTickets"></div><div id="slipArchive"></div></section>
+  </section>
  </div>
  <div class="notice warning">Le percentuali sono stime statistiche, non garanzie. Il valore combinato è un prodotto delle probabilità delle singole partite e assume indipendenza tra eventi; la correlazione può cambiare il risultato. MatchMind non conosce automaticamente le formazioni ufficiali, gli infortuni o le squalifiche: inserisci solo indisponibilità verificate.</div>
  <div id="globalStatus" class="status-line" aria-live="polite"></div><footer class="site-footer">MatchMind · Strumento statistico di supporto, non consulenza sul gioco.</footer>
@@ -181,6 +196,29 @@ body[data-page="bets"] .bet-sisal-details[open]>summary{padding-bottom:12px;bord
  body[data-page="bets"] .bet-workspace-tabs{position:sticky;top:6px;z-index:15;box-shadow:0 8px 22px #0005}
  body[data-page="bets"] .bet-workspace-tab{min-height:42px;padding:8px 6px;font-size:12px}
  body[data-page="bets"] .bet-sisal-details{padding:13px}
+}
+
+
+/* MatchMind 4.1: clearer builder sequence and saved-ticket cards. */
+body[data-page="bets"] #automaticBuilder{display:flex;flex-direction:column;gap:14px}
+body[data-page="bets"] #automaticBuilder>.section-head{margin:0}
+body[data-page="bets"] #automaticBuilder>.section-head p{max-width:58ch;margin:0;color:var(--muted,#9aa9b8);line-height:1.5}
+body[data-page="bets"] #automaticBuilder>.field{margin:0;padding:12px;border:1px solid #253744;border-radius:12px;background:#0d151d}
+body[data-page="bets"] #automaticBuilder>.field>label{display:block;margin-bottom:9px;font-weight:800}
+body[data-page="bets"] #automaticBuilder .builder-strategy-pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+body[data-page="bets"] #automaticBuilder .builder-strategy-pills .pill{min-height:43px;white-space:normal;line-height:1.25;text-align:center}
+body[data-page="bets"] #automaticBuilder .builder-strategy-hint{display:block;margin-top:9px;line-height:1.45}
+body[data-page="bets"] #automaticBuilder #ticketResults{margin-top:0!important}
+body[data-page="bets"] .archive-ticket{margin:12px 0;padding:14px;border:1px solid #273a48;border-radius:14px;background:#101923}
+body[data-page="bets"] .archive-ticket-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+body[data-page="bets"] .archive-ticket .settings-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+body[data-page="bets"] .archive-ticket .settings-actions button{flex:1 1 130px;min-height:38px}
+body[data-page="bets"] .bankroll-dashboard-card{margin-top:12px}
+body[data-page="bets"] .bet-workspace-panel{min-width:0}
+@media(max-width:560px){
+ body[data-page="bets"] #automaticBuilder>.field{padding:10px}
+ body[data-page="bets"] #automaticBuilder .builder-strategy-pills .pill{font-size:11px;padding:9px 6px}
+ body[data-page="bets"] .archive-ticket .settings-actions button{flex:1 1 calc(50% - 7px);font-size:11px}
 }
 
 </style></main>

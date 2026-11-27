@@ -20,19 +20,22 @@ pages=(ROOT/"site-pages.js").read_text(encoding="utf-8")
 readme=(ROOT/"README.md").read_text(encoding="utf-8")
 assert bets.count('data-duplicate-ticket=') == 2, "Both open and archived tickets must expose duplication"
 assert "function duplicateTicket(ticket)" in bets and 'status:"Da giocare",result:null' in bets
-assert 'const MATCHMIND_URL = "https://matchmind-3te.pages.dev/bets.html"' in sisal, "Sisal overlay must link to the main MatchMind app"
-assert "// @version      3.6.5" in sisal and 'const MM_SCRIPT_VERSION = "3.6.5"' in sisal, "Sisal userscript release metadata must match"
+assert 'const MATCHMIND_URL = "https://restore-matchmind-4-0-202611.matchmind-3te.pages.dev/bets.html"' in sisal, "Sisal overlay must link to the branch preview app"
+assert "// @version      4.1.0" in sisal and 'const MM_SCRIPT_VERSION = "4.1.0"' in sisal, "Sisal userscript release metadata must match"
+assert "function extractTeamPair(container)" in sisal, "Sisal scanner must include tolerant team extraction"
 assert 'x.sport !== "nba"' in sisal and 'competition: String(x.competition || "serie-a")' in sisal, "MatchMind handoff must accept football only and retain competition"
 assert "non sono integrati: non è stato verificato un endpoint pubblico gratuito e stabile" in pages, "Unverified model providers must not be presented as active"
-assert "does not call OddsPapi or any paid odds service" in readme and "returned by OddsPapi" not in readme, "Do not document a paid/unverified odds integration as active"
+assert "does not call OddsPapi or a paid odds service" in readme and "no verified public Sisal odds API" in readme, "Document only verified odds sources and the actual Sisal handoff"
 assert "Il Live funziona solo se API_FOOTBALL_KEY" not in settings, "ESPN must remain available without API keys"
 core=(ROOT/"site-core.js").read_text(encoding="utf-8")
 api=(ROOT/"functions"/"api"/"competition-calendar.js").read_text(encoding="utf-8")
-assert all(name in core for name in ['"serie-a"','"champions-league"','"europa-league"','"nations-league"'])
-assert all(name in api for name in ['"serie-a"','"champions-league"','"europa-league"','"nations-league"'])
+competitions=['"serie-a"','"serie-b"','"champions-league"','"europa-league"','"conference-league"','"nations-league"','"premier-league"','"la-liga"','"bundesliga"','"ligue-1"','"world-cup"','"european-championship"']
+assert all(name in core for name in competitions), "The PWA must expose all 12 selected competitions"
+assert all(name in api for name in competitions), "The calendar API must accept all 12 selected competitions"
+assert 'history:true' in core, "Configured club feeds must contribute their own current-season history"
 assert 'slug: "uefa.nations"' in api
 assert "fetchDirectNationsLeague" in core and "fetchCompetitionFromEspn" in api and "slug: \"uefa.nations\"" in api
-assert "matchmind-multipage-cache-v16-cornerflick-nations-history" in core
+assert "matchmind-multipage-cache-v17-competition-catalogue" in core
 # The GitHub Pages data path must retain an official Nations League fallback.
 assert "fetchCornerflickNationsHistory" in core and "fetchCornerflickNationsHistory" in api
 assert "cornerflick.com/football/leagues/nations-league/results/season.json" in core

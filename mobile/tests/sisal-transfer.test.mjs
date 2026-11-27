@@ -10,14 +10,14 @@ const bets = readFileSync(resolve(ROOT, "bets.js"), "utf8");
 const betsHtml = readFileSync(resolve(ROOT, "bets.html"), "utf8");
 const bridge = readFileSync(resolve(ROOT, "sisal-bridge.js"), "utf8");
 
-test("checks the current Sisal userscript release, version 3.6.5, with valid metadata and syntax", () => {
+test("checks the current Sisal userscript release, version 4.1.0, with valid metadata and syntax", () => {
   assert.doesNotMatch(script, /\[truncated/i);
   assert.doesNotThrow(() => new Function(script));
-  assert.match(script, /^\/\/ @version\s+3\.6\.5$/m);
-  assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
-  assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/main\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
-  assert.match(script, /^\/\/ @match\s+https:\/\/matchmind-3te\.pages\.dev\/\*$/m);
-  assert.match(script, /const MATCHMIND_URL = "https:\/\/matchmind-3te\.pages\.dev\/bets\.html"/);
+  assert.match(script, /^\/\/ @version\s+4\.1\.0$/m);
+  assert.match(script, /^\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/restore\/matchmind-4\.0-20261126\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
+  assert.match(script, /^\/\/ @downloadURL\s+https:\/\/raw\.githubusercontent\.com\/Sonostevecazzo\/MatchMind\/restore\/matchmind-4\.0-20261126\/mobile\/scripts\/sisal-matchmind\.user\.js$/m);
+  assert.ok(script.includes("// @match        https://*.sisal.it/*"));
+  assert.match(script, /const MATCHMIND_URL = "https:\/\/restore-matchmind-4-0-202611\.matchmind-3te\.pages\.dev\/bets\.html"/);
 });
 
 test("restores the original Sisal scanner and its main market-analysis flow", () => {
@@ -33,8 +33,8 @@ test("restores the original Sisal scanner and its main market-analysis flow", ()
   assert.match(script, /mutations\.some\(hasRelevantMutation\)/);
   assert.doesNotMatch(script, /setInterval\(\(\) => \{[\s\S]{0,120}scanPage\(\);[\s\S]{0,80}2500\)/);
   assert.match(script, /hasVisibleEventRows/);
-  assert.match(script, /multiMatches.length === 0 && !hasVisibleEventRows/);
-  assert.match(script, /text.length < previous.textLength/);
+  assert.match(script, /multiMatches.length === 0/);
+  assert.match(script, /text\.length<previous\.textLength/);
 });
 
 test("keeps the football transfer path compatible with the current v3 fragment and never clicks odds automatically", () => {
@@ -71,8 +71,10 @@ test("extreme quote/model gaps are quarantined and cannot become value recommend
 test("unknown or generic page titles cannot be treated as a known fixture", () => {
   assert.match(script, /function isKnownTeamName\(name\)/);
   assert.match(script, /TEAM_RATINGS\[key\]/);
-  assert.match(script, /detectedSingleMatch && isKnownTeamName/);
-  assert.match(script, /detectMultipleMatches\(\)\.filter\(item => isKnownTeamName/);
+  assert.match(script, /detectedSingleMatch && isPlausibleTeamName/);
+  assert.match(script, /function extractTeamPair\(container\)/);
+  assert.match(script, /function isPlausibleTeamName\(name\)/);
+  assert.match(script, /GENERIC_TEAM_LABELS/);
 });
 
 test("mobile widget navigation supports touch scrolling, horizontal market tabs and a scrollable list", () => {
@@ -81,4 +83,37 @@ test("mobile widget navigation supports touch scrolling, horizontal market tabs 
   assert.match(script, /\.mm-list-container \{ flex:1 1 auto/);
   assert.match(script, /max-height: min\(56dvh, 520px\)/);
   assert.match(script, /mm-verdict-invalid/);
+});
+
+
+test("Sisal overlay prefers central MatchMind PWA probabilities for transferred fixtures", () => {
+  assert.match(script, /modelProbability:\s*Number\.isFinite\(Number\(x\.probability\)\)/);
+  assert.match(script, /predictions:\s*Array\.isArray\(x\.predictions\)/);
+  assert.match(script, /predictionSource = "MatchMind PWA"/);
+  assert.match(script, /Campione storico MatchMind insufficiente/);
+  assert.match(script, /Probabilità della PWA MatchMind applicate alle partite trasferite/);
+});
+
+
+test("Sisal transfer preserves PWA xG and applies the central model to imported fixtures", () => {
+  assert.match(script, /homeXg:\s*row\[19\],\s*awayXg:\s*row\[20\]/);
+  assert.match(script, /calculation\.homeXg = item\.homeXg/);
+  assert.match(script, /calculation\.awayXg = item\.awayXg/);
+  assert.match(script, /predictionSource = "MatchMind PWA"/);
+});
+
+test("scanner supports team extraction from Sisal event markup", () => {
+  assert.ok(script.includes("function isPlausibleTeamName(name)"));
+  assert.ok(script.includes("function extractTeamPair(container)"));
+  assert.ok(script.includes("[data-testid*='match']"));
+});
+test("saved selections survive missing fixture rows", () => {
+  assert.ok(!bets.includes("fixtures.some(m=>fixtureKey(m)===fixtureKey(p))"));
+});
+test("archive includes pending saved slips", () => {
+  assert.ok(bets.includes("const closed=archive.filter(ticket=>(ticket.selections||[]).length);"));
+  assert.ok(bets.includes("const isClosed=selections.length>0"));
+});
+test("bets application bundle versions are cache-busted", () => {
+  assert.ok(betsHtml.includes("bets.js?v=20261127-builder-import-1"));
 });

@@ -6,10 +6,18 @@ const DATA_ROOT = "https://raw.githubusercontent.com/oladeeayo/open-matchday/mas
 const seasonCode = year => String(year).slice(-2) + String(year + 1).slice(-2);
 const seasonFolder = year => String(year) + "-" + String(year + 1).slice(-2);
 const COMPETITIONS = {
-  "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football", calendarYear: false },
-  "champions-league": { name: "UEFA Champions League", slug: "uefa.champions", feed: "UEFA_1_champions-league", sport: "football", calendarYear: false },
-  "europa-league": { name: "UEFA Europa League", slug: "uefa.europa", feed: "UEFA_1_europa-league", sport: "football", calendarYear: false },
-  "nations-league": { name: "UEFA Nations League", slug: "uefa.nations", sport: "football", calendarYear: true }
+  "serie-a": { name: "Serie A", slug: "ita.1", feed: "ITA_1_serie-a", sport: "football", calendarYear: false, kind: "club" },
+  "serie-b": { name: "Serie B", slug: "ita.2", feed: "ITA_2_serie-b", sport: "football", calendarYear: false, kind: "club" },
+  "champions-league": { name: "UEFA Champions League", slug: "uefa.champions", feed: "UEFA_1_champions-league", sport: "football", calendarYear: false, kind: "club" },
+  "europa-league": { name: "UEFA Europa League", slug: "uefa.europa", feed: "UEFA_1_europa-league", sport: "football", calendarYear: false, kind: "club" },
+  "conference-league": { name: "UEFA Conference League", slug: "uefa.europa.conf", feed: "UEFA_1_conference-league", sport: "football", calendarYear: false, kind: "club" },
+  "nations-league": { name: "UEFA Nations League", slug: "uefa.nations", sport: "football", calendarYear: true, kind: "national" },
+  "premier-league": { name: "Premier League", slug: "eng.1", feed: "ENG_1_premier-league", sport: "football", calendarYear: false, kind: "club" },
+  "la-liga": { name: "La Liga", slug: "esp.1", feed: "ESP_1_la-liga", sport: "football", calendarYear: false, kind: "club" },
+  "bundesliga": { name: "Bundesliga", slug: "ger.1", feed: "GER_1_bundesliga", sport: "football", calendarYear: false, kind: "club" },
+  "ligue-1": { name: "Ligue 1", slug: "fra.1", feed: "FRA_1_ligue-1", sport: "football", calendarYear: false, kind: "club" },
+  "world-cup": { name: "Mondiali FIFA", slug: "fifa.world", sport: "football", calendarYear: true, kind: "national" },
+  "european-championship": { name: "Campionato Europeo UEFA", slug: "uefa.euro", sport: "football", calendarYear: true, kind: "national" }
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
