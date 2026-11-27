@@ -13,12 +13,12 @@
  const marketOptions=(forecast,category)=>{
   const p=forecast.probabilities;
   const map={
-   "1x2":[["home","1",p.home],["draw","X",p.draw],["away","2",p.away]],
-   "double-chance":[["dc1X","1X",p.home+p.draw],["dcX2","X2",p.draw+p.away],["dc12","12",p.home+p.away]],
+   "1x2":[["home","Vittoria casa (1)",p.home],["draw","Pareggio (X)",p.draw],["away","Vittoria ospite (2)",p.away]],
+   "double-chance":[["dc1X","Casa o pareggio (1X)",p.home+p.draw],["dcX2","Pareggio o ospite (X2)",p.draw+p.away],["dc12","Vittoria di una squadra (12)",p.home+p.away]],
    goals15:[["over15","Over 1,5",p.o15],["under15","Under 1,5",1-p.o15]],
    goals25:[["over25","Over 2,5",p.o25],["under25","Under 2,5",1-p.o25]],
    goals35:[["over35","Over 3,5",p.o35],["under35","Under 3,5",1-p.o35]],
-   btts:[["bttsYes","Gol",p.btts],["bttsNo","No Gol",1-p.btts]]
+   btts:[["bttsYes","Gol: entrambe segnano",p.btts],["bttsNo","No Gol: almeno una non segna",1-p.btts]]
   };
   if(category==="combo-goals"||category==="combo-btts"||category==="exact-score"){
    return window.MatchMindBets.marketCandidates(category,forecast).map(item=>[item.key,item.label,window.MatchMindBets.marketProbability(forecast,item.key)]);
@@ -38,7 +38,7 @@
  };
  const marketPickerHtml=(m,forecast,selected,preferredCategory=null)=>{
   const key=matchPickKey(m),category=selected?marketCategoryForKey(selected.marketKey):(preferredCategory||"1x2"),id="market-"+MM().norm(key);
-  const options=[["1x2","1X2"],["double-chance","Doppia chance"],["goals15","Over/Under 1,5"],["goals25","Over/Under 2,5"],["goals35","Over/Under 3,5"],["btts","Gol / No Gol"],["combo-goals","1X2 + Over/Under"],["combo-btts","1X2 + Gol / No Gol"],["exact-score","Risultato esatto"]];
+  const options=[["1x2","Esito partita: 1 / X / 2"],["double-chance","Doppia chance: 1X / X2 / 12"],["goals15","Totale gol: più o meno di 1,5"],["goals25","Totale gol: più ou meno di 2,5"],["goals35","Totale gol: più o meno di 3,5"],["btts","Gol: segnano entrambe? (Sì / No)"],["combo-goals","Combinata: esito + totale gol"],["combo-btts","Combinata: esito + Gol/No Gol"],["exact-score","Punteggio esatto"]];
   return '<div class="fixture-market-panel" data-market-panel="'+esc(key)+'"><div class="fixture-market-picker"><label for="'+esc(id)+'">Mercato</label><select id="'+esc(id)+'" data-market-picker data-match-key="'+esc(key)+'">'+options.map(([value,label])=>'<option value="'+value+'"'+(value===category?' selected':'')+'>'+label+'</option>').join('')+'</select></div>'+
    marketButtonsHtml(m,forecast,category,selected&&selected.marketKey)+
    '<small class="fixture-market-sample">'+(forecast.sampleEnough?'Storico adeguato':'Campione storico limitato')+'</small></div>';
