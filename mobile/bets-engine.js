@@ -27,8 +27,8 @@
     ["over15", "Over 1,5"], ["under15", "Under 1,5"],
     ["over25", "Over 2,5"], ["under25", "Under 2,5"],
     ["over35", "Over 3,5"], ["under35", "Under 3,5"],
-    ["bttsYes", "Gol"], ["bttsNo", "No Gol"],
-    ["home", "1"], ["draw", "X"], ["away", "2"]
+    ["bttsYes", "Entrambe le squadre segnano (Gol)"], ["bttsNo", "Almeno una squadra non segna (No Gol)"],
+    ["home", "Vittoria squadra di casa (1)"], ["draw", "Pareggio (X)"], ["away", "Vittoria squadra ospite (2)"]
   ];
 
   function marketChoices() {
@@ -131,9 +131,9 @@
   }
 
   function comboMarketChoices(mode) {
-    const outcomes = [["home", "1"], ["draw", "X"], ["away", "2"]];
+    const outcomes = [["home", "Vittoria casa (1)"], ["draw", "Pareggio (X)"], ["away", "Vittoria ospite (2)"]];
     const goals = [["over15", "Over 1,5"], ["under15", "Under 1,5"], ["over25", "Over 2,5"], ["under25", "Under 2,5"], ["over35", "Over 3,5"], ["under35", "Under 3,5"]];
-    const btts = [["bttsYes", "Gol"], ["bttsNo", "No Gol"]];
+    const btts = [["bttsYes", "Entrambe segnano (Gol)"], ["bttsNo", "Almeno una non segna (No Gol)"]];
     const secondary = mode === "combo-goals" ? goals : mode === "combo-btts" ? btts : goals.concat(btts);
     return outcomes.flatMap(([resultKey, resultLabel]) => secondary.map(([marketKey, marketLabel]) => ({
       key: "combo:" + resultKey + ":" + marketKey,
