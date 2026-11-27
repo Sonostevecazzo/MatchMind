@@ -6,6 +6,17 @@
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./site.css?v=20261127-saved-tickets-ui2"><link rel="stylesheet" href="./mobile-readable.css?v=20261127-saved-tickets-ui2">
 <title>MatchMind · Previsioni</title>
 <script defer src="./bets-engine.js?v=20261127-saved-tickets-ui2"></script><script defer src="./site-core.js?v=20261127-saved-tickets-ui2"></script><script defer src="./ai-engine.js"></script><script defer src="./elo.js"></script><script defer src="./sisal-bridge.js"></script><script defer src="./bets.js?v=20261127-saved-tickets-ui2"></script>
+
+<style id="saved-tickets-mobile-ui">
+@media(max-width:700px){
+ .bet-workspace-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;padding:8px!important;align-items:stretch!important;}
+ .bet-workspace-tab{display:flex!important;min-width:0!important;min-height:58px!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:3px!important;padding:7px 4px!important;text-align:center!important;white-space:normal!important;font-size:12px!important;line-height:1.2!important;overflow-wrap:anywhere!important;}
+ .bet-workspace-tab span{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:20px!important;height:20px!important;padding:0 5px!important;border-radius:999px!important;font-size:11px!important;line-height:1!important;}
+ body[data-page="bets"] .global-slip-dock.is-expanded{max-height:58vh!important;}
+ body[data-page="bets"] .global-slip-dock.is-expanded .global-slip-list{max-height:36vh!important;}
+ body[data-page="bets"] .page-wrap{padding-bottom:calc(190px + env(safe-area-inset-bottom))!important;}
+}
+</style>
 </head>
 <body data-page="bets" data-title="Previsioni" data-subtitle="Previsioni calcistiche e costruttore per le partite future.">
 <div id="siteHeader"></div>
