@@ -756,7 +756,7 @@ function buildProposal(){
 
 function renderProposalUI(){
  if(!proposal||!proposal.length){
-  $("ticketResults").innerHTML=currentBuilderStrategy==='value'?'<div class="notice warning">Nessuna opportunità +EV verificabile: servono quote bookmaker reali. Su GitHub Pages le quote non sono disponibili.</div>':'<div class="empty-state">Nessuna selezione generata per questa combinazione.</div>';
+  $("ticketResults").innerHTML=currentBuilderStrategy==='value'?'<div class="notice warning"><b>Valore (+EV) non valutabile.</b><br>In questa versione non arrivano quote bookmaker reali da Sisal: senza una quota verificata non è corretto dichiarare un vantaggio atteso positivo. Se vuoi una proposta basata sulle probabilità del modello, passa a “Più Probabili” o “Bilanciata”.</div>':'<div class="empty-state">Nessuna selezione generata: prova ad ampliare il periodo o cambiare i mercati.</div>';
   return;
  }
  const mult=proposal.reduce((acc,x)=>acc*(x.odds||1),1);
